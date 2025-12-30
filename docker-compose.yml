@@ -5,21 +5,16 @@ services:
     build: .
     ports:
       - "3100:3000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/announcement_db?schema=public
-      - NEXTAUTH_SECRET=your-secret-key-change-in-production
-      - NEXTAUTH_URL=http://localhost:3100
-      - ENABLE_AUTO_UPDATE=true
+    env_file:
+      - .env
     volumes:
       - ./public/uploads:/app/public/uploads
-      # Windows Docker Desktop named pipe
-      - //./pipe/docker_engine://./pipe/docker_engine
-      # Mount project folder for git pull
-      - .:/app/repo
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - internal
 
   db:
     image: postgres:16-alpine
@@ -29,14 +24,19 @@ services:
       - POSTGRES_DB=announcement_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
+    # Port removed for security - DB only accessible within Docker network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
 
 volumes:
   postgres_data:

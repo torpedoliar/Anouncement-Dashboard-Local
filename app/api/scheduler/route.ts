@@ -9,16 +9,22 @@ import prisma from "@/lib/prisma";
 
 export async function GET(request: Request) {
     try {
-        // Verify cron secret (optional security)
+        // Verify cron secret (required for security)
         const authHeader = request.headers.get("authorization");
         const cronSecret = process.env.CRON_SECRET;
 
-        // If CRON_SECRET is set, require authorization
-        if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-            // Allow without auth if no secret is configured
-            if (cronSecret !== "none") {
-                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-            }
+        // CRON_SECRET must be configured
+        if (!cronSecret) {
+            console.error("[Scheduler] CRON_SECRET not configured");
+            return NextResponse.json(
+                { error: "Scheduler not configured. Set CRON_SECRET in environment." },
+                { status: 500 }
+            );
+        }
+
+        // Validate authorization header
+        if (authHeader !== `Bearer ${cronSecret}`) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const now = new Date();
