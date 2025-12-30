@@ -1,0 +1,106 @@
+// Prisma Schema for Announcement Dashboard
+// Santos Jaya Abadi themed Professional Dashboard
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  avatar       String?
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  activityLogs ActivityLog[]
+
+  @@map("users")
+}
+
+model Category {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  slug          String         @unique
+  color         String         @default("#ED1C24")
+  order         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  announcements Announcement[]
+
+  @@map("categories")
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?
+  content     String
+  imagePath   String?
+  isPinned    Boolean   @default(false)
+  isHero      Boolean   @default(false)
+  isPublished Boolean   @default(false)
+  scheduledAt DateTime?
+  takedownAt  DateTime?
+  viewCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId])
+  @@index([isPublished, createdAt])
+  @@map("announcements")
+}
+
+model Settings {
+  id           Int      @id @default(1)
+  siteName     String   @default("Santos Jaya Abadi")
+  heroTitle    String   @default("Berita & Pengumuman")
+  heroSubtitle String   @default("Informasi terbaru dari perusahaan")
+  heroImage    String?
+  logoPath     String?
+  primaryColor String   @default("#ED1C24")
+  
+  // About text for footer
+  aboutText    String   @default("Didirikan tahun 1979, PT. Santos Jaya Abadi adalah salah satu perusahaan roasting kopi terbesar di Asia Tenggara dengan merek ikonik Kapal Api.")
+  
+  // Social media URLs
+  instagramUrl  String?
+  linkedinUrl   String?
+  facebookUrl   String?
+  twitterUrl    String?
+  youtubeUrl    String?
+  
+  updatedAt    DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  changes    String?
+  createdAt  DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@map("activity_logs")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}

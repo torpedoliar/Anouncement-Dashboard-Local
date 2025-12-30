@@ -1,0 +1,7 @@
+{
+    "version": "1.0.0",
+    "buildDate": "2025-12-29",
+    "schemaVersion": "1",
+    "releaseNotes": "Initial release with User Management and Audit Log features",
+    "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
+}
