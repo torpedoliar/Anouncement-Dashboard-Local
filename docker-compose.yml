@@ -5,8 +5,16 @@ services:
     build: .
     ports:
       - "3100:3000"
-    env_file:
-      - .env
+    environment:
+      # Database - internal network only (db:5432 not localhost:5433)
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/announcement_db?schema=public
+      # Auth Security
+      - NEXTAUTH_SECRET=sja-announcement-dashboard-secret-2024
+      - NEXTAUTH_URL=http://localhost:3100
+      # Scheduler Security - call with: curl -H "Authorization: Bearer scheduler-secret-2024" http://localhost:3100/api/scheduler
+      - CRON_SECRET=scheduler-secret-2024
+      # Features
+      - ENABLE_AUTO_UPDATE=true
     volumes:
       - ./public/uploads:/app/public/uploads
     depends_on:
@@ -24,7 +32,8 @@ services:
       - POSTGRES_DB=announcement_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # Port removed for security - DB only accessible within Docker network
+    # Port 5433 removed for security - DB only accessible within Docker network
+    # To access DB: docker exec -it announcement-dashboard-db-1 psql -U postgres announcement_db
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
