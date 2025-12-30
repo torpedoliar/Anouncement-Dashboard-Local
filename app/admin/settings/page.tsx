@@ -556,7 +556,7 @@ export default function SettingsPage() {
 
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
+                gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: '24px',
             }}>
                 {/* General Settings */}
@@ -564,6 +564,7 @@ export default function SettingsPage() {
                     backgroundColor: '#000',
                     border: '1px solid #1a1a1a',
                     padding: '24px',
+                    overflow: 'hidden',
                 }}>
                     <p style={{
                         color: '#dc2626',
