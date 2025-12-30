@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import UpdateBanner from "@/components/admin/UpdateBanner";
+import AdminMainContent from "@/components/admin/AdminMainContent";
 
 export default async function AdminLayout({
     children,
@@ -16,20 +17,22 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="min-h-screen bg-black flex">
+        <div style={{
+            minHeight: '100vh',
+            backgroundColor: '#000000',
+            display: 'flex',
+        }}>
             {/* Sidebar */}
             <AdminSidebar
                 userName={session.user?.name}
                 userEmail={session.user?.email}
             />
 
-            {/* Main Content */}
-            <main className="flex-1 min-h-screen bg-[#0a0a0a] transition-all duration-300 lg:ml-64 w-full">
+            {/* Main Content - Uses client component for responsive margin */}
+            <AdminMainContent>
                 <UpdateBanner />
-                <div className="mt-14 lg:mt-0"> {/* Spacer for mobile menu button */}
-                    {children}
-                </div>
-            </main>
+                {children}
+            </AdminMainContent>
         </div>
     );
 }

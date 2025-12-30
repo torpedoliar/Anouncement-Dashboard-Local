@@ -25,12 +25,26 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps) {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(true);
     const pathname = usePathname();
+
+    // Detect screen size
+    useEffect(() => {
+        const checkScreenSize = () => {
+            setIsDesktop(window.innerWidth >= 1024);
+        };
+
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
 
     // Close sidebar when route changes on mobile
     useEffect(() => {
-        setIsOpen(false);
-    }, [pathname]);
+        if (!isDesktop) {
+            setIsOpen(false);
+        }
+    }, [pathname, isDesktop]);
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
@@ -46,52 +60,109 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
         { href: "/admin/settings", icon: FiSettings, label: "PENGATURAN" },
     ];
 
+    // Sidebar should be visible if: Desktop OR Mobile+Open
+    const sidebarVisible = isDesktop || isOpen;
+
     return (
         <>
-            {/* Mobile Menu Button - Visible mainly on mobile */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="fixed top-4 left-4 z-50 p-2 bg-neutral-900 border border-neutral-800 rounded-md text-white lg:hidden"
-                aria-label="Toggle Menu"
-            >
-                {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-            </button>
+            {/* Mobile Menu Button - Only visible on mobile */}
+            {!isDesktop && (
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    style={{
+                        position: 'fixed',
+                        top: '16px',
+                        left: '16px',
+                        zIndex: 60,
+                        padding: '8px',
+                        backgroundColor: '#171717',
+                        border: '1px solid #262626',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                    }}
+                    aria-label="Toggle Menu"
+                >
+                    {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+                </button>
+            )}
 
             {/* Backdrop for Mobile */}
-            {isOpen && (
+            {!isDesktop && isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        zIndex: 40,
+                    }}
                     onClick={() => setIsOpen(false)}
                 />
             )}
 
             {/* Sidebar Container */}
-            <aside
-                className={`
-                    fixed top-0 left-0 z-40 h-full w-64 bg-black border-r border-neutral-900 
-                    transition-transform duration-300 ease-in-out
-                    flex flex-col
-                    ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-                `}
-            >
+            <aside style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                zIndex: 50,
+                height: '100%',
+                width: '256px',
+                backgroundColor: '#000',
+                borderRight: '1px solid #1a1a1a',
+                display: 'flex',
+                flexDirection: 'column',
+                transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
+                transition: 'transform 0.3s ease-in-out',
+            }}>
                 {/* Logo */}
-                <div className="p-6 border-b border-neutral-900">
-                    <Link href="/admin" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 bg-red-600 flex items-center justify-center transition-transform group-hover:scale-105">
-                            <span className="font-montserrat font-bold text-white text-lg">S</span>
+                <div style={{ padding: '24px', borderBottom: '1px solid #1a1a1a' }}>
+                    <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: '#dc2626',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}>
+                            <span style={{
+                                fontFamily: 'Montserrat, sans-serif',
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                fontSize: '18px',
+                            }}>S</span>
                         </div>
                         <div>
-                            <h1 className="font-montserrat font-bold text-white text-[11px] tracking-widest">ADMIN</h1>
-                            <p className="text-[11px] text-neutral-500">Dashboard</p>
+                            <h1 style={{
+                                fontFamily: 'Montserrat, sans-serif',
+                                fontWeight: 700,
+                                color: '#fff',
+                                fontSize: '11px',
+                                letterSpacing: '0.1em',
+                            }}>ADMIN</h1>
+                            <p style={{ fontSize: '11px', color: '#525252' }}>Dashboard</p>
                         </div>
                     </Link>
                 </div>
 
                 {/* Quick Action */}
-                <div className="p-4 border-b border-neutral-900">
+                <div style={{ padding: '16px', borderBottom: '1px solid #1a1a1a' }}>
                     <Link
                         href="/admin/announcements/new"
-                        className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white text-[11px] font-semibold tracking-widest transition-colors"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            width: '100%',
+                            padding: '12px 16px',
+                            backgroundColor: '#dc2626',
+                            color: '#fff',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            letterSpacing: '0.1em',
+                        }}
                     >
                         <FiPlusCircle size={14} />
                         <span>BUAT BARU</span>
@@ -99,23 +170,29 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 overflow-y-auto py-4">
-                    <ul className="space-y-1 px-3">
+                <nav style={{ flex: 1, overflowY: 'auto', padding: '16px 0' }}>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                         {navItems.map((item) => {
                             const isActive = pathname === item.href;
                             return (
                                 <li key={item.href}>
                                     <Link
                                         href={item.href}
-                                        className={`
-                                            flex items-center gap-3 px-4 py-3 rounded-none text-[11px] font-semibold tracking-widest transition-colors
-                                            ${isActive
-                                                ? "bg-neutral-900 text-red-500 border-l-2 border-red-500"
-                                                : "text-neutral-400 hover:text-white hover:bg-neutral-900/50 border-l-2 border-transparent"
-                                            }
-                                        `}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '12px 24px',
+                                            color: isActive ? '#dc2626' : '#a3a3a3',
+                                            backgroundColor: isActive ? '#0a0a0a' : 'transparent',
+                                            borderLeft: isActive ? '2px solid #dc2626' : '2px solid transparent',
+                                            fontSize: '11px',
+                                            fontWeight: 600,
+                                            letterSpacing: '0.1em',
+                                            transition: 'all 0.2s ease',
+                                        }}
                                     >
-                                        <item.icon size={16} className={isActive ? "text-red-500" : "text-neutral-500"} />
+                                        <item.icon size={16} />
                                         <span>{item.label}</span>
                                     </Link>
                                 </li>
@@ -125,18 +202,47 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
                 </nav>
 
                 {/* User Profile & Logout */}
-                <div className="p-4 border-t border-neutral-900 bg-black">
-                    <div className="flex items-center gap-3 mb-4 px-2">
-                        <div className="w-10 h-10 bg-neutral-900 flex items-center justify-center rounded-sm">
-                            <span className="text-white font-bold text-sm">
+                <div style={{
+                    padding: '16px',
+                    borderTop: '1px solid #1a1a1a',
+                    backgroundColor: '#000',
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '16px',
+                    }}>
+                        <div style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: '#1a1a1a',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}>
+                            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>
                                 {userName?.charAt(0)?.toUpperCase() || "A"}
                             </span>
                         </div>
-                        <div className="flex-1 overflow-hidden">
-                            <p className="text-[13px] text-white font-medium truncate">
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                            <p style={{
+                                fontSize: '13px',
+                                color: '#fff',
+                                fontWeight: 500,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            }}>
                                 {userName}
                             </p>
-                            <p className="text-[11px] text-neutral-500 truncate">
+                            <p style={{
+                                fontSize: '11px',
+                                color: '#525252',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            }}>
                                 {userEmail}
                             </p>
                         </div>
@@ -144,11 +250,21 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
                     <button
                         onClick={handleLogout}
                         disabled={isLoggingOut}
-                        className={`
-                            w-full flex items-center gap-2 px-4 py-2 bg-transparent text-neutral-400 hover:text-red-500 hover:bg-neutral-900 
-                            text-[11px] font-semibold tracking-widest transition-colors
-                            ${isLoggingOut ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-                        `}
+                        style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 16px',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            color: '#737373',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            letterSpacing: '0.1em',
+                            cursor: isLoggingOut ? 'not-allowed' : 'pointer',
+                            opacity: isLoggingOut ? 0.5 : 1,
+                        }}
                     >
                         <FiLogOut size={14} />
                         <span>{isLoggingOut ? "KELUAR..." : "KELUAR"}</span>
