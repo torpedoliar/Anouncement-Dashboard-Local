@@ -12,6 +12,21 @@ interface UpdateInfo {
     error?: string;
 }
 
+const GITHUB_VERSION_URL = "https://raw.githubusercontent.com/torpedoliar/Anouncement-Dashboard-Local/main/version.json";
+
+// Compare semver versions: returns 1 if a > b, -1 if a < b, 0 if equal
+function compareVersions(a: string, b: string): number {
+    const partsA = a.split(".").map(Number);
+    const partsB = b.split(".").map(Number);
+    for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+        const numA = partsA[i] || 0;
+        const numB = partsB[i] || 0;
+        if (numA > numB) return 1;
+        if (numA < numB) return -1;
+    }
+    return 0;
+}
+
 export default function UpdateBanner() {
     const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
     const [isDismissed, setIsDismissed] = useState(false);
@@ -21,7 +36,7 @@ export default function UpdateBanner() {
         // Check localStorage for dismiss timestamp
         const dismissedData = localStorage.getItem("updateDismissed");
         if (dismissedData) {
-            const { timestamp, version } = JSON.parse(dismissedData);
+            const { timestamp } = JSON.parse(dismissedData);
             const dismissTime = new Date(timestamp);
             const now = new Date();
             // Re-show after 24 hours or if new version
@@ -35,18 +50,37 @@ export default function UpdateBanner() {
 
     const checkForUpdates = async () => {
         try {
-            const res = await fetch("/api/version/check");
-            const data = await res.json();
-            if (data.hasUpdate || data.error) {
+            // Fetch local version from API
+            const localRes = await fetch("/api/version");
+            const localVersion = await localRes.json();
+
+            // Fetch remote version from GitHub (client-side)
+            const remoteRes = await fetch(GITHUB_VERSION_URL, { cache: "no-store" });
+            if (!remoteRes.ok) {
+                throw new Error("Cannot connect to GitHub");
+            }
+            const remoteVersion = await remoteRes.json();
+
+            // Compare versions
+            const hasUpdate = compareVersions(remoteVersion.version, localVersion.version) > 0;
+            const hasSchemaUpdate = parseInt(remoteVersion.schemaVersion || "1") > parseInt(localVersion.schemaVersion || "1");
+
+            if (hasUpdate) {
                 // Check if this version was already dismissed
                 const dismissedData = localStorage.getItem("updateDismissed");
                 if (dismissedData) {
                     const { version } = JSON.parse(dismissedData);
-                    if (version === data.latestVersion) {
+                    if (version === remoteVersion.version) {
                         setIsDismissed(true);
                     }
                 }
-                setUpdateInfo(data);
+                setUpdateInfo({
+                    hasUpdate,
+                    hasSchemaUpdate,
+                    currentVersion: localVersion.version,
+                    latestVersion: remoteVersion.version,
+                    releaseNotes: remoteVersion.releaseNotes || "",
+                });
             }
         } catch (error) {
             console.error("Failed to check for updates:", error);
