@@ -12,7 +12,9 @@ services:
       - ENABLE_AUTO_UPDATE=true
     volumes:
       - ./public/uploads:/app/public/uploads
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Windows Docker Desktop named pipe
+      - //./pipe/docker_engine://./pipe/docker_engine
+      # Mount project folder for git pull
       - .:/app/repo
     depends_on:
       db:
