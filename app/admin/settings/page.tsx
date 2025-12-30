@@ -136,37 +136,10 @@ function VersionInfoSection() {
         }
     };
 
-    const performUpdate = async () => {
-        if (!confirm("Yakin ingin update aplikasi? Database akan di-backup otomatis sebelum update.")) {
-            return;
-        }
-
-        setIsUpdating(true);
-        setUpdateProgress([{ step: "Memulai update...", status: "running" }]);
-
-        try {
-            const response = await fetch("/api/update", { method: "POST" });
-            const data = await response.json();
-
-            if (data.success) {
-                setUpdateProgress(data.steps || []);
-                setTimeout(() => {
-                    alert("Update berhasil! Halaman akan refresh dalam 5 detik...");
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 5000);
-                }, 1000);
-            } else {
-                setUpdateProgress(data.steps || [{ step: data.error || "Update gagal", status: "error" }]);
-                alert(data.error || "Update gagal");
-            }
-        } catch (err) {
-            console.error("Update error:", err);
-            setUpdateProgress([{ step: "Koneksi terputus", status: "error" }]);
-            alert("Update gagal. Periksa koneksi.");
-        } finally {
-            setIsUpdating(false);
-        }
+    const performUpdate = () => {
+        // Show the update modal with instructions
+        const modal = document.getElementById('update-modal');
+        if (modal) modal.style.display = 'flex';
     };
 
     return (
