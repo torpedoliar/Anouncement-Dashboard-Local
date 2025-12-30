@@ -16,11 +16,7 @@ export default async function AdminLayout({
     }
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            backgroundColor: '#000000',
-            display: 'flex',
-        }}>
+        <div className="min-h-screen bg-black flex">
             {/* Sidebar */}
             <AdminSidebar
                 userName={session.user?.name}
@@ -28,14 +24,11 @@ export default async function AdminLayout({
             />
 
             {/* Main Content */}
-            <main style={{
-                flex: 1,
-                marginLeft: '256px',
-                minHeight: '100vh',
-                backgroundColor: '#0a0a0a',
-            }}>
+            <main className="flex-1 min-h-screen bg-[#0a0a0a] transition-all duration-300 lg:ml-64 w-full">
                 <UpdateBanner />
-                {children}
+                <div className="mt-14 lg:mt-0"> {/* Spacer for mobile menu button */}
+                    {children}
+                </div>
             </main>
         </div>
     );

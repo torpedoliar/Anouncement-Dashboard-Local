@@ -554,11 +554,7 @@ export default function SettingsPage() {
                 </div>
             )}
 
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '24px',
-            }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* General Settings */}
                 <div style={{
                     backgroundColor: '#000',

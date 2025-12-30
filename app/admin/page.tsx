@@ -54,12 +54,7 @@ export default async function AdminDashboard() {
     return (
         <div style={{ padding: '32px' }}>
             {/* Header */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '32px',
-            }}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
                     <p style={{
                         color: '#dc2626',
@@ -99,12 +94,7 @@ export default async function AdminDashboard() {
             </div>
 
             {/* Stats Cards */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '24px',
-                marginBottom: '32px',
-            }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {statCards.map((stat, index) => (
                     <div
                         key={index}

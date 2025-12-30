@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -12,7 +12,9 @@ import {
     FiPlusCircle,
     FiTag,
     FiUsers,
-    FiActivity
+    FiActivity,
+    FiMenu,
+    FiX
 } from "react-icons/fi";
 
 interface AdminSidebarProps {
@@ -22,7 +24,13 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps) {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const pathname = usePathname();
+
+    // Close sidebar when route changes on mobile
+    useEffect(() => {
+        setIsOpen(false);
+    }, [pathname]);
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
@@ -39,185 +47,114 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
     ];
 
     return (
-        <aside style={{
-            width: '256px',
-            backgroundColor: '#000',
-            borderRight: '1px solid #1a1a1a',
-            position: 'fixed',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-        }}>
-            {/* Logo */}
-            <div style={{ padding: '24px', borderBottom: '1px solid #1a1a1a' }}>
-                <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#dc2626',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}>
-                        <span style={{
-                            fontFamily: 'Montserrat, sans-serif',
-                            fontWeight: 'bold',
-                            color: '#fff',
-                            fontSize: '18px',
-                        }}>S</span>
-                    </div>
-                    <div>
-                        <h1 style={{
-                            fontFamily: 'Montserrat, sans-serif',
-                            fontWeight: 700,
-                            color: '#fff',
-                            fontSize: '11px',
-                            letterSpacing: '0.1em',
-                        }}>ADMIN</h1>
-                        <p style={{ fontSize: '11px', color: '#525252' }}>Dashboard</p>
-                    </div>
-                </Link>
-            </div>
+        <>
+            {/* Mobile Menu Button - Visible mainly on mobile */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="fixed top-4 left-4 z-50 p-2 bg-neutral-900 border border-neutral-800 rounded-md text-white lg:hidden"
+                aria-label="Toggle Menu"
+            >
+                {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+            </button>
 
-            {/* Quick Action */}
-            <div style={{ padding: '16px', borderBottom: '1px solid #1a1a1a' }}>
-                <Link
-                    href="/admin/announcements/new"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        width: '100%',
-                        padding: '12px 16px',
-                        backgroundColor: '#dc2626',
-                        color: '#fff',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        letterSpacing: '0.1em',
-                    }}
-                >
-                    <FiPlusCircle size={14} />
-                    BUAT BARU
-                </Link>
-            </div>
+            {/* Backdrop for Mobile */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
 
-            {/* Navigation */}
-            <nav style={{ flex: 1, padding: '16px' }}>
-                {navItems.map((item) => {
-                    const isActive = pathname === item.href ||
-                        (item.href !== "/admin" && pathname?.startsWith(item.href));
-
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                padding: '12px 16px',
-                                marginBottom: '4px',
-                                backgroundColor: isActive ? '#dc2626' : 'transparent',
-                                color: isActive ? '#fff' : '#737373',
-                                fontSize: '11px',
-                                fontWeight: 600,
-                                letterSpacing: '0.1em',
-                                transition: 'all 0.2s',
-                            }}
-                            onMouseOver={(e) => {
-                                if (!isActive) {
-                                    e.currentTarget.style.backgroundColor = '#0a0a0a';
-                                    e.currentTarget.style.color = '#fff';
-                                }
-                            }}
-                            onMouseOut={(e) => {
-                                if (!isActive) {
-                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                    e.currentTarget.style.color = '#737373';
-                                }
-                            }}
-                        >
-                            <item.icon size={16} />
-                            <span>{item.label}</span>
-                        </Link>
-                    );
-                })}
-            </nav>
-
-            {/* User & Logout */}
-            <div style={{ padding: '16px', borderTop: '1px solid #1a1a1a' }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '16px',
-                }}>
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#1a1a1a',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}>
-                        <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>
-                            {userName?.charAt(0)?.toUpperCase() || "A"}
-                        </span>
-                    </div>
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
-                        <p style={{
-                            fontSize: '13px',
-                            color: '#fff',
-                            fontWeight: 500,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                        }}>
-                            {userName}
-                        </p>
-                        <p style={{
-                            fontSize: '11px',
-                            color: '#525252',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                        }}>
-                            {userEmail}
-                        </p>
-                    </div>
+            {/* Sidebar Container */}
+            <aside
+                className={`
+                    fixed top-0 left-0 z-40 h-full w-64 bg-black border-r border-neutral-900 
+                    transition-transform duration-300 ease-in-out
+                    flex flex-col
+                    ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+                `}
+            >
+                {/* Logo */}
+                <div className="p-6 border-b border-neutral-900">
+                    <Link href="/admin" className="flex items-center gap-3 group">
+                        <div className="w-10 h-10 bg-red-600 flex items-center justify-center transition-transform group-hover:scale-105">
+                            <span className="font-montserrat font-bold text-white text-lg">S</span>
+                        </div>
+                        <div>
+                            <h1 className="font-montserrat font-bold text-white text-[11px] tracking-widest">ADMIN</h1>
+                            <p className="text-[11px] text-neutral-500">Dashboard</p>
+                        </div>
+                    </Link>
                 </div>
-                <button
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 16px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        color: '#737373',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        letterSpacing: '0.1em',
-                        cursor: isLoggingOut ? 'not-allowed' : 'pointer',
-                        opacity: isLoggingOut ? 0.5 : 1,
-                    }}
-                    onMouseOver={(e) => {
-                        e.currentTarget.style.color = '#dc2626';
-                        e.currentTarget.style.backgroundColor = '#0a0a0a';
-                    }}
-                    onMouseOut={(e) => {
-                        e.currentTarget.style.color = '#737373';
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                >
-                    <FiLogOut size={14} />
-                    <span>{isLoggingOut ? "KELUAR..." : "KELUAR"}</span>
-                </button>
-            </div>
-        </aside>
+
+                {/* Quick Action */}
+                <div className="p-4 border-b border-neutral-900">
+                    <Link
+                        href="/admin/announcements/new"
+                        className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white text-[11px] font-semibold tracking-widest transition-colors"
+                    >
+                        <FiPlusCircle size={14} />
+                        <span>BUAT BARU</span>
+                    </Link>
+                </div>
+
+                {/* Navigation */}
+                <nav className="flex-1 overflow-y-auto py-4">
+                    <ul className="space-y-1 px-3">
+                        {navItems.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <li key={item.href}>
+                                    <Link
+                                        href={item.href}
+                                        className={`
+                                            flex items-center gap-3 px-4 py-3 rounded-none text-[11px] font-semibold tracking-widest transition-colors
+                                            ${isActive
+                                                ? "bg-neutral-900 text-red-500 border-l-2 border-red-500"
+                                                : "text-neutral-400 hover:text-white hover:bg-neutral-900/50 border-l-2 border-transparent"
+                                            }
+                                        `}
+                                    >
+                                        <item.icon size={16} className={isActive ? "text-red-500" : "text-neutral-500"} />
+                                        <span>{item.label}</span>
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </nav>
+
+                {/* User Profile & Logout */}
+                <div className="p-4 border-t border-neutral-900 bg-black">
+                    <div className="flex items-center gap-3 mb-4 px-2">
+                        <div className="w-10 h-10 bg-neutral-900 flex items-center justify-center rounded-sm">
+                            <span className="text-white font-bold text-sm">
+                                {userName?.charAt(0)?.toUpperCase() || "A"}
+                            </span>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                            <p className="text-[13px] text-white font-medium truncate">
+                                {userName}
+                            </p>
+                            <p className="text-[11px] text-neutral-500 truncate">
+                                {userEmail}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
+                        className={`
+                            w-full flex items-center gap-2 px-4 py-2 bg-transparent text-neutral-400 hover:text-red-500 hover:bg-neutral-900 
+                            text-[11px] font-semibold tracking-widest transition-colors
+                            ${isLoggingOut ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                        `}
+                    >
+                        <FiLogOut size={14} />
+                        <span>{isLoggingOut ? "KELUAR..." : "KELUAR"}</span>
+                    </button>
+                </div>
+            </aside>
+        </>
     );
 }
