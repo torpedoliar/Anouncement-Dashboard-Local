@@ -49,6 +49,8 @@ function VersionInfoSection() {
     const [checkResult, setCheckResult] = useState<VersionCheckResult | null>(null);
     const [isChecking, setIsChecking] = useState(false);
     const [isBackingUp, setIsBackingUp] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [updateProgress, setUpdateProgress] = useState<{ step: string; status: string }[]>([]);
 
     useEffect(() => {
         fetchVersion();
@@ -131,6 +133,39 @@ function VersionInfoSection() {
             alert("Gagal membuat backup");
         } finally {
             setIsBackingUp(false);
+        }
+    };
+
+    const performUpdate = async () => {
+        if (!confirm("Yakin ingin update aplikasi? Database akan di-backup otomatis sebelum update.")) {
+            return;
+        }
+
+        setIsUpdating(true);
+        setUpdateProgress([{ step: "Memulai update...", status: "running" }]);
+
+        try {
+            const response = await fetch("/api/update", { method: "POST" });
+            const data = await response.json();
+
+            if (data.success) {
+                setUpdateProgress(data.steps || []);
+                setTimeout(() => {
+                    alert("Update berhasil! Halaman akan refresh dalam 5 detik...");
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 5000);
+                }, 1000);
+            } else {
+                setUpdateProgress(data.steps || [{ step: data.error || "Update gagal", status: "error" }]);
+                alert(data.error || "Update gagal");
+            }
+        } catch (err) {
+            console.error("Update error:", err);
+            setUpdateProgress([{ step: "Koneksi terputus", status: "error" }]);
+            alert("Update gagal. Periksa koneksi.");
+        } finally {
+            setIsUpdating(false);
         }
     };
 
@@ -224,19 +259,18 @@ function VersionInfoSection() {
                                     Update tersedia: v{checkResult.latestVersion}
                                 </p>
                                 <button
-                                    onClick={() => {
-                                        const modal = document.getElementById('update-modal');
-                                        if (modal) modal.style.display = 'flex';
-                                    }}
+                                    onClick={performUpdate}
+                                    disabled={isUpdating}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: '6px',
-                                        padding: '8px 16px', backgroundColor: '#22c55e', border: 'none',
-                                        color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                                        borderRadius: '4px',
+                                        padding: '8px 16px', backgroundColor: isUpdating ? '#166534' : '#22c55e', border: 'none',
+                                        color: '#fff', fontSize: '12px', fontWeight: 600,
+                                        cursor: isUpdating ? 'not-allowed' : 'pointer',
+                                        borderRadius: '4px', opacity: isUpdating ? 0.8 : 1,
                                     }}
                                 >
-                                    <FiRefreshCw size={12} />
-                                    Update Sekarang
+                                    <FiRefreshCw size={12} className={isUpdating ? 'animate-spin' : ''} />
+                                    {isUpdating ? "Updating..." : "Update Sekarang"}
                                 </button>
                             </div>
                             <p style={{ color: '#94a3b8', fontSize: '13px' }}>{checkResult.releaseNotes}</p>
@@ -244,6 +278,23 @@ function VersionInfoSection() {
                                 <p style={{ color: '#fbbf24', fontSize: '12px', marginTop: '8px' }}>
                                     ⚠️ Update ini memerlukan migrasi database
                                 </p>
+                            )}
+                            {/* Progress indicator */}
+                            {updateProgress.length > 0 && (
+                                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#0a0a0a', borderRadius: '6px' }}>
+                                    {updateProgress.map((p, i) => (
+                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                            <span style={{
+                                                color: p.status === 'success' ? '#22c55e' :
+                                                    p.status === 'error' ? '#ef4444' :
+                                                        p.status === 'warning' ? '#fbbf24' : '#60a5fa'
+                                            }}>
+                                                {p.status === 'success' ? '✓' : p.status === 'error' ? '✗' : p.status === 'running' ? '⏳' : '⚠'}
+                                            </span>
+                                            <span style={{ color: '#a1a1aa', fontSize: '12px' }}>{p.step}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     ) : (
