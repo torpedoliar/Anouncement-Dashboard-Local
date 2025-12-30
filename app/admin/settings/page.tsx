@@ -219,9 +219,26 @@ function VersionInfoSection() {
                         <p style={{ color: '#fbbf24' }}>{checkResult.error}</p>
                     ) : checkResult.hasUpdate ? (
                         <div>
-                            <p style={{ color: '#60a5fa', fontWeight: 600, marginBottom: '4px' }}>
-                                Update tersedia: v{checkResult.latestVersion}
-                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <p style={{ color: '#60a5fa', fontWeight: 600 }}>
+                                    Update tersedia: v{checkResult.latestVersion}
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        const modal = document.getElementById('update-modal');
+                                        if (modal) modal.style.display = 'flex';
+                                    }}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                        padding: '8px 16px', backgroundColor: '#22c55e', border: 'none',
+                                        color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                                        borderRadius: '4px',
+                                    }}
+                                >
+                                    <FiRefreshCw size={12} />
+                                    Update Sekarang
+                                </button>
+                            </div>
                             <p style={{ color: '#94a3b8', fontSize: '13px' }}>{checkResult.releaseNotes}</p>
                             {checkResult.hasSchemaUpdate && (
                                 <p style={{ color: '#fbbf24', fontSize: '12px', marginTop: '8px' }}>
@@ -234,6 +251,87 @@ function VersionInfoSection() {
                     )}
                 </div>
             )}
+
+            {/* Update Modal */}
+            <div
+                id="update-modal"
+                style={{
+                    display: 'none',
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    alignItems: 'center', justifyContent: 'center',
+                    zIndex: 9999,
+                }}
+                onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                        const modal = document.getElementById('update-modal');
+                        if (modal) modal.style.display = 'none';
+                    }
+                }}
+            >
+                <div style={{
+                    backgroundColor: '#1a1a1a',
+                    border: '1px solid #333',
+                    borderRadius: '12px',
+                    padding: '32px',
+                    maxWidth: '600px',
+                    width: '90%',
+                }}>
+                    <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
+                        📦 Cara Update Aplikasi
+                    </h3>
+                    <p style={{ color: '#a1a1aa', marginBottom: '20px', lineHeight: 1.6 }}>
+                        Untuk keamanan data, update dilakukan secara manual melalui terminal server.
+                        Ikuti langkah-langkah berikut:
+                    </p>
+                    <div style={{
+                        backgroundColor: '#0a0a0a',
+                        border: '1px solid #262626',
+                        borderRadius: '8px',
+                        padding: '20px',
+                        fontFamily: 'monospace',
+                        fontSize: '13px',
+                    }}>
+                        <p style={{ color: '#22c55e', marginBottom: '12px' }}># 1. Backup database terlebih dahulu</p>
+                        <p style={{ color: '#e5e5e5', marginBottom: '16px' }}>.\scripts\backup.ps1</p>
+
+                        <p style={{ color: '#22c55e', marginBottom: '12px' }}># 2. Pull kode terbaru dari GitHub</p>
+                        <p style={{ color: '#e5e5e5', marginBottom: '16px' }}>git pull origin main</p>
+
+                        <p style={{ color: '#22c55e', marginBottom: '12px' }}># 3. Rebuild dan restart container</p>
+                        <p style={{ color: '#e5e5e5' }}>docker-compose up -d --build</p>
+                    </div>
+                    <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText('git pull origin main && docker-compose up -d --build');
+                                alert('Command disalin ke clipboard!');
+                            }}
+                            style={{
+                                padding: '10px 20px', backgroundColor: '#1e40af', border: 'none',
+                                color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                                borderRadius: '6px',
+                            }}
+                        >
+                            Copy Command
+                        </button>
+                        <button
+                            onClick={() => {
+                                const modal = document.getElementById('update-modal');
+                                if (modal) modal.style.display = 'none';
+                            }}
+                            style={{
+                                padding: '10px 20px', backgroundColor: '#333', border: 'none',
+                                color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                                borderRadius: '6px',
+                            }}
+                        >
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
@@ -434,8 +532,8 @@ export default function SettingsPage() {
 
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                gap: '32px',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '24px',
             }}>
                 {/* General Settings */}
                 <div style={{
