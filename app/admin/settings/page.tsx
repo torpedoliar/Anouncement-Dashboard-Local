@@ -299,15 +299,14 @@ function VersionInfoSection() {
                     border: '1px solid #333',
                     borderRadius: '12px',
                     padding: '32px',
-                    maxWidth: '600px',
+                    maxWidth: '650px',
                     width: '90%',
                 }}>
                     <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
                         📦 Cara Update Aplikasi
                     </h3>
-                    <p style={{ color: '#a1a1aa', marginBottom: '20px', lineHeight: 1.6 }}>
-                        Untuk keamanan data, update dilakukan secara manual melalui terminal server.
-                        Ikuti langkah-langkah berikut:
+                    <p style={{ color: '#fbbf24', marginBottom: '16px', fontSize: '13px', padding: '10px', backgroundColor: 'rgba(251, 191, 36, 0.1)', borderRadius: '6px' }}>
+                        ⚠️ Jalankan perintah ini di <strong>PowerShell server</strong> tempat aplikasi diinstall
                     </p>
                     <div style={{
                         backgroundColor: '#0a0a0a',
@@ -315,30 +314,31 @@ function VersionInfoSection() {
                         borderRadius: '8px',
                         padding: '20px',
                         fontFamily: 'monospace',
-                        fontSize: '13px',
+                        fontSize: '12px',
+                        lineHeight: 1.8,
                     }}>
-                        <p style={{ color: '#22c55e', marginBottom: '12px' }}># 1. Backup database terlebih dahulu</p>
-                        <p style={{ color: '#e5e5e5', marginBottom: '16px' }}>.\scripts\backup.ps1</p>
+                        <p style={{ color: '#22c55e' }}># 1. Masuk ke folder project</p>
+                        <p style={{ color: '#e5e5e5', marginBottom: '12px' }}>cd &quot;E:\Vibe\Dashboard SJA\announcement-dashboard&quot;</p>
 
-                        <p style={{ color: '#22c55e', marginBottom: '12px' }}># 2. Pull kode terbaru dari GitHub</p>
-                        <p style={{ color: '#e5e5e5', marginBottom: '16px' }}>git pull origin main</p>
+                        <p style={{ color: '#22c55e' }}># 2. Download kode terbaru</p>
+                        <p style={{ color: '#e5e5e5', marginBottom: '12px' }}>git pull origin main</p>
 
-                        <p style={{ color: '#22c55e', marginBottom: '12px' }}># 3. Rebuild dan restart container</p>
-                        <p style={{ color: '#e5e5e5' }}>docker-compose up -d --build</p>
+                        <p style={{ color: '#22c55e' }}># 3. Rebuild dan restart (tunggu 3-5 menit)</p>
+                        <p style={{ color: '#e5e5e5' }}>docker-compose down; docker-compose build --no-cache; docker-compose up -d</p>
                     </div>
-                    <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                    <div style={{ marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                         <button
                             onClick={() => {
-                                navigator.clipboard.writeText('git pull origin main && docker-compose up -d --build');
-                                alert('Command disalin ke clipboard!');
+                                navigator.clipboard.writeText(`cd "E:\\Vibe\\Dashboard SJA\\announcement-dashboard"\ngit pull origin main\ndocker-compose down; docker-compose build --no-cache; docker-compose up -d`);
+                                alert('Perintah sudah dicopy! Paste ke PowerShell server.');
                             }}
                             style={{
-                                padding: '10px 20px', backgroundColor: '#1e40af', border: 'none',
+                                padding: '10px 20px', backgroundColor: '#22c55e', border: 'none',
                                 color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                                 borderRadius: '6px',
                             }}
                         >
-                            Copy Command
+                            📋 Copy Semua Perintah
                         </button>
                         <button
                             onClick={() => {
