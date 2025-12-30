@@ -29,6 +29,21 @@ interface VersionCheckResult {
     error?: string;
 }
 
+const GITHUB_VERSION_URL = "https://raw.githubusercontent.com/torpedoliar/Anouncement-Dashboard-Local/main/version.json";
+
+// Compare semver versions: returns 1 if a > b, -1 if a < b, 0 if equal
+function compareVersions(a: string, b: string): number {
+    const partsA = a.split(".").map(Number);
+    const partsB = b.split(".").map(Number);
+    for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+        const numA = partsA[i] || 0;
+        const numB = partsB[i] || 0;
+        if (numA > numB) return 1;
+        if (numA < numB) return -1;
+    }
+    return 0;
+}
+
 function VersionInfoSection() {
     const [versionInfo, setVersionInfo] = useState<{ version: string; schemaVersion: string } | null>(null);
     const [checkResult, setCheckResult] = useState<VersionCheckResult | null>(null);
@@ -52,11 +67,42 @@ function VersionInfoSection() {
     const checkForUpdates = async () => {
         setIsChecking(true);
         try {
-            const res = await fetch("/api/version/check");
-            const data = await res.json();
-            setCheckResult(data);
+            // Fetch local version from API
+            const localRes = await fetch("/api/version");
+            const localVersion = await localRes.json();
+
+            // Fetch remote version from GitHub (client-side)
+            const remoteRes = await fetch(GITHUB_VERSION_URL, { cache: "no-store" });
+            if (!remoteRes.ok) {
+                throw new Error("Tidak dapat terhubung ke GitHub");
+            }
+            const remoteVersion = await remoteRes.json();
+
+            // Compare versions
+            const hasUpdate = compareVersions(remoteVersion.version, localVersion.version) > 0;
+            const hasSchemaUpdate = parseInt(remoteVersion.schemaVersion || "1") > parseInt(localVersion.schemaVersion || "1");
+
+            setCheckResult({
+                hasUpdate,
+                hasSchemaUpdate,
+                currentVersion: localVersion.version,
+                latestVersion: remoteVersion.version,
+                currentSchemaVersion: localVersion.schemaVersion || "1",
+                latestSchemaVersion: remoteVersion.schemaVersion || "1",
+                releaseNotes: remoteVersion.releaseNotes || "",
+            });
         } catch (err) {
             console.error("Failed to check updates:", err);
+            setCheckResult({
+                hasUpdate: false,
+                hasSchemaUpdate: false,
+                currentVersion: versionInfo?.version || "1.0.0",
+                latestVersion: versionInfo?.version || "1.0.0",
+                currentSchemaVersion: versionInfo?.schemaVersion || "1",
+                latestSchemaVersion: versionInfo?.schemaVersion || "1",
+                releaseNotes: "",
+                error: "Tidak dapat terhubung ke GitHub. Periksa koneksi internet.",
+            });
         } finally {
             setIsChecking(false);
         }
