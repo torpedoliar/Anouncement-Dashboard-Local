@@ -1,7 +1,7 @@
 {
-    "version": "1.1.0",
+    "version": "1.1.1",
     "buildDate": "2025-12-30",
     "schemaVersion": "2",
-    "releaseNotes": "Fitur baru: Jadwal Publish & Takedown otomatis untuk pengumuman",
+    "releaseNotes": "Perbaikan: Keamanan database, Rate limiting API, UI Admin responsive",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
