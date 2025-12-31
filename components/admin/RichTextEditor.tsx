@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -18,6 +18,9 @@ import {
     FiAlignLeft,
     FiAlignCenter,
     FiAlignRight,
+    FiMaximize,
+    FiMinimize,
+    FiTrash2,
 } from "react-icons/fi";
 import { LuHeading1, LuHeading2, LuHeading3, LuListOrdered } from "react-icons/lu";
 
@@ -27,12 +30,36 @@ interface RichTextEditorProps {
     placeholder?: string;
 }
 
+// Custom Image extension with alignment and size support
+const CustomImage = Image.extend({
+    addAttributes() {
+        return {
+            ...this.parent?.(),
+            align: {
+                default: 'center',
+                parseHTML: element => element.getAttribute('data-align') || 'center',
+                renderHTML: attributes => {
+                    return { 'data-align': attributes.align };
+                },
+            },
+            width: {
+                default: '100%',
+                parseHTML: element => element.getAttribute('width') || element.style.width || '100%',
+                renderHTML: attributes => {
+                    return { width: attributes.width, style: `width: ${attributes.width}` };
+                },
+            },
+        };
+    },
+});
+
 export default function RichTextEditor({
     content,
     onChange,
     placeholder = "Tulis konten pengumuman...",
 }: RichTextEditorProps) {
     const [isUploading, setIsUploading] = useState(false);
+    const [selectedImageSize, setSelectedImageSize] = useState<string>('100%');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const editor = useEditor({
@@ -42,14 +69,12 @@ export default function RichTextEditor({
                 heading: {
                     levels: [1, 2, 3],
                 },
-                // Disable these as we add them separately with custom config
-                // TipTap v3 StarterKit includes Link and Underline by default
                 link: false,
                 underline: false,
             }),
-            Image.configure({
+            CustomImage.configure({
                 HTMLAttributes: {
-                    style: "max-width: 100%; height: auto; border-radius: 8px; margin: 16px 0;",
+                    style: "max-width: 100%; height: auto; border-radius: 8px; margin: 16px auto; display: block;",
                 },
             }),
             Link.configure({
@@ -60,7 +85,7 @@ export default function RichTextEditor({
             }),
             Underline,
             TextAlign.configure({
-                types: ["heading", "paragraph"],
+                types: ["heading", "paragraph", "image"],
             }),
             Placeholder.configure({
                 placeholder,
@@ -103,7 +128,10 @@ export default function RichTextEditor({
             }
 
             const data = await response.json();
-            editor.chain().focus().setImage({ src: data.url }).run();
+            editor.chain().focus().setImage({
+                src: data.url,
+                alt: file.name,
+            }).run();
         } catch (error) {
             console.error("Image upload failed:", error);
             const message = error instanceof Error ? error.message : "Gagal mengupload gambar";
@@ -122,7 +150,6 @@ export default function RichTextEditor({
         if (file) {
             handleImageUpload(file);
         }
-        // Reset input
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -134,6 +161,23 @@ export default function RichTextEditor({
         if (url) {
             editor.chain().focus().setLink({ href: url }).run();
         }
+    }, [editor]);
+
+    // Image manipulation functions
+    const setImageAlign = useCallback((align: 'left' | 'center' | 'right') => {
+        if (!editor) return;
+        editor.chain().focus().updateAttributes('image', { align }).run();
+    }, [editor]);
+
+    const setImageSize = useCallback((width: string) => {
+        if (!editor) return;
+        setSelectedImageSize(width);
+        editor.chain().focus().updateAttributes('image', { width }).run();
+    }, [editor]);
+
+    const deleteImage = useCallback(() => {
+        if (!editor) return;
+        editor.chain().focus().deleteSelection().run();
     }, [editor]);
 
     if (!editor) {
@@ -170,6 +214,18 @@ export default function RichTextEditor({
         backgroundColor: '#333',
         margin: '0 4px',
     };
+
+    const bubbleButtonStyle = (isActive: boolean = false) => ({
+        padding: '6px 10px',
+        backgroundColor: isActive ? '#dc2626' : '#1a1a1a',
+        color: '#fff',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+    });
 
     return (
         <div style={{
@@ -320,6 +376,98 @@ export default function RichTextEditor({
                 )}
             </div>
 
+            {/* Bubble Menu for Image - appears when image is selected */}
+            {editor && (
+                <BubbleMenu
+                    editor={editor}
+                    tippyOptions={{ duration: 100 }}
+                    shouldShow={({ editor }) => editor.isActive('image')}
+                >
+                    <div style={{
+                        display: 'flex',
+                        backgroundColor: '#000',
+                        border: '1px solid #333',
+                        borderRadius: '6px',
+                        overflow: 'hidden',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                    }}>
+                        {/* Size Controls */}
+                        <button
+                            type="button"
+                            onClick={() => setImageSize('25%')}
+                            style={bubbleButtonStyle(selectedImageSize === '25%')}
+                            title="Ukuran 25%"
+                        >
+                            <FiMinimize size={12} /> 25%
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setImageSize('50%')}
+                            style={bubbleButtonStyle(selectedImageSize === '50%')}
+                            title="Ukuran 50%"
+                        >
+                            50%
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setImageSize('75%')}
+                            style={bubbleButtonStyle(selectedImageSize === '75%')}
+                            title="Ukuran 75%"
+                        >
+                            75%
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setImageSize('100%')}
+                            style={bubbleButtonStyle(selectedImageSize === '100%')}
+                            title="Ukuran Penuh"
+                        >
+                            <FiMaximize size={12} /> 100%
+                        </button>
+
+                        <div style={{ width: '1px', backgroundColor: '#333' }} />
+
+                        {/* Alignment Controls */}
+                        <button
+                            type="button"
+                            onClick={() => setImageAlign('left')}
+                            style={bubbleButtonStyle()}
+                            title="Rata Kiri"
+                        >
+                            <FiAlignLeft size={14} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setImageAlign('center')}
+                            style={bubbleButtonStyle()}
+                            title="Rata Tengah"
+                        >
+                            <FiAlignCenter size={14} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setImageAlign('right')}
+                            style={bubbleButtonStyle()}
+                            title="Rata Kanan"
+                        >
+                            <FiAlignRight size={14} />
+                        </button>
+
+                        <div style={{ width: '1px', backgroundColor: '#333' }} />
+
+                        {/* Delete */}
+                        <button
+                            type="button"
+                            onClick={deleteImage}
+                            style={{ ...bubbleButtonStyle(), backgroundColor: '#7f1d1d' }}
+                            title="Hapus Gambar"
+                        >
+                            <FiTrash2 size={14} />
+                        </button>
+                    </div>
+                </BubbleMenu>
+            )}
+
             {/* Editor Content */}
             <EditorContent editor={editor} />
 
@@ -372,6 +520,25 @@ export default function RichTextEditor({
                     height: auto;
                     border-radius: 8px;
                     margin: 16px 0;
+                    cursor: pointer;
+                    transition: outline 0.2s;
+                }
+                .tiptap img.ProseMirror-selectednode {
+                    outline: 3px solid #dc2626;
+                }
+                .tiptap img[data-align="left"] {
+                    margin-left: 0;
+                    margin-right: auto;
+                }
+                .tiptap img[data-align="center"] {
+                    margin-left: auto;
+                    margin-right: auto;
+                    display: block;
+                }
+                .tiptap img[data-align="right"] {
+                    margin-left: auto;
+                    margin-right: 0;
+                    display: block;
                 }
                 .tiptap a {
                     color: #dc2626;
