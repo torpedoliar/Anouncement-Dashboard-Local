@@ -1,21 +1,30 @@
 import { NextResponse } from "next/server";
+import { readFileSync } from "fs";
+import { join } from "path";
 
-// GET /api/version - Return the current app version
-// This is hardcoded so it works in Docker standalone mode
+// GET /api/version - Return the current app version from version.json
 export async function GET() {
     try {
-        // Return current version (hardcoded for Docker compatibility)
+        // Read version from version.json file
+        const versionPath = join(process.cwd(), "version.json");
+        const versionData = readFileSync(versionPath, "utf-8");
+        const version = JSON.parse(versionData);
+
         return NextResponse.json({
-            version: "1.0.0",
-            buildDate: "2025-12-29",
-            schemaVersion: "1",
-            releaseNotes: "Initial release",
+            version: version.version,
+            buildDate: version.buildDate,
+            schemaVersion: version.schemaVersion,
+            releaseNotes: version.releaseNotes,
+            repository: version.repository,
         });
     } catch (error) {
         console.error("Version API error:", error);
-        return NextResponse.json(
-            { error: "Failed to get version" },
-            { status: 500 }
-        );
+        // Fallback if version.json is not found
+        return NextResponse.json({
+            version: "1.0.0",
+            buildDate: "unknown",
+            schemaVersion: "1",
+            releaseNotes: "Version file not found",
+        });
     }
 }
