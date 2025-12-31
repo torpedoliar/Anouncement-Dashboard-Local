@@ -1,13 +1,13 @@
 "use client";
 
-import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import {
     FiBold,
     FiItalic,
@@ -59,6 +59,7 @@ export default function RichTextEditor({
     placeholder = "Tulis konten pengumuman...",
 }: RichTextEditorProps) {
     const [isUploading, setIsUploading] = useState(false);
+    const [isImageSelected, setIsImageSelected] = useState(false);
     const [selectedImageSize, setSelectedImageSize] = useState<string>('100%');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -94,6 +95,9 @@ export default function RichTextEditor({
         content,
         onUpdate: ({ editor }) => {
             onChange(editor.getHTML());
+        },
+        onSelectionUpdate: ({ editor }) => {
+            setIsImageSelected(editor.isActive('image'));
         },
         editorProps: {
             attributes: {
@@ -178,6 +182,7 @@ export default function RichTextEditor({
     const deleteImage = useCallback(() => {
         if (!editor) return;
         editor.chain().focus().deleteSelection().run();
+        setIsImageSelected(false);
     }, [editor]);
 
     if (!editor) {
@@ -215,7 +220,7 @@ export default function RichTextEditor({
         margin: '0 4px',
     };
 
-    const bubbleButtonStyle = (isActive: boolean = false) => ({
+    const imageButtonStyle = (isActive: boolean = false) => ({
         padding: '6px 10px',
         backgroundColor: isActive ? '#dc2626' : '#1a1a1a',
         color: '#fff',
@@ -225,6 +230,7 @@ export default function RichTextEditor({
         display: 'flex',
         alignItems: 'center',
         gap: '4px',
+        borderRadius: '4px',
     });
 
     return (
@@ -376,96 +382,95 @@ export default function RichTextEditor({
                 )}
             </div>
 
-            {/* Bubble Menu for Image - appears when image is selected */}
-            {editor && (
-                <BubbleMenu
-                    editor={editor}
-                    tippyOptions={{ duration: 100 }}
-                    shouldShow={({ editor }) => editor.isActive('image')}
-                >
-                    <div style={{
-                        display: 'flex',
-                        backgroundColor: '#000',
-                        border: '1px solid #333',
-                        borderRadius: '6px',
-                        overflow: 'hidden',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                    }}>
-                        {/* Size Controls */}
-                        <button
-                            type="button"
-                            onClick={() => setImageSize('25%')}
-                            style={bubbleButtonStyle(selectedImageSize === '25%')}
-                            title="Ukuran 25%"
-                        >
-                            <FiMinimize size={12} /> 25%
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setImageSize('50%')}
-                            style={bubbleButtonStyle(selectedImageSize === '50%')}
-                            title="Ukuran 50%"
-                        >
-                            50%
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setImageSize('75%')}
-                            style={bubbleButtonStyle(selectedImageSize === '75%')}
-                            title="Ukuran 75%"
-                        >
-                            75%
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setImageSize('100%')}
-                            style={bubbleButtonStyle(selectedImageSize === '100%')}
-                            title="Ukuran Penuh"
-                        >
-                            <FiMaximize size={12} /> 100%
-                        </button>
+            {/* Image Toolbar - appears when image is selected */}
+            {isImageSelected && (
+                <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 12px',
+                    borderBottom: '1px solid #262626',
+                    backgroundColor: '#171717',
+                }}>
+                    <span style={{ color: '#a3a3a3', fontSize: '12px', fontWeight: 600 }}>
+                        Gambar:
+                    </span>
 
-                        <div style={{ width: '1px', backgroundColor: '#333' }} />
+                    {/* Size Controls */}
+                    <button
+                        type="button"
+                        onClick={() => setImageSize('25%')}
+                        style={imageButtonStyle(selectedImageSize === '25%')}
+                        title="Ukuran 25%"
+                    >
+                        <FiMinimize size={12} /> 25%
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setImageSize('50%')}
+                        style={imageButtonStyle(selectedImageSize === '50%')}
+                        title="Ukuran 50%"
+                    >
+                        50%
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setImageSize('75%')}
+                        style={imageButtonStyle(selectedImageSize === '75%')}
+                        title="Ukuran 75%"
+                    >
+                        75%
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setImageSize('100%')}
+                        style={imageButtonStyle(selectedImageSize === '100%')}
+                        title="Ukuran Penuh"
+                    >
+                        <FiMaximize size={12} /> 100%
+                    </button>
 
-                        {/* Alignment Controls */}
-                        <button
-                            type="button"
-                            onClick={() => setImageAlign('left')}
-                            style={bubbleButtonStyle()}
-                            title="Rata Kiri"
-                        >
-                            <FiAlignLeft size={14} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setImageAlign('center')}
-                            style={bubbleButtonStyle()}
-                            title="Rata Tengah"
-                        >
-                            <FiAlignCenter size={14} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setImageAlign('right')}
-                            style={bubbleButtonStyle()}
-                            title="Rata Kanan"
-                        >
-                            <FiAlignRight size={14} />
-                        </button>
+                    <div style={{ width: '1px', height: '20px', backgroundColor: '#333' }} />
 
-                        <div style={{ width: '1px', backgroundColor: '#333' }} />
+                    {/* Alignment Controls */}
+                    <button
+                        type="button"
+                        onClick={() => setImageAlign('left')}
+                        style={imageButtonStyle()}
+                        title="Rata Kiri"
+                    >
+                        <FiAlignLeft size={14} /> Kiri
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setImageAlign('center')}
+                        style={imageButtonStyle()}
+                        title="Rata Tengah"
+                    >
+                        <FiAlignCenter size={14} /> Tengah
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setImageAlign('right')}
+                        style={imageButtonStyle()}
+                        title="Rata Kanan"
+                    >
+                        <FiAlignRight size={14} /> Kanan
+                    </button>
 
-                        {/* Delete */}
-                        <button
-                            type="button"
-                            onClick={deleteImage}
-                            style={{ ...bubbleButtonStyle(), backgroundColor: '#7f1d1d' }}
-                            title="Hapus Gambar"
-                        >
-                            <FiTrash2 size={14} />
-                        </button>
-                    </div>
-                </BubbleMenu>
+                    <div style={{ width: '1px', height: '20px', backgroundColor: '#333' }} />
+
+                    {/* Delete */}
+                    <button
+                        type="button"
+                        onClick={deleteImage}
+                        style={{ ...imageButtonStyle(), backgroundColor: '#7f1d1d' }}
+                        title="Hapus Gambar"
+                    >
+                        <FiTrash2 size={14} /> Hapus
+                    </button>
+                </div>
             )}
 
             {/* Editor Content */}
