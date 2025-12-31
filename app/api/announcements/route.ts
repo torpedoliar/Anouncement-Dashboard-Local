@@ -3,9 +3,13 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { slugify, generateExcerpt } from "@/lib/utils";
+import { runScheduler } from "@/lib/scheduler";
 
 // GET /api/announcements - List announcements
 export async function GET(request: NextRequest) {
+    // Run auto-scheduler check (throttled to once per minute)
+    await runScheduler();
+
     try {
         const { searchParams } = new URL(request.url);
         const category = searchParams.get("category");
