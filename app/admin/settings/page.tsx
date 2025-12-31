@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiSave, FiUpload, FiX, FiInstagram, FiLinkedin, FiFacebook, FiTwitter, FiYoutube, FiInfo, FiDatabase, FiRefreshCw, FiExternalLink } from "react-icons/fi";
+import { FiSave, FiUpload, FiX, FiInstagram, FiLinkedin, FiFacebook, FiTwitter, FiYoutube, FiInfo, FiDatabase, FiRefreshCw, FiExternalLink, FiUploadCloud } from "react-icons/fi";
 
 interface Settings {
     siteName: string;
@@ -49,6 +49,7 @@ function VersionInfoSection() {
     const [checkResult, setCheckResult] = useState<VersionCheckResult | null>(null);
     const [isChecking, setIsChecking] = useState(false);
     const [isBackingUp, setIsBackingUp] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [updateProgress, setUpdateProgress] = useState<{ step: string; status: string }[]>([]);
 
@@ -136,6 +137,50 @@ function VersionInfoSection() {
         }
     };
 
+    const handleRestore = async () => {
+        // Create file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            if (!confirm('PERHATIAN: Restore akan menimpa data yang ada dengan data dari backup. Lanjutkan?')) {
+                return;
+            }
+
+            setIsRestoring(true);
+            try {
+                const text = await file.text();
+                const backupData = JSON.parse(text);
+
+                const response = await fetch('/api/backup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(backupData),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Restore berhasil!\n\nSettings: ${result.restored.settings ? '✓' : '✗'}\nKategori: ${result.restored.categories}\nPengumuman: ${result.restored.announcements}`);
+                    window.location.reload();
+                } else {
+                    alert('Gagal restore: ' + (result.error || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Restore error:', err);
+                alert('Gagal membaca file backup. Pastikan format file benar.');
+            } finally {
+                setIsRestoring(false);
+            }
+        };
+
+        input.click();
+    };
+
     const performUpdate = () => {
         // Show the update modal with instructions
         const modal = document.getElementById('update-modal');
@@ -199,6 +244,19 @@ function VersionInfoSection() {
                 >
                     <FiDatabase size={14} />
                     {isBackingUp ? "Downloading..." : "Backup Database"}
+                </button>
+                <button
+                    onClick={handleRestore}
+                    disabled={isRestoring}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '12px 20px', backgroundColor: '#7c2d12', border: 'none',
+                        color: '#fff', fontSize: '13px', fontWeight: 600, cursor: isRestoring ? 'not-allowed' : 'pointer',
+                        borderRadius: '6px', opacity: isRestoring ? 0.7 : 1,
+                    }}
+                >
+                    <FiUploadCloud size={14} />
+                    {isRestoring ? "Restoring..." : "Restore Database"}
                 </button>
                 <a
                     href="https://github.com/torpedoliar/Anouncement-Dashboard-Local"
