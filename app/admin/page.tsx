@@ -9,6 +9,7 @@ import {
     FiArrowRight
 } from "react-icons/fi";
 import { formatNumber, formatDateShort } from "@/lib/utils";
+import { runScheduler } from "@/lib/scheduler";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,9 @@ async function getRecentAnnouncements() {
 }
 
 export default async function AdminDashboard() {
+    // Run auto-scheduler check
+    await runScheduler();
+
     const [stats, recentAnnouncements] = await Promise.all([
         getStats(),
         getRecentAnnouncements(),
