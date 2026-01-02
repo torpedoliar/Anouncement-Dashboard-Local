@@ -123,6 +123,7 @@ export default function RichTextEditor({
     const [isUploading, setIsUploading] = useState(false);
     const [isVideoUploading, setIsVideoUploading] = useState(false);
     const [isImageSelected, setIsImageSelected] = useState(false);
+    const [isVideoSelected, setIsVideoSelected] = useState(false);
     const [selectedImageSize, setSelectedImageSize] = useState<string>('100%');
     const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
     const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -166,7 +167,9 @@ export default function RichTextEditor({
         },
         onSelectionUpdate: ({ editor }) => {
             const isImage = editor.isActive('image');
+            const isVideo = editor.isActive('video') || editor.isActive('youtube');
             setIsImageSelected(isImage);
+            setIsVideoSelected(isVideo);
             // Also update size from current image
             if (isImage) {
                 const attrs = editor.getAttributes('image');
@@ -174,10 +177,14 @@ export default function RichTextEditor({
             }
         },
         onTransaction: ({ editor }) => {
-            // Double-check image selection on any transaction
+            // Double-check image/video selection on any transaction
             const isImage = editor.isActive('image');
+            const isVideo = editor.isActive('video') || editor.isActive('youtube');
             if (isImage !== isImageSelected) {
                 setIsImageSelected(isImage);
+            }
+            if (isVideo !== isVideoSelected) {
+                setIsVideoSelected(isVideo);
             }
         },
         editorProps: {
@@ -343,6 +350,12 @@ export default function RichTextEditor({
         if (!editor) return;
         editor.chain().focus().deleteSelection().run();
         setIsImageSelected(false);
+    }, [editor]);
+
+    const deleteVideo = useCallback(() => {
+        if (!editor) return;
+        editor.chain().focus().deleteSelection().run();
+        setIsVideoSelected(false);
     }, [editor]);
 
     if (!editor) {
@@ -698,6 +711,35 @@ export default function RichTextEditor({
                     </button>
                 </div>
             )}
+
+            {/* Video Toolbar - appears when video is selected */}
+            {isVideoSelected && (
+                <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 12px',
+                    borderBottom: '1px solid #262626',
+                    backgroundColor: '#171717',
+                    flexShrink: 0,
+                }}>
+                    <span style={{ color: '#a3a3a3', fontSize: '12px', fontWeight: 600 }}>
+                        Video:
+                    </span>
+
+                    {/* Delete */}
+                    <button
+                        type="button"
+                        onClick={deleteVideo}
+                        style={{ ...imageButtonStyle(), backgroundColor: '#7f1d1d' }}
+                        title="Hapus Video"
+                    >
+                        <FiTrash2 size={14} /> Hapus Video
+                    </button>
+                </div>
+            )}
+
             {/* Editor Content - Scrollable Area */}
             <div style={{
                 flex: 1,

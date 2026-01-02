@@ -148,28 +148,22 @@ export default function AnalyticsDashboard() {
                 </select>
             </div>
 
-            {/* Migration Notice */}
+            {/* Notice when no detailed analytics */}
             {!data.hasAnalyticsData && (
                 <div style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "12px",
                     padding: "16px 20px",
-                    backgroundColor: "#422006",
-                    border: "1px solid #f59e0b",
+                    backgroundColor: "#1a1a1a",
+                    border: "1px solid #333",
                     borderRadius: "8px",
                     marginBottom: "24px",
                 }}>
-                    <FiAlertCircle size={20} color="#f59e0b" />
-                    <div>
-                        <p style={{ color: "#fbbf24", fontSize: "13px", fontWeight: 600 }}>
-                            Data Analytics Belum Aktif
-                        </p>
-                        <p style={{ color: "#fde68a", fontSize: "12px" }}>
-                            Jalankan migrasi database untuk mengaktifkan tracking views harian.
-                            Data di atas menggunakan estimasi dari viewCount.
-                        </p>
-                    </div>
+                    <FiAlertCircle size={20} color="#737373" />
+                    <p style={{ color: "#a3a3a3", fontSize: "12px" }}>
+                        Data menggunakan estimasi dari total views.
+                    </p>
                 </div>
             )}
 
