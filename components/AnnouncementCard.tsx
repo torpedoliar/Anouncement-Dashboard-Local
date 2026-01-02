@@ -78,8 +78,14 @@ export default function AnnouncementCard({
                                 <video
                                     src={videoPath}
                                     muted
+                                    preload="metadata"
                                     style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
                                     className="group-hover:scale-110"
+                                    onLoadedMetadata={(e) => {
+                                        // Seek to 0.1s to ensure frame is loaded
+                                        const video = e.currentTarget;
+                                        video.currentTime = 0.1;
+                                    }}
                                 />
                             ) : thumbnailUrl ? (
                                 <Image
