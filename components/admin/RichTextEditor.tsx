@@ -23,6 +23,7 @@ import {
     FiTrash2,
     FiYoutube,
     FiX,
+    FiVideo,
 } from "react-icons/fi";
 import { LuHeading1, LuHeading2, LuHeading3, LuListOrdered } from "react-icons/lu";
 
@@ -86,17 +87,47 @@ const YouTube = Node.create({
     },
 });
 
+// Video embed extension for uploaded videos
+const Video = Node.create({
+    name: 'video',
+    group: 'block',
+    atom: true,
+    draggable: true,
+    addAttributes() {
+        return {
+            src: { default: null },
+        };
+    },
+    parseHTML() {
+        return [{
+            tag: 'div[data-video]',
+        }];
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['div', mergeAttributes({ 'data-video': '', style: 'margin:16px 0;border-radius:8px;overflow:hidden;' }), [
+            'video',
+            {
+                src: HTMLAttributes.src,
+                controls: 'true',
+                style: 'width:100%;max-height:500px;border-radius:8px;',
+            },
+        ]];
+    },
+});
+
 export default function RichTextEditor({
     content,
     onChange,
     placeholder = "Tulis konten pengumuman...",
 }: RichTextEditorProps) {
     const [isUploading, setIsUploading] = useState(false);
+    const [isVideoUploading, setIsVideoUploading] = useState(false);
     const [isImageSelected, setIsImageSelected] = useState(false);
     const [selectedImageSize, setSelectedImageSize] = useState<string>('100%');
     const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
     const [youtubeUrl, setYoutubeUrl] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
 
     const editor = useEditor({
         immediatelyRender: false,
@@ -127,6 +158,7 @@ export default function RichTextEditor({
                 placeholder,
             }),
             YouTube,
+            Video,
         ],
         content,
         onUpdate: ({ editor }) => {
@@ -196,6 +228,54 @@ export default function RichTextEditor({
 
     const handleImageClick = () => {
         fileInputRef.current?.click();
+    };
+
+    const handleVideoUpload = useCallback(async (file: File) => {
+        if (!editor) return;
+
+        // Validate file type
+        if (!file.type.startsWith('video/')) {
+            alert('Format file tidak valid. Hanya video yang diperbolehkan.');
+            return;
+        }
+
+        // Validate file size (max 100MB)
+        if (file.size > 100 * 1024 * 1024) {
+            alert('Ukuran video terlalu besar. Maksimal 100MB.');
+            return;
+        }
+
+        setIsVideoUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch("/api/media", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Upload failed");
+            }
+
+            const data = await response.json();
+            editor.chain().focus().insertContent({
+                type: 'video',
+                attrs: { src: data.url },
+            }).run();
+        } catch (error) {
+            console.error("Video upload failed:", error);
+            const message = error instanceof Error ? error.message : "Gagal mengupload video";
+            alert(message);
+        } finally {
+            setIsVideoUploading(false);
+        }
+    }, [editor]);
+
+    const handleVideoClick = () => {
+        videoInputRef.current?.click();
     };
 
     // Extract YouTube video ID from various URL formats
@@ -476,6 +556,26 @@ export default function RichTextEditor({
                     <FiYoutube size={16} />
                 </button>
 
+                {/* Video upload */}
+                <button
+                    type="button"
+                    onClick={handleVideoClick}
+                    disabled={isVideoUploading}
+                    style={{
+                        ...buttonStyle(),
+                        opacity: isVideoUploading ? 0.5 : 1,
+                    }}
+                    title="Upload Video (MP4, max 100MB)"
+                >
+                    <FiVideo size={16} />
+                </button>
+
+                {isVideoUploading && (
+                    <span style={{ color: '#737373', fontSize: '12px' }}>
+                        Uploading video...
+                    </span>
+                )}
+
                 {/* Hint for image resize */}
                 <span style={{ color: '#525252', fontSize: '11px', marginLeft: 'auto' }}>
                     💡 Klik gambar untuk resize
@@ -607,12 +707,25 @@ export default function RichTextEditor({
                 <EditorContent editor={editor} />
             </div>
 
-            {/* Hidden file input */}
+            {/* Hidden file inputs */}
             <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
+                style={{ display: 'none' }}
+            />
+            <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/mp4,video/webm,video/ogg"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                        handleVideoUpload(file);
+                        e.target.value = '';
+                    }
+                }}
                 style={{ display: 'none' }}
             />
 
