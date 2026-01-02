@@ -5,12 +5,18 @@ import { authOptions } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
+import sharp from "sharp";
 
 // File type configurations
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const VIDEO_TYPES = ["video/mp4"];
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB (before compression)
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+
+// Compression settings
+const MAX_WIDTH = 1920;
+const MAX_HEIGHT = 1080;
+const QUALITY = 80;
 
 // GET /api/media - List media
 export async function GET(request: NextRequest) {
@@ -76,6 +82,7 @@ export async function POST(request: NextRequest) {
         // Determine file type
         const isImage = IMAGE_TYPES.includes(file.type);
         const isVideo = VIDEO_TYPES.includes(file.type);
+        const isGif = file.type === "image/gif";
 
         if (!isImage && !isVideo) {
             return NextResponse.json({
@@ -92,37 +99,67 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
-        // Determine folder and generate filename
+        // Determine folder
         const folder = isVideo ? "videos" : "images";
-        const prefix = isVideo ? "video" : "media";
-        const ext = file.name.split(".").pop()?.toLowerCase() || (isVideo ? "mp4" : "jpg");
-        const filename = `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
-
         const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
-        const filepath = path.join(uploadDir, filename);
 
         // Create directory if not exists
         if (!existsSync(uploadDir)) {
             await mkdir(uploadDir, { recursive: true });
         }
 
-        // Save file
+        // Read file buffer
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        await writeFile(filepath, buffer);
+
+        let finalBuffer: Buffer;
+        let filename: string;
+        let finalMimeType: string;
+
+        if (isVideo) {
+            // Video - no compression (would need ffmpeg)
+            filename = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp4`;
+            finalBuffer = buffer;
+            finalMimeType = file.type;
+        } else if (isGif) {
+            // GIF - preserve animation, no compression
+            filename = `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.gif`;
+            finalBuffer = buffer;
+            finalMimeType = file.type;
+        } else {
+            // Image - compress and convert to WebP
+            filename = `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.webp`;
+            finalMimeType = "image/webp";
+
+            finalBuffer = await sharp(buffer)
+                .resize(MAX_WIDTH, MAX_HEIGHT, {
+                    fit: 'inside',
+                    withoutEnlargement: true
+                })
+                .webp({ quality: QUALITY })
+                .toBuffer();
+        }
+
+        const filepath = path.join(uploadDir, filename);
+        await writeFile(filepath, finalBuffer);
 
         // Save to database
         const media = await prisma.mediaLibrary.create({
             data: {
                 filename,
                 url: `/uploads/${folder}/${filename}`,
-                mimeType: file.type,
-                size: file.size,
+                mimeType: finalMimeType,
+                size: finalBuffer.length,
                 alt: alt || null,
             },
         });
 
-        return NextResponse.json(media, { status: 201 });
+        return NextResponse.json({
+            ...media,
+            originalSize: buffer.length,
+            compressedSize: finalBuffer.length,
+            savedPercent: Math.max(0, Math.round((1 - finalBuffer.length / buffer.length) * 100)),
+        }, { status: 201 });
     } catch (error) {
         console.error("Error uploading media:", error);
         return NextResponse.json({ error: "Failed to upload media" }, { status: 500 });
