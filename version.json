@@ -1,7 +1,7 @@
 {
-    "version": "2.1.0",
+    "version": "2.1.1",
     "buildDate": "2026-01-02",
     "schemaVersion": "5",
-    "releaseNotes": "Video support: upload/embed in articles, YouTube embed, Hero video background, image compression (WebP), video in editor toolbar",
+    "releaseNotes": "Fix: delete video button in editor, remove analytics migration warning, video thumbnail poster frame fix",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
