@@ -6,7 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { FiArrowLeft, FiEye, FiCalendar } from "react-icons/fi";
+import { FiArrowLeft, FiEye, FiCalendar, FiPlay } from "react-icons/fi";
+import ArticleVideoPlayer from "@/components/ArticleVideoPlayer";
 
 // Enable ISR with 60s revalidation for article pages
 export const revalidate = 60;
@@ -78,36 +79,51 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                 siteName={settings?.siteName || "Santos Jaya Abadi"}
             />
 
-            {/* Hero Image */}
+            {/* Hero Media - Video or Image */}
             <section style={{
                 position: 'relative',
                 height: '70vh',
                 minHeight: '500px',
             }}>
-                {announcement.imagePath ? (
-                    <Image
-                        src={announcement.imagePath}
-                        alt={announcement.title}
-                        fill
-                        style={{ objectFit: 'cover' }}
-                        priority
+                {/* Video Upload */}
+                {announcement.videoPath && announcement.videoType === 'upload' ? (
+                    <ArticleVideoPlayer
+                        videoPath={announcement.videoPath}
+                        title={announcement.title}
                     />
-                ) : (
-                    <div style={{
-                        width: '100%',
-                        height: '100%',
-                        background: 'linear-gradient(to bottom right, #171717, #000, #262626)',
-                    }} />
-                )}
+                ) : /* YouTube */
+                    announcement.videoType === 'youtube' && announcement.youtubeUrl ? (
+                        <ArticleVideoPlayer
+                            youtubeUrl={announcement.youtubeUrl}
+                            title={announcement.title}
+                        />
+                    ) : /* Image */
+                        announcement.imagePath ? (
+                            <Image
+                                src={announcement.imagePath}
+                                alt={announcement.title}
+                                fill
+                                style={{ objectFit: 'cover' }}
+                                priority
+                            />
+                        ) : (
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                background: 'linear-gradient(to bottom right, #171717, #000, #262626)',
+                            }} />
+                        )}
                 <div style={{
                     position: 'absolute',
                     inset: 0,
                     background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5), #000)',
+                    pointerEvents: 'none',
                 }} />
                 <div style={{
                     position: 'absolute',
                     inset: 0,
                     background: 'linear-gradient(to right, rgba(0,0,0,0.6), transparent, rgba(0,0,0,0.3))',
+                    pointerEvents: 'none',
                 }} />
 
                 {/* Content */}
