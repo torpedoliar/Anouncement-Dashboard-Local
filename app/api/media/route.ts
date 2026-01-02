@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
         const media = await prisma.mediaLibrary.create({
             data: {
                 filename,
-                url: `/uploads/${folder}/${filename}`,
+                url: `/api/uploads/${folder}/${filename}`,
                 mimeType: finalMimeType,
                 size: finalBuffer.length,
                 alt: alt || null,
