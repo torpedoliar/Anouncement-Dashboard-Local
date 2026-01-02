@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiSave, FiX, FiUpload, FiStar, FiMapPin, FiEye, FiClock } from "react-icons/fi";
+import { FiSave, FiX, FiUpload, FiStar, FiMapPin, FiEye, FiClock, FiImage, FiVideo, FiYoutube, FiPlay } from "react-icons/fi";
 import RichTextEditor from "./RichTextEditor";
 
 interface Category {
@@ -19,6 +19,9 @@ interface AnnouncementFormProps {
         content: string;
         categoryId: string;
         imagePath?: string | null;
+        videoPath?: string | null;
+        videoType?: string | null;
+        youtubeUrl?: string | null;
         isHero: boolean;
         isPinned: boolean;
         isPublished: boolean;
@@ -26,6 +29,8 @@ interface AnnouncementFormProps {
         takedownAt?: string | null;
     };
 }
+
+type MediaType = "image" | "video" | "youtube";
 
 export default function AnnouncementForm({ categories, initialData }: AnnouncementFormProps) {
     const router = useRouter();
@@ -36,6 +41,12 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
     const [content, setContent] = useState(initialData?.content || "");
     const [categoryId, setCategoryId] = useState(initialData?.categoryId || categories[0]?.id || "");
     const [imagePath, setImagePath] = useState(initialData?.imagePath || "");
+    const [videoPath, setVideoPath] = useState(initialData?.videoPath || "");
+    const [youtubeUrl, setYoutubeUrl] = useState(initialData?.youtubeUrl || "");
+    const [mediaType, setMediaType] = useState<MediaType>(
+        initialData?.videoType === "youtube" ? "youtube" :
+            initialData?.videoPath ? "video" : "image"
+    );
     const [isHero, setIsHero] = useState(initialData?.isHero || false);
     const [isPinned, setIsPinned] = useState(initialData?.isPinned || false);
     const [isPublished, setIsPublished] = useState(initialData?.isPublished || false);
@@ -43,6 +54,7 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
     const [takedownAt, setTakedownAt] = useState(initialData?.takedownAt || "");
 
     const [imageUploading, setImageUploading] = useState(false);
+    const [videoUploading, setVideoUploading] = useState(false);
 
     const isEditing = !!initialData?.id;
 
@@ -100,10 +112,72 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
         }
     };
 
+    const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file size (100MB max)
+        if (file.size > 100 * 1024 * 1024) {
+            setError("Ukuran video maksimal 100MB");
+            return;
+        }
+
+        // Validate file type
+        if (file.type !== "video/mp4") {
+            setError("Format video harus MP4");
+            return;
+        }
+
+        setVideoUploading(true);
+        setError("");
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch("/api/media", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Upload failed");
+            }
+
+            const data = await response.json();
+            setVideoPath(data.url);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Upload video failed");
+        } finally {
+            setVideoUploading(false);
+        }
+    };
+
+    // Extract YouTube video ID
+    const extractYoutubeId = (url: string): string | null => {
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+        ];
+        for (const pattern of patterns) {
+            const match = url.match(pattern);
+            if (match) return match[1];
+        }
+        return null;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError("");
+
+        // Validate YouTube URL if selected
+        if (mediaType === "youtube" && youtubeUrl && !extractYoutubeId(youtubeUrl)) {
+            setError("URL YouTube tidak valid");
+            setIsLoading(false);
+            return;
+        }
 
         try {
             const url = isEditing
@@ -117,7 +191,10 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
                     title,
                     content,
                     categoryId,
-                    imagePath: imagePath || null,
+                    imagePath: mediaType === "image" ? imagePath : null,
+                    videoPath: mediaType === "video" ? videoPath : null,
+                    videoType: mediaType === "youtube" ? "youtube" : (mediaType === "video" ? "upload" : null),
+                    youtubeUrl: mediaType === "youtube" ? youtubeUrl : null,
                     isHero,
                     isPinned,
                     isPublished,
@@ -139,6 +216,8 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
             setIsLoading(false);
         }
     };
+
+    const youtubeVideoId = extractYoutubeId(youtubeUrl);
 
     return (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -208,59 +287,234 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
                         </select>
                     </div>
 
-                    {/* Image Upload */}
+                    {/* Media Upload - Image/Video/YouTube */}
                     <div style={cardStyle}>
-                        <label style={labelStyle}>Gambar</label>
-                        {imagePath ? (
-                            <div style={{ position: 'relative' }}>
-                                <img
-                                    src={imagePath}
-                                    alt="Preview"
-                                    style={{
-                                        width: '100%',
-                                        height: '128px',
-                                        objectFit: 'cover',
-                                    }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setImagePath("")}
-                                    style={{
+                        <label style={labelStyle}>Media Cover</label>
+
+                        {/* Media Type Toggle */}
+                        <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
+                            <button
+                                type="button"
+                                onClick={() => setMediaType("image")}
+                                style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    backgroundColor: mediaType === "image" ? '#dc2626' : '#1a1a1a',
+                                    color: mediaType === "image" ? '#fff' : '#737373',
+                                    border: 'none',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <FiImage size={14} /> Gambar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMediaType("video")}
+                                style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    backgroundColor: mediaType === "video" ? '#dc2626' : '#1a1a1a',
+                                    color: mediaType === "video" ? '#fff' : '#737373',
+                                    border: 'none',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <FiVideo size={14} /> Video
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMediaType("youtube")}
+                                style={{
+                                    flex: 1,
+                                    padding: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    backgroundColor: mediaType === "youtube" ? '#dc2626' : '#1a1a1a',
+                                    color: mediaType === "youtube" ? '#fff' : '#737373',
+                                    border: 'none',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <FiYoutube size={14} /> YouTube
+                            </button>
+                        </div>
+
+                        {/* Image Upload */}
+                        {mediaType === "image" && (
+                            imagePath ? (
+                                <div style={{ position: 'relative' }}>
+                                    <img
+                                        src={imagePath}
+                                        alt="Preview"
+                                        style={{
+                                            width: '100%',
+                                            height: '128px',
+                                            objectFit: 'cover',
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setImagePath("")}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '8px',
+                                            right: '8px',
+                                            padding: '4px',
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            color: '#fff',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <FiX size={16} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    height: '128px',
+                                    border: '2px dashed #333',
+                                    cursor: 'pointer',
+                                }}>
+                                    <FiImage size={32} color="#525252" style={{ marginBottom: '8px' }} />
+                                    <span style={{ color: '#525252', fontSize: '14px' }}>
+                                        {imageUploading ? "Uploading..." : "Klik untuk upload gambar"}
+                                    </span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        style={{ display: 'none' }}
+                                        disabled={imageUploading}
+                                    />
+                                </label>
+                            )
+                        )}
+
+                        {/* Video Upload */}
+                        {mediaType === "video" && (
+                            videoPath ? (
+                                <div style={{ position: 'relative' }}>
+                                    <video
+                                        src={videoPath}
+                                        style={{
+                                            width: '100%',
+                                            height: '128px',
+                                            objectFit: 'cover',
+                                            backgroundColor: '#000',
+                                        }}
+                                    />
+                                    <div style={{
                                         position: 'absolute',
-                                        top: '8px',
-                                        right: '8px',
-                                        padding: '4px',
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        color: '#fff',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <FiX size={16} />
-                                </button>
-                            </div>
-                        ) : (
-                            <label style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '128px',
-                                border: '2px dashed #333',
-                                cursor: 'pointer',
-                            }}>
-                                <FiUpload size={32} color="#525252" style={{ marginBottom: '8px' }} />
-                                <span style={{ color: '#525252', fontSize: '14px' }}>
-                                    {imageUploading ? "Uploading..." : "Klik untuk upload"}
-                                </span>
+                                        inset: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: 'rgba(0,0,0,0.4)',
+                                    }}>
+                                        <FiPlay size={32} color="#fff" />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setVideoPath("")}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '8px',
+                                            right: '8px',
+                                            padding: '4px',
+                                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                            color: '#fff',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <FiX size={16} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    height: '128px',
+                                    border: '2px dashed #333',
+                                    cursor: videoUploading ? 'not-allowed' : 'pointer',
+                                    opacity: videoUploading ? 0.6 : 1,
+                                }}>
+                                    <FiVideo size={32} color="#525252" style={{ marginBottom: '8px' }} />
+                                    <span style={{ color: '#525252', fontSize: '14px' }}>
+                                        {videoUploading ? "Uploading video..." : "Klik untuk upload video"}
+                                    </span>
+                                    <span style={{ color: '#404040', fontSize: '11px', marginTop: '4px' }}>
+                                        MP4, max 100MB
+                                    </span>
+                                    <input
+                                        type="file"
+                                        accept="video/mp4"
+                                        onChange={handleVideoUpload}
+                                        style={{ display: 'none' }}
+                                        disabled={videoUploading}
+                                    />
+                                </label>
+                            )
+                        )}
+
+                        {/* YouTube URL */}
+                        {mediaType === "youtube" && (
+                            <div>
                                 <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    style={{ display: 'none' }}
-                                    disabled={imageUploading}
+                                    type="text"
+                                    placeholder="https://youtube.com/watch?v=..."
+                                    value={youtubeUrl}
+                                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                                    style={{ ...inputStyle, marginBottom: '8px' }}
                                 />
-                            </label>
+                                {youtubeVideoId && (
+                                    <div style={{
+                                        position: 'relative',
+                                        paddingBottom: '56.25%',
+                                        height: 0,
+                                        overflow: 'hidden',
+                                        borderRadius: '4px',
+                                    }}>
+                                        <iframe
+                                            src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: '100%',
+                                                border: 'none',
+                                            }}
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        />
+                                    </div>
+                                )}
+                                {!youtubeVideoId && youtubeUrl && (
+                                    <p style={{ color: '#ef4444', fontSize: '12px' }}>
+                                        URL YouTube tidak valid
+                                    </p>
+                                )}
+                            </div>
                         )}
                     </div>
 

@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { title, content, categoryId, imagePath, isHero, isPinned, isPublished, scheduledAt, takedownAt } = body;
+        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, scheduledAt, takedownAt } = body;
 
         if (!title || !content || !categoryId) {
             return NextResponse.json(
@@ -108,6 +108,9 @@ export async function POST(request: NextRequest) {
                 excerpt,
                 categoryId,
                 imagePath,
+                videoPath,
+                videoType,
+                youtubeUrl,
                 isHero: isHero || false,
                 isPinned: isPinned || false,
                 isPublished: isPublished || false,
