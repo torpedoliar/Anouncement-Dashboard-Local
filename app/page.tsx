@@ -4,7 +4,10 @@ import AnnouncementCard from "@/components/AnnouncementCard";
 import { CategoryFilterClient } from "@/components/CategoryFilter";
 import SearchBar from "@/components/SearchBar";
 import Footer from "@/components/Footer";
+import Pagination from "@/components/Pagination";
 import prisma from "@/lib/prisma";
+
+const ITEMS_PER_PAGE = 9;
 
 async function getHeroAnnouncements() {
   return prisma.announcement.findMany({
@@ -15,16 +18,30 @@ async function getHeroAnnouncements() {
   });
 }
 
-async function getAnnouncements(categorySlug?: string) {
-  return prisma.announcement.findMany({
-    where: {
-      isPublished: true,
-      ...(categorySlug && { category: { slug: categorySlug } }),
-    },
-    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
-    take: 9,
-    include: { category: { select: { name: true, color: true, slug: true } } },
-  });
+async function getAnnouncements(categorySlug?: string, page: number = 1) {
+  const skip = (page - 1) * ITEMS_PER_PAGE;
+
+  const where = {
+    isPublished: true,
+    ...(categorySlug && { category: { slug: categorySlug } }),
+  };
+
+  const [announcements, total] = await Promise.all([
+    prisma.announcement.findMany({
+      where,
+      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+      skip,
+      take: ITEMS_PER_PAGE,
+      include: { category: { select: { name: true, color: true, slug: true } } },
+    }),
+    prisma.announcement.count({ where }),
+  ]);
+
+  return {
+    announcements,
+    total,
+    totalPages: Math.ceil(total / ITEMS_PER_PAGE),
+  };
 }
 
 async function getCategories() {
@@ -38,22 +55,29 @@ async function getSettings() {
 export default async function HomePage({
   searchParams: searchParamsPromise,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; page?: string }>;
 }) {
   const searchParams = await searchParamsPromise;
   const categorySlug = searchParams.category;
+  const currentPage = parseInt(searchParams.page || "1");
 
-  const [heroAnnouncements, announcements, categories, settings] = await Promise.all([
+  const [heroAnnouncements, announcementData, categories, settings] = await Promise.all([
     getHeroAnnouncements(),
-    getAnnouncements(categorySlug),
+    getAnnouncements(categorySlug, currentPage),
     getCategories(),
     getSettings(),
   ]);
+
+  const { announcements, totalPages } = announcementData;
 
   // Find active category name for empty state message
   const activeCategory = categorySlug
     ? categories.find((c: typeof categories[0]) => c.slug === categorySlug)?.name
     : null;
+
+  // Build search params for pagination
+  const paginationParams: Record<string, string> = {};
+  if (categorySlug) paginationParams.category = categorySlug;
 
   return (
     <main style={{ minHeight: '100vh', backgroundColor: '#000' }}>
@@ -112,31 +136,43 @@ export default async function HomePage({
 
           {/* Announcements Grid */}
           {announcements.length > 0 ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '32px',
-            }}>
-              {announcements.map((announcement: typeof announcements[0], index: number) => (
-                <div
-                  key={announcement.id}
-                  className="animate-slide-up"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <AnnouncementCard
-                    id={announcement.id}
-                    title={announcement.title}
-                    excerpt={announcement.excerpt || undefined}
-                    slug={announcement.slug}
-                    imagePath={announcement.imagePath || undefined}
-                    category={announcement.category}
-                    createdAt={announcement.createdAt}
-                    viewCount={announcement.viewCount}
-                    isPinned={announcement.isPinned}
-                  />
-                </div>
-              ))}
-            </div>
+            <>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: '32px',
+              }}>
+                {announcements.map((announcement: typeof announcements[0], index: number) => (
+                  <div
+                    key={announcement.id}
+                    className="animate-slide-up"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <AnnouncementCard
+                      id={announcement.id}
+                      title={announcement.title}
+                      excerpt={announcement.excerpt || undefined}
+                      slug={announcement.slug}
+                      imagePath={announcement.imagePath || undefined}
+                      category={announcement.category}
+                      createdAt={announcement.createdAt}
+                      viewCount={announcement.viewCount}
+                      isPinned={announcement.isPinned}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  baseUrl="/"
+                  searchParams={paginationParams}
+                />
+              )}
+            </>
           ) : (
             <div style={{
               textAlign: 'center',
@@ -159,42 +195,10 @@ export default async function HomePage({
               )}
             </div>
           )}
-
-          {/* View All Link */}
-          {announcements.length >= 9 && (
-            <div style={{ textAlign: 'center', marginTop: '64px' }}>
-              <a
-                href="/search"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '16px 32px',
-                  border: '1px solid #dc2626',
-                  color: '#dc2626',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  transition: 'all 0.3s',
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = '#dc2626';
-                  e.currentTarget.style.color = '#fff';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#dc2626';
-                }}
-              >
-                LIHAT SEMUA BERITA
-              </a>
-            </div>
-          )}
         </div>
       </section>
 
       <Footer />
-    </main >
+    </main>
   );
 }
