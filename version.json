@@ -1,7 +1,7 @@
 {
-    "version": "1.2.5",
+    "version": "1.2.6",
     "buildDate": "2026-01-02",
     "schemaVersion": "3",
-    "releaseNotes": "Sticky toolbar follows scroll, custom image size percentage input (10-100%)",
+    "releaseNotes": "Fixed sticky toolbar - toolbars now stay visible while content scrolls (flex layout with scrollable content area)",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

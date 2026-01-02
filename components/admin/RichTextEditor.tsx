@@ -250,10 +250,11 @@ export default function RichTextEditor({
         <div style={{
             backgroundColor: '#0a0a0a',
             border: '1px solid #262626',
-            overflow: 'hidden',
-            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '80vh',
         }}>
-            {/* Toolbar - Sticky */}
+            {/* Toolbar - Always visible at top */}
             <div style={{
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -262,9 +263,7 @@ export default function RichTextEditor({
                 padding: '8px 12px',
                 borderBottom: '1px solid #262626',
                 backgroundColor: '#0f0f0f',
-                position: 'sticky',
-                top: 0,
-                zIndex: 10,
+                flexShrink: 0,
             }}>
                 {/* Headings */}
                 <button
@@ -404,7 +403,7 @@ export default function RichTextEditor({
                 </span>
             </div>
 
-            {/* Image Toolbar - appears when image is selected - Sticky */}
+            {/* Image Toolbar - appears when image is selected */}
             {isImageSelected && (
                 <div style={{
                     display: 'flex',
@@ -414,9 +413,7 @@ export default function RichTextEditor({
                     padding: '10px 12px',
                     borderBottom: '1px solid #262626',
                     backgroundColor: '#171717',
-                    position: 'sticky',
-                    top: '45px',
-                    zIndex: 9,
+                    flexShrink: 0,
                 }}>
                     <span style={{ color: '#a3a3a3', fontSize: '12px', fontWeight: 600 }}>
                         Gambar:
@@ -522,9 +519,14 @@ export default function RichTextEditor({
                     </button>
                 </div>
             )}
-
-            {/* Editor Content */}
-            <EditorContent editor={editor} />
+            {/* Editor Content - Scrollable Area */}
+            <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                minHeight: '300px',
+            }}>
+                <EditorContent editor={editor} />
+            </div>
 
             {/* Hidden file input */}
             <input
