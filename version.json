@@ -1,7 +1,7 @@
 {
-    "version": "1.2.6",
+    "version": "2.0.0",
     "buildDate": "2026-01-02",
-    "schemaVersion": "3",
-    "releaseNotes": "Fixed sticky toolbar - toolbars now stay visible while content scrolls (flex layout with scrollable content area)",
+    "schemaVersion": "4",
+    "releaseNotes": "Major update: Toast notifications, debounced search, pagination, accessibility, draft auto-save, media gallery, bulk actions, analytics",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

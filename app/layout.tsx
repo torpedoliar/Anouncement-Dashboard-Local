@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/contexts/ToastContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -38,7 +39,9 @@ export default function RootLayout({
         className={`${inter.variable} ${montserrat.variable} font-sans bg-dark-primary text-light-primary antialiased min-h-screen`}
         suppressHydrationWarning
       >
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

@@ -53,8 +53,15 @@ model Announcement {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  // Draft auto-save fields
+  draftContent   String?
+  draftUpdatedAt DateTime?
+
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
+
+  // Analytics relation
+  analytics Analytics[]
 
   @@index([categoryId])
   @@index([isPublished, createdAt])
@@ -105,7 +112,37 @@ model ActivityLog {
   @@map("activity_logs")
 }
 
+// Media Library for image gallery
+model MediaLibrary {
+  id         String   @id @default(cuid())
+  filename   String
+  url        String
+  mimeType   String
+  size       Int
+  alt        String?
+  uploadedAt DateTime @default(now())
+
+  @@index([uploadedAt])
+  @@map("media_library")
+}
+
+// Analytics for tracking views
+model Analytics {
+  id             String   @id @default(cuid())
+  announcementId String?
+  pageViews      Int      @default(1)
+  uniqueVisitors Int      @default(1)
+  date           DateTime @default(now()) @db.Date
+
+  announcement Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, date])
+  @@index([date])
+  @@map("analytics")
+}
+
 enum Role {
   ADMIN
   EDITOR
 }
+
