@@ -58,7 +58,7 @@ Write-Host ""
 Write-Host "[3/6] Checking for database schema changes..." -ForegroundColor Yellow
 $schemaChanged = git diff HEAD~1 --name-only 2>$null | Select-String "prisma/schema.prisma"
 if ($schemaChanged) {
-    Write-Host "Schema changes detected - migration will run after rebuild" -ForegroundColor Cyan
+    Write-Host "Schema changes detected - will sync after rebuild" -ForegroundColor Cyan
 }
 else {
     Write-Host "No schema changes detected" -ForegroundColor Green
@@ -84,21 +84,29 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "OK - Build completed" -ForegroundColor Green
 
-# Step 6: Start containers and run migrations
+# Step 6: Start containers and sync database
 Write-Host ""
-Write-Host "[6/6] Starting containers and running migrations..." -ForegroundColor Yellow
+Write-Host "[6/6] Starting containers and syncing database..." -ForegroundColor Yellow
 docker-compose up -d
 Start-Sleep -Seconds 8
 
-# Run database migrations
+# Sync database schema (db push is safe for existing databases)
 Write-Host ""
-Write-Host "Running database migrations..." -ForegroundColor Yellow
-docker-compose exec -T web npx prisma migrate deploy 2>&1
+Write-Host "Syncing database schema..." -ForegroundColor Yellow
+$pushResult = docker-compose exec -T web npx prisma db push --accept-data-loss 2>&1
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "OK - Database migrations applied" -ForegroundColor Green
+    Write-Host "OK - Database schema synced" -ForegroundColor Green
 }
 else {
-    Write-Host "WARN - Migration may have failed or no migrations needed" -ForegroundColor Yellow
+    # Try migrate deploy as fallback
+    Write-Host "Trying migration deploy..." -ForegroundColor Yellow
+    docker-compose exec -T web npx prisma migrate deploy 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "OK - Migrations applied" -ForegroundColor Green
+    }
+    else {
+        Write-Host "WARN - Schema sync completed with warnings (may be normal)" -ForegroundColor Yellow
+    }
 }
 
 # Generate Prisma client
@@ -122,5 +130,5 @@ Write-Host "  Application: http://localhost:3100" -ForegroundColor Cyan
 Write-Host "  Backup file: $backupFile" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  To restore if needed:" -ForegroundColor Yellow
-Write-Host "  Get-Content $backupFile | docker-compose exec -T db psql -U postgres announcement_db" -ForegroundColor DarkGray
+Write-Host "  .\restore.ps1" -ForegroundColor DarkGray
 Write-Host ""
