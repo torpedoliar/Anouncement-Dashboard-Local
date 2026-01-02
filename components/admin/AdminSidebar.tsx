@@ -14,7 +14,8 @@ import {
     FiUsers,
     FiActivity,
     FiMenu,
-    FiX
+    FiX,
+    FiClock
 } from "react-icons/fi";
 
 interface AdminSidebarProps {
@@ -26,6 +27,7 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(true);
+    const [currentTime, setCurrentTime] = useState<Date | null>(null);
     const pathname = usePathname();
 
     // Detect screen size
@@ -45,6 +47,15 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
             setIsOpen(false);
         }
     }, [pathname, isDesktop]);
+
+    // Live clock - update every second
+    useEffect(() => {
+        setCurrentTime(new Date());
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
@@ -144,6 +155,28 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
                             <p style={{ fontSize: '11px', color: '#525252' }}>Dashboard</p>
                         </div>
                     </Link>
+                    {/* Current Date & Time */}
+                    {currentTime && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            marginTop: '12px',
+                            padding: '8px 10px',
+                            backgroundColor: '#0a0a0a',
+                            borderRadius: '4px',
+                        }}>
+                            <FiClock size={14} style={{ color: '#dc2626' }} />
+                            <div>
+                                <p style={{ fontSize: '10px', color: '#a3a3a3', fontWeight: 500 }}>
+                                    {currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                                <p style={{ fontSize: '13px', color: '#fff', fontWeight: 600, fontFamily: 'monospace' }}>
+                                    {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Quick Action */}

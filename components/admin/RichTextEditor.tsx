@@ -380,6 +380,11 @@ export default function RichTextEditor({
                         Uploading...
                     </span>
                 )}
+
+                {/* Hint for image resize */}
+                <span style={{ color: '#525252', fontSize: '11px', marginLeft: 'auto' }}>
+                    💡 Klik gambar untuk resize
+                </span>
             </div>
 
             {/* Image Toolbar - appears when image is selected */}
@@ -526,10 +531,16 @@ export default function RichTextEditor({
                     border-radius: 8px;
                     margin: 16px 0;
                     cursor: pointer;
-                    transition: outline 0.2s;
+                    transition: all 0.2s;
+                    position: relative;
+                }
+                .tiptap img:hover {
+                    outline: 2px dashed #525252;
+                    outline-offset: 4px;
                 }
                 .tiptap img.ProseMirror-selectednode {
                     outline: 3px solid #dc2626;
+                    outline-offset: 4px;
                 }
                 .tiptap img[data-align="left"] {
                     margin-left: 0;

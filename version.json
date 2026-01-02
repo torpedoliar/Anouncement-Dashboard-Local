@@ -1,7 +1,7 @@
 {
-    "version": "1.2.1",
+    "version": "1.2.2",
     "buildDate": "2026-01-02",
     "schemaVersion": "3",
-    "releaseNotes": "Design improvements: Logo support in Navbar/Footer, fixed copyright, moved Admin link to footer, category filter active state, skeleton loading component",
+    "releaseNotes": "Added live clock in admin sidebar, image resize UX improvements with visual hints",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
