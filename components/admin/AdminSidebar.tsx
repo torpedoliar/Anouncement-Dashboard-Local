@@ -15,7 +15,8 @@ import {
     FiActivity,
     FiMenu,
     FiX,
-    FiClock
+    FiClock,
+    FiImage
 } from "react-icons/fi";
 
 interface AdminSidebarProps {
@@ -66,6 +67,7 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
         { href: "/admin", icon: FiHome, label: "DASHBOARD" },
         { href: "/admin/announcements", icon: FiFileText, label: "PENGUMUMAN" },
         { href: "/admin/categories", icon: FiTag, label: "KATEGORI" },
+        { href: "/admin/media", icon: FiImage, label: "MEDIA" },
         { href: "/admin/users", icon: FiUsers, label: "PENGGUNA" },
         { href: "/admin/audit-logs", icon: FiActivity, label: "AUDIT LOG" },
         { href: "/admin/settings", icon: FiSettings, label: "PENGATURAN" },

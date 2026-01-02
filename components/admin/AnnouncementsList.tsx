@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiAlertTriangle } from "react-icons/fi";
 import { formatDateShort, formatNumber } from "@/lib/utils";
+import BulkActionBar from "./BulkActionBar";
 
 interface Announcement {
     id: string;
@@ -39,6 +40,9 @@ export default function AnnouncementsList({ announcements, categories }: Announc
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
+    // Bulk selection state
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
     const handleDeleteClick = (announcement: Announcement) => {
         setSelectedAnnouncement(announcement);
         setShowDeleteModal(true);
@@ -67,6 +71,29 @@ export default function AnnouncementsList({ announcements, categories }: Announc
             setShowDeleteModal(false);
             setSelectedAnnouncement(null);
         }
+    };
+
+    // Bulk selection handlers
+    const toggleSelection = (id: string) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === announcements.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(announcements.map((a) => a.id)));
+        }
+    };
+
+    const clearSelection = () => {
+        setSelectedIds(new Set());
     };
 
     return (
@@ -158,6 +185,25 @@ export default function AnnouncementsList({ announcements, categories }: Announc
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid #1a1a1a' }}>
+                                    {/* Checkbox header */}
+                                    <th style={{
+                                        width: '48px',
+                                        padding: '16px',
+                                        textAlign: 'center',
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.size === announcements.length && announcements.length > 0}
+                                            onChange={toggleSelectAll}
+                                            style={{
+                                                width: '16px',
+                                                height: '16px',
+                                                cursor: 'pointer',
+                                                accentColor: '#dc2626',
+                                            }}
+                                            aria-label="Pilih semua"
+                                        />
+                                    </th>
                                     <th style={{
                                         textAlign: 'left',
                                         padding: '16px',
@@ -212,8 +258,26 @@ export default function AnnouncementsList({ announcements, categories }: Announc
                                 {announcements.map((announcement) => (
                                     <tr
                                         key={announcement.id}
-                                        style={{ borderBottom: '1px solid #1a1a1a' }}
+                                        style={{
+                                            borderBottom: '1px solid #1a1a1a',
+                                            backgroundColor: selectedIds.has(announcement.id) ? '#1a1a1a' : 'transparent',
+                                        }}
                                     >
+                                        {/* Checkbox */}
+                                        <td style={{ padding: '16px', textAlign: 'center' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(announcement.id)}
+                                                onChange={() => toggleSelection(announcement.id)}
+                                                style={{
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    cursor: 'pointer',
+                                                    accentColor: '#dc2626',
+                                                }}
+                                                aria-label={`Pilih ${announcement.title}`}
+                                            />
+                                        </td>
                                         <td style={{ padding: '16px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 {announcement.isPinned && (
@@ -329,6 +393,13 @@ export default function AnnouncementsList({ announcements, categories }: Announc
                     )}
                 </div>
             </div>
+
+            {/* Bulk Action Bar */}
+            <BulkActionBar
+                selectedCount={selectedIds.size}
+                onClear={clearSelection}
+                selectedIds={Array.from(selectedIds)}
+            />
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && selectedAnnouncement && (
