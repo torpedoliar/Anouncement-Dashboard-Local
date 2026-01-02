@@ -1,7 +1,7 @@
 {
-    "version": "1.2.0",
+    "version": "1.2.1",
     "buildDate": "2026-01-02",
     "schemaVersion": "3",
-    "releaseNotes": "Performance optimization: Connection pooling, rate limits 1000 req/min, API caching, PostgreSQL tuning max 200 connections, 5 new DB indexes, removed scheduler from public pages",
+    "releaseNotes": "Design improvements: Logo support in Navbar/Footer, fixed copyright, moved Admin link to footer, category filter active state, skeleton loading component",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

@@ -131,19 +131,6 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi" }: Nav
                                     {link.label}
                                 </Link>
                             ))}
-                            <Link
-                                href="/admin-login"
-                                style={{
-                                    color: '#dc2626',
-                                    fontSize: '12px',
-                                    fontWeight: 600,
-                                    letterSpacing: '0.15em',
-                                    textTransform: 'uppercase',
-                                    padding: '8px 0',
-                                }}
-                            >
-                                ADMIN
-                            </Link>
                         </div>
                     )}
 

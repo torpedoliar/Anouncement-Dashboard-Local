@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { FiInstagram, FiLinkedin, FiFacebook, FiTwitter, FiYoutube } from "react-icons/fi";
 
 interface Settings {
     siteName: string;
     aboutText: string;
+    logoPath: string | null;
     instagramUrl: string | null;
     linkedinUrl: string | null;
     facebookUrl: string | null;
@@ -19,6 +21,7 @@ export default function Footer() {
     const [settings, setSettings] = useState<Settings>({
         siteName: "Santos Jaya Abadi",
         aboutText: "Didirikan tahun 1979, PT. Santos Jaya Abadi adalah salah satu perusahaan roasting kopi terbesar di Asia Tenggara dengan merek ikonik Kapal Api.",
+        logoPath: null,
         instagramUrl: null,
         linkedinUrl: null,
         facebookUrl: null,
@@ -55,18 +58,28 @@ export default function Footer() {
                     {/* Company Info */}
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                            <div style={{
-                                width: '40px',
-                                height: '40px',
-                                backgroundColor: '#dc2626',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}>
-                                <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '18px' }}>
-                                    {settings.siteName.charAt(0).toUpperCase()}
-                                </span>
-                            </div>
+                            {settings.logoPath ? (
+                                <Image
+                                    src={settings.logoPath}
+                                    alt={settings.siteName}
+                                    width={48}
+                                    height={48}
+                                    style={{ objectFit: 'contain' }}
+                                />
+                            ) : (
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    backgroundColor: '#dc2626',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}>
+                                    <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '18px' }}>
+                                        {settings.siteName.charAt(0).toUpperCase()}
+                                    </span>
+                                </div>
+                            )}
                             <span style={{
                                 fontFamily: 'Montserrat, sans-serif',
                                 fontWeight: 700,
@@ -180,8 +193,19 @@ export default function Footer() {
                         fontSize: '12px',
                         letterSpacing: '0.05em',
                     }}>
-                        © {currentYear} PT. {settings.siteName.toUpperCase()}. ALL RIGHTS RESERVED.
+                        © {currentYear} {settings.siteName.toUpperCase()}. ALL RIGHTS RESERVED.
                     </p>
+                    <Link
+                        href="/admin-login"
+                        style={{
+                            color: '#333',
+                            fontSize: '11px',
+                            textDecoration: 'none',
+                            transition: 'color 0.3s',
+                        }}
+                    >
+                        Admin
+                    </Link>
                 </div>
             </div>
         </footer>

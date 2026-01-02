@@ -72,9 +72,10 @@ export function CategoryFilterClient({
     activeCategory?: string;
 }) {
     const getButtonStyle = (isActive: boolean) => ({
-        padding: '12px 24px',
+        padding: isActive ? '12px 24px 9px 24px' : '12px 24px',
         backgroundColor: isActive ? '#dc2626' : 'transparent',
         border: isActive ? '1px solid #dc2626' : '1px solid #333',
+        borderBottom: isActive ? '3px solid #fff' : '1px solid #333',
         color: isActive ? '#fff' : '#737373',
         fontSize: '11px',
         fontWeight: 600,
