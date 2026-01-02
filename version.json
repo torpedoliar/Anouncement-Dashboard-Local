@@ -1,7 +1,7 @@
 {
-    "version": "1.2.2",
+    "version": "1.2.3",
     "buildDate": "2026-01-02",
     "schemaVersion": "3",
-    "releaseNotes": "Added live clock in admin sidebar, image resize UX improvements with visual hints",
+    "releaseNotes": "Fixed image resize toolbar detection with onTransaction event",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

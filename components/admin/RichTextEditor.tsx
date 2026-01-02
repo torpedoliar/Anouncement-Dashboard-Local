@@ -97,7 +97,20 @@ export default function RichTextEditor({
             onChange(editor.getHTML());
         },
         onSelectionUpdate: ({ editor }) => {
-            setIsImageSelected(editor.isActive('image'));
+            const isImage = editor.isActive('image');
+            setIsImageSelected(isImage);
+            // Also update size from current image
+            if (isImage) {
+                const attrs = editor.getAttributes('image');
+                if (attrs.width) setSelectedImageSize(attrs.width);
+            }
+        },
+        onTransaction: ({ editor }) => {
+            // Double-check image selection on any transaction
+            const isImage = editor.isActive('image');
+            if (isImage !== isImageSelected) {
+                setIsImageSelected(isImage);
+            }
         },
         editorProps: {
             attributes: {
