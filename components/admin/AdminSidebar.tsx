@@ -189,6 +189,7 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
                             justifyContent: 'center',
                             gap: '8px',
                             width: '100%',
+                            boxSizing: 'border-box',
                             padding: '12px 16px',
                             backgroundColor: '#dc2626',
                             color: '#fff',

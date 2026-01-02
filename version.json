@@ -1,7 +1,7 @@
 {
-    "version": "1.2.3",
+    "version": "1.2.4",
     "buildDate": "2026-01-02",
     "schemaVersion": "3",
-    "releaseNotes": "Fixed image resize toolbar detection with onTransaction event",
+    "releaseNotes": "Fixed admin UI layout: BUAT BARU button overflow, settings grid max-width",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

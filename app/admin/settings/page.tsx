@@ -616,6 +616,7 @@ export default function SettingsPage() {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                 gap: '24px',
+                maxWidth: '900px',
             }}>
                 {/* General Settings */}
                 <div style={{
