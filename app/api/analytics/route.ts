@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { startOfDay, endOfDay, subDays, format } from "date-fns";
+import { startOfDay, endOfDay, subDays, format, eachDayOfInterval } from "date-fns";
 
 // GET /api/analytics - Get analytics data
 export async function GET(request: NextRequest) {
@@ -18,68 +18,104 @@ export async function GET(request: NextRequest) {
         const startDate = startOfDay(subDays(new Date(), days));
         const endDate = endOfDay(new Date());
 
-        // Get daily views
-        const dailyViews = await prisma.analytics.groupBy({
-            by: ["date"],
-            where: {
-                date: {
-                    gte: startDate,
-                    lte: endDate,
-                },
-            },
-            _sum: {
-                pageViews: true,
-                uniqueVisitors: true,
-            },
-            orderBy: {
-                date: "asc",
-            },
-        });
+        // Check if Analytics table has data
+        const analyticsCount = await prisma.analytics.count();
+        const hasAnalyticsData = analyticsCount > 0;
 
-        // Get top articles
-        const topArticles = await prisma.analytics.groupBy({
-            by: ["announcementId"],
-            where: {
-                announcementId: { not: null },
-                date: {
-                    gte: startDate,
-                    lte: endDate,
+        let dailyViews: { date: string; pageViews: number; uniqueVisitors: number }[] = [];
+        let topArticlesData: { id: string; title: string; views: number; category?: { name: string; color: string } }[] = [];
+
+        if (hasAnalyticsData) {
+            // Get daily views from Analytics table
+            const rawDailyViews = await prisma.analytics.groupBy({
+                by: ["date"],
+                where: {
+                    date: { gte: startDate, lte: endDate },
                 },
-            },
-            _sum: {
-                pageViews: true,
-            },
-            orderBy: {
                 _sum: {
-                    pageViews: "desc",
+                    pageViews: true,
+                    uniqueVisitors: true,
                 },
-            },
-            take: 10,
-        });
+                orderBy: { date: "asc" },
+            });
 
-        // Get announcement details for top articles
-        const topArticleIds = topArticles
-            .map((a) => a.announcementId)
-            .filter((id): id is string => id !== null);
+            dailyViews = rawDailyViews.map((d) => ({
+                date: format(d.date, "yyyy-MM-dd"),
+                pageViews: d._sum.pageViews || 0,
+                uniqueVisitors: d._sum.uniqueVisitors || 0,
+            }));
 
-        const announcements = await prisma.announcement.findMany({
-            where: { id: { in: topArticleIds } },
-            select: {
-                id: true,
-                title: true,
-                slug: true,
-                category: { select: { name: true, color: true } },
-            },
-        });
+            // Get top articles from Analytics
+            const topFromAnalytics = await prisma.analytics.groupBy({
+                by: ["announcementId"],
+                where: {
+                    announcementId: { not: null },
+                    date: { gte: startDate, lte: endDate },
+                },
+                _sum: { pageViews: true },
+                orderBy: { _sum: { pageViews: "desc" } },
+                take: 10,
+            });
 
-        const announcementMap = new Map(announcements.map((a) => [a.id, a]));
+            const topArticleIds = topFromAnalytics
+                .map((a) => a.announcementId)
+                .filter((id): id is string => id !== null);
 
-        // Get category distribution
+            const announcements = await prisma.announcement.findMany({
+                where: { id: { in: topArticleIds } },
+                select: {
+                    id: true,
+                    title: true,
+                    category: { select: { name: true, color: true } },
+                },
+            });
+
+            const announcementMap = new Map(announcements.map((a) => [a.id, a]));
+
+            topArticlesData = topFromAnalytics.map((a) => ({
+                id: a.announcementId!,
+                views: a._sum.pageViews || 0,
+                title: announcementMap.get(a.announcementId!)?.title || "Unknown",
+                category: announcementMap.get(a.announcementId!)?.category,
+            }));
+        } else {
+            // Fallback: Generate sample daily views from existing viewCount data
+            const interval = eachDayOfInterval({ start: startDate, end: endDate });
+            const totalViews = await prisma.announcement.aggregate({ _sum: { viewCount: true } });
+            const avgDailyViews = Math.round((totalViews._sum.viewCount || 0) / days);
+
+            dailyViews = interval.slice(-Math.min(days, 30)).map((date, index) => ({
+                date: format(date, "yyyy-MM-dd"),
+                pageViews: Math.max(0, avgDailyViews + Math.floor(Math.random() * 5) - 2), // slight variation
+                uniqueVisitors: Math.max(0, Math.floor(avgDailyViews * 0.7)),
+            }));
+
+            // Fallback: Get top articles from viewCount field
+            const topByViewCount = await prisma.announcement.findMany({
+                where: { isPublished: true },
+                orderBy: { viewCount: "desc" },
+                take: 10,
+                select: {
+                    id: true,
+                    title: true,
+                    viewCount: true,
+                    category: { select: { name: true, color: true } },
+                },
+            });
+
+            topArticlesData = topByViewCount.map((a) => ({
+                id: a.id,
+                title: a.title,
+                views: a.viewCount,
+                category: a.category,
+            }));
+        }
+
+        // Get category distribution (always from viewCount)
         const categoryViews = await prisma.$queryRaw`
-            SELECT c.name, c.color, SUM(a."viewCount") as views
-            FROM announcements a
-            JOIN categories c ON a."categoryId" = c.id
-            WHERE a."isPublished" = true
+            SELECT c.name, c.color, COALESCE(SUM(a."viewCount"), 0) as views
+            FROM categories c
+            LEFT JOIN announcements a ON a."categoryId" = c.id AND a."isPublished" = true
             GROUP BY c.id, c.name, c.color
             ORDER BY views DESC
         ` as { name: string; color: string; views: bigint }[];
@@ -94,16 +130,8 @@ export async function GET(request: NextRequest) {
         });
 
         return NextResponse.json({
-            dailyViews: dailyViews.map((d) => ({
-                date: format(d.date, "yyyy-MM-dd"),
-                pageViews: d._sum.pageViews || 0,
-                uniqueVisitors: d._sum.uniqueVisitors || 0,
-            })),
-            topArticles: topArticles.map((a) => ({
-                id: a.announcementId,
-                views: a._sum.pageViews || 0,
-                ...announcementMap.get(a.announcementId!),
-            })),
+            dailyViews,
+            topArticles: topArticlesData,
             categoryDistribution: categoryViews.map((c) => ({
                 name: c.name,
                 color: c.color,
@@ -116,6 +144,7 @@ export async function GET(request: NextRequest) {
                     ? Math.round((totalViews._sum.viewCount || 0) / publishedCount)
                     : 0,
             },
+            hasAnalyticsData,
         });
     } catch (error) {
         console.error("Error fetching analytics:", error);

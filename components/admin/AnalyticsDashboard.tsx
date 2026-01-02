@@ -15,7 +15,7 @@ import {
     Pie,
     Cell,
 } from "recharts";
-import { FiTrendingUp, FiEye, FiFileText, FiLoader } from "react-icons/fi";
+import { FiTrendingUp, FiEye, FiFileText, FiLoader, FiAlertCircle } from "react-icons/fi";
 import { useToast } from "@/contexts/ToastContext";
 
 interface DailyView {
@@ -49,6 +49,7 @@ interface AnalyticsData {
     topArticles: TopArticle[];
     categoryDistribution: CategoryDistribution[];
     summary: AnalyticsSummary;
+    hasAnalyticsData?: boolean;
 }
 
 export default function AnalyticsDashboard() {
@@ -59,6 +60,7 @@ export default function AnalyticsDashboard() {
 
     useEffect(() => {
         fetchAnalytics();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [days]);
 
     const fetchAnalytics = async () => {
@@ -103,6 +105,8 @@ export default function AnalyticsDashboard() {
                 alignItems: "center",
                 justifyContent: "space-between",
                 marginBottom: "32px",
+                flexWrap: "wrap",
+                gap: "16px",
             }}>
                 <div>
                     <p style={{
@@ -143,6 +147,31 @@ export default function AnalyticsDashboard() {
                     <option value={90}>90 hari terakhir</option>
                 </select>
             </div>
+
+            {/* Migration Notice */}
+            {!data.hasAnalyticsData && (
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "16px 20px",
+                    backgroundColor: "#422006",
+                    border: "1px solid #f59e0b",
+                    borderRadius: "8px",
+                    marginBottom: "24px",
+                }}>
+                    <FiAlertCircle size={20} color="#f59e0b" />
+                    <div>
+                        <p style={{ color: "#fbbf24", fontSize: "13px", fontWeight: 600 }}>
+                            Data Analytics Belum Aktif
+                        </p>
+                        <p style={{ color: "#fde68a", fontSize: "12px" }}>
+                            Jalankan migrasi database untuk mengaktifkan tracking views harian.
+                            Data di atas menggunakan estimasi dari viewCount.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Summary Cards */}
             <div style={{
@@ -191,33 +220,38 @@ export default function AnalyticsDashboard() {
                     }}>
                         Views Harian
                     </h3>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <LineChart data={data.dailyViews}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                            <XAxis
-                                dataKey="date"
-                                stroke="#525252"
-                                fontSize={11}
-                                tickFormatter={(value) => value.slice(5)}
-                            />
-                            <YAxis stroke="#525252" fontSize={11} />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "#171717",
-                                    border: "1px solid #262626",
-                                    borderRadius: "8px",
-                                }}
-                                labelStyle={{ color: "#fff" }}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="pageViews"
-                                stroke="#dc2626"
-                                strokeWidth={2}
-                                dot={false}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
+                    {data.dailyViews.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={250}>
+                            <LineChart data={data.dailyViews}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                                <XAxis
+                                    dataKey="date"
+                                    stroke="#525252"
+                                    fontSize={11}
+                                    tickFormatter={(value) => value.slice(5)}
+                                />
+                                <YAxis stroke="#525252" fontSize={11} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "#171717",
+                                        border: "1px solid #262626",
+                                        borderRadius: "8px",
+                                    }}
+                                    labelStyle={{ color: "#fff" }}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="pageViews"
+                                    stroke="#dc2626"
+                                    strokeWidth={2}
+                                    dot={{ fill: "#dc2626", strokeWidth: 0, r: 3 }}
+                                    name="Views"
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <EmptyChartMessage message="Belum ada data views harian" />
+                    )}
                 </div>
 
                 {/* Bar Chart - Top Articles */}
@@ -234,28 +268,32 @@ export default function AnalyticsDashboard() {
                     }}>
                         Top 10 Artikel
                     </h3>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <BarChart data={data.topArticles.slice(0, 10)} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                            <XAxis type="number" stroke="#525252" fontSize={11} />
-                            <YAxis
-                                type="category"
-                                dataKey="title"
-                                stroke="#525252"
-                                fontSize={10}
-                                width={120}
-                                tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + "..." : value}
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "#171717",
-                                    border: "1px solid #262626",
-                                    borderRadius: "8px",
-                                }}
-                            />
-                            <Bar dataKey="views" fill="#dc2626" radius={[0, 4, 4, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    {data.topArticles.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={data.topArticles.slice(0, 10)} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                                <XAxis type="number" stroke="#525252" fontSize={11} />
+                                <YAxis
+                                    type="category"
+                                    dataKey="title"
+                                    stroke="#525252"
+                                    fontSize={10}
+                                    width={120}
+                                    tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + "..." : value}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "#171717",
+                                        border: "1px solid #262626",
+                                        borderRadius: "8px",
+                                    }}
+                                />
+                                <Bar dataKey="views" fill="#dc2626" radius={[0, 4, 4, 0]} name="Views" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <EmptyChartMessage message="Belum ada artikel" />
+                    )}
                 </div>
 
                 {/* Pie Chart - Category Distribution */}
@@ -272,31 +310,35 @@ export default function AnalyticsDashboard() {
                     }}>
                         Distribusi Kategori
                     </h3>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                            <Pie
-                                data={data.categoryDistribution}
-                                dataKey="views"
-                                nameKey="name"
-                                cx="50%"
-                                cy="50%"
-                                outerRadius={80}
-                                label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
-                                labelLine={false}
-                            >
-                                {data.categoryDistribution.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Pie>
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "#171717",
-                                    border: "1px solid #262626",
-                                    borderRadius: "8px",
-                                }}
-                            />
-                        </PieChart>
-                    </ResponsiveContainer>
+                    {data.categoryDistribution.filter(c => c.views > 0).length > 0 ? (
+                        <ResponsiveContainer width="100%" height={250}>
+                            <PieChart>
+                                <Pie
+                                    data={data.categoryDistribution.filter(c => c.views > 0)}
+                                    dataKey="views"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={80}
+                                    label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
+                                    labelLine={false}
+                                >
+                                    {data.categoryDistribution.filter(c => c.views > 0).map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: "#171717",
+                                        border: "1px solid #262626",
+                                        borderRadius: "8px",
+                                    }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <EmptyChartMessage message="Belum ada data kategori" />
+                    )}
                 </div>
 
                 {/* Top Articles List */}
@@ -313,56 +355,60 @@ export default function AnalyticsDashboard() {
                     }}>
                         Artikel Terpopuler
                     </h3>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        {data.topArticles.slice(0, 5).map((article, index) => (
-                            <div
-                                key={article.id}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "12px",
-                                    padding: "12px",
-                                    backgroundColor: "#111",
-                                    borderRadius: "8px",
-                                }}
-                            >
-                                <span style={{
-                                    width: "28px",
-                                    height: "28px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    backgroundColor: index === 0 ? "#dc2626" : "#262626",
-                                    color: "#fff",
-                                    fontSize: "12px",
-                                    fontWeight: 600,
-                                    borderRadius: "6px",
-                                }}>
-                                    {index + 1}
-                                </span>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{
+                    {data.topArticles.length > 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            {data.topArticles.slice(0, 5).map((article, index) => (
+                                <div
+                                    key={article.id}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "12px",
+                                        padding: "12px",
+                                        backgroundColor: "#111",
+                                        borderRadius: "8px",
+                                    }}
+                                >
+                                    <span style={{
+                                        width: "28px",
+                                        height: "28px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        backgroundColor: index === 0 ? "#dc2626" : "#262626",
                                         color: "#fff",
-                                        fontSize: "13px",
-                                        fontWeight: 500,
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                        whiteSpace: "nowrap",
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                        borderRadius: "6px",
                                     }}>
-                                        {article.title}
-                                    </p>
-                                    {article.category && (
-                                        <span style={{ color: article.category.color, fontSize: "11px" }}>
-                                            {article.category.name}
-                                        </span>
-                                    )}
+                                        {index + 1}
+                                    </span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{
+                                            color: "#fff",
+                                            fontSize: "13px",
+                                            fontWeight: 500,
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                        }}>
+                                            {article.title}
+                                        </p>
+                                        {article.category && (
+                                            <span style={{ color: article.category.color, fontSize: "11px" }}>
+                                                {article.category.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span style={{ color: "#737373", fontSize: "13px", fontWeight: 600 }}>
+                                        {article.views} views
+                                    </span>
                                 </div>
-                                <span style={{ color: "#737373", fontSize: "13px", fontWeight: 600 }}>
-                                    {article.views} views
-                                </span>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <EmptyChartMessage message="Belum ada artikel" />
+                    )}
                 </div>
             </div>
         </div>
@@ -408,6 +454,23 @@ function SummaryCard({ icon: Icon, label, value, color }: {
             <p style={{ color: "#fff", fontSize: "28px", fontWeight: 700 }}>
                 {value.toLocaleString()}
             </p>
+        </div>
+    );
+}
+
+function EmptyChartMessage({ message }: { message: string }) {
+    return (
+        <div style={{
+            height: "250px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#525252",
+            fontSize: "14px",
+            backgroundColor: "#111",
+            borderRadius: "8px",
+        }}>
+            {message}
         </div>
     );
 }

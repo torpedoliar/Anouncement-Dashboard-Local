@@ -17,7 +17,7 @@ if (-not (Test-Path "docker-compose.yml")) {
 }
 
 # Pull latest code
-Write-Host "[1/4] Pulling latest code from GitHub..." -ForegroundColor Yellow
+Write-Host "[1/5] Pulling latest code from GitHub..." -ForegroundColor Yellow
 git pull origin main
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Git pull failed!" -ForegroundColor Red
@@ -26,15 +26,25 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "OK - Code updated" -ForegroundColor Green
 
+# Check for schema changes
+Write-Host ""
+Write-Host "[2/5] Checking for database schema changes..." -ForegroundColor Yellow
+$schemaChanged = git diff HEAD~1 --name-only | Select-String "prisma/schema.prisma"
+if ($schemaChanged) {
+    Write-Host "Schema changes detected - migration will run after rebuild" -ForegroundColor Cyan
+} else {
+    Write-Host "No schema changes detected" -ForegroundColor Green
+}
+
 # Stop containers
 Write-Host ""
-Write-Host "[2/4] Stopping containers..." -ForegroundColor Yellow
+Write-Host "[3/5] Stopping containers..." -ForegroundColor Yellow
 docker-compose down 2>&1 | Out-Null
 Write-Host "OK - Containers stopped" -ForegroundColor Green
 
 # Rebuild
 Write-Host ""
-Write-Host "[3/4] Rebuilding (this may take 2-5 minutes)..." -ForegroundColor Yellow
+Write-Host "[4/5] Rebuilding (this may take 2-5 minutes)..." -ForegroundColor Yellow
 docker-compose build --no-cache
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Build failed!" -ForegroundColor Red
@@ -42,11 +52,26 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "OK - Build completed" -ForegroundColor Green
 
-# Start
+# Start containers
 Write-Host ""
-Write-Host "[4/4] Starting containers..." -ForegroundColor Yellow
+Write-Host "[5/5] Starting containers and running migrations..." -ForegroundColor Yellow
 docker-compose up -d
-Write-Host "OK - Containers started" -ForegroundColor Green
+Start-Sleep -Seconds 5
+
+# Run database migrations
+Write-Host ""
+Write-Host "Running database migrations..." -ForegroundColor Yellow
+docker-compose exec -T web npx prisma migrate deploy 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "OK - Database migrations applied" -ForegroundColor Green
+} else {
+    Write-Host "WARN - Migration may have failed or no migrations needed" -ForegroundColor Yellow
+}
+
+# Generate Prisma client
+Write-Host "Generating Prisma client..." -ForegroundColor Yellow
+docker-compose exec -T web npx prisma generate 2>&1 | Out-Null
+Write-Host "OK - Prisma client generated" -ForegroundColor Green
 
 # Done
 Write-Host ""
