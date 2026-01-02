@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { existsSync } from "fs";
+
+// File type configurations
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const VIDEO_TYPES = ["video/mp4"];
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 
 // GET /api/media - List media
 export async function GET(request: NextRequest) {
@@ -16,15 +23,23 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
+        const type = searchParams.get("type"); // "image" | "video" | null (all)
         const skip = (page - 1) * limit;
+
+        const where = type ? {
+            mimeType: type === "video"
+                ? { startsWith: "video/" }
+                : { startsWith: "image/" }
+        } : {};
 
         const [media, total] = await Promise.all([
             prisma.mediaLibrary.findMany({
+                where,
                 orderBy: { uploadedAt: "desc" },
                 skip,
                 take: limit,
             }),
-            prisma.mediaLibrary.count(),
+            prisma.mediaLibrary.count({ where }),
         ]);
 
         return NextResponse.json({
@@ -42,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/media - Upload media
+// POST /api/media - Upload media (image or video)
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
@@ -58,17 +73,38 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "File is required" }, { status: 400 });
         }
 
-        // Validate file type
-        const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-        if (!allowedTypes.includes(file.type)) {
-            return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+        // Determine file type
+        const isImage = IMAGE_TYPES.includes(file.type);
+        const isVideo = VIDEO_TYPES.includes(file.type);
+
+        if (!isImage && !isVideo) {
+            return NextResponse.json({
+                error: `Format tidak didukung. Gunakan: ${IMAGE_TYPES.join(", ")}, ${VIDEO_TYPES.join(", ")}`
+            }, { status: 400 });
         }
 
-        // Generate unique filename
-        const ext = file.name.split(".").pop();
-        const filename = `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "media");
+        // Check file size
+        const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+        if (file.size > maxSize) {
+            const maxMB = maxSize / (1024 * 1024);
+            return NextResponse.json({
+                error: `Ukuran file terlalu besar. Maksimal ${maxMB}MB untuk ${isVideo ? 'video' : 'gambar'}`
+            }, { status: 400 });
+        }
+
+        // Determine folder and generate filename
+        const folder = isVideo ? "videos" : "images";
+        const prefix = isVideo ? "video" : "media";
+        const ext = file.name.split(".").pop()?.toLowerCase() || (isVideo ? "mp4" : "jpg");
+        const filename = `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
+
+        const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
         const filepath = path.join(uploadDir, filename);
+
+        // Create directory if not exists
+        if (!existsSync(uploadDir)) {
+            await mkdir(uploadDir, { recursive: true });
+        }
 
         // Save file
         const bytes = await file.arrayBuffer();
@@ -79,7 +115,7 @@ export async function POST(request: NextRequest) {
         const media = await prisma.mediaLibrary.create({
             data: {
                 filename,
-                url: `/uploads/media/${filename}`,
+                url: `/uploads/${folder}/${filename}`,
                 mimeType: file.type,
                 size: file.size,
                 alt: alt || null,

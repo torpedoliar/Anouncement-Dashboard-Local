@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, Node, mergeAttributes } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -21,6 +21,8 @@ import {
     FiMaximize,
     FiMinimize,
     FiTrash2,
+    FiYoutube,
+    FiX,
 } from "react-icons/fi";
 import { LuHeading1, LuHeading2, LuHeading3, LuListOrdered } from "react-icons/lu";
 
@@ -53,6 +55,37 @@ const CustomImage = Image.extend({
     },
 });
 
+// YouTube embed extension
+const YouTube = Node.create({
+    name: 'youtube',
+    group: 'block',
+    atom: true,
+    draggable: true,
+    addAttributes() {
+        return {
+            src: { default: null },
+            videoId: { default: null },
+        };
+    },
+    parseHTML() {
+        return [{
+            tag: 'div[data-youtube-video]',
+        }];
+    },
+    renderHTML({ HTMLAttributes }) {
+        const videoId = HTMLAttributes.videoId;
+        return ['div', mergeAttributes({ 'data-youtube-video': '', style: 'position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:16px 0;border-radius:8px;' }), [
+            'iframe',
+            {
+                src: `https://www.youtube.com/embed/${videoId}`,
+                style: 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;',
+                allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+                allowfullscreen: 'true',
+            },
+        ]];
+    },
+});
+
 export default function RichTextEditor({
     content,
     onChange,
@@ -61,6 +94,8 @@ export default function RichTextEditor({
     const [isUploading, setIsUploading] = useState(false);
     const [isImageSelected, setIsImageSelected] = useState(false);
     const [selectedImageSize, setSelectedImageSize] = useState<string>('100%');
+    const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
+    const [youtubeUrl, setYoutubeUrl] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const editor = useEditor({
@@ -91,6 +126,7 @@ export default function RichTextEditor({
             Placeholder.configure({
                 placeholder,
             }),
+            YouTube,
         ],
         content,
         onUpdate: ({ editor }) => {
@@ -160,6 +196,37 @@ export default function RichTextEditor({
 
     const handleImageClick = () => {
         fileInputRef.current?.click();
+    };
+
+    // Extract YouTube video ID from various URL formats
+    const extractYoutubeId = (url: string): string | null => {
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+        ];
+        for (const pattern of patterns) {
+            const match = url.match(pattern);
+            if (match) return match[1];
+        }
+        return null;
+    };
+
+    const insertYoutube = () => {
+        if (!editor || !youtubeUrl) return;
+
+        const videoId = extractYoutubeId(youtubeUrl);
+        if (!videoId) {
+            alert('URL YouTube tidak valid. Gunakan format:\n• youtube.com/watch?v=XXX\n• youtu.be/XXX');
+            return;
+        }
+
+        editor.chain().focus().insertContent({
+            type: 'youtube',
+            attrs: { videoId },
+        }).run();
+
+        setYoutubeUrl('');
+        setShowYoutubeDialog(false);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -397,6 +464,18 @@ export default function RichTextEditor({
                     </span>
                 )}
 
+                <div style={dividerStyle} />
+
+                {/* YouTube embed */}
+                <button
+                    type="button"
+                    onClick={() => setShowYoutubeDialog(true)}
+                    style={buttonStyle()}
+                    title="Embed YouTube Video"
+                >
+                    <FiYoutube size={16} />
+                </button>
+
                 {/* Hint for image resize */}
                 <span style={{ color: '#525252', fontSize: '11px', marginLeft: 'auto' }}>
                     💡 Klik gambar untuk resize
@@ -618,6 +697,99 @@ export default function RichTextEditor({
                     outline: none;
                 }
             `}</style>
+
+            {/* YouTube URL Dialog */}
+            {showYoutubeDialog && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 100,
+                }}>
+                    <div style={{
+                        backgroundColor: '#171717',
+                        border: '1px solid #262626',
+                        borderRadius: '8px',
+                        padding: '24px',
+                        width: '100%',
+                        maxWidth: '400px',
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '16px',
+                        }}>
+                            <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <FiYoutube color="#dc2626" /> Embed YouTube Video
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => { setShowYoutubeDialog(false); setYoutubeUrl(''); }}
+                                style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}
+                            >
+                                <FiX size={20} />
+                            </button>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Paste YouTube URL..."
+                            value={youtubeUrl}
+                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && insertYoutube()}
+                            style={{
+                                width: '100%',
+                                padding: '12px',
+                                backgroundColor: '#0a0a0a',
+                                border: '1px solid #333',
+                                borderRadius: '6px',
+                                color: '#fff',
+                                fontSize: '14px',
+                                marginBottom: '12px',
+                            }}
+                            autoFocus
+                        />
+                        <p style={{ color: '#737373', fontSize: '11px', marginBottom: '16px' }}>
+                            Format: youtube.com/watch?v=XXX atau youtu.be/XXX
+                        </p>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                                type="button"
+                                onClick={() => { setShowYoutubeDialog(false); setYoutubeUrl(''); }}
+                                style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: 'transparent',
+                                    border: '1px solid #333',
+                                    color: '#a3a3a3',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                onClick={insertYoutube}
+                                disabled={!youtubeUrl}
+                                style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#dc2626',
+                                    border: 'none',
+                                    color: '#fff',
+                                    borderRadius: '6px',
+                                    cursor: youtubeUrl ? 'pointer' : 'not-allowed',
+                                    opacity: youtubeUrl ? 1 : 0.5,
+                                }}
+                            >
+                                Embed
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

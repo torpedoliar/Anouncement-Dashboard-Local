@@ -44,6 +44,11 @@ model Announcement {
   excerpt     String?
   content     String
   imagePath   String?
+  
+  // Video fields
+  videoPath    String?   // Uploaded video file path
+  videoType    String?   // "upload" | "youtube"
+  youtubeUrl   String?   // YouTube video URL
   isPinned    Boolean   @default(false)
   isHero      Boolean   @default(false)
   isPublished Boolean   @default(false)
@@ -78,6 +83,12 @@ model Settings {
   heroTitle    String   @default("Berita & Pengumuman")
   heroSubtitle String   @default("Informasi terbaru dari perusahaan")
   heroImage    String?
+  
+  // Hero video fields
+  heroVideoPath    String?   // Uploaded hero video
+  heroVideoType    String?   // "upload" | "youtube"
+  heroYoutubeUrl   String?   // YouTube URL for hero
+  
   logoPath     String?
   primaryColor String   @default("#ED1C24")
   
