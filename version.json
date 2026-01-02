@@ -1,7 +1,7 @@
 {
-    "version": "2.0.0",
+    "version": "2.1.0",
     "buildDate": "2026-01-02",
-    "schemaVersion": "4",
-    "releaseNotes": "Major update: Toast notifications, debounced search, pagination, accessibility, draft auto-save, media gallery, bulk actions, analytics",
+    "schemaVersion": "5",
+    "releaseNotes": "Video support: upload/embed in articles, YouTube embed, Hero video background, image compression (WebP), video in editor toolbar",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
