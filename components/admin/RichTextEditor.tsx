@@ -251,8 +251,9 @@ export default function RichTextEditor({
             backgroundColor: '#0a0a0a',
             border: '1px solid #262626',
             overflow: 'hidden',
+            position: 'relative',
         }}>
-            {/* Toolbar */}
+            {/* Toolbar - Sticky */}
             <div style={{
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -261,6 +262,9 @@ export default function RichTextEditor({
                 padding: '8px 12px',
                 borderBottom: '1px solid #262626',
                 backgroundColor: '#0f0f0f',
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
             }}>
                 {/* Headings */}
                 <button
@@ -400,7 +404,7 @@ export default function RichTextEditor({
                 </span>
             </div>
 
-            {/* Image Toolbar - appears when image is selected */}
+            {/* Image Toolbar - appears when image is selected - Sticky */}
             {isImageSelected && (
                 <div style={{
                     display: 'flex',
@@ -410,6 +414,9 @@ export default function RichTextEditor({
                     padding: '10px 12px',
                     borderBottom: '1px solid #262626',
                     backgroundColor: '#171717',
+                    position: 'sticky',
+                    top: '45px',
+                    zIndex: 9,
                 }}>
                     <span style={{ color: '#a3a3a3', fontSize: '12px', fontWeight: 600 }}>
                         Gambar:
@@ -448,6 +455,31 @@ export default function RichTextEditor({
                     >
                         <FiMaximize size={12} /> 100%
                     </button>
+
+                    {/* Custom Size Input */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <input
+                            type="number"
+                            min="10"
+                            max="100"
+                            value={parseInt(selectedImageSize) || 100}
+                            onChange={(e) => {
+                                const val = Math.min(100, Math.max(10, parseInt(e.target.value) || 100));
+                                setImageSize(`${val}%`);
+                            }}
+                            style={{
+                                width: '50px',
+                                padding: '5px 8px',
+                                backgroundColor: '#0a0a0a',
+                                border: '1px solid #333',
+                                borderRadius: '4px',
+                                color: '#fff',
+                                fontSize: '12px',
+                                textAlign: 'center',
+                            }}
+                        />
+                        <span style={{ color: '#737373', fontSize: '12px' }}>%</span>
+                    </div>
 
                     <div style={{ width: '1px', height: '20px', backgroundColor: '#333' }} />
 

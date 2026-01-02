@@ -1,7 +1,7 @@
 {
-    "version": "1.2.4",
+    "version": "1.2.5",
     "buildDate": "2026-01-02",
     "schemaVersion": "3",
-    "releaseNotes": "Fixed admin UI layout: BUAT BARU button overflow, settings grid max-width",
+    "releaseNotes": "Sticky toolbar follows scroll, custom image size percentage input (10-100%)",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
