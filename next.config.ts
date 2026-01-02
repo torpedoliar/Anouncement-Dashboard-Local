@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  compress: true,
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       {
@@ -10,6 +12,7 @@ const nextConfig: NextConfig = {
       },
     ],
     unoptimized: process.env.NODE_ENV === "development",
+    minimumCacheTTL: 60,
   },
   experimental: {
     serverActions: {

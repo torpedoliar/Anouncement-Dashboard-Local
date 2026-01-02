@@ -5,9 +5,6 @@ import AnnouncementCard from "@/components/AnnouncementCard";
 import SearchBar from "@/components/SearchBar";
 import Link from "next/link";
 import { FiArrowLeft } from "react-icons/fi";
-import { runScheduler } from "@/lib/scheduler";
-
-export const dynamic = "force-dynamic";
 
 interface SearchPageProps {
     searchParams: Promise<{ q?: string }>;
@@ -37,9 +34,6 @@ async function getSettings() {
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-    // Run auto-scheduler check
-    await runScheduler();
-
     const { q } = await searchParams;
     const query = q || "";
 

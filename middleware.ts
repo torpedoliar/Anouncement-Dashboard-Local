@@ -34,11 +34,13 @@ export function middleware(request: NextRequest) {
         const windowMs = 60000; // 1 minute window
 
         // Different limits for different endpoints
-        let maxRequests = 100; // Default: 100 req/min
+        let maxRequests = 300; // Default: 300 req/min
         if (path.includes('/auth') || path.includes('/login')) {
             maxRequests = 10; // Auth: 10 req/min (prevent brute force)
         } else if (path.includes('/backup')) {
             maxRequests = 5; // Backup: 5 req/min
+        } else if (path.startsWith('/api/announcements') || path.startsWith('/api/settings')) {
+            maxRequests = 1000; // Public read endpoints: 1000 req/min
         }
 
         const key = `${ip}:${path.split('/')[2]}`; // Group by IP and first path segment

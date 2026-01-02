@@ -21,7 +21,9 @@ export async function GET() {
             });
         }
 
-        return NextResponse.json(settings);
+        const response = NextResponse.json(settings);
+        response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+        return response;
     } catch (error) {
         console.error("Error fetching settings:", error);
         return NextResponse.json(

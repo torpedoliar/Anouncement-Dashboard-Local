@@ -58,6 +58,10 @@ model Announcement {
 
   @@index([categoryId])
   @@index([isPublished, createdAt])
+  @@index([isPublished, isHero])
+  @@index([isPublished, isPinned])
+  @@index([scheduledAt])
+  @@index([takedownAt])
   @@map("announcements")
 }
 
@@ -97,6 +101,7 @@ model ActivityLog {
   user   User   @relation(fields: [userId], references: [id])
 
   @@index([entityType, entityId])
+  @@index([createdAt])
   @@map("activity_logs")
 }
 

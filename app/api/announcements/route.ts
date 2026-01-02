@@ -3,13 +3,9 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { slugify, generateExcerpt } from "@/lib/utils";
-import { runScheduler } from "@/lib/scheduler";
 
 // GET /api/announcements - List announcements
 export async function GET(request: NextRequest) {
-    // Run auto-scheduler check (throttled to once per minute)
-    await runScheduler();
-
     try {
         const { searchParams } = new URL(request.url);
         const category = searchParams.get("category");
@@ -56,7 +52,7 @@ export async function GET(request: NextRequest) {
             prisma.announcement.count({ where }),
         ]);
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             data: announcements,
             pagination: {
                 page,
@@ -65,6 +61,8 @@ export async function GET(request: NextRequest) {
                 totalPages: Math.ceil(total / limit),
             },
         });
+        response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+        return response;
     } catch (error) {
         console.error("Error fetching announcements:", error);
         return NextResponse.json(

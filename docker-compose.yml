@@ -6,8 +6,8 @@ services:
     ports:
       - "3100:3000"
     environment:
-      # Database - internal network only (db:5432 not localhost:5433)
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/announcement_db?schema=public
+      # Database with connection pooling
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/announcement_db?schema=public&connection_limit=30&pool_timeout=30
       # Auth Security
       - NEXTAUTH_SECRET=sja-announcement-dashboard-secret-2024
       - NEXTAUTH_URL=http://localhost:3100
@@ -34,6 +34,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
     # Port 5433 removed for security - DB only accessible within Docker network
     # To access DB: docker exec -it announcement-dashboard-db-1 psql -U postgres announcement_db
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=512MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=64MB
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s

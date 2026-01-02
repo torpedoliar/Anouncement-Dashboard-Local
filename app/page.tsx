@@ -5,14 +5,6 @@ import { CategoryFilterClient } from "@/components/CategoryFilter";
 import SearchBar from "@/components/SearchBar";
 import Footer from "@/components/Footer";
 import prisma from "@/lib/prisma";
-import { runScheduler } from "@/lib/scheduler";
-
-export const dynamic = "force-dynamic";
-
-// Run scheduler on homepage load (throttled to once per minute)
-async function checkScheduler() {
-  await runScheduler();
-}
 
 async function getHeroAnnouncements() {
   return prisma.announcement.findMany({
@@ -48,9 +40,6 @@ export default async function HomePage({
 }: {
   searchParams: Promise<{ category?: string }>;
 }) {
-  // Run auto-scheduler check
-  await checkScheduler();
-
   const searchParams = await searchParamsPromise;
   const categorySlug = searchParams.category;
 

@@ -8,7 +8,8 @@ import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import { FiArrowLeft, FiEye, FiCalendar } from "react-icons/fi";
 
-export const dynamic = "force-dynamic";
+// Enable ISR with 60s revalidation for article pages
+export const revalidate = 60;
 
 interface AnnouncementPageProps {
     params: Promise<{ slug: string }>;
@@ -23,10 +24,12 @@ async function getAnnouncement(slug: string) {
     });
 
     if (announcement) {
-        // Increment view count
-        await prisma.announcement.update({
+        // Non-blocking: increment view count without waiting
+        prisma.announcement.update({
             where: { id: announcement.id },
             data: { viewCount: { increment: 1 } },
+        }).catch(() => {
+            // Ignore errors - view count is not critical
         });
     }
 
