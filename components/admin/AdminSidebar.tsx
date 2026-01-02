@@ -68,6 +68,7 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
         { href: "/admin/announcements", icon: FiFileText, label: "PENGUMUMAN" },
         { href: "/admin/categories", icon: FiTag, label: "KATEGORI" },
         { href: "/admin/media", icon: FiImage, label: "MEDIA" },
+        { href: "/admin/analytics", icon: FiActivity, label: "ANALYTICS" },
         { href: "/admin/users", icon: FiUsers, label: "PENGGUNA" },
         { href: "/admin/audit-logs", icon: FiActivity, label: "AUDIT LOG" },
         { href: "/admin/settings", icon: FiSettings, label: "PENGATURAN" },
