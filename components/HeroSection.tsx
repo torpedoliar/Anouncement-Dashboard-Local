@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { useState, useEffect, useCallback } from "react";
+import { FiChevronLeft, FiChevronRight, FiVolume2, FiVolumeX } from "react-icons/fi";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface HeroAnnouncement {
     id: string;
@@ -11,6 +11,9 @@ interface HeroAnnouncement {
     excerpt?: string | null;
     slug: string;
     imagePath?: string | null;
+    videoPath?: string | null;
+    videoType?: string | null;
+    youtubeUrl?: string | null;
 }
 
 interface HeroSectionProps {
@@ -20,6 +23,19 @@ interface HeroSectionProps {
     heroImage?: string | null;
 }
 
+// Extract YouTube video ID
+const extractYoutubeId = (url: string): string | null => {
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+        /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+    }
+    return null;
+};
+
 export default function HeroSection({
     announcements,
     heroTitle = "BERITA & PENGUMUMAN",
@@ -28,6 +44,8 @@ export default function HeroSection({
 }: HeroSectionProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+    const [isMuted, setIsMuted] = useState(true);
+    const videoRef = useRef<HTMLVideoElement>(null);
 
     const nextSlide = useCallback(() => {
         if (announcements.length === 0) return;
@@ -114,31 +132,66 @@ export default function HeroSection({
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
         >
-            {/* Background Image */}
+            {/* Background Media (Image or Video) */}
             <div style={{ position: 'absolute', inset: 0 }}>
-                {currentAnnouncement?.imagePath ? (
-                    <Image
-                        src={currentAnnouncement.imagePath}
-                        alt={currentAnnouncement.title}
-                        fill
-                        style={{ objectFit: 'cover', transform: 'scale(1.05)' }}
-                        priority
+                {/* Video Upload */}
+                {currentAnnouncement?.videoPath && currentAnnouncement?.videoType === 'upload' ? (
+                    <video
+                        ref={videoRef}
+                        src={currentAnnouncement.videoPath}
+                        autoPlay
+                        loop
+                        muted={isMuted}
+                        playsInline
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transform: 'scale(1.05)',
+                        }}
                     />
-                ) : heroImage ? (
-                    <Image
-                        src={heroImage}
-                        alt="Hero Background"
-                        fill
-                        style={{ objectFit: 'cover', transform: 'scale(1.05)' }}
-                        priority
-                    />
-                ) : (
-                    <div style={{
-                        width: '100%',
-                        height: '100%',
-                        background: 'linear-gradient(135deg, #1a0000 0%, #000000 50%, #0a0a0a 100%)',
-                    }} />
-                )}
+                ) : /* YouTube Video */
+                    currentAnnouncement?.videoType === 'youtube' && currentAnnouncement?.youtubeUrl ? (
+                        <iframe
+                            src={`https://www.youtube.com/embed/${extractYoutubeId(currentAnnouncement.youtubeUrl)}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&controls=0&showinfo=0&rel=0&playlist=${extractYoutubeId(currentAnnouncement.youtubeUrl)}`}
+                            style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%) scale(1.5)',
+                                width: '100%',
+                                height: '100%',
+                                border: 'none',
+                                pointerEvents: 'none',
+                            }}
+                            allow="autoplay; encrypted-media"
+                        />
+                    ) : /* Image */
+                        currentAnnouncement?.imagePath ? (
+                            <Image
+                                src={currentAnnouncement.imagePath}
+                                alt={currentAnnouncement.title}
+                                fill
+                                style={{ objectFit: 'cover', transform: 'scale(1.05)' }}
+                                priority
+                            />
+                        ) : heroImage ? (
+                            <Image
+                                src={heroImage}
+                                alt="Hero Background"
+                                fill
+                                style={{ objectFit: 'cover', transform: 'scale(1.05)' }}
+                                priority
+                            />
+                        ) : (
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                background: 'linear-gradient(135deg, #1a0000 0%, #000000 50%, #0a0a0a 100%)',
+                            }} />
+                        )}
                 {/* Overlays */}
                 <div style={{
                     position: 'absolute',
@@ -150,6 +203,38 @@ export default function HeroSection({
                     inset: 0,
                     background: 'linear-gradient(to right, rgba(0,0,0,0.8) 0%, transparent 50%, rgba(0,0,0,0.4) 100%)',
                 }} />
+
+                {/* Mute/Unmute Button for Video */}
+                {(currentAnnouncement?.videoPath || currentAnnouncement?.videoType === 'youtube') && (
+                    <button
+                        onClick={() => {
+                            setIsMuted(!isMuted);
+                            if (videoRef.current) {
+                                videoRef.current.muted = !isMuted;
+                            }
+                        }}
+                        style={{
+                            position: 'absolute',
+                            bottom: '140px',
+                            right: '24px',
+                            zIndex: 30,
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(0,0,0,0.6)',
+                            border: '1px solid #404040',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                        }}
+                        title={isMuted ? 'Unmute' : 'Mute'}
+                    >
+                        {isMuted ? <FiVolumeX size={20} /> : <FiVolume2 size={20} />}
+                    </button>
+                )}
             </div>
 
             {/* Content */}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { formatDateShort } from "@/lib/utils";
-import { FiEye, FiClock } from "react-icons/fi";
+import { FiEye, FiClock, FiPlay, FiYoutube } from "react-icons/fi";
 
 interface AnnouncementCardProps {
     id: string;
@@ -9,6 +9,9 @@ interface AnnouncementCardProps {
     excerpt?: string;
     slug: string;
     imagePath?: string;
+    videoPath?: string | null;
+    videoType?: string | null;
+    youtubeUrl?: string | null;
     category: {
         name: string;
         color: string;
@@ -18,16 +21,37 @@ interface AnnouncementCardProps {
     isPinned?: boolean;
 }
 
+// Extract YouTube video ID for thumbnail
+const extractYoutubeId = (url: string): string | null => {
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+        /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+    }
+    return null;
+};
+
 export default function AnnouncementCard({
     title,
     excerpt,
     slug,
     imagePath,
+    videoPath,
+    videoType,
+    youtubeUrl,
     category,
     createdAt,
     viewCount,
     isPinned,
 }: AnnouncementCardProps) {
+    const hasVideo = videoPath || videoType === 'youtube';
+    const youtubeId = youtubeUrl ? extractYoutubeId(youtubeUrl) : null;
+    const thumbnailUrl = videoType === 'youtube' && youtubeId
+        ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`
+        : imagePath;
     return (
         <Link href={`/${slug}`} style={{ display: 'block' }}>
             <article style={{
@@ -41,21 +65,50 @@ export default function AnnouncementCard({
             }}
                 className="group hover:border-red-600 hover:-translate-y-2"
             >
-                {/* Image */}
+                {/* Media - Image or Video Thumbnail */}
                 <div style={{
                     position: 'relative',
                     aspectRatio: '16/10',
                     overflow: 'hidden',
                     backgroundColor: '#111',
                 }}>
-                    {imagePath ? (
-                        <Image
-                            src={imagePath}
-                            alt={title}
-                            fill
-                            style={{ objectFit: 'cover', transition: 'transform 0.5s' }}
-                            className="group-hover:scale-110"
-                        />
+                    {thumbnailUrl || videoPath ? (
+                        <>
+                            {videoPath && videoType === 'upload' ? (
+                                <video
+                                    src={videoPath}
+                                    muted
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
+                                    className="group-hover:scale-110"
+                                />
+                            ) : thumbnailUrl ? (
+                                <Image
+                                    src={thumbnailUrl}
+                                    alt={title}
+                                    fill
+                                    style={{ objectFit: 'cover', transition: 'transform 0.5s' }}
+                                    className="group-hover:scale-110"
+                                />
+                            ) : null}
+                            {hasVideo && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'rgba(220, 38, 38, 0.9)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 5,
+                                }}>
+                                    {videoType === 'youtube' ? <FiYoutube size={24} color="#fff" /> : <FiPlay size={24} color="#fff" />}
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div style={{
                             width: '100%',

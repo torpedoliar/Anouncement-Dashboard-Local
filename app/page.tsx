@@ -14,7 +14,16 @@ async function getHeroAnnouncements() {
     where: { isPublished: true, isHero: true },
     orderBy: { createdAt: "desc" },
     take: 5,
-    select: { id: true, title: true, excerpt: true, slug: true, imagePath: true },
+    select: {
+      id: true,
+      title: true,
+      excerpt: true,
+      slug: true,
+      imagePath: true,
+      videoPath: true,
+      videoType: true,
+      youtubeUrl: true,
+    },
   });
 }
 
