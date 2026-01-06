@@ -2,11 +2,12 @@ import prisma from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AnnouncementCard from "@/components/AnnouncementCard";
+import CommentSection from "@/components/CommentSection";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { FiArrowLeft, FiEye, FiCalendar, FiPlay } from "react-icons/fi";
+import { FiArrowLeft, FiEye, FiCalendar, FiUser, FiClock } from "react-icons/fi";
 import ArticleVideoPlayer from "@/components/ArticleVideoPlayer";
 
 // Enable ISR with 60s revalidation for article pages
@@ -21,6 +22,13 @@ async function getAnnouncement(slug: string) {
         where: { slug },
         include: {
             category: true,
+            author: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                },
+            },
         },
     });
 
@@ -56,6 +64,13 @@ async function getSettings() {
     return prisma.settings.findFirst();
 }
 
+// Calculate reading time
+function calculateReadingTime(content: string): number {
+    const text = content.replace(/<[^>]*>/g, "");
+    const words = text.split(/\s+/).filter(Boolean).length;
+    return Math.max(1, Math.ceil(words / 200));
+}
+
 export default async function AnnouncementPage({ params }: AnnouncementPageProps) {
     const { slug } = await params;
     const [announcement, settings] = await Promise.all([
@@ -71,6 +86,8 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
         announcement.categoryId,
         announcement.id
     );
+
+    const readingTime = calculateReadingTime(announcement.content);
 
     return (
         <main style={{ minHeight: '100vh', backgroundColor: '#000' }}>
@@ -202,6 +219,10 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                                 <FiEye size={16} />
                                 {announcement.viewCount + 1} views
                             </span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <FiClock size={16} />
+                                {readingTime} menit baca
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -217,6 +238,60 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                     margin: '0 auto',
                     padding: '0 24px',
                 }}>
+                    {/* Contributor/Author Box */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        padding: '20px 24px',
+                        backgroundColor: '#0a0a0a',
+                        border: '1px solid #262626',
+                        marginBottom: '48px',
+                    }}>
+                        <div style={{
+                            width: '48px',
+                            height: '48px',
+                            backgroundColor: '#dc2626',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                        }}>
+                            <span style={{ color: '#fff', fontSize: '18px', fontWeight: 700 }}>
+                                {announcement.author?.name?.charAt(0).toUpperCase() || 'A'}
+                            </span>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <p style={{
+                                color: '#525252',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase',
+                                marginBottom: '4px',
+                            }}>
+                                KONTRIBUTOR
+                            </p>
+                            <p style={{
+                                color: '#fff',
+                                fontSize: '16px',
+                                fontWeight: 600,
+                            }}>
+                                {announcement.author?.name || 'Admin'}
+                            </p>
+                            <p style={{
+                                color: '#737373',
+                                fontSize: '13px',
+                            }}>
+                                Dipublikasikan pada {formatDate(announcement.createdAt)}
+                                {announcement.updatedAt && announcement.updatedAt > announcement.createdAt && (
+                                    <> • Diperbarui {formatDate(announcement.updatedAt)}</>
+                                )}
+                            </p>
+                        </div>
+                    </div>
+
                     {/* Excerpt */}
                     {announcement.excerpt && (
                         <p style={{
@@ -239,6 +314,44 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                         }}
                         dangerouslySetInnerHTML={{ __html: announcement.content }}
                     />
+
+                    {/* Tags/Category Reminder */}
+                    <div style={{
+                        marginTop: '48px',
+                        paddingTop: '32px',
+                        borderTop: '1px solid #262626',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                    }}>
+                        <span style={{ color: '#525252', fontSize: '13px' }}>Kategori:</span>
+                        <span
+                            style={{
+                                padding: '6px 14px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                backgroundColor: announcement.category.color,
+                                color: '#fff',
+                            }}
+                        >
+                            {announcement.category.name}
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            {/* Comments Section */}
+            <section style={{
+                padding: '64px 0',
+                borderTop: '1px solid #262626',
+                backgroundColor: '#0a0a0a',
+            }}>
+                <div style={{
+                    maxWidth: '896px',
+                    margin: '0 auto',
+                    padding: '0 24px',
+                }}>
+                    <CommentSection announcementId={announcement.id} />
                 </div>
             </section>
 
