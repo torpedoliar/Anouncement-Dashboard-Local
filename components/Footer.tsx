@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { FiInstagram, FiLinkedin, FiFacebook, FiTwitter, FiYoutube } from "react-icons/fi";
+import NewsletterSubscribe from "./NewsletterSubscribe";
 
 interface Settings {
     siteName: string;
@@ -173,6 +174,9 @@ export default function Footer() {
                             ))}
                         </ul>
                     </div>
+
+                    {/* Newsletter Subscribe */}
+                    <NewsletterSubscribe variant="inline" />
                 </div>
             </div>
 
