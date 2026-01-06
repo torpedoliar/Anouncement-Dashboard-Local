@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
         const entityType = searchParams.get("entityType");
         const action = searchParams.get("action");
         const userId = searchParams.get("userId");
+        const severity = searchParams.get("severity");
         const skip = (page - 1) * limit;
 
         // Build where clause
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest) {
             entityType?: string;
             action?: string;
             userId?: string;
+            severity?: "INFO" | "WARNING" | "ERROR";
         };
 
         const where: WhereClause = {};
@@ -36,6 +38,9 @@ export async function GET(request: NextRequest) {
         }
         if (userId) {
             where.userId = userId;
+        }
+        if (severity && ["INFO", "WARNING", "ERROR"].includes(severity)) {
+            where.severity = severity as "INFO" | "WARNING" | "ERROR";
         }
 
         const [logs, total] = await Promise.all([
@@ -74,3 +79,4 @@ export async function GET(request: NextRequest) {
         );
     }
 }
+

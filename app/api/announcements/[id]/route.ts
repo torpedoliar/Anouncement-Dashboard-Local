@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { slugify, generateExcerpt } from "@/lib/utils";
+import { createRevision } from "@/lib/revision";
 
 // GET /api/announcements/[id] - Get single announcement
 export async function GET(
@@ -73,6 +74,20 @@ export async function PUT(
 
         // Generate excerpt if content changed
         const excerpt = content ? generateExcerpt(content) : existingAnnouncement.excerpt;
+
+        // Create revision snapshot BEFORE updating (save current state)
+        const userId = (session.user as { id: string }).id;
+        try {
+            await createRevision({
+                announcementId: id,
+                authorId: userId,
+                changeType: "EDIT",
+                changeSummary: title !== existingAnnouncement.title ? "Title changed" : undefined,
+            });
+        } catch (revErr) {
+            console.warn("Failed to create revision:", revErr);
+            // Continue with update even if revision fails
+        }
 
         const announcement = await prisma.announcement.update({
             where: { id },

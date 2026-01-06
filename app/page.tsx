@@ -163,6 +163,9 @@ export default async function HomePage({
                       excerpt={announcement.excerpt || undefined}
                       slug={announcement.slug}
                       imagePath={announcement.imagePath || undefined}
+                      videoPath={announcement.videoPath}
+                      videoType={announcement.videoType}
+                      youtubeUrl={announcement.youtubeUrl}
                       category={announcement.category}
                       createdAt={announcement.createdAt}
                       viewCount={announcement.viewCount}

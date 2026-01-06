@@ -93,3 +93,31 @@ export function getRelativeTime(date: Date | string): string {
         return "Baru saja";
     }
 }
+
+/**
+ * Count words in text content
+ */
+export function countWords(text: string): number {
+    const plainText = stripHtml(text);
+    const words = plainText.trim().split(/\s+/).filter(word => word.length > 0);
+    return words.length;
+}
+
+/**
+ * Calculate reading time in minutes (based on average 200 WPM)
+ */
+export function calculateReadingTime(content: string): number {
+    const wordCount = countWords(content);
+    const wordsPerMinute = 200;
+    const readingTime = Math.ceil(wordCount / wordsPerMinute);
+    return Math.max(1, readingTime); // Minimum 1 minute
+}
+
+/**
+ * Format reading time for display
+ */
+export function formatReadingTime(content: string): string {
+    const minutes = calculateReadingTime(content);
+    return `${minutes} menit baca`;
+}
+

@@ -286,6 +286,9 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                                     excerpt={item.excerpt || undefined}
                                     slug={item.slug}
                                     imagePath={item.imagePath || undefined}
+                                    videoPath={item.videoPath}
+                                    videoType={item.videoType}
+                                    youtubeUrl={item.youtubeUrl}
                                     category={item.category}
                                     createdAt={item.createdAt}
                                     viewCount={item.viewCount}
