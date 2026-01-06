@@ -23,6 +23,7 @@ model User {
   activityLogs ActivityLog[]
 
   // Feature Improvements Relations
+  announcements      Announcement[]
   revisions          AnnouncementRevision[]
   sessions           UserSession[]
   moderatedComments  Comment[]
@@ -80,6 +81,10 @@ model Announcement {
   revisions        AnnouncementRevision[]
   comments         Comment[]
   approvalRequests ApprovalRequest[]
+
+  // Author relation
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id])
 
   @@index([categoryId])
   @@index([isPublished, createdAt])
