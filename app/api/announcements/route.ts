@@ -116,9 +116,11 @@ export async function POST(request: NextRequest) {
                 isPublished: isPublished || false,
                 scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
                 takedownAt: takedownAt ? new Date(takedownAt) : null,
+                authorId: (session.user as { id: string }).id,
             },
             include: {
                 category: true,
+                author: { select: { id: true, name: true, email: true } },
             },
         });
 
