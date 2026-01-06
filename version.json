@@ -1,7 +1,7 @@
 {
-    "version": "2.2.0",
+    "version": "2.2.1",
     "buildDate": "2026-01-06",
     "schemaVersion": "6",
-    "releaseNotes": "Feature: Revision history, Session management, Email system (internal SMTP), Comments with moderation, Newsletter subscribers, Reading time indicator, New admin pages",
+    "releaseNotes": "Feature: Newsletter subscribe form, Media gallery with video preview, Comments on articles, Contributor info box, Reading time indicator",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
