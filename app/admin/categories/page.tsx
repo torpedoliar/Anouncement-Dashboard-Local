@@ -127,7 +127,8 @@ export default function CategoriesPage() {
 
     const cardStyle = {
         backgroundColor: '#0a0a0a',
-        border: '1px solid #1a1a1a',
+        border: '2px solid #333',
+        borderRadius: '8px',
         padding: '16px',
     };
 

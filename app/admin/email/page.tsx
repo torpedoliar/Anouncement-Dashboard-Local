@@ -119,7 +119,7 @@ export default function EmailPage() {
             <form onSubmit={handleSave}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
                     {/* SMTP Settings */}
-                    <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "24px" }}>
+                    <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", padding: "24px" }}>
                         <h2 style={{ display: "flex", alignItems: "center", gap: "10px", color: "#fff", fontSize: "16px", fontWeight: 600, marginBottom: "24px" }}>
                             <FiServer size={18} />
                             Konfigurasi SMTP
@@ -256,7 +256,7 @@ export default function EmailPage() {
                     </div>
 
                     {/* Sender Settings */}
-                    <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "24px" }}>
+                    <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", padding: "24px" }}>
                         <h2 style={{ display: "flex", alignItems: "center", gap: "10px", color: "#fff", fontSize: "16px", fontWeight: 600, marginBottom: "24px" }}>
                             <FiMail size={18} />
                             Informasi Pengirim
