@@ -145,17 +145,17 @@ export default function EmailPage() {
                             />
                         </div>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                            <div>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
-                                    PORT
-                                </label>
+                        <div style={{ marginBottom: "16px" }}>
+                            <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
+                                PORT
+                            </label>
+                            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                                 <input
                                     type="number"
                                     value={settings.smtpPort}
                                     onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) || 25 })}
                                     style={{
-                                        width: "100%",
+                                        width: "100px",
                                         padding: "12px",
                                         backgroundColor: "#111",
                                         border: "1px solid #333",
@@ -163,14 +163,12 @@ export default function EmailPage() {
                                         fontSize: "14px",
                                     }}
                                 />
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", paddingTop: "24px" }}>
                                 <label style={{ display: "flex", alignItems: "center", gap: "8px", color: "#a1a1aa", fontSize: "13px", cursor: "pointer" }}>
                                     <input
                                         type="checkbox"
                                         checked={settings.smtpSecure}
                                         onChange={(e) => setSettings({ ...settings, smtpSecure: e.target.checked })}
-                                        style={{ width: "18px", height: "18px" }}
+                                        style={{ width: "18px", height: "18px", accentColor: "#dc2626" }}
                                     />
                                     SSL/TLS (port 465)
                                 </label>
