@@ -1,7 +1,7 @@
 {
-    "version": "2.2.1",
-    "buildDate": "2026-01-06",
+    "version": "2.3.0",
+    "buildDate": "2026-01-07",
     "schemaVersion": "6",
-    "releaseNotes": "Feature: Newsletter subscribe form, Media gallery with video preview, Comments on articles, Contributor info box, Reading time indicator",
+    "releaseNotes": "Feature: Media Library with Local & Stock Media (Pexels) integration for articles",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
