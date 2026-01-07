@@ -24,8 +24,10 @@ import {
     FiYoutube,
     FiX,
     FiVideo,
+    FiFolder,
 } from "react-icons/fi";
 import { LuHeading1, LuHeading2, LuHeading3, LuListOrdered } from "react-icons/lu";
+import MediaPickerModal from "./MediaPickerModal";
 
 interface RichTextEditorProps {
     content: string;
@@ -129,6 +131,7 @@ export default function RichTextEditor({
     const [youtubeUrl, setYoutubeUrl] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
+    const [showMediaPicker, setShowMediaPicker] = useState(false);
 
     const editor = useEditor({
         immediatelyRender: false,
@@ -593,6 +596,25 @@ export default function RichTextEditor({
                 <span style={{ color: '#525252', fontSize: '11px', marginLeft: 'auto' }}>
                     💡 Klik gambar untuk resize
                 </span>
+
+                {/* Media Library Button */}
+                <button
+                    type="button"
+                    onClick={() => setShowMediaPicker(true)}
+                    style={{
+                        ...buttonStyle(),
+                        marginLeft: '8px',
+                        padding: '6px 12px',
+                        backgroundColor: '#1a1a1a',
+                        border: '1px solid #333',
+                        borderRadius: '4px',
+                        gap: '6px',
+                        display: 'flex',
+                    }}
+                    title="Media Library"
+                >
+                    <FiFolder size={14} /> Library
+                </button>
             </div>
 
             {/* Image Toolbar - appears when image is selected */}
@@ -945,6 +967,24 @@ export default function RichTextEditor({
                     </div>
                 </div>
             )}
+
+            {/* Media Picker Modal */}
+            <MediaPickerModal
+                isOpen={showMediaPicker}
+                onClose={() => setShowMediaPicker(false)}
+                onSelect={(url, type) => {
+                    if (type === "video") {
+                        editor?.chain().focus().insertContent({
+                            type: 'video',
+                            attrs: { src: url },
+                        }).run();
+                    } else {
+                        editor?.chain().focus().setImage({ src: url }).run();
+                    }
+                    setShowMediaPicker(false);
+                }}
+                mediaType="all"
+            />
         </div>
     );
 }
