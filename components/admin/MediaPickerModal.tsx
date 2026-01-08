@@ -248,6 +248,7 @@ export default function MediaPickerModal({
                     {/* Tab Buttons */}
                     <div style={{ display: "flex", gap: "4px" }}>
                         <button
+                            type="button"
                             onClick={() => setActiveTab("local")}
                             style={{
                                 padding: "8px 16px",
@@ -265,6 +266,7 @@ export default function MediaPickerModal({
                             <FiFolder size={14} /> Local
                         </button>
                         <button
+                            type="button"
                             onClick={() => setActiveTab("stock")}
                             style={{
                                 padding: "8px 16px",
@@ -287,6 +289,7 @@ export default function MediaPickerModal({
                     {mediaType === "all" && (
                         <div style={{ display: "flex", gap: "4px" }}>
                             <button
+                                type="button"
                                 onClick={() => setMediaFilter("all")}
                                 style={{
                                     padding: "6px 12px",
@@ -301,6 +304,7 @@ export default function MediaPickerModal({
                                 Semua
                             </button>
                             <button
+                                type="button"
                                 onClick={() => setMediaFilter("image")}
                                 style={{
                                     padding: "6px 12px",
@@ -318,6 +322,7 @@ export default function MediaPickerModal({
                                 <FiImage size={12} /> Foto
                             </button>
                             <button
+                                type="button"
                                 onClick={() => setMediaFilter("video")}
                                 style={{
                                     padding: "6px 12px",
@@ -464,6 +469,7 @@ export default function MediaPickerModal({
                                     {localMedia.length < localTotal && (
                                         <div style={{ textAlign: "center", marginTop: "16px" }}>
                                             <button
+                                                type="button"
                                                 onClick={() => fetchLocalMedia(localPage + 1)}
                                                 disabled={localLoading}
                                                 style={{
@@ -599,6 +605,7 @@ export default function MediaPickerModal({
                                     {stockMedia.length < stockTotal && (
                                         <div style={{ textAlign: "center", marginTop: "16px" }}>
                                             <button
+                                                type="button"
                                                 onClick={() => fetchStockMedia(stockPage + 1, debouncedQuery)}
                                                 disabled={stockLoading}
                                                 style={{
@@ -663,6 +670,7 @@ export default function MediaPickerModal({
                     </div>
                     <div style={{ display: "flex", gap: "8px" }}>
                         <button
+                            type="button"
                             onClick={onClose}
                             style={{
                                 padding: "8px 16px",
@@ -677,6 +685,7 @@ export default function MediaPickerModal({
                             Batal
                         </button>
                         <button
+                            type="button"
                             onClick={handleSelect}
                             disabled={!selectedMedia || downloading}
                             style={{

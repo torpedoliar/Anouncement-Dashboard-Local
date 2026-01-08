@@ -1,7 +1,7 @@
 {
-    "version": "2.3.0",
-    "buildDate": "2026-01-07",
+    "version": "2.3.1",
+    "buildDate": "2026-01-08",
     "schemaVersion": "6",
-    "releaseNotes": "Feature: Media Library with Local & Stock Media (Pexels) integration for articles",
+    "releaseNotes": "Fix: Media Library buttons no longer trigger form validation popup",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
