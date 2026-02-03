@@ -292,18 +292,7 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                         </div>
                     </div>
 
-                    {/* Excerpt */}
-                    {announcement.excerpt && (
-                        <p style={{
-                            fontSize: '20px',
-                            color: '#d4d4d4',
-                            lineHeight: 1.75,
-                            marginBottom: '48px',
-                            fontWeight: 300,
-                        }}>
-                            {announcement.excerpt}
-                        </p>
-                    )}
+                    {/* Note: Excerpt removed to avoid duplication with content */}
 
                     {/* Main Content */}
                     <div
