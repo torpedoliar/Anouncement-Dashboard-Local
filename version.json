@@ -1,7 +1,7 @@
 {
-    "version": "2.3.2",
+    "version": "2.3.3",
     "buildDate": "2026-02-03",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Remove duplicate excerpt in article detail page",
+    "releaseNotes": "Fix: Category tag spacing, Diperbarui date logic, cache-busting for version check",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
