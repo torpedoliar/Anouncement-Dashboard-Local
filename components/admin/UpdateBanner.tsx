@@ -54,8 +54,8 @@ export default function UpdateBanner() {
             const localRes = await fetch("/api/version");
             const localVersion = await localRes.json();
 
-            // Fetch remote version from GitHub (client-side)
-            const remoteRes = await fetch(GITHUB_VERSION_URL, { cache: "no-store" });
+            // Fetch remote version from GitHub (client-side) with cache-busting
+            const remoteRes = await fetch(`${GITHUB_VERSION_URL}?t=${Date.now()}`, { cache: "no-store" });
             if (!remoteRes.ok) {
                 throw new Error("Cannot connect to GitHub");
             }
