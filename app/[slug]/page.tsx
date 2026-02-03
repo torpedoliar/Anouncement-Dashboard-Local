@@ -173,7 +173,7 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                             Kembali ke Beranda
                         </Link>
 
-                        {/* Category */}
+                        {/* Category - with margin to separate from back link */}
                         <span
                             style={{
                                 display: 'inline-block',
@@ -181,6 +181,7 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                                 fontSize: '11px',
                                 fontWeight: 700,
                                 letterSpacing: '0.1em',
+                                marginTop: '16px',
                                 marginBottom: '24px',
                                 textTransform: 'uppercase',
                                 backgroundColor: announcement.category.color,
@@ -285,9 +286,11 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                                 fontSize: '13px',
                             }}>
                                 Dipublikasikan pada {formatDate(announcement.createdAt)}
-                                {announcement.updatedAt && announcement.updatedAt > announcement.createdAt && (
-                                    <> • Diperbarui {formatDate(announcement.updatedAt)}</>
-                                )}
+                                {/* Only show "Diperbarui" if there's a significant difference (> 60 seconds) */}
+                                {announcement.updatedAt &&
+                                    (new Date(announcement.updatedAt).getTime() - new Date(announcement.createdAt).getTime() > 60000) && (
+                                        <> • Diperbarui {formatDate(announcement.updatedAt)}</>
+                                    )}
                             </p>
                         </div>
                     </div>
