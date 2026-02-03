@@ -1,7 +1,7 @@
 {
-    "version": "2.3.1",
-    "buildDate": "2026-01-08",
+    "version": "2.3.2",
+    "buildDate": "2026-02-03",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Media Library buttons no longer trigger form validation popup",
+    "releaseNotes": "Fix: Remove duplicate excerpt in article detail page",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
