@@ -85,23 +85,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Resolve siteId - auto-assign default site if not provided (backward compatibility)
-        let resolvedSiteId = siteId;
-        if (!resolvedSiteId) {
-            const defaultSite = await prisma.site.findFirst({
-                where: { isDefault: true },
-                select: { id: true },
-            });
-            resolvedSiteId = defaultSite?.id || null;
-        }
-
-        if (!email) {
-            return NextResponse.json(
-                { error: "Email is required" },
-                { status: 400 }
-            );
-        }
-
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
@@ -111,11 +94,37 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Resolve siteId - auto-assign default site if not provided (backward compatibility)
+        let resolvedSiteId = siteId;
+        if (!resolvedSiteId) {
+            const defaultSite = await prisma.site.findFirst({
+                where: { isDefault: true },
+                select: { id: true },
+            });
+            if (defaultSite) {
+                resolvedSiteId = defaultSite.id;
+            } else {
+                // Fallback to first active site
+                const firstSite = await prisma.site.findFirst({
+                    where: { isActive: true },
+                    select: { id: true },
+                });
+                if (firstSite) {
+                    resolvedSiteId = firstSite.id;
+                } else {
+                    return NextResponse.json(
+                        { error: "No sites available. Please create a site first." },
+                        { status: 400 }
+                    );
+                }
+            }
+        }
+
         // Check if already subscribed to this site
         const existing = await prisma.newsletterSubscriber.findFirst({
             where: {
                 email: email.toLowerCase(),
-                ...(resolvedSiteId ? { siteId: resolvedSiteId } : {}),
+                siteId: resolvedSiteId,
             },
         });
 
