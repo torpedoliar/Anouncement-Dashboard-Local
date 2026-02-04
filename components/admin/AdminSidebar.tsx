@@ -20,8 +20,10 @@ import {
     FiMessageSquare,
     FiMonitor,
     FiMail,
-    FiSend
+    FiSend,
+    FiGlobe
 } from "react-icons/fi";
+import SiteSelector from "./SiteSelector";
 
 
 interface AdminSidebarProps {
@@ -70,6 +72,7 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
 
     const navItems = [
         { href: "/admin", icon: FiHome, label: "DASHBOARD" },
+        { href: "/admin/sites", icon: FiGlobe, label: "SITES" },
         { href: "/admin/announcements", icon: FiFileText, label: "PENGUMUMAN" },
         { href: "/admin/categories", icon: FiTag, label: "KATEGORI" },
         { href: "/admin/media", icon: FiImage, label: "MEDIA" },
@@ -213,6 +216,11 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
                         <FiPlusCircle size={14} />
                         <span>BUAT BARU</span>
                     </Link>
+                </div>
+
+                {/* Site Selector */}
+                <div style={{ padding: '0 16px 16px', borderBottom: '1px solid #1a1a1a' }}>
+                    <SiteSelector />
                 </div>
 
                 {/* Navigation */}
