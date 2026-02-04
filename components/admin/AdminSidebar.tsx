@@ -21,7 +21,8 @@ import {
     FiMonitor,
     FiMail,
     FiSend,
-    FiGlobe
+    FiGlobe,
+    FiPieChart
 } from "react-icons/fi";
 import SiteSelector from "./SiteSelector";
 
@@ -78,6 +79,7 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
         { href: "/admin/media", icon: FiImage, label: "MEDIA" },
         { href: "/admin/comments", icon: FiMessageSquare, label: "KOMENTAR" },
         { href: "/admin/analytics", icon: FiActivity, label: "ANALYTICS" },
+        { href: "/admin/global-analytics", icon: FiPieChart, label: "GLOBAL ANALYTICS" },
         { href: "/admin/users", icon: FiUsers, label: "PENGGUNA" },
         { href: "/admin/sessions", icon: FiMonitor, label: "SESI" },
         { href: "/admin/email", icon: FiMail, label: "EMAIL" },
