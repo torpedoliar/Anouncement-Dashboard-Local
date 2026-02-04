@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { slugify, generateExcerpt } from "@/lib/utils";
+import { canEditOnSite } from "@/lib/site-access";
 
 // GET /api/announcements - List announcements
 export async function GET(request: NextRequest) {
@@ -10,31 +11,47 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const category = searchParams.get("category");
         const search = searchParams.get("q");
+        const siteId = searchParams.get("siteId");
+        const siteSlug = searchParams.get("siteSlug");
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "12");
         const skip = (page - 1) * limit;
+        const includeAll = searchParams.get("includeAll") === "true"; // For admin view
 
-        // Build where clause - PostgreSQL compatible
-        type WhereClause = {
-            isPublished: boolean;
-            category?: { slug: string };
-            OR?: Array<{ title: { contains: string; mode: "insensitive" } } | { content: { contains: string; mode: "insensitive" } }>;
-        };
+        // Resolve siteId from slug if provided
+        let resolvedSiteId = siteId;
+        if (!resolvedSiteId && siteSlug) {
+            const site = await prisma.site.findUnique({
+                where: { slug: siteSlug },
+                select: { id: true },
+            });
+            resolvedSiteId = site?.id || null;
+        }
 
-        const where: WhereClause = {
-            isPublished: true,
-        };
+        // Build where clause for announcements
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
+
+        if (!includeAll) {
+            where.isPublished = true;
+        }
 
         if (category) {
             where.category = { slug: category };
         }
 
         if (search) {
-            // PostgreSQL supports case-insensitive search
             where.OR = [
                 { title: { contains: search, mode: "insensitive" } },
                 { content: { contains: search, mode: "insensitive" } },
             ];
+        }
+
+        // Filter by site through the junction table
+        if (resolvedSiteId) {
+            where.sites = {
+                some: { siteId: resolvedSiteId },
+            };
         }
 
         const [announcements, total] = await Promise.all([
@@ -47,13 +64,31 @@ export async function GET(request: NextRequest) {
                     category: {
                         select: { name: true, color: true, slug: true },
                     },
+                    sites: resolvedSiteId ? {
+                        where: { siteId: resolvedSiteId },
+                        include: {
+                            site: { select: { id: true, name: true, slug: true } },
+                        },
+                    } : {
+                        include: {
+                            site: { select: { id: true, name: true, slug: true } },
+                        },
+                    },
+                    author: { select: { id: true, name: true } },
                 },
             }),
             prisma.announcement.count({ where }),
         ]);
 
+        // Transform to include site info
+        const data = announcements.map((a) => ({
+            ...a,
+            primarySite: a.sites.find((s) => s.isPrimary)?.site || a.sites[0]?.site || null,
+            siteCount: a.sites.length,
+        }));
+
         const response = NextResponse.json({
-            data: announcements,
+            data,
             pagination: {
                 page,
                 limit,
@@ -76,18 +111,53 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
-        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, scheduledAt, takedownAt } = body;
+        const {
+            title,
+            content,
+            categoryId,
+            imagePath,
+            videoPath,
+            videoType,
+            youtubeUrl,
+            isHero,
+            isPinned,
+            isPublished,
+            scheduledAt,
+            takedownAt,
+            siteIds,        // Array of site IDs to publish to
+            primarySiteId,  // Which site is the primary (for canonical URL)
+        } = body;
 
         if (!title || !content || !categoryId) {
             return NextResponse.json(
                 { error: "Title, content, and category are required" },
                 { status: 400 }
             );
+        }
+
+        // Validate site IDs
+        if (!siteIds || siteIds.length === 0) {
+            return NextResponse.json(
+                { error: "At least one site is required" },
+                { status: 400 }
+            );
+        }
+
+        // Check user has permission to publish to all specified sites
+        const userId = session.user.id;
+        for (const siteId of siteIds) {
+            const canEdit = await canEditOnSite(userId, siteId);
+            if (!canEdit) {
+                return NextResponse.json(
+                    { error: `No permission to publish to site ${siteId}` },
+                    { status: 403 }
+                );
+            }
         }
 
         // Generate unique slug
@@ -100,42 +170,70 @@ export async function POST(request: NextRequest) {
         // Generate excerpt
         const excerpt = generateExcerpt(content);
 
-        const announcement = await prisma.announcement.create({
-            data: {
-                title,
-                slug,
-                content,
-                excerpt,
-                categoryId,
-                imagePath,
-                videoPath,
-                videoType,
-                youtubeUrl,
-                isHero: isHero || false,
-                isPinned: isPinned || false,
-                isPublished: isPublished || false,
-                scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-                takedownAt: takedownAt ? new Date(takedownAt) : null,
-                authorId: (session.user as { id: string }).id,
-            },
+        // Create announcement with site associations in a transaction
+        const announcement = await prisma.$transaction(async (tx) => {
+            const newAnnouncement = await tx.announcement.create({
+                data: {
+                    title,
+                    slug,
+                    content,
+                    excerpt,
+                    categoryId,
+                    imagePath,
+                    videoPath,
+                    videoType,
+                    youtubeUrl,
+                    isHero: isHero || false,
+                    isPinned: isPinned || false,
+                    isPublished: isPublished || false,
+                    scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+                    takedownAt: takedownAt ? new Date(takedownAt) : null,
+                    authorId: userId,
+                },
+            });
+
+            // Create site associations (syndication)
+            const actualPrimarySiteId = primarySiteId || siteIds[0];
+            for (const siteId of siteIds) {
+                await tx.announcementSite.create({
+                    data: {
+                        announcementId: newAnnouncement.id,
+                        siteId,
+                        isPrimary: siteId === actualPrimarySiteId,
+                    },
+                });
+            }
+
+            return newAnnouncement;
+        });
+
+        // Fetch full announcement with relations
+        const fullAnnouncement = await prisma.announcement.findUnique({
+            where: { id: announcement.id },
             include: {
                 category: true,
                 author: { select: { id: true, name: true, email: true } },
+                sites: {
+                    include: {
+                        site: { select: { id: true, name: true, slug: true } },
+                    },
+                },
             },
         });
 
-        // Log activity - stringify JSON for SQLite
+        // Log activity
         await prisma.activityLog.create({
             data: {
                 action: "CREATE",
                 entityType: "ANNOUNCEMENT",
                 entityId: announcement.id,
-                userId: (session.user as { id: string }).id,
-                changes: JSON.stringify({ title, categoryId }),
+                userId,
+                siteId: primarySiteId || siteIds[0],
+                changes: JSON.stringify({ title, categoryId, siteIds }),
             },
         });
 
-        return NextResponse.json(announcement, { status: 201 });
+        return NextResponse.json(fullAnnouncement, { status: 201 });
     } catch (error) {
         console.error("Error creating announcement:", error);
         return NextResponse.json(
