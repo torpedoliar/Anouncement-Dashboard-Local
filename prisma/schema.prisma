@@ -17,10 +17,12 @@ model User {
   name         String
   avatar       String?
   role         Role     @default(ADMIN)
+  isSuperAdmin Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   activityLogs ActivityLog[]
+  siteAccess   UserSiteAccess[]
 
   // Feature Improvements Relations
   announcements      Announcement[]
@@ -35,13 +37,19 @@ model User {
 
 model Category {
   id            String         @id @default(cuid())
-  name          String         @unique
-  slug          String         @unique
+  name          String
+  slug          String
   color         String         @default("#ED1C24")
   order         Int            @default(0)
   createdAt     DateTime       @default(now())
   announcements Announcement[]
 
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([name, siteId])
+  @@unique([slug, siteId])
+  @@index([siteId])
   @@map("categories")
 }
 
@@ -73,6 +81,9 @@ model Announcement {
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
+
+  // Multi-site syndication (many-to-many)
+  sites AnnouncementSite[]
 
   // Analytics relation
   analytics Analytics[]
@@ -146,13 +157,17 @@ model ActivityLog {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
+  siteId String?
+  site   Site?   @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
   @@index([entityType, entityId])
   @@index([createdAt])
   @@index([severity])
+  @@index([siteId])
   @@map("activity_logs")
 }
 
-// Media Library for image gallery
+// Media Library for image gallery (Hybrid: siteId null = shared/global)
 model MediaLibrary {
   id         String   @id @default(cuid())
   filename   String
@@ -162,7 +177,11 @@ model MediaLibrary {
   alt        String?
   uploadedAt DateTime @default(now())
 
+  siteId String?
+  site   Site?   @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
   @@index([uploadedAt])
+  @@index([siteId])
   @@map("media_library")
 }
 
@@ -176,14 +195,117 @@ model Analytics {
 
   announcement Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
 
+  siteId String?
+  site   Site?   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
   @@unique([announcementId, date])
   @@index([date])
+  @@index([siteId, date])
   @@map("analytics")
 }
 
 enum Role {
   ADMIN
   EDITOR
+}
+
+// ============================================
+// MULTI-SITE ENUMS
+// ============================================
+
+enum SiteRole {
+  SITE_ADMIN // Full control of this site
+  EDITOR // Create/edit content on this site
+  VIEWER // Read-only access to this site
+}
+
+// ============================================
+// MULTI-SITE MODELS
+// ============================================
+
+model Site {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  slug         String   @unique
+  description  String?
+  logoPath     String?
+  faviconPath  String?
+  primaryColor String   @default("#ED1C24")
+  isActive     Boolean  @default(true)
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  settings          SiteSettings?
+  announcementSites AnnouncementSite[]
+  categories        Category[]
+  mediaLibrary      MediaLibrary[]
+  userAccess        UserSiteAccess[]
+  activityLogs      ActivityLog[]
+  analytics         Analytics[]
+  newsletters       NewsletterSubscriber[]
+  emailTemplates    EmailTemplate[]
+
+  @@map("sites")
+}
+
+model SiteSettings {
+  id     Int    @id @default(autoincrement())
+  siteId String @unique
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  heroTitle      String  @default("Berita & Pengumuman")
+  heroSubtitle   String  @default("Informasi terbaru")
+  heroImage      String?
+  heroVideoPath  String?
+  heroVideoType  String?
+  heroYoutubeUrl String?
+  aboutText      String?
+
+  instagramUrl String?
+  facebookUrl  String?
+  twitterUrl   String?
+  linkedinUrl  String?
+  youtubeUrl   String?
+
+  commentAutoApprove  Boolean @default(false)
+  commentRequireEmail Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model UserSiteAccess {
+  id     String   @id @default(cuid())
+  userId String
+  siteId String
+  role   SiteRole @default(EDITOR)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, siteId])
+  @@index([userId])
+  @@index([siteId])
+  @@map("user_site_access")
+}
+
+// Content Syndication - Many-to-Many (Announcement can appear on multiple sites)
+model AnnouncementSite {
+  id             String   @id @default(cuid())
+  announcementId String
+  siteId         String
+  isPrimary      Boolean  @default(false)
+  publishedAt    DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  site         Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, siteId])
+  @@index([siteId])
+  @@index([announcementId])
+  @@map("announcement_sites")
 }
 
 // ============================================
@@ -330,10 +452,10 @@ model Comment {
   @@map("comments")
 }
 
-// Newsletter Subscribers
+// Newsletter Subscribers (per-site)
 model NewsletterSubscriber {
   id               String    @id @default(cuid())
-  email            String    @unique
+  email            String
   name             String?
   isActive         Boolean   @default(true)
   subscribedAt     DateTime  @default(now())
@@ -341,15 +463,20 @@ model NewsletterSubscriber {
   unsubscribeToken String    @unique @default(cuid())
   source           String?
 
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([email, siteId])
   @@index([isActive])
+  @@index([siteId])
   @@map("newsletter_subscribers")
 }
 
-// Email Templates
+// Email Templates (optional siteId for site-specific templates)
 model EmailTemplate {
   id          String            @id @default(cuid())
-  name        String            @unique
-  slug        String            @unique
+  name        String
+  slug        String
   subject     String
   htmlContent String            @db.Text
   textContent String?           @db.Text
@@ -359,6 +486,12 @@ model EmailTemplate {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
+  siteId String?
+  site   Site?   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([name, siteId])
+  @@unique([slug, siteId])
+  @@index([siteId])
   @@map("email_templates")
 }
 
