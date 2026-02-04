@@ -18,6 +18,11 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.next();
     const path = request.nextUrl.pathname;
 
+    // Redirect root to site picker
+    if (path === '/') {
+        return NextResponse.redirect(new URL('/site', request.url));
+    }
+
     // Add security headers to all responses
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('X-Frame-Options', 'SAMEORIGIN');
@@ -39,7 +44,7 @@ export function middleware(request: NextRequest) {
             maxRequests = 10; // Auth: 10 req/min (prevent brute force)
         } else if (path.includes('/backup')) {
             maxRequests = 5; // Backup: 5 req/min
-        } else if (path.startsWith('/api/announcements') || path.startsWith('/api/settings')) {
+        } else if (path.startsWith('/api/announcements') || path.startsWith('/api/settings') || path.startsWith('/api/sites')) {
             maxRequests = 1000; // Public read endpoints: 1000 req/min
         }
 
@@ -65,7 +70,9 @@ export function middleware(request: NextRequest) {
 // Configure which paths the middleware applies to
 export const config = {
     matcher: [
+        '/',
         '/api/:path*',
         '/admin/:path*',
+        '/site/:path*',
     ],
 };
