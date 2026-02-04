@@ -140,21 +140,40 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validate site IDs
-        if (!siteIds || siteIds.length === 0) {
-            return NextResponse.json(
-                { error: "At least one site is required" },
-                { status: 400 }
-            );
+        // Validate site IDs - auto-assign default site if not provided (backward compatibility)
+        let resolvedSiteIds = siteIds;
+        if (!resolvedSiteIds || resolvedSiteIds.length === 0) {
+            // Find default site for backward compatibility
+            const defaultSite = await prisma.site.findFirst({
+                where: { isDefault: true },
+                select: { id: true },
+            });
+            if (defaultSite) {
+                resolvedSiteIds = [defaultSite.id];
+            } else {
+                // Get first site if no default
+                const firstSite = await prisma.site.findFirst({
+                    where: { isActive: true },
+                    select: { id: true },
+                });
+                if (firstSite) {
+                    resolvedSiteIds = [firstSite.id];
+                } else {
+                    return NextResponse.json(
+                        { error: "No sites available. Please create a site first." },
+                        { status: 400 }
+                    );
+                }
+            }
         }
 
         // Check user has permission to publish to all specified sites
         const userId = session.user.id;
-        for (const siteId of siteIds) {
-            const canEdit = await canEditOnSite(userId, siteId);
+        for (const sId of resolvedSiteIds) {
+            const canEdit = await canEditOnSite(userId, sId);
             if (!canEdit) {
                 return NextResponse.json(
-                    { error: `No permission to publish to site ${siteId}` },
+                    { error: `No permission to publish to site ${sId}` },
                     { status: 403 }
                 );
             }
@@ -193,13 +212,13 @@ export async function POST(request: NextRequest) {
             });
 
             // Create site associations (syndication)
-            const actualPrimarySiteId = primarySiteId || siteIds[0];
-            for (const siteId of siteIds) {
+            const actualPrimarySiteId = primarySiteId || resolvedSiteIds[0];
+            for (const sId of resolvedSiteIds) {
                 await tx.announcementSite.create({
                     data: {
                         announcementId: newAnnouncement.id,
-                        siteId,
-                        isPrimary: siteId === actualPrimarySiteId,
+                        siteId: sId,
+                        isPrimary: sId === actualPrimarySiteId,
                     },
                 });
             }
@@ -228,8 +247,8 @@ export async function POST(request: NextRequest) {
                 entityType: "ANNOUNCEMENT",
                 entityId: announcement.id,
                 userId,
-                siteId: primarySiteId || siteIds[0],
-                changes: JSON.stringify({ title, categoryId, siteIds }),
+                siteId: primarySiteId || resolvedSiteIds[0],
+                changes: JSON.stringify({ title, categoryId, siteIds: resolvedSiteIds }),
             },
         });
 

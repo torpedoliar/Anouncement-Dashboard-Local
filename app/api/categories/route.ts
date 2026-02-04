@@ -69,11 +69,29 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!siteId) {
-            return NextResponse.json(
-                { error: "Site ID is required" },
-                { status: 400 }
-            );
+        // Auto-assign default site if not provided (backward compatibility)
+        let resolvedSiteId = siteId;
+        if (!resolvedSiteId) {
+            const defaultSite = await prisma.site.findFirst({
+                where: { isDefault: true },
+                select: { id: true },
+            });
+            if (defaultSite) {
+                resolvedSiteId = defaultSite.id;
+            } else {
+                const firstSite = await prisma.site.findFirst({
+                    where: { isActive: true },
+                    select: { id: true },
+                });
+                if (firstSite) {
+                    resolvedSiteId = firstSite.id;
+                } else {
+                    return NextResponse.json(
+                        { error: "No sites available. Please create a site first." },
+                        { status: 400 }
+                    );
+                }
+            }
         }
 
         // Check user has permission to edit on this site
@@ -115,7 +133,7 @@ export async function POST(request: NextRequest) {
                 slug,
                 color: color || "#dc2626",
                 order: (maxOrder._max.order || 0) + 1,
-                siteId,
+                siteId: resolvedSiteId,
             },
             include: {
                 site: { select: { id: true, name: true, slug: true } }
@@ -129,7 +147,7 @@ export async function POST(request: NextRequest) {
                 entityType: "CATEGORY",
                 entityId: category.id,
                 userId: session.user.id,
-                siteId,
+                siteId: resolvedSiteId,
                 changes: JSON.stringify({ name, color, siteId }),
             },
         });
