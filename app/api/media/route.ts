@@ -18,7 +18,7 @@ const MAX_WIDTH = 1920;
 const MAX_HEIGHT = 1080;
 const QUALITY = 80;
 
-// GET /api/media - List media
+// GET /api/media - List media (hybrid: siteId=null shows shared, siteId shows site-specific + shared)
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
@@ -30,13 +30,33 @@ export async function GET(request: NextRequest) {
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
         const type = searchParams.get("type"); // "image" | "video" | null (all)
+        const siteId = searchParams.get("siteId"); // Optional: filter by site
+        const sharedOnly = searchParams.get("sharedOnly") === "true"; // Only show shared media
         const skip = (page - 1) * limit;
 
-        const where = type ? {
-            mimeType: type === "video"
+        // Build where clause
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
+
+        // Type filter
+        if (type) {
+            where.mimeType = type === "video"
                 ? { startsWith: "video/" }
-                : { startsWith: "image/" }
-        } : {};
+                : { startsWith: "image/" };
+        }
+
+        // Site filter (hybrid mode)
+        if (sharedOnly) {
+            // Only shared/global media
+            where.siteId = null;
+        } else if (siteId) {
+            // Site-specific + shared media
+            where.OR = [
+                { siteId: siteId },
+                { siteId: null },
+            ];
+        }
+        // If no siteId filter, show all media (for SuperAdmin)
 
         const [media, total] = await Promise.all([
             prisma.mediaLibrary.findMany({
@@ -44,6 +64,11 @@ export async function GET(request: NextRequest) {
                 orderBy: { uploadedAt: "desc" },
                 skip,
                 take: limit,
+                include: {
+                    site: {
+                        select: { name: true, slug: true, primaryColor: true },
+                    },
+                },
             }),
             prisma.mediaLibrary.count({ where }),
         ]);
@@ -74,6 +99,7 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const file = formData.get("file") as File;
         const alt = formData.get("alt") as string | null;
+        const siteId = formData.get("siteId") as string | null; // Optional: null = shared, otherwise site-specific
 
         if (!file) {
             return NextResponse.json({ error: "File is required" }, { status: 400 });
@@ -143,7 +169,7 @@ export async function POST(request: NextRequest) {
         const filepath = path.join(uploadDir, filename);
         await writeFile(filepath, finalBuffer);
 
-        // Save to database
+        // Save to database (siteId: null = shared/global media)
         const media = await prisma.mediaLibrary.create({
             data: {
                 filename,
@@ -151,6 +177,7 @@ export async function POST(request: NextRequest) {
                 mimeType: finalMimeType,
                 size: finalBuffer.length,
                 alt: alt || null,
+                siteId: siteId || null, // null = shared, otherwise site-specific
             },
         });
 
