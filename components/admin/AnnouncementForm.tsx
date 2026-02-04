@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FiSave, FiX, FiUpload, FiStar, FiMapPin, FiEye, FiClock, FiImage, FiVideo, FiYoutube, FiPlay, FiFolder } from "react-icons/fi";
 import RichTextEditor from "./RichTextEditor";
 import MediaPickerModal from "./MediaPickerModal";
+import SiteSyndicationPicker from "./SiteSyndicationPicker";
 
 interface Category {
     id: string;
@@ -28,6 +29,7 @@ interface AnnouncementFormProps {
         isPublished: boolean;
         scheduledAt?: string | null;
         takedownAt?: string | null;
+        sites?: { siteId: string; isPrimary: boolean }[];
     };
 }
 
@@ -53,6 +55,14 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
     const [isPublished, setIsPublished] = useState(initialData?.isPublished || false);
     const [scheduledAt, setScheduledAt] = useState(initialData?.scheduledAt || "");
     const [takedownAt, setTakedownAt] = useState(initialData?.takedownAt || "");
+
+    // Multi-site syndication state
+    const [siteIds, setSiteIds] = useState<string[]>(
+        initialData?.sites?.map(s => s.siteId) || []
+    );
+    const [primarySiteId, setPrimarySiteId] = useState<string | null>(
+        initialData?.sites?.find(s => s.isPrimary)?.siteId || null
+    );
 
     const [imageUploading, setImageUploading] = useState(false);
     const [videoUploading, setVideoUploading] = useState(false);
@@ -202,6 +212,8 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
                     isPublished,
                     scheduledAt: scheduledAt || null,
                     takedownAt: takedownAt || null,
+                    siteIds,
+                    primarySiteId,
                 }),
             });
 
@@ -288,6 +300,18 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        {/* Site Syndication */}
+                        <div style={cardStyle}>
+                            <SiteSyndicationPicker
+                                selectedSiteIds={siteIds}
+                                primarySiteId={primarySiteId}
+                                onChange={(newSiteIds, newPrimarySiteId) => {
+                                    setSiteIds(newSiteIds);
+                                    setPrimarySiteId(newPrimarySiteId);
+                                }}
+                            />
                         </div>
 
                         {/* Media Upload - Image/Video/YouTube */}

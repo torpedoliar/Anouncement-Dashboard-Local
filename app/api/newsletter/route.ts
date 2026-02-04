@@ -21,8 +21,28 @@ export async function GET(request: NextRequest) {
         const page = parseInt(url.searchParams.get("page") || "1");
         const limit = parseInt(url.searchParams.get("limit") || "50");
         const activeOnly = url.searchParams.get("active") === "true";
+        const siteId = url.searchParams.get("siteId");
+        const siteSlug = url.searchParams.get("siteSlug");
 
-        const where = activeOnly ? { isActive: true } : {};
+        // Resolve siteId from slug if provided
+        let resolvedSiteId = siteId;
+        if (!resolvedSiteId && siteSlug) {
+            const site = await prisma.site.findUnique({
+                where: { slug: siteSlug },
+                select: { id: true },
+            });
+            resolvedSiteId = site?.id || null;
+        }
+
+        // Build where clause
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
+        if (activeOnly) {
+            where.isActive = true;
+        }
+        if (resolvedSiteId) {
+            where.siteId = resolvedSiteId;
+        }
 
         const [subscribers, total] = await Promise.all([
             prisma.newsletterSubscriber.findMany({
@@ -56,7 +76,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { email, name, source } = body;
+        const { email, name, source, siteId } = body;
+
+        if (!email) {
+            return NextResponse.json(
+                { error: "Email is required" },
+                { status: 400 }
+            );
+        }
+
+        // Resolve siteId - auto-assign default site if not provided (backward compatibility)
+        let resolvedSiteId = siteId;
+        if (!resolvedSiteId) {
+            const defaultSite = await prisma.site.findFirst({
+                where: { isDefault: true },
+                select: { id: true },
+            });
+            resolvedSiteId = defaultSite?.id || null;
+        }
 
         if (!email) {
             return NextResponse.json(
@@ -74,9 +111,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check if already subscribed
-        const existing = await prisma.newsletterSubscriber.findUnique({
-            where: { email: email.toLowerCase() },
+        // Check if already subscribed to this site
+        const existing = await prisma.newsletterSubscriber.findFirst({
+            where: {
+                email: email.toLowerCase(),
+                ...(resolvedSiteId ? { siteId: resolvedSiteId } : {}),
+            },
         });
 
         if (existing) {
@@ -109,6 +149,7 @@ export async function POST(request: NextRequest) {
                 email: email.toLowerCase(),
                 name,
                 source: source || "website",
+                siteId: resolvedSiteId,
             },
         });
 
