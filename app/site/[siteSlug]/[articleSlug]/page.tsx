@@ -199,6 +199,44 @@ export default async function ArticlePage({ params }: PageProps) {
                     {announcement.category.name}
                 </Link>
 
+                {/* Hero Media (Video/Image) */}
+                <div style={{ marginBottom: "32px", borderRadius: "12px", overflow: "hidden" }}>
+                    {announcement.videoPath ? (
+                        <video
+                            src={announcement.videoPath}
+                            controls
+                            style={{ width: "100%", borderRadius: "12px" }}
+                        />
+                    ) : announcement.youtubeUrl ? (
+                        <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                            <iframe
+                                src={announcement.youtubeUrl.replace("watch?v=", "embed/")}
+                                style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                    borderRadius: "12px",
+                                }}
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        </div>
+                    ) : announcement.imagePath ? (
+                        <img
+                            src={announcement.imagePath}
+                            alt={announcement.title}
+                            style={{
+                                width: "100%",
+                                height: "auto",
+                                display: "block",
+                            }}
+                        />
+                    ) : null}
+                </div>
+
                 {/* Title */}
                 <h1
                     style={{
@@ -245,26 +283,7 @@ export default async function ArticlePage({ params }: PageProps) {
                     </span>
                 </div>
 
-                {/* Featured Image */}
-                {announcement.imagePath && (
-                    <div
-                        style={{
-                            marginBottom: "32px",
-                            borderRadius: "12px",
-                            overflow: "hidden",
-                        }}
-                    >
-                        <img
-                            src={announcement.imagePath}
-                            alt={announcement.title}
-                            style={{
-                                width: "100%",
-                                height: "auto",
-                                display: "block",
-                            }}
-                        />
-                    </div>
-                )}
+                {/* Hero Media moved up */}
 
                 {/* Content */}
                 <div
