@@ -117,7 +117,7 @@ async function restoreLegacyData() {
             const [
                 id, title, slug, excerpt, content, imagePath,
                 videoPath, videoType, youtubeUrl, isPinned, isHero, isPublished,
-                scheduledAt, takedownAt, viewCount, wordCount, createdAt, updatedAt,
+                scheduledAt, takedownAt, viewCount, createdAt, updatedAt,
                 draftContent, draftUpdatedAt, categoryId, authorId
             ] = cols;
 
@@ -148,7 +148,7 @@ async function restoreLegacyData() {
                         scheduledAt: dateVal(scheduledAt),
                         takedownAt: dateVal(takedownAt),
                         viewCount: intVal(viewCount),
-                        wordCount: intVal(wordCount), // Added wordCount
+                        // wordCount: intVal(wordCount), // Removed
                         createdAt: dateVal(createdAt) || new Date(),
                         updatedAt: dateVal(updatedAt) || new Date(),
                         draftContent: val(draftContent),
