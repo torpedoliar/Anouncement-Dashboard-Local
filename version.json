@@ -1,7 +1,7 @@
 {
-    "version": "2.4.19",
+    "version": "2.4.20",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Update `restore-legacy-production.ps1` to seed default site before restoration.",
+    "releaseNotes": "Fix: Correct Legacy Data column mapping (removed wordCount) in restore script.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
