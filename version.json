@@ -1,7 +1,7 @@
 {
-    "version": "2.4.15",
+    "version": "2.4.16",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Logo propagation to Choose Site page and Homepage (caching fix). Fixed Site Picker layout.",
+    "releaseNotes": "Fix: Logo fallback on site pages to use Global Settings if site logo is not set.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

@@ -4,6 +4,8 @@ import SiteThemeProvider from "@/components/SiteThemeProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
+export const dynamic = 'force-dynamic';
+
 export default async function SiteLayout({
     children,
     params,
@@ -13,16 +15,19 @@ export default async function SiteLayout({
 }) {
     const { siteSlug } = await params;
 
-    const site = await prisma.site.findUnique({
-        where: { slug: siteSlug, isActive: true },
-        include: {
-            settings: true,
-            categories: {
-                orderBy: { order: "asc" },
-                select: { name: true, slug: true },
+    const [site, globalSettings] = await Promise.all([
+        prisma.site.findUnique({
+            where: { slug: siteSlug, isActive: true },
+            include: {
+                settings: true,
+                categories: {
+                    orderBy: { order: "asc" },
+                    select: { name: true, slug: true },
+                },
             },
-        },
-    });
+        }),
+        prisma.settings.findFirst(),
+    ]);
 
     if (!site) {
         notFound();
@@ -42,7 +47,7 @@ export default async function SiteLayout({
     const footerSettings = {
         siteName: site.name,
         aboutText: site.settings?.aboutText || `Informasi terbaru dari ${site.name}`,
-        logoPath: site.logoPath,
+        logoPath: site.logoPath || globalSettings?.logoPath,
         instagramUrl: site.settings?.instagramUrl || null,
         linkedinUrl: site.settings?.linkedinUrl || null,
         facebookUrl: site.settings?.facebookUrl || null,
@@ -58,7 +63,7 @@ export default async function SiteLayout({
         >
             <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
                 <Navbar
-                    logoPath={site.logoPath}
+                    logoPath={site.logoPath || globalSettings?.logoPath}
                     siteName={site.name}
                     customLinks={customLinks}
                 />
