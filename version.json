@@ -1,7 +1,7 @@
 {
-    "version": "2.4.17",
+    "version": "2.4.18",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Feat: Add Logo, Color, and Name editing to Site Settings page.",
+    "releaseNotes": "Feat: added `restore-legacy-production.ps1` for safe legacy data migration to Multi-Site.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
