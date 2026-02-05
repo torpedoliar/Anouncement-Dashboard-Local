@@ -1,7 +1,7 @@
 {
-    "version": "2.4.16",
+    "version": "2.4.17",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Logo fallback on site pages to use Global Settings if site logo is not set.",
+    "releaseNotes": "Feat: Add Logo, Color, and Name editing to Site Settings page.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { FiSave, FiArrowLeft, FiGlobe, FiLayout, FiShare2, FiMessageSquare, FiCheck, FiX } from "react-icons/fi";
+import { FiSave, FiArrowLeft, FiGlobe, FiLayout, FiShare2, FiMessageSquare, FiCheck, FiX, FiUpload, FiTrash2 } from "react-icons/fi";
+import Image from "next/image";
 
 interface SiteSettings {
     id: string;
     siteId: string;
-    siteName: string;
+    siteName: string; // From Site model
+    logoPath: string | null; // From Site model
+    primaryColor: string; // From Site model
     heroTitle: string;
     heroSubtitle: string;
     heroImage: string | null;
@@ -31,6 +34,7 @@ export default function SiteSettingsPage() {
     const [activeTab, setActiveTab] = useState<'general' | 'social' | 'comments'>('general');
     const [settings, setSettings] = useState<SiteSettings | null>(null);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     // Clear message after 3 seconds
     useEffect(() => {
@@ -60,6 +64,33 @@ export default function SiteSettingsPage() {
             fetchSettings();
         }
     }, [params.id]);
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'heroImage' | 'logoPath') => {
+        const file = e.target.files?.[0];
+        if (!file || !settings) return;
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error("Upload failed");
+
+            const data = await response.json();
+            setSettings({ ...settings, [field]: data.url });
+            setMessage({ type: 'success', text: 'Gambar berhasil diupload' });
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            setMessage({ type: 'error', text: "Gagal mengupload gambar" });
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     const handleSave = async () => {
         if (!settings) return;
@@ -216,6 +247,128 @@ export default function SiteSettingsPage() {
                 {/* General Tab */}
                 {activeTab === 'general' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+                        {/* Site Branding */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                            <div>
+                                <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                    Nama Situs
+                                </label>
+                                <input
+                                    type="text"
+                                    value={settings.siteName || ''}
+                                    onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                                    style={{
+                                        width: '100%',
+                                        backgroundColor: '#0a0a0a',
+                                        border: '1px solid #262626',
+                                        borderRadius: '6px',
+                                        padding: '12px',
+                                        color: '#fff',
+                                        outline: 'none',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                    Warna Utama
+                                </label>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <input
+                                        type="color"
+                                        value={settings.primaryColor || '#dc2626'}
+                                        onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                                        style={{
+                                            width: '48px',
+                                            height: '45px',
+                                            padding: '0',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            backgroundColor: 'transparent'
+                                        }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={settings.primaryColor || '#dc2626'}
+                                        onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                                        style={{
+                                            flex: 1,
+                                            backgroundColor: '#0a0a0a',
+                                            border: '1px solid #262626',
+                                            borderRadius: '6px',
+                                            padding: '12px',
+                                            color: '#fff',
+                                            outline: 'none',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Logo Upload */}
+                        <div>
+                            <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                Logo Perusahaan
+                            </label>
+                            {settings.logoPath ? (
+                                <div style={{ position: 'relative', width: '120px', height: '120px', backgroundColor: '#000', borderRadius: '8px', border: '1px solid #262626', overflow: 'hidden' }}>
+                                    <Image
+                                        src={settings.logoPath}
+                                        alt="Logo"
+                                        fill
+                                        style={{ objectFit: 'contain', padding: '10px' }}
+                                    />
+                                    <button
+                                        onClick={() => setSettings({ ...settings, logoPath: null })}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '4px',
+                                            right: '4px',
+                                            padding: '4px',
+                                            backgroundColor: '#dc2626',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <FiX size={12} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '120px',
+                                    height: '120px',
+                                    border: '1px dashed #333',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    backgroundColor: '#0a0a0a',
+                                }}>
+                                    <FiUpload size={24} color="#525252" style={{ marginBottom: '8px' }} />
+                                    <span style={{ color: '#525252', fontSize: '11px' }}>Upload Logo</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleImageUpload(e, "logoPath")}
+                                        style={{ display: 'none' }}
+                                    />
+                                </label>
+                            )}
+                            <p style={{ marginTop: '8px', fontSize: '12px', color: '#525252' }}>
+                                Format: PNG, JPG, GIF (max 2MB). Disarankan background transparan.
+                            </p>
+                        </div>
+
+                        <div style={{ height: '1px', backgroundColor: '#262626', margin: '24px 0' }}></div>
+
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
                             <div>
                                 <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
@@ -236,9 +389,6 @@ export default function SiteSettingsPage() {
                                         boxSizing: 'border-box'
                                     }}
                                 />
-                                <p style={{ marginTop: '4px', fontSize: '12px', color: '#525252' }}>
-                                    Judul utama yang muncul di halaman depan
-                                </p>
                             </div>
 
                             <div>

@@ -23,19 +23,36 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const settings = await prisma.siteSettings.findUnique({
-            where: { siteId: id },
+        const site = await prisma.site.findUnique({
+            where: { id },
+            include: { settings: true }
         });
+
+        if (!site) {
+            return NextResponse.json({ error: 'Site not found' }, { status: 404 });
+        }
+
+        const settings = site.settings;
 
         if (!settings) {
             // Create default settings if they don't exist
             const newSettings = await prisma.siteSettings.create({
                 data: { siteId: id },
             });
-            return NextResponse.json(newSettings);
+            return NextResponse.json({
+                ...newSettings,
+                logoPath: site.logoPath,
+                primaryColor: site.primaryColor,
+                siteName: site.name, // Also return site name
+            });
         }
 
-        return NextResponse.json(settings);
+        return NextResponse.json({
+            ...settings,
+            logoPath: site.logoPath,
+            primaryColor: site.primaryColor,
+            siteName: site.name,
+        });
     } catch (error) {
         console.error('Error fetching site settings:', error);
         return NextResponse.json({ error: 'Failed to fetch site settings' }, { status: 500 });
@@ -59,6 +76,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
         const body = await request.json();
         const {
+            siteName, // From site
+            logoPath, // From site
+            primaryColor, // From site
             heroTitle,
             heroSubtitle,
             heroImage,
@@ -75,44 +95,65 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             commentRequireEmail,
         } = body;
 
-        const settings = await prisma.siteSettings.upsert({
-            where: { siteId: id },
-            create: {
-                siteId: id,
-                heroTitle,
-                heroSubtitle,
-                heroImage,
-                heroVideoPath,
-                heroVideoType,
-                heroYoutubeUrl,
-                aboutText,
-                instagramUrl,
-                facebookUrl,
-                twitterUrl,
-                linkedinUrl,
-                youtubeUrl,
-                commentAutoApprove,
-                commentRequireEmail,
-            },
-            update: {
-                heroTitle,
-                heroSubtitle,
-                heroImage,
-                heroVideoPath,
-                heroVideoType,
-                heroYoutubeUrl,
-                aboutText,
-                instagramUrl,
-                facebookUrl,
-                twitterUrl,
-                linkedinUrl,
-                youtubeUrl,
-                commentAutoApprove,
-                commentRequireEmail,
-            },
+        // Transaction to update both Site and SiteSettings
+        const result = await prisma.$transaction(async (tx) => {
+            // Update Site Fields
+            await tx.site.update({
+                where: { id },
+                data: {
+                    name: siteName,
+                    logoPath: logoPath,
+                    primaryColor: primaryColor,
+                }
+            });
+
+            // Update Site Settings
+            const settings = await tx.siteSettings.upsert({
+                where: { siteId: id },
+                create: {
+                    siteId: id,
+                    heroTitle,
+                    heroSubtitle,
+                    heroImage,
+                    heroVideoPath,
+                    heroVideoType,
+                    heroYoutubeUrl,
+                    aboutText,
+                    instagramUrl,
+                    facebookUrl,
+                    twitterUrl,
+                    linkedinUrl,
+                    youtubeUrl,
+                    commentAutoApprove,
+                    commentRequireEmail,
+                },
+                update: {
+                    heroTitle,
+                    heroSubtitle,
+                    heroImage,
+                    heroVideoPath,
+                    heroVideoType,
+                    heroYoutubeUrl,
+                    aboutText,
+                    instagramUrl,
+                    facebookUrl,
+                    twitterUrl,
+                    linkedinUrl,
+                    youtubeUrl,
+                    commentAutoApprove,
+                    commentRequireEmail,
+                },
+            });
+
+            return {
+                ...settings,
+                siteName,
+                logoPath,
+                primaryColor
+            };
         });
 
-        return NextResponse.json(settings);
+        return NextResponse.json(result);
     } catch (error) {
         console.error('Error updating site settings:', error);
         return NextResponse.json({ error: 'Failed to update site settings' }, { status: 500 });
