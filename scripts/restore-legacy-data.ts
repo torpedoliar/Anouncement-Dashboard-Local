@@ -188,7 +188,7 @@ async function restoreLegacyData() {
                         draftContent: val(draftContent),
                         draftUpdatedAt: dateVal(draftUpdatedAt),
                         categoryId: categoryId,
-                        categoryId: categoryId,
+
                         authorId: defaultAuthor ? defaultAuthor.id : undefined // Link to SuperAdmin
                     }
                 });
