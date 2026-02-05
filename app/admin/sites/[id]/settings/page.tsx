@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { FiSave, FiArrowLeft, FiGlobe, FiLayout, FiShare2, FiMessageSquare } from "react-icons/fi";
-import { toast } from "react-hot-toast";
+import { FiSave, FiArrowLeft, FiGlobe, FiLayout, FiShare2, FiMessageSquare, FiCheck, FiX } from "react-icons/fi";
 
 interface SiteSettings {
     id: string;
@@ -31,6 +30,15 @@ export default function SiteSettingsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [activeTab, setActiveTab] = useState<'general' | 'social' | 'comments'>('general');
     const [settings, setSettings] = useState<SiteSettings | null>(null);
+    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    // Clear message after 3 seconds
+    useEffect(() => {
+        if (message) {
+            const timer = setTimeout(() => setMessage(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
 
     // Initial fetch
     useEffect(() => {
@@ -42,7 +50,7 @@ export default function SiteSettingsPage() {
                 setSettings(data);
             } catch (error) {
                 console.error(error);
-                toast.error("Gagal memuat pengaturan site");
+                setMessage({ type: 'error', text: 'Gagal memuat pengaturan site' });
             } finally {
                 setIsLoading(false);
             }
@@ -66,11 +74,11 @@ export default function SiteSettingsPage() {
 
             if (!response.ok) throw new Error("Failed to save settings");
 
-            toast.success("Pengaturan berhasil disimpan");
+            setMessage({ type: 'success', text: 'Pengaturan berhasil disimpan' });
             router.refresh();
         } catch (error) {
             console.error(error);
-            toast.error("Gagal menyimpan pengaturan");
+            setMessage({ type: 'error', text: 'Gagal menyimpan pengaturan' });
         } finally {
             setIsSaving(false);
         }
@@ -88,6 +96,29 @@ export default function SiteSettingsPage() {
 
     return (
         <div style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto' }}>
+            {/* Toast Notification */}
+            {message && (
+                <div style={{
+                    position: 'fixed',
+                    top: '24px',
+                    right: '24px',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    backgroundColor: message.type === 'success' ? '#22c55e' : '#ef4444',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    zIndex: 9999,
+                    fontSize: '14px',
+                    fontWeight: 500,
+                }}>
+                    {message.type === 'success' ? <FiCheck /> : <FiX />}
+                    {message.text}
+                </div>
+            )}
+
             {/* Header */}
             <div style={{ marginBottom: '32px' }}>
                 <button
