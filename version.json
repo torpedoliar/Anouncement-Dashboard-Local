@@ -1,7 +1,7 @@
 {
-    "version": "2.4.1",
+    "version": "2.4.2",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Multi-site implementation verified. Fixed Category API permissions. Polished SiteLayout and Frontend.",
+    "releaseNotes": "Hotfix: Resolve build error by removing invalid 'use client' directive in SitePickerPage.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
