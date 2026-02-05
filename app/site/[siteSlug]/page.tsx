@@ -58,6 +58,10 @@ async function getSiteData(slug: string) {
     return { site, announcements, heroAnnouncement };
 }
 
+import SiteHero from "@/components/SiteHero";
+
+// ... existing imports
+
 export default async function SiteHomePage({ params }: PageProps) {
     const { siteSlug } = await params;
     const data = await getSiteData(siteSlug);
@@ -74,33 +78,11 @@ export default async function SiteHomePage({ params }: PageProps) {
             {/* Navbar removed - handled by layout */}
 
             {/* Hero Section */}
-            <div
-                style={{
-                    padding: "60px 24px",
-                    textAlign: "center",
-                    background: `linear-gradient(180deg, ${site.primaryColor}20 0%, transparent 100%)`,
-                }}
-            >
-                <h1
-                    style={{
-                        fontSize: "42px",
-                        fontWeight: 800,
-                        marginBottom: "12px",
-                    }}
-                >
-                    {settings?.heroTitle || "Berita & Pengumuman"}
-                </h1>
-                <p
-                    style={{
-                        fontSize: "18px",
-                        color: "#888",
-                        maxWidth: "600px",
-                        margin: "0 auto",
-                    }}
-                >
-                    {settings?.heroSubtitle || "Informasi terbaru dari " + site.name}
-                </p>
-            </div>
+            <SiteHero
+                settings={settings}
+                primaryColor={site.primaryColor}
+                siteName={site.name}
+            />
 
             {/* Hero Announcement */}
             {heroAnnouncement && (

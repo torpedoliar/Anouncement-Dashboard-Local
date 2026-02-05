@@ -1,7 +1,7 @@
 {
-    "version": "2.4.5",
+    "version": "2.4.6",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Feature: Added Super Admin role option in User Management.",
+    "releaseNotes": "Hotfix: Fixed Site Settings 404, Restored Legacy Hero Design (Video/Image support), and Integrated Super Admin session.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

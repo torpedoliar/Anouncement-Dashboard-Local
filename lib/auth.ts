@@ -36,6 +36,7 @@ export const authOptions: NextAuthOptions = {
                     email: user.email,
                     name: user.name,
                     role: user.role,
+                    isSuperAdmin: user.isSuperAdmin,
                 };
             },
         }),
@@ -45,6 +46,7 @@ export const authOptions: NextAuthOptions = {
             if (user) {
                 token.id = user.id;
                 token.role = (user as { role: string }).role;
+                token.isSuperAdmin = (user as { isSuperAdmin: boolean }).isSuperAdmin;
 
                 // Generate session token for tracking
                 const sessionToken = uuidv4();
@@ -69,6 +71,7 @@ export const authOptions: NextAuthOptions = {
             if (session.user) {
                 (session.user as { id: string }).id = token.id as string;
                 (session.user as { role: string }).role = token.role as string;
+                (session.user as { isSuperAdmin: boolean }).isSuperAdmin = token.isSuperAdmin as boolean;
                 (session.user as { sessionToken?: string }).sessionToken = token.sessionToken as string;
             }
             return session;

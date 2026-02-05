@@ -26,6 +26,7 @@ export default async function AdminLayout({
             <AdminSidebar
                 userName={session.user?.name}
                 userEmail={session.user?.email}
+                isSuperAdmin={session.user?.isSuperAdmin}
             />
 
             {/* Main Content - Uses client component for responsive margin */}

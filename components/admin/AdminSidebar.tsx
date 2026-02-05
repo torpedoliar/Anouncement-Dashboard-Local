@@ -30,9 +30,10 @@ import SiteSelector from "./SiteSelector";
 interface AdminSidebarProps {
     userName?: string | null;
     userEmail?: string | null;
+    isSuperAdmin?: boolean;
 }
 
-export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps) {
+export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: AdminSidebarProps) {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(true);
@@ -73,18 +74,21 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
 
     const navItems = [
         { href: "/admin", icon: FiHome, label: "DASHBOARD" },
-        { href: "/admin/sites", icon: FiGlobe, label: "SITES" },
+        // Only SuperAdmin sees Sites and Users management
+        ...(isSuperAdmin ? [
+            { href: "/admin/sites", icon: FiGlobe, label: "SITES" },
+            { href: "/admin/users", icon: FiUsers, label: "PENGGUNA" },
+            { href: "/admin/global-analytics", icon: FiPieChart, label: "GLOBAL ANALYTICS" },
+            { href: "/admin/audit-logs", icon: FiActivity, label: "AUDIT LOG" },
+        ] : []),
         { href: "/admin/announcements", icon: FiFileText, label: "PENGUMUMAN" },
         { href: "/admin/categories", icon: FiTag, label: "KATEGORI" },
         { href: "/admin/media", icon: FiImage, label: "MEDIA" },
         { href: "/admin/comments", icon: FiMessageSquare, label: "KOMENTAR" },
         { href: "/admin/analytics", icon: FiActivity, label: "ANALYTICS" },
-        { href: "/admin/global-analytics", icon: FiPieChart, label: "GLOBAL ANALYTICS" },
-        { href: "/admin/users", icon: FiUsers, label: "PENGGUNA" },
         { href: "/admin/sessions", icon: FiMonitor, label: "SESI" },
         { href: "/admin/email", icon: FiMail, label: "EMAIL" },
         { href: "/admin/newsletter", icon: FiSend, label: "NEWSLETTER" },
-        { href: "/admin/audit-logs", icon: FiActivity, label: "AUDIT LOG" },
         { href: "/admin/settings", icon: FiSettings, label: "PENGATURAN" },
     ];
 
@@ -108,6 +112,8 @@ export default function AdminSidebar({ userName, userEmail }: AdminSidebarProps)
                         borderRadius: '6px',
                         color: '#fff',
                         cursor: 'pointer',
+                        transform: isOpen ? 'translateX(256px)' : 'translateX(0)',
+                        transition: 'transform 0.3s ease-in-out',
                     }}
                     aria-label="Toggle Menu"
                 >
