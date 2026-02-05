@@ -1,7 +1,7 @@
 {
-    "version": "2.4.14",
+    "version": "2.4.15",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Logo not appearing on site (synced with settings). Fixed settings layout overflow.",
+    "releaseNotes": "Fix: Logo propagation to Choose Site page and Homepage (caching fix). Fixed Site Picker layout.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

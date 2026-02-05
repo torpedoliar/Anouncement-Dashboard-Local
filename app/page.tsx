@@ -61,6 +61,8 @@ async function getSettings() {
   return prisma.settings.findFirst();
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage({
   searchParams: searchParamsPromise,
 }: {

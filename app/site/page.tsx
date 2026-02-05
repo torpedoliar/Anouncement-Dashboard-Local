@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { FiGlobe } from "react-icons/fi";
 import SitePickerCard from "@/components/SitePickerCard";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +30,15 @@ async function getActiveSites() {
     });
 }
 
+async function getGlobalSettings() {
+    return await prisma.settings.findFirst();
+}
+
 export default async function SitePickerPage() {
-    const sites = await getActiveSites();
+    const [sites, settings] = await Promise.all([
+        getActiveSites(),
+        getGlobalSettings()
+    ]);
 
     return (
         <div
@@ -48,20 +56,31 @@ export default async function SitePickerPage() {
                     background: "linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)",
                 }}
             >
-                <div
-                    style={{
-                        width: "80px",
-                        height: "80px",
-                        borderRadius: "20px",
-                        backgroundColor: "#ED1C24",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        margin: "0 auto 24px",
-                    }}
-                >
-                    <FiGlobe size={40} color="#fff" />
-                </div>
+                {settings?.logoPath ? (
+                    <div style={{ position: 'relative', width: '120px', height: '120px', margin: "0 auto 24px" }}>
+                        <Image
+                            src={settings.logoPath}
+                            alt="Logo"
+                            fill
+                            style={{ objectFit: 'contain' }}
+                        />
+                    </div>
+                ) : (
+                    <div
+                        style={{
+                            width: "80px",
+                            height: "80px",
+                            borderRadius: "20px",
+                            backgroundColor: settings?.primaryColor || "#ED1C24",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto 24px",
+                        }}
+                    >
+                        <FiGlobe size={40} color="#fff" />
+                    </div>
+                )}
                 <h1
                     style={{
                         fontSize: "48px",

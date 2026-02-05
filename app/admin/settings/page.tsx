@@ -536,6 +536,7 @@ export default function SettingsPage() {
         color: '#fff',
         fontSize: '14px',
         outline: 'none',
+        boxSizing: 'border-box' as const,
     };
 
     const labelStyle = {
