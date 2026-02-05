@@ -1,7 +1,7 @@
 {
-    "version": "2.4.22",
+    "version": "2.4.23",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Add Robust Debugging for Restoration Script (v2.4.22)",
+    "releaseNotes": "Fix: Handle UTF-16 (UCS-2) encoded backup files automatically during restoration.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
