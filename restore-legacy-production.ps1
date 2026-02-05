@@ -33,8 +33,12 @@ docker cp scripts/restore-legacy-data.ts "${containerId}:/app/scripts/restore-le
 Write-Host "OK - Files copied" -ForegroundColor Green
 
 # 4. Execute Restore Script
-Write-Host "[3/4] Ececuting safe restore script..." -ForegroundColor Yellow
+Write-Host "[3/4] Executing safe restore script..." -ForegroundColor Yellow
 Write-Host "This will merge old articles into the Default Site..." -ForegroundColor Gray
+
+# Ensure Default Site exists (Seeding)
+Write-Host "Configuring Default Site..." -ForegroundColor DarkGray
+docker exec $containerId npm run prisma:seed
 
 # Use npx tsx to execute the typescript file (standard in our Docker image)
 docker exec $containerId npx tsx scripts/restore-legacy-data.ts $BackupFile
