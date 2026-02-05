@@ -141,8 +141,8 @@ export async function sendTemplatedEmail(
     data: Record<string, unknown>,
     announcementId?: string
 ) {
-    const template = await prisma.emailTemplate.findUnique({
-        where: { slug: templateSlug },
+    const template = await prisma.emailTemplate.findFirst({
+        where: { slug: templateSlug, siteId: null },
     });
 
     if (!template || !template.isActive) {
@@ -171,8 +171,8 @@ export async function sendBulkEmails(
     templateSlug: string,
     announcementId?: string
 ) {
-    const template = await prisma.emailTemplate.findUnique({
-        where: { slug: templateSlug },
+    const template = await prisma.emailTemplate.findFirst({
+        where: { slug: templateSlug, siteId: null },
     });
 
     if (!template || !template.isActive) {

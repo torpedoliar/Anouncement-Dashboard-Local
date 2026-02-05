@@ -1,11 +1,9 @@
-/**
- * Site Picker Page
- * Public homepage showing all available sites
- */
+"use client";
 
-import Link from "next/link";
+// NOT "use client" - this is a server component
 import { prisma } from "@/lib/prisma";
-import { FiGlobe, FiArrowRight } from "react-icons/fi";
+import { FiGlobe } from "react-icons/fi";
+import SitePickerCard from "@/components/SitePickerCard";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +20,7 @@ async function getActiveSites() {
             _count: {
                 select: {
                     announcementSites: true,
+                    categories: true,
                 },
             },
         },
@@ -106,115 +105,7 @@ export default async function SitePickerPage() {
                         }}
                     >
                         {sites.map((site) => (
-                            <Link
-                                key={site.id}
-                                href={`/site/${site.slug}`}
-                                style={{
-                                    display: "block",
-                                    backgroundColor: "#1a1a1a",
-                                    borderRadius: "16px",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    overflow: "hidden",
-                                    textDecoration: "none",
-                                    transition: "transform 0.3s, box-shadow 0.3s",
-                                }}
-                            >
-                                {/* Color Bar */}
-                                <div
-                                    style={{
-                                        height: "6px",
-                                        backgroundColor: site.primaryColor,
-                                    }}
-                                />
-
-                                {/* Content */}
-                                <div style={{ padding: "28px" }}>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "flex-start",
-                                            justifyContent: "space-between",
-                                            marginBottom: "16px",
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                width: "56px",
-                                                height: "56px",
-                                                borderRadius: "12px",
-                                                backgroundColor: site.primaryColor,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <FiGlobe size={28} color="#fff" />
-                                        </div>
-                                        {site.isDefault && (
-                                            <span
-                                                style={{
-                                                    fontSize: "11px",
-                                                    padding: "4px 10px",
-                                                    backgroundColor: "rgba(237,28,36,0.15)",
-                                                    color: "#ED1C24",
-                                                    borderRadius: "6px",
-                                                    fontWeight: 600,
-                                                    textTransform: "uppercase",
-                                                }}
-                                            >
-                                                Default
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <h2
-                                        style={{
-                                            fontSize: "24px",
-                                            fontWeight: 700,
-                                            color: "#fff",
-                                            marginBottom: "8px",
-                                        }}
-                                    >
-                                        {site.name}
-                                    </h2>
-
-                                    <p
-                                        style={{
-                                            fontSize: "14px",
-                                            color: "#888",
-                                            marginBottom: "20px",
-                                            lineHeight: 1.6,
-                                        }}
-                                    >
-                                        {site.settings?.heroSubtitle || site.description || "Berita dan pengumuman terbaru"}
-                                    </p>
-
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                        }}
-                                    >
-                                        <span style={{ fontSize: "13px", color: "#666" }}>
-                                            {site._count.announcementSites} artikel
-                                        </span>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "6px",
-                                                color: site.primaryColor,
-                                                fontWeight: 600,
-                                                fontSize: "14px",
-                                            }}
-                                        >
-                                            Kunjungi
-                                            <FiArrowRight size={16} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
+                            <SitePickerCard key={site.id} site={site} />
                         ))}
                     </div>
                 ) : (

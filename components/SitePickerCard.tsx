@@ -15,6 +15,7 @@ interface SitePickerCardProps {
         slug: string;
         description?: string | null;
         logoPath?: string | null;
+        logo?: string | null; // Match Prisma model
         primaryColor: string;
         _count?: {
             announcementSites?: number;
@@ -81,14 +82,14 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
                     boxShadow: `0 4px 20px ${site.primaryColor}40`,
                 }}
             >
-                {site.logoPath ? (
+                {(site.logo || site.logoPath) ? (
                     <img
-                        src={site.logoPath}
+                        src={site.logo || site.logoPath || ""}
                         alt={site.name}
                         style={{
                             width: "100%",
                             height: "100%",
-                            objectFit: "cover",
+                            objectFit: "contain", // changed to contain for logos
                             borderRadius: "14px",
                         }}
                     />

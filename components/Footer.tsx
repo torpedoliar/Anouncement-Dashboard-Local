@@ -17,27 +17,33 @@ interface Settings {
     youtubeUrl: string | null;
 }
 
-export default function Footer() {
+interface FooterProps {
+    settings?: Partial<Settings>;
+}
+
+export default function Footer({ settings: initialSettings }: FooterProps) {
     const currentYear = new Date().getFullYear();
     const [settings, setSettings] = useState<Settings>({
-        siteName: "Santos Jaya Abadi",
-        aboutText: "Didirikan tahun 1979, PT. Santos Jaya Abadi adalah salah satu perusahaan roasting kopi terbesar di Asia Tenggara dengan merek ikonik Kapal Api.",
-        logoPath: null,
-        instagramUrl: null,
-        linkedinUrl: null,
-        facebookUrl: null,
-        twitterUrl: null,
-        youtubeUrl: null,
+        siteName: initialSettings?.siteName || "Santos Jaya Abadi",
+        aboutText: initialSettings?.aboutText || "Didirikan tahun 1979, PT. Santos Jaya Abadi adalah salah satu perusahaan roasting kopi terbesar di Asia Tenggara dengan merek ikonik Kapal Api.",
+        logoPath: initialSettings?.logoPath || null,
+        instagramUrl: initialSettings?.instagramUrl || null,
+        linkedinUrl: initialSettings?.linkedinUrl || null,
+        facebookUrl: initialSettings?.facebookUrl || null,
+        twitterUrl: initialSettings?.twitterUrl || null,
+        youtubeUrl: initialSettings?.youtubeUrl || null,
     });
 
     useEffect(() => {
+        if (initialSettings) return; // Skip fetch if settings provided via props
+
         fetch("/api/settings")
             .then((res) => res.json())
             .then((data) => {
                 if (data) setSettings(data);
             })
             .catch((err) => console.error("Failed to fetch settings:", err));
-    }, []);
+    }, [initialSettings]);
 
     const socialLinks = [
         { icon: FiInstagram, href: settings.instagramUrl, label: "Instagram" },

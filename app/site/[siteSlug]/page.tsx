@@ -71,86 +71,7 @@ export default async function SiteHomePage({ params }: PageProps) {
 
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
-            {/* Navbar */}
-            <nav
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "16px 24px",
-                    borderBottom: "1px solid rgba(255,255,255,0.1)",
-                    position: "sticky",
-                    top: 0,
-                    backgroundColor: "rgba(10,10,10,0.9)",
-                    backdropFilter: "blur(10px)",
-                    zIndex: 100,
-                }}
-            >
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <Link
-                        href="/site"
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            color: "#888",
-                            textDecoration: "none",
-                        }}
-                    >
-                        <FiArrowLeft size={18} />
-                        <span>All Sites</span>
-                    </Link>
-                    <div
-                        style={{
-                            width: "1px",
-                            height: "24px",
-                            backgroundColor: "rgba(255,255,255,0.1)",
-                        }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: "32px",
-                                height: "32px",
-                                borderRadius: "8px",
-                                backgroundColor: site.primaryColor,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "14px",
-                                fontWeight: 700,
-                            }}
-                        >
-                            {site.name.charAt(0)}
-                        </div>
-                        <span style={{ fontWeight: 600 }}>{site.name}</span>
-                    </div>
-                </div>
-
-                {/* Categories */}
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    {site.categories.slice(0, 5).map((cat) => (
-                        <Link
-                            key={cat.id}
-                            href={`/site/${siteSlug}?category=${cat.slug}`}
-                            style={{
-                                color: "#888",
-                                textDecoration: "none",
-                                fontSize: "14px",
-                                transition: "color 0.2s",
-                            }}
-                        >
-                            {cat.name}
-                        </Link>
-                    ))}
-                </div>
-            </nav>
+            {/* Navbar removed - handled by layout */}
 
             {/* Hero Section */}
             <div
@@ -358,18 +279,7 @@ export default async function SiteHomePage({ params }: PageProps) {
                 )}
             </div>
 
-            {/* Footer */}
-            <div
-                style={{
-                    borderTop: "1px solid rgba(255,255,255,0.1)",
-                    padding: "24px",
-                    textAlign: "center",
-                    color: "#666",
-                    fontSize: "13px",
-                }}
-            >
-                © {new Date().getFullYear()} {site.name}. All rights reserved.
-            </div>
+            {/* Footer removed - handled by layout */}
         </div>
     );
 }

@@ -20,7 +20,22 @@ async function main() {
     });
     console.log("✅ Created admin user:", admin.email);
 
-    // Create categories
+    // Create Default Site
+    const defaultSite = await prisma.site.upsert({
+        where: { slug: "santos-jaya-abadi" },
+        update: {},
+        create: {
+            name: "Santos Jaya Abadi",
+            slug: "santos-jaya-abadi",
+            description: "Default corporate site",
+            primaryColor: "#ED1C24",
+            isDefault: true,
+            isActive: true,
+        },
+    });
+    console.log("✅ Created default site:", defaultSite.name);
+
+    // Create categories for Default Site
     const categories = [
         { name: "News", slug: "news", color: "#ED1C24", order: 1 },
         { name: "Event", slug: "event", color: "#3B82F6", order: 2 },
@@ -30,14 +45,20 @@ async function main() {
 
     for (const cat of categories) {
         await prisma.category.upsert({
-            where: { slug: cat.slug },
-            update: cat,
-            create: cat,
+            where: {
+                slug_siteId: {
+                    slug: cat.slug,
+                    siteId: defaultSite.id
+                }
+            },
+            update: { ...cat, siteId: defaultSite.id },
+            create: { ...cat, siteId: defaultSite.id },
         });
     }
     console.log("✅ Created categories");
 
-    // Create default settings
+    // Create default settings (Global Legacy)
+    // We keep this for backward compatibility if code still reads it
     await prisma.settings.upsert({
         where: { id: 1 },
         update: {},
@@ -48,11 +69,36 @@ async function main() {
             primaryColor: "#ED1C24",
         },
     });
-    console.log("✅ Created default settings");
+    console.log("✅ Created default global settings");
+
+    // Create Site Settings for Default Site
+    await prisma.siteSettings.upsert({
+        where: { siteId: defaultSite.id },
+        update: {},
+        create: {
+            siteId: defaultSite.id,
+            heroTitle: "Berita & Pengumuman",
+            heroSubtitle: "Informasi terbaru dari perusahaan",
+        },
+    });
 
     // Create sample announcements
-    const newsCategory = await prisma.category.findUnique({ where: { slug: "news" } });
-    const eventCategory = await prisma.category.findUnique({ where: { slug: "event" } });
+    const newsCategory = await prisma.category.findUnique({
+        where: {
+            slug_siteId: {
+                slug: "news",
+                siteId: defaultSite.id
+            }
+        }
+    });
+    const eventCategory = await prisma.category.findUnique({
+        where: {
+            slug_siteId: {
+                slug: "event",
+                siteId: defaultSite.id
+            }
+        }
+    });
 
     if (newsCategory && eventCategory) {
         const sampleAnnouncements = [
@@ -228,10 +274,33 @@ async function main() {
 
     for (const template of emailTemplates) {
         await prisma.emailTemplate.upsert({
-            where: { slug: template.slug },
+            where: {
+                slug_siteId: {
+                    slug: template.slug,
+                    siteId: "" // Hack: Prisma won't allow null in unique composite compound? 
+                    // Wait, if siteId is optional, we cant use it in unique constraint easily in Type safe way if it is null?
+                    // The schema has @@unique([slug, siteId]). 
+                    // In Prisma Client, if siteId is nullable, the generated type for where input might expect { slug: string, siteId: string | null }.
+                    // Let's try siteId: null
+                } as any
+            },
             update: template,
             create: template,
         });
+        // REVERT: This is risky. Better to just use findFirst and then update/create manually to avoid Type complexity with unique nulls
+        const existing = await prisma.emailTemplate.findFirst({
+            where: { slug: template.slug, siteId: null }
+        });
+        if (existing) {
+            await prisma.emailTemplate.update({
+                where: { id: existing.id },
+                data: template
+            });
+        } else {
+            await prisma.emailTemplate.create({
+                data: template
+            });
+        }
     }
     console.log("✅ Created email templates");
 

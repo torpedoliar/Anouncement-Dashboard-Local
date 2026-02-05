@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check user has permission to edit on this site
-        const canEdit = await canEditOnSite(session.user.id, siteId);
+        const canEdit = await canEditOnSite(session.user.id, resolvedSiteId);
         if (!canEdit) {
             return NextResponse.json(
                 { error: "No permission to create category on this site" },

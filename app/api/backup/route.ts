@@ -133,22 +133,32 @@ export async function POST(request: Request) {
             }
         }
 
-        // 2. Restore categories
-        if (backupData.tables.categories && Array.isArray(backupData.tables.categories)) {
+        // 2. Restore categories (To Default Site)
+        const defaultSite = await prisma.site.findFirst({ where: { isDefault: true } });
+        const siteId = defaultSite?.id;
+
+        if (siteId && backupData.tables.categories && Array.isArray(backupData.tables.categories)) {
             for (const category of backupData.tables.categories) {
                 try {
                     await prisma.category.upsert({
-                        where: { slug: category.slug },
+                        where: {
+                            slug_siteId: {
+                                slug: category.slug,
+                                siteId: siteId
+                            }
+                        },
                         update: {
                             name: category.name,
                             color: category.color,
                             order: category.order,
+                            siteId: siteId // Ensure siteId
                         },
                         create: {
                             name: category.name,
                             slug: category.slug,
                             color: category.color,
                             order: category.order || 0,
+                            siteId: siteId // Ensure siteId
                         }
                     });
                     restored.categories++;
@@ -165,7 +175,7 @@ export async function POST(request: Request) {
                     // Find category by slug or name
                     let categoryId = announcement.categoryId;
                     if (!categoryId && announcement.category?.slug) {
-                        const cat = await prisma.category.findUnique({
+                        const cat = await prisma.category.findFirst({
                             where: { slug: announcement.category.slug }
                         });
                         categoryId = cat?.id;

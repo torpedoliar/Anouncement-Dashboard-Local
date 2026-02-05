@@ -5,12 +5,18 @@ import Image from "next/image";
 import { FiMenu, FiX } from "react-icons/fi";
 import { useState, useEffect } from "react";
 
-interface NavbarProps {
-    logoPath?: string;
-    siteName?: string;
+interface NavLink {
+    href: string;
+    label: string;
 }
 
-export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi" }: NavbarProps) {
+interface NavbarProps {
+    logoPath?: string | null;
+    siteName?: string;
+    customLinks?: NavLink[];
+}
+
+export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", customLinks }: NavbarProps) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
@@ -44,7 +50,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi" }: Nav
     const showDesktopNav = mounted ? isDesktop : true;
     const showMobileMenu = mounted ? !isDesktop : false;
 
-    const navLinks = [
+    const navLinks = customLinks || [
         { href: "/", label: "BERANDA" },
         { href: "/#news", label: "BERITA" },
         { href: "/search", label: "PENCARIAN" },
