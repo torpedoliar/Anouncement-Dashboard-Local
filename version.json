@@ -1,7 +1,7 @@
 {
-    "version": "2.4.2",
+    "version": "2.4.3",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Hotfix: Resolve build error by removing invalid 'use client' directive in SitePickerPage.",
+    "releaseNotes": "Hotfix: Added pre-migration script to Dockerfile to resolve schema conflict.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
