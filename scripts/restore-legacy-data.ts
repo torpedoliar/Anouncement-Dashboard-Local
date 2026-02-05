@@ -117,7 +117,7 @@ async function restoreLegacyData() {
             const [
                 id, title, slug, excerpt, content, imagePath,
                 videoPath, videoType, youtubeUrl, isPinned, isHero, isPublished,
-                scheduledAt, takedownAt, viewCount, createdAt, updatedAt,
+                scheduledAt, takedownAt, viewCount, wordCount, createdAt, updatedAt,
                 draftContent, draftUpdatedAt, categoryId, authorId
             ] = cols;
 
@@ -148,7 +148,7 @@ async function restoreLegacyData() {
                         scheduledAt: dateVal(scheduledAt),
                         takedownAt: dateVal(takedownAt),
                         viewCount: intVal(viewCount),
-                        // wordCount: intVal(wordCount), // Removed
+                        wordCount: intVal(wordCount),
                         createdAt: dateVal(createdAt) || new Date(),
                         updatedAt: dateVal(updatedAt) || new Date(),
                         draftContent: val(draftContent),
@@ -159,6 +159,9 @@ async function restoreLegacyData() {
                 });
 
                 restoreStats.announcements++;
+                if (restoreStats.announcements === 1) {
+                    console.log(`ℹ️ First restored announcement: [${id}] ${title}`);
+                }
 
                 // Link to Default Site (The Multi-Site Magic)
                 const existingLink = await prisma.announcementSite.findUnique({
