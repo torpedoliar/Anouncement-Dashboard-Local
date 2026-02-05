@@ -1,7 +1,7 @@
 {
-    "version": "2.4.25",
+    "version": "2.4.27",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Move Hero Media above Title and add Video/YouTube support.",
+    "releaseNotes": "Fix: Implement immersive Hero Section (Full Cover) with mute toggle for Article Detail page.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

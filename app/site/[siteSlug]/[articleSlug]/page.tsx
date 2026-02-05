@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { FiArrowLeft, FiCalendar, FiUser, FiEye, FiClock } from "react-icons/fi";
+import ArticleHero from "@/components/site/ArticleHero";
 
 export const dynamic = "force-dynamic";
 
@@ -179,109 +180,23 @@ export default async function ArticlePage({ params }: PageProps) {
                 </div>
             </nav>
 
-            {/* Article */}
+            {/* Hero Section */}
+            <ArticleHero
+                title={announcement.title}
+                category={announcement.category}
+                author={announcement.author}
+                createdAt={announcement.createdAt}
+                wordCount={announcement.wordCount}
+                viewCount={announcement.viewCount}
+                imagePath={announcement.imagePath}
+                videoPath={announcement.videoPath}
+                youtubeUrl={announcement.youtubeUrl}
+                siteSlug={siteSlug}
+            />
+
+            {/* Article Content Container */}
             <article style={{ maxWidth: "800px", margin: "0 auto", padding: "48px 24px" }}>
-                {/* Category */}
-                <Link
-                    href={`/site/${siteSlug}?category=${announcement.category.slug}`}
-                    style={{
-                        display: "inline-block",
-                        padding: "6px 14px",
-                        backgroundColor: announcement.category.color,
-                        color: "#fff",
-                        borderRadius: "6px",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                        marginBottom: "20px",
-                    }}
-                >
-                    {announcement.category.name}
-                </Link>
 
-                {/* Hero Media (Video/Image) */}
-                <div style={{ marginBottom: "32px", borderRadius: "12px", overflow: "hidden" }}>
-                    {announcement.videoPath ? (
-                        <video
-                            src={announcement.videoPath}
-                            controls
-                            style={{ width: "100%", borderRadius: "12px" }}
-                        />
-                    ) : announcement.youtubeUrl ? (
-                        <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-                            <iframe
-                                src={announcement.youtubeUrl.replace("watch?v=", "embed/")}
-                                style={{
-                                    position: "absolute",
-                                    top: 0,
-                                    left: 0,
-                                    width: "100%",
-                                    height: "100%",
-                                    borderRadius: "12px",
-                                }}
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            />
-                        </div>
-                    ) : announcement.imagePath ? (
-                        <img
-                            src={announcement.imagePath}
-                            alt={announcement.title}
-                            style={{
-                                width: "100%",
-                                height: "auto",
-                                display: "block",
-                            }}
-                        />
-                    ) : null}
-                </div>
-
-                {/* Title */}
-                <h1
-                    style={{
-                        fontSize: "42px",
-                        fontWeight: 800,
-                        lineHeight: 1.2,
-                        marginBottom: "24px",
-                    }}
-                >
-                    {announcement.title}
-                </h1>
-
-                {/* Meta */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        gap: "20px",
-                        color: "#888",
-                        fontSize: "14px",
-                        marginBottom: "32px",
-                        paddingBottom: "32px",
-                        borderBottom: "1px solid rgba(255,255,255,0.1)",
-                    }}
-                >
-                    {announcement.author && (
-                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <FiUser size={14} />
-                            {announcement.author.name}
-                        </span>
-                    )}
-                    <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <FiCalendar size={14} />
-                        {format(new Date(announcement.createdAt), "dd MMMM yyyy", { locale: id })}
-                    </span>
-                    <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <FiClock size={14} />
-                        {calculateReadingTime(announcement.wordCount)}
-                    </span>
-                    <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <FiEye size={14} />
-                        {announcement.viewCount} views
-                    </span>
-                </div>
 
                 {/* Hero Media moved up */}
 
