@@ -1,7 +1,7 @@
 {
-    "version": "2.4.23",
+    "version": "2.4.24",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Handle UTF-16 (UCS-2) encoded backup files automatically during restoration.",
+    "releaseNotes": "Fix: Restore comments and author (linked to SuperAdmin), add Comments UI.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
