@@ -1,7 +1,7 @@
 {
-    "version": "2.4.6",
+    "version": "2.4.8",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Hotfix: Fixed Site Settings 404, Restored Legacy Hero Design (Video/Image support), and Integrated Super Admin session.",
+    "releaseNotes": "Feature: Restored legacy fullscreen hero design with video/image backgrounds from hero announcement.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

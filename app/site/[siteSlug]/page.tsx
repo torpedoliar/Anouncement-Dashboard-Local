@@ -58,7 +58,7 @@ async function getSiteData(slug: string) {
     return { site, announcements, heroAnnouncement };
 }
 
-import SiteHero from "@/components/SiteHero";
+import FullscreenHero from "@/components/FullscreenHero";
 
 // ... existing imports
 
@@ -73,71 +73,46 @@ export default async function SiteHomePage({ params }: PageProps) {
     const { site, announcements, heroAnnouncement } = data;
     const settings = site.settings;
 
+    // Prepare hero announcements for fullscreen hero (use hero announcement if exists, otherwise first pinned)
+    const heroAnnouncements = heroAnnouncement
+        ? [heroAnnouncement]
+        : announcements.filter(a => a.isPinned).slice(0, 3);
+
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
             {/* Navbar removed - handled by layout */}
 
-            {/* Hero Section */}
-            <SiteHero
-                settings={settings}
-                primaryColor={site.primaryColor}
-                siteName={site.name}
-            />
-
-            {/* Hero Announcement */}
-            {heroAnnouncement && (
-                <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px 48px" }}>
-                    <Link
-                        href={`/site/${siteSlug}/${heroAnnouncement.slug}`}
-                        style={{
-                            display: "block",
-                            textDecoration: "none",
-                            borderRadius: "16px",
-                            overflow: "hidden",
-                            backgroundColor: "#1a1a1a",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                        }}
-                    >
-                        {heroAnnouncement.imagePath && (
-                            <div
-                                style={{
-                                    height: "300px",
-                                    backgroundImage: `url(${heroAnnouncement.imagePath})`,
-                                    backgroundSize: "cover",
-                                    backgroundPosition: "center",
-                                }}
-                            />
-                        )}
-                        <div style={{ padding: "32px" }}>
-                            <span
-                                style={{
-                                    display: "inline-block",
-                                    padding: "4px 12px",
-                                    backgroundColor: heroAnnouncement.category.color,
-                                    color: "#fff",
-                                    borderRadius: "6px",
-                                    fontSize: "12px",
-                                    fontWeight: 600,
-                                    marginBottom: "16px",
-                                }}
-                            >
-                                {heroAnnouncement.category.name}
-                            </span>
-                            <h2
-                                style={{
-                                    fontSize: "32px",
-                                    fontWeight: 700,
-                                    color: "#fff",
-                                    marginBottom: "12px",
-                                }}
-                            >
-                                {heroAnnouncement.title}
-                            </h2>
-                            <p style={{ color: "#888", fontSize: "16px", lineHeight: 1.6 }}>
-                                {heroAnnouncement.excerpt}
-                            </p>
-                        </div>
-                    </Link>
+            {/* Fullscreen Hero Section */}
+            {heroAnnouncements.length > 0 ? (
+                <FullscreenHero
+                    siteSlug={siteSlug}
+                    announcements={heroAnnouncements.map(a => ({
+                        id: a.id,
+                        slug: a.slug,
+                        title: a.title,
+                        excerpt: a.excerpt,
+                        imagePath: a.imagePath,
+                        videoPath: a.videoPath,
+                        youtubeUrl: a.youtubeUrl,
+                        category: a.category,
+                    }))}
+                    primaryColor={site.primaryColor}
+                />
+            ) : (
+                // Fallback simple hero when no hero announcements
+                <div
+                    style={{
+                        padding: "80px 24px",
+                        textAlign: "center",
+                        background: `linear-gradient(180deg, ${site.primaryColor}20 0%, transparent 100%)`,
+                    }}
+                >
+                    <h1 style={{ fontSize: "42px", fontWeight: 800, marginBottom: "12px" }}>
+                        {settings?.heroTitle || "Berita & Pengumuman"}
+                    </h1>
+                    <p style={{ fontSize: "18px", color: "#888", maxWidth: "600px", margin: "0 auto" }}>
+                        {settings?.heroSubtitle || "Informasi terbaru dari " + site.name}
+                    </p>
                 </div>
             )}
 
