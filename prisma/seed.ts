@@ -6,19 +6,20 @@ const prisma = new PrismaClient();
 async function main() {
     console.log("🌱 Seeding database...");
 
-    // Create default admin user
+    // Create default admin user (SuperAdmin)
     const adminPassword = await hash("admin123", 12);
     const admin = await prisma.user.upsert({
         where: { email: "admin@example.com" },
-        update: {},
+        update: { isSuperAdmin: true }, // Ensure existing admin becomes SuperAdmin
         create: {
             email: "admin@example.com",
             passwordHash: adminPassword,
             name: "Administrator",
             role: "ADMIN",
+            isSuperAdmin: true,
         },
     });
-    console.log("✅ Created admin user:", admin.email);
+    console.log("✅ Created admin user (SuperAdmin):", admin.email);
 
     // Create Default Site
     const defaultSite = await prisma.site.upsert({

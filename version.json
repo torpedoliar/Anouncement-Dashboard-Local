@@ -1,7 +1,7 @@
 {
-    "version": "2.4.8",
+    "version": "2.4.9",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Feature: Restored legacy fullscreen hero design with video/image backgrounds from hero announcement.",
+    "releaseNotes": "Feature: Admin seeding as SuperAdmin by default; Site access control verified for editors.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
