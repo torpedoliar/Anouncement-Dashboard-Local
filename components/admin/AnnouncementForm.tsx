@@ -495,31 +495,51 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
                                         </button>
                                     </div>
                                 ) : (
-                                    <label style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        height: '128px',
-                                        border: '2px dashed #333',
-                                        cursor: videoUploading ? 'not-allowed' : 'pointer',
-                                        opacity: videoUploading ? 0.6 : 1,
-                                    }}>
-                                        <FiVideo size={32} color="#525252" style={{ marginBottom: '8px' }} />
-                                        <span style={{ color: '#525252', fontSize: '14px' }}>
-                                            {videoUploading ? "Uploading video..." : "Klik untuk upload video"}
-                                        </span>
-                                        <span style={{ color: '#404040', fontSize: '11px', marginTop: '4px' }}>
-                                            MP4, max 100MB
-                                        </span>
-                                        <input
-                                            type="file"
-                                            accept="video/mp4"
-                                            onChange={handleVideoUpload}
-                                            style={{ display: 'none' }}
-                                            disabled={videoUploading}
-                                        />
-                                    </label>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            height: '128px',
+                                            border: '2px dashed #333',
+                                            cursor: videoUploading ? 'not-allowed' : 'pointer',
+                                            opacity: videoUploading ? 0.6 : 1,
+                                        }}>
+                                            <FiVideo size={32} color="#525252" style={{ marginBottom: '8px' }} />
+                                            <span style={{ color: '#525252', fontSize: '14px' }}>
+                                                {videoUploading ? "Uploading video..." : "Klik untuk upload video"}
+                                            </span>
+                                            <span style={{ color: '#404040', fontSize: '11px', marginTop: '4px' }}>
+                                                MP4, max 100MB
+                                            </span>
+                                            <input
+                                                type="file"
+                                                accept="video/mp4"
+                                                onChange={handleVideoUpload}
+                                                style={{ display: 'none' }}
+                                                disabled={videoUploading}
+                                            />
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMediaPicker(true)}
+                                            style={{
+                                                padding: '8px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                backgroundColor: '#1a1a1a',
+                                                color: '#a3a3a3',
+                                                border: '1px solid #333',
+                                                fontSize: '12px',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            <FiFolder size={14} /> Media Library
+                                        </button>
+                                    </div>
                                 )
                             )}
 

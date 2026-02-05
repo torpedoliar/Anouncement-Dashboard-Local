@@ -1,7 +1,7 @@
 {
-    "version": "2.4.10",
+    "version": "2.4.11",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Added global SessionProvider to resolve useSession crash in admin pages.",
+    "releaseNotes": "Feature: Added ability to select videos from Media Library for announcement cover.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
