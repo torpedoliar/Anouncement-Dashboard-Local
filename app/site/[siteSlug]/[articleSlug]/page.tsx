@@ -73,12 +73,61 @@ async function getArticleData(siteSlug: string, articleSlug: string) {
         ? null
         : `/site/${primarySite?.slug}/${announcement.slug}`;
 
-    return { site, announcement, relatedArticles, canonicalUrl };
+
+    // Fetch Comments
+    const comments = await prisma.comment.findMany({
+        where: {
+            announcementId: announcement.id,
+            status: "APPROVED",
+            parentId: null // Top level comments
+        },
+        include: {
+            replies: {
+                where: { status: "APPROVED" },
+                orderBy: { createdAt: "asc" }
+            }
+        },
+        orderBy: { createdAt: "desc" }
+    });
+
+    return { site, announcement, relatedArticles, canonicalUrl, comments };
 }
 
 function calculateReadingTime(wordCount: number): string {
     const minutes = Math.ceil(wordCount / 200);
     return `${minutes} menit baca`;
+}
+
+function CommentItem({ comment }: { comment: any }) {
+    return (
+        <div style={{ marginBottom: "24px", paddingBottom: "24px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                <strong style={{ color: "#fff", fontSize: "14px" }}>{comment.authorName}</strong>
+                <span style={{ color: "#666", fontSize: "12px" }}>
+                    {format(new Date(comment.createdAt), "dd MMM yyyy", { locale: id })}
+                </span>
+            </div>
+            <p style={{ color: "#bbb", fontSize: "14px", lineHeight: "1.6", margin: 0 }}>
+                {comment.content}
+            </p>
+            {/* Replies */}
+            {comment.replies && comment.replies.length > 0 && (
+                <div style={{ marginLeft: "20px", marginTop: "16px", paddingLeft: "16px", borderLeft: "2px solid rgba(255,255,255,0.1)" }}>
+                    {comment.replies.map((reply: any) => (
+                        <div key={reply.id} style={{ marginTop: "16px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                                <strong style={{ color: "#ddd", fontSize: "13px" }}>{reply.authorName}</strong>
+                                <span style={{ color: "#666", fontSize: "11px" }}>
+                                    {format(new Date(reply.createdAt), "dd MMM", { locale: id })}
+                                </span>
+                            </div>
+                            <p style={{ color: "#aaa", fontSize: "13px", margin: 0 }}>{reply.content}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default async function ArticlePage({ params }: PageProps) {
@@ -89,7 +138,7 @@ export default async function ArticlePage({ params }: PageProps) {
         notFound();
     }
 
-    const { site, announcement, relatedArticles, canonicalUrl } = data;
+    const { site, announcement, relatedArticles, canonicalUrl, comments } = data;
 
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
@@ -259,6 +308,23 @@ export default async function ArticlePage({ params }: PageProps) {
                     </div>
                 )}
             </article>
+
+            {/* Comments Section */}
+            <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 24px 60px" }}>
+                <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "24px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "32px" }}>
+                    Komentar ({comments.length})
+                </h3>
+                {comments.length > 0 ? (
+                    <div>
+                        {comments.map((comment: any) => (
+                            <CommentItem key={comment.id} comment={comment} />
+                        ))}
+                    </div>
+                ) : (
+                    <p style={{ color: "#666", fontStyle: "italic" }}>Belum ada komentar.</p>
+                )}
+            </div>
+
 
             {/* Related Articles */}
             {relatedArticles.length > 0 && (
