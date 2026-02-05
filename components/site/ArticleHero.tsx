@@ -66,7 +66,7 @@ export default function ArticleHero({
             }}
         >
             {/* 1. Media Layer */}
-            <div style={{ position: "absolute", insert: 0, width: "100%", height: "100%", zIndex: 0 }}>
+            <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 0 }}>
                 {hasVideo && (
                     <>
                         <video
