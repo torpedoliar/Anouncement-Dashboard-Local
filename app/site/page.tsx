@@ -1,6 +1,4 @@
-"use client";
-
-// NOT "use client" - this is a server component
+// This is a server component
 import { prisma } from "@/lib/prisma";
 import { FiGlobe } from "react-icons/fi";
 import SitePickerCard from "@/components/SitePickerCard";
