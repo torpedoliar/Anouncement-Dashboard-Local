@@ -1,7 +1,7 @@
 {
-    "version": "2.4.4",
+    "version": "2.4.5",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Hotfix: Switched to tsx for pre-migration script execution to fix ESM errors.",
+    "releaseNotes": "Feature: Added Super Admin role option in User Management.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

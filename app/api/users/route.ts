@@ -19,6 +19,7 @@ export async function GET() {
                 name: true,
                 avatar: true,
                 role: true,
+                isSuperAdmin: true,
                 createdAt: true,
                 updatedAt: true,
             },
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { email, password, name, role } = body;
+        const { email, password, name, role, isSuperAdmin } = body;
 
         if (!email || !password || !name) {
             return NextResponse.json(
@@ -81,12 +82,14 @@ export async function POST(request: NextRequest) {
                 passwordHash,
                 name,
                 role: role || "EDITOR",
+                isSuperAdmin: isSuperAdmin || false,
             },
             select: {
                 id: true,
                 email: true,
                 name: true,
                 role: true,
+                isSuperAdmin: true,
                 createdAt: true,
             },
         });

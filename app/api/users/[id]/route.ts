@@ -25,6 +25,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 name: true,
                 avatar: true,
                 role: true,
+                isSuperAdmin: true,
                 createdAt: true,
                 updatedAt: true,
             },
@@ -63,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }
 
         const body = await request.json();
-        const { email, name, role, password } = body;
+        const { email, name, role, password, isSuperAdmin } = body;
 
         const existingUser = await prisma.user.findUnique({
             where: { id },
@@ -90,12 +91,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             email?: string;
             name?: string;
             role?: "ADMIN" | "EDITOR";
+            isSuperAdmin?: boolean;
             passwordHash?: string;
         } = {};
 
         if (email) updateData.email = email;
         if (name) updateData.name = name;
         if (role) updateData.role = role;
+        if (typeof isSuperAdmin !== 'undefined') updateData.isSuperAdmin = isSuperAdmin;
         if (password) {
             updateData.passwordHash = await bcrypt.hash(password, 10);
         }
@@ -108,6 +111,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 email: true,
                 name: true,
                 role: true,
+                isSuperAdmin: true,
                 updatedAt: true,
             },
         });

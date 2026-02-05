@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiShield, FiUser } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiShield, FiUser, FiZap } from "react-icons/fi";
 
 interface User {
     id: string;
     email: string;
     name: string;
     role: "ADMIN" | "EDITOR";
+    isSuperAdmin: boolean;
     createdAt: string;
 }
 
@@ -20,7 +21,7 @@ export default function UsersPage() {
         name: "",
         email: "",
         password: "",
-        role: "EDITOR" as "ADMIN" | "EDITOR",
+        role: "EDITOR" as "ADMIN" | "EDITOR" | "SUPER_ADMIN",
     });
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
@@ -52,10 +53,11 @@ export default function UsersPage() {
             const url = editingUser ? `/api/users/${editingUser.id}` : "/api/users";
             const method = editingUser ? "PUT" : "POST";
 
-            const body: Record<string, string> = {
+            const body: Record<string, any> = {
                 name: formData.name,
                 email: formData.email,
-                role: formData.role,
+                role: formData.role === "SUPER_ADMIN" ? "ADMIN" : formData.role,
+                isSuperAdmin: formData.role === "SUPER_ADMIN",
             };
             if (formData.password) {
                 body.password = formData.password;
@@ -111,7 +113,7 @@ export default function UsersPage() {
             name: user.name,
             email: user.email,
             password: "",
-            role: user.role,
+            role: user.isSuperAdmin ? "SUPER_ADMIN" : user.role,
         });
         setShowModal(true);
     };
@@ -128,6 +130,37 @@ export default function UsersPage() {
             month: "short",
             year: "numeric",
         });
+    };
+
+    const getRoleBadge = (user: User) => {
+        if (user.isSuperAdmin) {
+            return {
+                bg: "rgba(237, 28, 36, 0.2)",
+                color: "#ED1C24",
+                label: "SUPER ADMIN",
+                icon: <FiZap size={18} color="#ED1C24" />,
+                iconBg: "rgba(237, 28, 36, 0.15)",
+                iconBorder: "1px solid rgba(237, 28, 36, 0.3)"
+            };
+        }
+        if (user.role === "ADMIN") {
+            return {
+                bg: "rgba(220, 38, 38, 0.2)",
+                color: "#f87171",
+                label: "ADMIN",
+                icon: <FiShield size={18} color="#dc2626" />,
+                iconBg: "rgba(220, 38, 38, 0.15)",
+                iconBorder: "1px solid rgba(220, 38, 38, 0.3)"
+            };
+        }
+        return {
+            bg: "rgba(59, 130, 246, 0.2)",
+            color: "#60a5fa",
+            label: "EDITOR",
+            icon: <FiUser size={18} color="#737373" />,
+            iconBg: "#1a1a1a",
+            iconBorder: "1px solid #333"
+        };
     };
 
     if (isLoading) {
@@ -183,69 +216,72 @@ export default function UsersPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map((user, index) => (
-                            <tr key={user.id} style={{ borderBottom: index < users.length - 1 ? "1px solid #262626" : "none", transition: "background-color 0.2s" }}>
-                                <td style={{ padding: "20px", color: "#fff", fontSize: "15px", fontWeight: 500 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                                        <div style={{
-                                            width: "40px",
-                                            height: "40px",
-                                            backgroundColor: user.role === "ADMIN" ? "rgba(220, 38, 38, 0.15)" : "#1a1a1a",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            borderRadius: "8px",
-                                            border: user.role === "ADMIN" ? "1px solid rgba(220, 38, 38, 0.3)" : "1px solid #333",
-                                        }}>
-                                            {user.role === "ADMIN" ? <FiShield size={18} color="#dc2626" /> : <FiUser size={18} color="#737373" />}
+                        {users.map((user, index) => {
+                            const badge = getRoleBadge(user);
+                            return (
+                                <tr key={user.id} style={{ borderBottom: index < users.length - 1 ? "1px solid #262626" : "none", transition: "background-color 0.2s" }}>
+                                    <td style={{ padding: "20px", color: "#fff", fontSize: "15px", fontWeight: 500 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                                            <div style={{
+                                                width: "40px",
+                                                height: "40px",
+                                                backgroundColor: badge.iconBg,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                borderRadius: "8px",
+                                                border: badge.iconBorder,
+                                            }}>
+                                                {badge.icon}
+                                            </div>
+                                            {user.name}
                                         </div>
-                                        {user.name}
-                                    </div>
-                                </td>
-                                <td style={{ padding: "20px", color: "#a1a1aa", fontSize: "14px" }}>{user.email}</td>
-                                <td style={{ padding: "20px" }}>
-                                    <span style={{
-                                        padding: "6px 14px",
-                                        backgroundColor: user.role === "ADMIN" ? "rgba(220, 38, 38, 0.2)" : "rgba(59, 130, 246, 0.2)",
-                                        color: user.role === "ADMIN" ? "#f87171" : "#60a5fa",
-                                        fontSize: "12px",
-                                        fontWeight: 700,
-                                        letterSpacing: "0.1em",
-                                        borderRadius: "4px",
-                                    }}>
-                                        {user.role}
-                                    </span>
-                                </td>
-                                <td style={{ padding: "20px", color: "#71717a", fontSize: "14px" }}>{formatDate(user.createdAt)}</td>
-                                <td style={{ padding: "16px", textAlign: "right" }}>
-                                    <button
-                                        onClick={() => openEditModal(user)}
-                                        style={{
-                                            padding: "8px",
-                                            backgroundColor: "transparent",
-                                            border: "1px solid #262626",
-                                            color: "#737373",
-                                            cursor: "pointer",
-                                            marginRight: "8px",
-                                        }}
-                                    >
-                                        <FiEdit2 size={14} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(user)}
-                                        style={{
-                                            padding: "8px",
-                                            backgroundColor: "transparent",
-                                            border: "1px solid #262626",
-                                            color: "#dc2626",
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        <FiTrash2 size={14} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                                    </td>
+                                    <td style={{ padding: "20px", color: "#a1a1aa", fontSize: "14px" }}>{user.email}</td>
+                                    <td style={{ padding: "20px" }}>
+                                        <span style={{
+                                            padding: "6px 14px",
+                                            backgroundColor: badge.bg,
+                                            color: badge.color,
+                                            fontSize: "12px",
+                                            fontWeight: 700,
+                                            letterSpacing: "0.1em",
+                                            borderRadius: "4px",
+                                        }}>
+                                            {badge.label}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: "20px", color: "#71717a", fontSize: "14px" }}>{formatDate(user.createdAt)}</td>
+                                    <td style={{ padding: "16px", textAlign: "right" }}>
+                                        <button
+                                            onClick={() => openEditModal(user)}
+                                            style={{
+                                                padding: "8px",
+                                                backgroundColor: "transparent",
+                                                border: "1px solid #262626",
+                                                color: "#737373",
+                                                cursor: "pointer",
+                                                marginRight: "8px",
+                                            }}
+                                        >
+                                            <FiEdit2 size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(user)}
+                                            style={{
+                                                padding: "8px",
+                                                backgroundColor: "transparent",
+                                                border: "1px solid #262626",
+                                                color: "#dc2626",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            <FiTrash2 size={14} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -341,7 +377,7 @@ export default function UsersPage() {
                                 <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>ROLE</label>
                                 <select
                                     value={formData.role}
-                                    onChange={(e) => setFormData({ ...formData, role: e.target.value as "ADMIN" | "EDITOR" })}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
                                     style={{
                                         width: "100%",
                                         padding: "12px",
@@ -353,6 +389,7 @@ export default function UsersPage() {
                                 >
                                     <option value="EDITOR">EDITOR</option>
                                     <option value="ADMIN">ADMIN</option>
+                                    <option value="SUPER_ADMIN">SUPER ADMIN</option>
                                 </select>
                             </div>
                             <button
