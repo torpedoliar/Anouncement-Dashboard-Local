@@ -1,7 +1,7 @@
 {
-    "version": "2.4.21",
+    "version": "2.4.22",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Revert `wordCount` column mapping, add verbose logging for restoration.",
+    "releaseNotes": "Fix: Add Robust Debugging for Restoration Script (v2.4.22)",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

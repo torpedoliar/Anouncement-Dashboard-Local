@@ -47,17 +47,22 @@ async function restoreLegacyData() {
     console.log("🔄 Restoring Categories...");
     let inCategories = false;
     for (const line of lines) {
-        if (line.startsWith('COPY public.categories')) {
+        if (line.includes('COPY public.categories')) {
+            console.log("  -> Found Categories block!");
             inCategories = true;
             continue;
         }
         if (inCategories && line.trim() === '\\.') {
+            console.log("  -> End of Categories block.");
             inCategories = false;
             break;
         }
         if (inCategories && line.trim()) {
             const cols = line.split('\t');
-            if (cols.length < 6) continue;
+            if (cols.length < 6) {
+                console.warn("  -> Skipping invalid category line (cols < 6):", line.substring(0, 50));
+                continue;
+            }
 
             const [id, name, slug, color, orderStr, createdAt] = cols;
 
@@ -83,8 +88,9 @@ async function restoreLegacyData() {
                         }
                     });
                     restoreStats.categories++;
+                    console.log(`  -> Restored Category: ${name}`);
                 } else {
-                    // console.log(`Skipping existing category: ${name}`);
+                    console.log(`  -> Skipped existing category: ${name} (${id})`);
                 }
             } catch (err: any) {
                 console.error(`Error restoring category ${name}:`, err.message);
@@ -97,11 +103,13 @@ async function restoreLegacyData() {
     console.log("🔄 Restoring Announcements...");
     let inAnnouncements = false;
     for (const line of lines) {
-        if (line.startsWith('COPY public.announcements')) {
+        if (line.includes('COPY public.announcements')) {
+            console.log("  -> Found Announcements block!");
             inAnnouncements = true;
             continue;
         }
         if (inAnnouncements && line.trim() === '\\.') {
+            console.log("  -> End of Announcements block.");
             inAnnouncements = false;
             break;
         }
@@ -109,7 +117,11 @@ async function restoreLegacyData() {
             // Split by tab
             const cols = line.split('\t');
             // Ensure we have enough columns (approx 21 based on dumps)
-            if (cols.length < 15) continue;
+            // Reduced strictness for debug
+            if (cols.length < 10) {
+                console.warn("  -> Skipping invalid announcement line (cols < 10):", line.substring(0, 50));
+                continue;
+            }
 
             // Map columns based on backup structure (Updated with wordCount at index 15)
             // id(0), title(1), slug(2), excerpt(3), content(4), imagePath(5), videoPath(6), videoType(7), youtubeUrl(8), isPinned(9), isHero(10), isPublished(11), scheduledAt(12), takedownAt(13), viewCount(14), wordCount(15), createdAt(16), updatedAt(17), draftContent(18), draftUpdatedAt(19), categoryId(20), authorId(21)
