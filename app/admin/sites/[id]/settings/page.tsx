@@ -216,47 +216,51 @@ export default function SiteSettingsPage() {
                 {/* General Tab */}
                 {activeTab === 'general' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div>
-                            <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
-                                Hero Title
-                            </label>
-                            <input
-                                type="text"
-                                value={settings.heroTitle}
-                                onChange={(e) => setSettings({ ...settings, heroTitle: e.target.value })}
-                                style={{
-                                    width: '100%',
-                                    backgroundColor: '#0a0a0a',
-                                    border: '1px solid #262626',
-                                    borderRadius: '6px',
-                                    padding: '12px',
-                                    color: '#fff',
-                                    outline: 'none',
-                                }}
-                            />
-                            <p style={{ marginTop: '4px', fontSize: '12px', color: '#525252' }}>
-                                Judul utama yang muncul di halaman depan
-                            </p>
-                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                            <div>
+                                <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                    Hero Title
+                                </label>
+                                <input
+                                    type="text"
+                                    value={settings.heroTitle}
+                                    onChange={(e) => setSettings({ ...settings, heroTitle: e.target.value })}
+                                    style={{
+                                        width: '100%',
+                                        backgroundColor: '#0a0a0a',
+                                        border: '1px solid #262626',
+                                        borderRadius: '6px',
+                                        padding: '12px',
+                                        color: '#fff',
+                                        outline: 'none',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                                <p style={{ marginTop: '4px', fontSize: '12px', color: '#525252' }}>
+                                    Judul utama yang muncul di halaman depan
+                                </p>
+                            </div>
 
-                        <div>
-                            <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
-                                Hero Subtitle
-                            </label>
-                            <input
-                                type="text"
-                                value={settings.heroSubtitle}
-                                onChange={(e) => setSettings({ ...settings, heroSubtitle: e.target.value })}
-                                style={{
-                                    width: '100%',
-                                    backgroundColor: '#0a0a0a',
-                                    border: '1px solid #262626',
-                                    borderRadius: '6px',
-                                    padding: '12px',
-                                    color: '#fff',
-                                    outline: 'none',
-                                }}
-                            />
+                            <div>
+                                <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                    Hero Subtitle
+                                </label>
+                                <input
+                                    type="text"
+                                    value={settings.heroSubtitle}
+                                    onChange={(e) => setSettings({ ...settings, heroSubtitle: e.target.value })}
+                                    style={{
+                                        width: '100%',
+                                        backgroundColor: '#0a0a0a',
+                                        border: '1px solid #262626',
+                                        borderRadius: '6px',
+                                        padding: '12px',
+                                        color: '#fff',
+                                        outline: 'none',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                            </div>
                         </div>
 
                         <div>
@@ -276,6 +280,8 @@ export default function SiteSettingsPage() {
                                     color: '#fff',
                                     outline: 'none',
                                     resize: 'vertical',
+                                    boxSizing: 'border-box',
+                                    minHeight: '120px'
                                 }}
                             />
                         </div>
@@ -284,7 +290,7 @@ export default function SiteSettingsPage() {
 
                 {/* Social Media Tab */}
                 {activeTab === 'social' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
                         {[
                             { key: 'instagramUrl', label: 'Instagram URL' },
                             { key: 'facebookUrl', label: 'Facebook URL' },
@@ -309,6 +315,7 @@ export default function SiteSettingsPage() {
                                         padding: '12px',
                                         color: '#fff',
                                         outline: 'none',
+                                        boxSizing: 'border-box'
                                     }}
                                 />
                             </div>
@@ -336,7 +343,7 @@ export default function SiteSettingsPage() {
                                     Jika aktif, komentar akan langsung muncul tanpa perlu persetujuan admin.
                                 </p>
                             </div>
-                            <div style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
+                            <div style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px', flexShrink: 0 }}>
                                 <input
                                     type="checkbox"
                                     checked={settings.commentAutoApprove}
@@ -387,7 +394,7 @@ export default function SiteSettingsPage() {
                                     Pengunjung harus mengisi alamat email saat berkomentar.
                                 </p>
                             </div>
-                            <div style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
+                            <div style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px', flexShrink: 0 }}>
                                 <input
                                     type="checkbox"
                                     checked={settings.commentRequireEmail}
@@ -426,3 +433,4 @@ export default function SiteSettingsPage() {
         </div>
     );
 }
+

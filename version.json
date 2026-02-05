@@ -1,7 +1,7 @@
 {
-    "version": "2.4.11",
+    "version": "2.4.13",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Feature: Added ability to select videos from Media Library for announcement cover.",
+    "releaseNotes": "Fix: Overhauled Site Settings layout to prevent form overflow and improve responsiveness.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
