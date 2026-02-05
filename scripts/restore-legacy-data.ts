@@ -32,8 +32,18 @@ async function restoreLegacyData() {
         process.exit(1);
     }
 
-    const fileContent = fs.readFileSync(backupPath, 'utf-8');
-    const lines = fileContent.split('\n');
+    // Read as buffer first to detect encoding
+    const buffer = fs.readFileSync(backupPath);
+    let fileContent = buffer.toString('utf-8');
+
+    // Check for UTF-16 LE (Common in PowerShell dumps) - Null bytes validation
+    if (buffer.includes(0x00)) {
+        console.log("⚠️ Detected UTF-16 LE encoding. Switching decoder...");
+        fileContent = buffer.toString('ucs2');
+    }
+
+    // Normalize newlines and split
+    const lines = fileContent.replace(/\r\n/g, '\n').split('\n');
     console.log(`📂 Read backup file: ${lines.length} lines`);
 
     let restoreStats = {
