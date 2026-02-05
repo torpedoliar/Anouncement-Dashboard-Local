@@ -71,6 +71,13 @@ export default function MediaPickerModal({
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
+    // Sync filter with prop when opening or changing type
+    useEffect(() => {
+        if (isOpen) {
+            setMediaFilter(mediaType === "all" ? "all" : mediaType);
+        }
+    }, [isOpen, mediaType]);
+
     // Fetch local media
     const fetchLocalMedia = useCallback(async (page: number = 1) => {
         setLocalLoading(true);
