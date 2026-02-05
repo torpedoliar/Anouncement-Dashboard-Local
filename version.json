@@ -1,7 +1,7 @@
 {
-    "version": "2.4.20",
+    "version": "2.4.21",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Correct Legacy Data column mapping (removed wordCount) in restore script.",
+    "releaseNotes": "Fix: Revert `wordCount` column mapping, add verbose logging for restoration.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
