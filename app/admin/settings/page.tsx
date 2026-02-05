@@ -853,6 +853,7 @@ export default function SettingsPage() {
                             fontSize: '14px',
                             outline: 'none',
                             resize: 'vertical',
+                            boxSizing: 'border-box',
                         }}
                         placeholder="Deskripsi singkat perusahaan untuk footer..."
                     />
@@ -899,6 +900,7 @@ export default function SettingsPage() {
                                     color: '#fff',
                                     fontSize: '14px',
                                     outline: 'none',
+                                    boxSizing: 'border-box',
                                 }}
                             />
                         </div>
@@ -927,6 +929,7 @@ export default function SettingsPage() {
                                     color: '#fff',
                                     fontSize: '14px',
                                     outline: 'none',
+                                    boxSizing: 'border-box',
                                 }}
                             />
                         </div>
@@ -955,6 +958,7 @@ export default function SettingsPage() {
                                     color: '#fff',
                                     fontSize: '14px',
                                     outline: 'none',
+                                    boxSizing: 'border-box',
                                 }}
                             />
                         </div>
@@ -983,6 +987,7 @@ export default function SettingsPage() {
                                     color: '#fff',
                                     fontSize: '14px',
                                     outline: 'none',
+                                    boxSizing: 'border-box',
                                 }}
                             />
                         </div>
@@ -1011,6 +1016,7 @@ export default function SettingsPage() {
                                     color: '#fff',
                                     fontSize: '14px',
                                     outline: 'none',
+                                    boxSizing: 'border-box',
                                 }}
                             />
                         </div>

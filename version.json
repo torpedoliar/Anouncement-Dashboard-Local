@@ -1,7 +1,7 @@
 {
-    "version": "2.4.13",
+    "version": "2.4.14",
     "buildDate": "2026-02-05",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Overhauled Site Settings layout to prevent form overflow and improve responsiveness.",
+    "releaseNotes": "Fix: Logo not appearing on site (synced with settings). Fixed settings layout overflow.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

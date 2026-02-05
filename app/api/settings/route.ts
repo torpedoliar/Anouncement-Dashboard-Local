@@ -101,6 +101,49 @@ export async function PUT(request: NextRequest) {
             });
         }
 
+        // SYNC TO DEFAULT SITE (Fix for Logo Issue)
+        // This ensures compatibility between legacy settings page and multi-site frontend
+        const defaultSite = await prisma.site.findFirst({ where: { isDefault: true } });
+        if (defaultSite) {
+            // Update Site Fields
+            await prisma.site.update({
+                where: { id: defaultSite.id },
+                data: {
+                    name: siteName || defaultSite.name,
+                    logoPath: logoPath, // This fixes the frontend logo
+                    primaryColor: primaryColor || defaultSite.primaryColor,
+                }
+            });
+
+            // Update Site Settings
+            await prisma.siteSettings.upsert({
+                where: { siteId: defaultSite.id },
+                create: {
+                    siteId: defaultSite.id,
+                    heroTitle: heroTitle || "BERITA & PENGUMUMAN",
+                    heroSubtitle: heroSubtitle,
+                    heroImage: heroImage,
+                    aboutText: aboutText,
+                    instagramUrl: instagramUrl,
+                    facebookUrl: facebookUrl,
+                    twitterUrl: twitterUrl,
+                    linkedinUrl: linkedinUrl,
+                    youtubeUrl: youtubeUrl,
+                },
+                update: {
+                    heroTitle: heroTitle || "BERITA & PENGUMUMAN",
+                    heroSubtitle: heroSubtitle,
+                    heroImage: heroImage,
+                    aboutText: aboutText,
+                    instagramUrl: instagramUrl,
+                    facebookUrl: facebookUrl,
+                    twitterUrl: twitterUrl,
+                    linkedinUrl: linkedinUrl,
+                    youtubeUrl: youtubeUrl,
+                }
+            });
+        }
+
         // Log activity
         try {
             await prisma.activityLog.create({
