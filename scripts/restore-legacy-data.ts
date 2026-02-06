@@ -63,8 +63,9 @@ async function restoreLegacyData() {
                     });
                     stats.categories++;
                 }
-            } catch (err) {
-                console.error(`Error restoring category ${name}:`, err.message);
+            } catch (err: unknown) {
+                const errorMsg = err instanceof Error ? (err instanceof Error ? err.message : String(err)) : String(err);
+                console.error(`Error restoring category ${name}:`, errorMsg);
             }
         }
     }
@@ -83,10 +84,10 @@ async function restoreLegacyData() {
                 isPublished, scheduledAt, takedownAt, viewCount, wordCount, createdAt, updatedAt,
                 draftContent, draftUpdatedAt, categoryId] = cols;
 
-            const val = v => v === '\\N' ? null : v;
-            const bool = v => v === 't';
-            const date = v => v === '\\N' ? null : new Date(v);
-            const int = v => v === '\\N' ? 0 : parseInt(v);
+            const val = (v: string) => v === '\\N' ? null : v;
+            const bool = (v: string) => v === 't';
+            const date = (v: string) => v === '\\N' ? null : new Date(v);
+            const int = (v: string) => v === '\\N' ? 0 : parseInt(v);
 
             try {
                 await prisma.announcement.upsert({
@@ -132,8 +133,8 @@ async function restoreLegacyData() {
                     });
                     stats.links++;
                 }
-            } catch (err) {
-                console.error(`Error restoring announcement ${id}:`, err.message);
+            } catch (err: unknown) {
+                console.error(`Error restoring announcement ${id}:`, (err instanceof Error ? err.message : String(err)));
             }
         }
     }
@@ -149,8 +150,8 @@ async function restoreLegacyData() {
             if (cols.length < 9) continue;
 
             const [id, announcementId, authorName, authorEmail, content, status, moderatedAt, moderatorId, parentId, createdAt] = cols;
-            const val = v => v === '\\N' ? null : v;
-            const date = v => v === '\\N' ? null : new Date(v);
+            const val = (v: string) => v === '\\N' ? null : v;
+            const date = (v: string) => v === '\\N' ? null : new Date(v);
 
             try {
                 const annExists = await prisma.announcement.findUnique({ where: { id: announcementId } });
@@ -173,8 +174,8 @@ async function restoreLegacyData() {
                     }
                 });
                 stats.comments++;
-            } catch (err) {
-                console.error(`Error restoring comment ${id}:`, err.message);
+            } catch (err: unknown) {
+                console.error(`Error restoring comment ${id}:`, (err instanceof Error ? err.message : String(err)));
             }
         }
     }
