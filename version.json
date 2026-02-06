@@ -1,7 +1,7 @@
 {
-    "version": "2.5.0",
+    "version": "2.5.1",
     "buildDate": "2026-02-06",
     "schemaVersion": "6",
-    "releaseNotes": "CRITICAL: Fix data loss during updates - switch to Prisma Migrate system, remove destructive pre-migration script, disable --accept-data-loss flags.",
+    "releaseNotes": "Fix: Add comment restoration to legacy data restore script, improve error handling.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }
