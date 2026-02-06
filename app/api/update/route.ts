@@ -58,9 +58,9 @@ export async function POST() {
         } catch (gitError: unknown) {
             let errorMessage = "Unknown error";
             if (gitError instanceof Error) {
-                errorMessage = gitError.message;
+                errorMessage = (gitError as Error).message;
             } else if (typeof gitError === 'string') {
-                errorMessage = gitError;
+                errorMessage = gitError as string;
             } else {
                 errorMessage = String(gitError);
             }
@@ -78,7 +78,6 @@ export async function POST() {
             const prismaResult = await execAsync('npx prisma db push --accept-data-loss', { timeout: 120000 });
             steps[steps.length - 1] = { step: "Updating database schema", status: "success", output: "Schema updated" };
         } catch (prismaError: unknown) {
-            const errorMessage = (prismaError instanceof Error ? prismaError.message : String(prismaError)) || "Unknown error";
             steps[steps.length - 1] = { step: "Updating database schema", status: "warning", output: "Migration skipped" };
         }
 
