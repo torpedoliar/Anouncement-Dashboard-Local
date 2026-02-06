@@ -42,8 +42,9 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
-        async jwt({ token, user }) {
-            if (user) {
+        async jwt({ token, user, trigger }) {
+            // Only create session on initial sign-in, not on every token refresh
+            if (trigger === 'signIn' && user) {
                 token.id = user.id;
                 token.role = (user as { role: string }).role;
                 token.isSuperAdmin = (user as { isSuperAdmin: boolean }).isSuperAdmin;
@@ -52,7 +53,7 @@ export const authOptions: NextAuthOptions = {
                 const sessionToken = uuidv4();
                 token.sessionToken = sessionToken;
 
-                // Create UserSession in database
+                // Create UserSession in database (only on sign-in)
                 try {
                     await prisma.userSession.create({
                         data: {
