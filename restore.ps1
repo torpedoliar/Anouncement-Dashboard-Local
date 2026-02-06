@@ -86,6 +86,11 @@ Write-Host ""
 
 # Confirm restore
 Write-Host "WARNING: This will REPLACE all current data in the database!" -ForegroundColor Red
+Write-Host ""
+Write-Host "Safety features enabled:" -ForegroundColor Green
+Write-Host "  ✓ Automatic backup before restore" -ForegroundColor White
+Write-Host "  ✓ Data verification after restore" -ForegroundColor White
+Write-Host ""
 $confirm = Read-Host "Type 'yes' to confirm restore"
 
 if ($confirm -ne "yes") {
@@ -94,7 +99,6 @@ if ($confirm -ne "yes") {
 }
 
 Write-Host ""
-Write-Host "Starting restore..." -ForegroundColor Yellow
 
 # Check if containers are running
 $dbContainer = docker-compose ps -q db 2>$null
@@ -103,6 +107,32 @@ if (-not $dbContainer) {
     docker-compose up -d db
     Start-Sleep -Seconds 5
 }
+
+# SAFETY: Create backup of current database before restore
+Write-Host "[SAFETY] Creating backup of current database..." -ForegroundColor Yellow
+$safetyBackup = "$backupDir/pre_restore_backup_$(Get-Date -Format 'yyyyMMdd_HHmmss').sql"
+
+if (-not (Test-Path $backupDir)) {
+    New-Item -ItemType Directory -Path $backupDir | Out-Null
+}
+
+docker-compose exec -T db pg_dump -U postgres announcement_db > $safetyBackup 2>$null
+
+if ($LASTEXITCODE -eq 0) {
+    $backupSize = [math]::Round((Get-Item $safetyBackup).Length / 1KB, 2)
+    Write-Host "  Safety backup created: $safetyBackup ($backupSize KB)" -ForegroundColor Green
+}
+else {
+    Write-Host "  WARNING: Could not create safety backup" -ForegroundColor Yellow
+    $proceedAnyway = Read-Host "Continue without safety backup? (yes/no)"
+    if ($proceedAnyway -ne "yes") {
+        Write-Host "Restore cancelled" -ForegroundColor Yellow
+        exit 0
+    }
+}
+
+Write-Host ""
+Write-Host "Starting restore..." -ForegroundColor Yellow
 
 # Drop and recreate database
 Write-Host "Preparing database..." -ForegroundColor Yellow
@@ -115,12 +145,30 @@ Get-Content $BackupFile | docker-compose exec -T db psql -U postgres announcemen
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""
+    Write-Host "Verifying restored data..." -ForegroundColor Yellow
+    
+    # Count records
+    $announcements = docker-compose exec -T db psql -U postgres announcement_db -c "SELECT COUNT(*) FROM announcements;" 2>&1 | Select-String "^\s*\d+\s*$"
+    $categories = docker-compose exec -T db psql -U postgres announcement_db -c "SELECT COUNT(*) FROM categories;" 2>&1 | Select-String "^\s*\d+\s*$"
+    $users = docker-compose exec -T db psql -U postgres announcement_db -c "SELECT COUNT(*) FROM users;" 2>&1 | Select-String "^\s*\d+\s*$"
+    
+    Write-Host ""
     Write-Host "============================================" -ForegroundColor Green
     Write-Host "  RESTORE COMPLETE!" -ForegroundColor Green
     Write-Host "============================================" -ForegroundColor Green
     Write-Host ""
-    Write-Host "  Restored from: $BackupFile" -ForegroundColor Cyan
+    Write-Host "  Restored from: $(Split-Path $BackupFile -Leaf)" -ForegroundColor Cyan
     Write-Host ""
+    Write-Host "  Verified Data:" -ForegroundColor Yellow
+    if ($announcements) { Write-Host "    Articles:   $($announcements.ToString().Trim())" -ForegroundColor White }
+    if ($categories) { Write-Host "    Categories: $($categories.ToString().Trim())" -ForegroundColor White }
+    if ($users) { Write-Host "    Users:      $($users.ToString().Trim())" -ForegroundColor White }
+    Write-Host ""
+    if ($safetyBackup -and (Test-Path $safetyBackup)) {
+        Write-Host "  Safety backup saved at:" -ForegroundColor Green
+        Write-Host "    $safetyBackup" -ForegroundColor DarkGray
+        Write-Host ""
+    }
     Write-Host "  Restart application to apply changes:" -ForegroundColor Yellow
     Write-Host "  docker-compose restart web" -ForegroundColor DarkGray
     Write-Host ""

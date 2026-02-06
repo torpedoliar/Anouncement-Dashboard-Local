@@ -92,11 +92,37 @@ Write-Host "WARNING: This will REPLACE all current data!" -ForegroundColor Red
 Write-Host "  - Database (all articles, users, comments)" -ForegroundColor Red
 Write-Host "  - Uploads (all images and videos)" -ForegroundColor Red
 Write-Host ""
+Write-Host "Safety features enabled:" -ForegroundColor Green
+Write-Host "  ✓ Automatic database backup before restore" -ForegroundColor White
+Write-Host "  ✓ Current uploads backed up" -ForegroundColor White
+Write-Host "  ✓ Data verification after restore" -ForegroundColor White
+Write-Host ""
 $confirm = Read-Host "Type 'yes' to confirm FULL restore"
 
 if ($confirm -ne "yes") {
     Write-Host "Restore cancelled" -ForegroundColor Yellow
     exit 0
+}
+
+Write-Host ""
+
+# Check if containers are running first
+$dbContainer = docker-compose ps -q db 2>$null
+if (-not $dbContainer) {
+    Write-Host "Starting database container..." -ForegroundColor Yellow
+    docker-compose up -d db
+    Start-Sleep -Seconds 5
+}
+
+# SAFETY: Create backup of current database before restore
+Write-Host "[SAFETY] Creating backup of current database..." -ForegroundColor Yellow
+$safetyBackup = "$backupDir/pre_full_restore_db_$(Get-Date -Format 'yyyyMMdd_HHmmss').sql"
+
+docker-compose exec -T db pg_dump -U postgres announcement_db > $safetyBackup 2>$null
+
+if ($LASTEXITCODE -eq 0) {
+    $backupSize = [math]::Round((Get-Item $safetyBackup).Length / 1KB, 2)
+    Write-Host "  Safety database backup: $safetyBackup ($backupSize KB)" -ForegroundColor Green
 }
 
 Write-Host ""
@@ -119,14 +145,6 @@ if (-not (Test-Path $dbFile)) {
 }
 
 Write-Host "[2/4] Restoring database..." -ForegroundColor Yellow
-
-# Check if containers are running
-$dbContainer = docker-compose ps -q db 2>$null
-if (-not $dbContainer) {
-    Write-Host "  Starting database container..." -ForegroundColor DarkGray
-    docker-compose up -d db
-    Start-Sleep -Seconds 5
-}
 
 # Drop and recreate database
 Write-Host "  Preparing database..." -ForegroundColor DarkGray
@@ -188,16 +206,37 @@ Write-Host "[4/4] Cleaning up..." -ForegroundColor Yellow
 Remove-Item -Recurse -Force $tempDir
 
 Write-Host ""
+Write-Host "Verifying restored data..." -ForegroundColor Yellow
+
+# Count records
+$announcements = docker-compose exec -T db psql -U postgres announcement_db -c "SELECT COUNT(*) FROM announcements;" 2>&1 | Select-String "^\s*\d+\s*$"
+$categories = docker-compose exec -T db psql -U postgres announcement_db -c "SELECT COUNT(*) FROM categories;" 2>&1 | Select-String "^\s*\d+\s*$"
+$users = docker-compose exec -T db psql -U postgres announcement_db -c "SELECT COUNT(*) FROM users;" 2>&1 | Select-String "^\s*\d+\s*$"
+
+Write-Host ""
 Write-Host "============================================" -ForegroundColor Green
 Write-Host "  FULL RESTORE COMPLETE!" -ForegroundColor Green
 Write-Host "============================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Restored from: $(Split-Path $BackupFile -Leaf)" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  What was restored:" -ForegroundColor Yellow
-Write-Host "    - Database (all articles, users, settings)" -ForegroundColor White
-Write-Host "    - Uploads (images, videos, attachments)" -ForegroundColor White
+Write-Host "  Verified Database:" -ForegroundColor Yellow
+if ($announcements) { Write-Host "    Articles:   $($announcements.ToString().Trim())" -ForegroundColor White }
+if ($categories) { Write-Host "    Categories: $($categories.ToString().Trim())" -ForegroundColor White }
+if ($users) { Write-Host "    Users:      $($users.ToString().Trim())" -ForegroundColor White }
 Write-Host ""
+Write-Host "  What was restored:" -ForegroundColor Yellow
+Write-Host "    ✓ Database (all articles, users, settings)" -ForegroundColor White
+Write-Host "    ✓ Uploads (images, videos, attachments)" -ForegroundColor White
+Write-Host ""
+if ($safetyBackup -and (Test-Path $safetyBackup)) {
+    Write-Host "  Safety backups saved at:" -ForegroundColor Green
+    Write-Host "    DB: $safetyBackup" -ForegroundColor DarkGray
+    if ($currentUploadsBackup -and (Test-Path $currentUploadsBackup)) {
+        Write-Host "    Uploads: $currentUploadsBackup" -ForegroundColor DarkGray
+    }
+    Write-Host ""
+}
 Write-Host "  Restart the application:" -ForegroundColor Yellow
 Write-Host "  docker-compose restart web" -ForegroundColor DarkGray
 Write-Host ""
