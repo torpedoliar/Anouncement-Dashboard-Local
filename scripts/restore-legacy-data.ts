@@ -304,7 +304,6 @@ async function restoreLegacyData() {
         console.log(`📊 Comments Restored:      ${restoreStats.comments}`);
         console.log(`🔗 Site Links Created:     ${restoreStats.relationships}`);
         console.log("=================================\n");
-
     }
 
     restoreLegacyData()
@@ -315,3 +314,4 @@ async function restoreLegacyData() {
         .finally(async () => {
             await prisma.$disconnect();
         });
+
