@@ -56,7 +56,14 @@ export async function POST() {
                 output: gitResult.stdout.trim() || "Already up to date"
             };
         } catch (gitError: unknown) {
-            const errorMessage = (gitError instanceof Error ? gitError.message : String(gitError)) || "Unknown error";
+            let errorMessage = "Unknown error";
+            if (gitError instanceof Error) {
+                errorMessage = gitError.message;
+            } else if (typeof gitError === 'string') {
+                errorMessage = gitError;
+            } else {
+                errorMessage = String(gitError);
+            }
             steps[steps.length - 1] = { step: "Pulling latest code", status: "error", output: errorMessage };
             return NextResponse.json({
                 success: false,
