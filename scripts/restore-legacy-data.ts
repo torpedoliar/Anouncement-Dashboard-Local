@@ -1,317 +1,198 @@
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config(); // Load environment variables
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
-
-// Configuration
 const BACKUP_FILE = process.argv[2] || 'db_backup_20260205_093159.sql';
 
-/**
- * Main Restoration Function
- */
 async function restoreLegacyData() {
     console.log("🚀 Starting Legacy Data Restoration...");
 
-    // 1. Get Default Site
-    const defaultSite = await prisma.site.findFirst({
-        where: { isDefault: true }
-    });
-
+    // Get default site
+    const defaultSite = await prisma.site.findFirst({ where: { isDefault: true } });
     if (!defaultSite) {
-        console.error("❌ No Default Site found! Please run seed script first.");
+        console.error("❌ No Default Site found!");
         process.exit(1);
     }
-    console.log(`✅ Default Site Found: ${defaultSite.name} (${defaultSite.id})`);
+    console.log(`✅ Default Site: ${defaultSite.name}`);
 
-    // 2. Get Default Author (SuperAdmin)
-    const defaultAuthor = await prisma.user.findFirst({
-        where: { email: 'admin@example.com' } // Ensure this matches seed.ts
-    });
-
+    // Get default author
+    const defaultAuthor = await prisma.user.findFirst({ where: { email: 'admin@example.com' } });
     if (!defaultAuthor) {
-        console.warn("⚠️ No Default Author (admin@example.com) found. Authors will be null.");
+        console.warn("⚠️ No default author found.");
     } else {
-        console.log(`✅ Default Author Found: ${defaultAuthor.name} (${defaultAuthor.id})`);
+        console.log(`✅ Default Author: ${defaultAuthor.name}`);
     }
 
-    // 2. Read Backup File
+    // Read backup file
     const backupPath = path.join(process.cwd(), BACKUP_FILE);
     if (!fs.existsSync(backupPath)) {
         console.error(`❌ Backup file not found: ${backupPath}`);
         process.exit(1);
     }
 
-    // Read as buffer first to detect encoding
     const buffer = fs.readFileSync(backupPath);
-    let fileContent = buffer.toString('utf-8');
-
-    // Check for UTF-16 LE (Common in PowerShell dumps) - Null bytes validation
-    if (buffer.includes(0x00)) {
-        console.log("⚠️ Detected UTF-16 LE encoding. Switching decoder...");
-        fileContent = buffer.toString('ucs2');
-    }
-
-    // Normalize newlines and split
+    let fileContent = buffer.includes(0x00) ? buffer.toString('ucs2') : buffer.toString('utf-8');
     const lines = fileContent.replace(/\r\n/g, '\n').split('\n');
-    console.log(`📂 Read backup file: ${lines.length} lines`);
+    console.log(`📂 Read ${lines.length} lines`);
 
-    let restoreStats = {
-        categories: 0,
-        announcements: 0,
-        relationships: 0,
-        comments: 0
-    };
+    const stats = { categories: 0, announcements: 0, comments: 0, links: 0 };
 
-    // 3. Process Categories
-    // Parsing COPY public.categories (id, name, slug, color, "order", "createdAt")
+    // Process categories
     console.log("🔄 Restoring Categories...");
-    let inCategories = false;
+    let inCat = false;
     for (const line of lines) {
-        if (line.includes('COPY public.categories')) {
-            console.log("  -> Found Categories block!");
-            inCategories = true;
-            continue;
-        }
-        if (inCategories && line.trim() === '\\.') {
-            console.log("  -> End of Categories block.");
-            inCategories = false;
-            break;
-        }
-        if (inCategories && line.trim()) {
-            const cols = line.split('\t');
-            if (cols.length < 6) {
-                console.warn("  -> Skipping invalid category line (cols < 6):", line.substring(0, 50));
-                continue;
-            }
-
-            const [id, name, slug, color, orderStr, createdAt] = cols;
-
-            // Clean up values (\N -> null)
-            const cleanSlug = slug === '\\N' ? `category-${Date.now()}` : slug;
-
+        if (line.includes('COPY public.categories')) { inCat = true; continue; }
+        if (inCat && line.trim() === '\\.') { inCat = false; break; }
+        if (inCat && line.trim()) {
+            const [id, name, slug, color, orderStr, createdAt] = line.split('\t');
             try {
-                // Check if exists
-                let cat = await prisma.category.findFirst({
-                    where: { id: id }
-                });
-
-                if (!cat) {
+                const exists = await prisma.category.findUnique({ where: { id } });
+                if (!exists) {
                     await prisma.category.create({
                         data: {
                             id,
                             name,
-                            slug: cleanSlug,
+                            slug: slug === '\\N' ? `cat-${Date.now()}` : slug,
                             color: color === '\\N' ? '#ED1C24' : color,
                             order: parseInt(orderStr) || 0,
                             createdAt: new Date(createdAt === '\\N' ? new Date() : createdAt),
-                            siteId: defaultSite.id // Inject Site ID
+                            siteId: defaultSite.id
                         }
                     });
-                    restoreStats.categories++;
-                    console.log(`  -> Restored Category: ${name}`);
-                } else {
-                    console.log(`  -> Skipped existing category: ${name} (${id})`);
+                    stats.categories++;
                 }
-            } catch (err: any) {
+            } catch (err) {
                 console.error(`Error restoring category ${name}:`, err.message);
             }
         }
     }
 
-    // 4. Process Announcements
-    // Parsing COPY public.announcements (..., wordCount, ...)
+    // Process announcements
     console.log("🔄 Restoring Announcements...");
-    let inAnnouncements = false;
+    let inAnn = false;
     for (const line of lines) {
-        if (line.includes('COPY public.announcements')) {
-            console.log("  -> Found Announcements block!");
-            inAnnouncements = true;
-            continue;
-        }
-        if (inAnnouncements && line.trim() === '\\.') {
-            console.log("  -> End of Announcements block.");
-            inAnnouncements = false;
-            break;
-        }
-        if (inAnnouncements && line.trim()) {
-            // Split by tab
+        if (line.includes('COPY public.announcements')) { inAnn = true; continue; }
+        if (inAnn && line.trim() === '\\.') { inAnn = false; break; }
+        if (inAnn && line.trim()) {
             const cols = line.split('\t');
-            // Ensure we have enough columns (approx 21 based on dumps)
-            // Reduced strictness for debug
-            if (cols.length < 10) {
-                console.warn("  -> Skipping invalid announcement line (cols < 10):", line.substring(0, 50));
-                continue;
-            }
+            if (cols.length < 10) continue;
 
-            // Map columns based on backup structure (Updated with wordCount at index 15)
-            // id(0), title(1), slug(2), excerpt(3), content(4), imagePath(5), videoPath(6), videoType(7), youtubeUrl(8), isPinned(9), isHero(10), isPublished(11), scheduledAt(12), takedownAt(13), viewCount(14), wordCount(15), createdAt(16), updatedAt(17), draftContent(18), draftUpdatedAt(19), categoryId(20), authorId(21)
+            const [id, title, slug, excerpt, content, imagePath, videoPath, videoType, youtubeUrl, isPinned, isHero,
+                isPublished, scheduledAt, takedownAt, viewCount, wordCount, createdAt, updatedAt,
+                draftContent, draftUpdatedAt, categoryId] = cols;
 
-            const [
-                id, title, slug, excerpt, content, imagePath,
-                videoPath, videoType, youtubeUrl, isPinned, isHero, isPublished,
-                scheduledAt, takedownAt, viewCount, wordCount, createdAt, updatedAt,
-                draftContent, draftUpdatedAt, categoryId, authorId
-            ] = cols;
-
-            // Helper to clean values
-            const val = (v: any) => (v === '\\N' ? null : v);
-            const boolVal = (v: any) => (v === 't');
-            const dateVal = (v: any) => (v === '\\N' ? null : new Date(v));
-            const intVal = (v: any) => (v === '\\N' ? 0 : parseInt(v));
+            const val = v => v === '\\N' ? null : v;
+            const bool = v => v === 't';
+            const date = v => v === '\\N' ? null : new Date(v);
+            const int = v => v === '\\N' ? 0 : parseInt(v);
 
             try {
-                // Upsert Announcement
                 await prisma.announcement.upsert({
-                    where: { id: id },
-                    update: {}, // Don't update if exists
+                    where: { id },
+                    update: {},
                     create: {
-                        id,
-                        title,
-                        slug,
+                        id, title, slug,
                         excerpt: val(excerpt),
                         content: val(content) || "",
                         imagePath: val(imagePath),
                         videoPath: val(videoPath),
                         videoType: val(videoType),
                         youtubeUrl: val(youtubeUrl),
-                        isPinned: boolVal(isPinned),
-                        isHero: boolVal(isHero),
-                        isPublished: boolVal(isPublished),
-                        scheduledAt: dateVal(scheduledAt),
-                        takedownAt: dateVal(takedownAt),
-                        viewCount: intVal(viewCount),
-                        wordCount: intVal(wordCount),
-                        createdAt: dateVal(createdAt) || new Date(),
-                        updatedAt: dateVal(updatedAt) || new Date(),
+                        isPinned: bool(isPinned),
+                        isHero: bool(isHero),
+                        isPublished: bool(isPublished),
+                        scheduledAt: date(scheduledAt),
+                        takedownAt: date(takedownAt),
+                        viewCount: int(viewCount),
+                        wordCount: int(wordCount),
+                        createdAt: date(createdAt) || new Date(),
+                        updatedAt: date(updatedAt) || new Date(),
                         draftContent: val(draftContent),
-                        draftUpdatedAt: dateVal(draftUpdatedAt),
-                        categoryId: categoryId,
-
-                        authorId: defaultAuthor ? defaultAuthor.id : undefined // Link to SuperAdmin
+                        draftUpdatedAt: date(draftUpdatedAt),
+                        categoryId,
+                        authorId: defaultAuthor ? defaultAuthor.id : undefined
                     }
                 });
+                stats.announcements++;
 
-                restoreStats.announcements++;
-                if (restoreStats.announcements === 1) {
-                    console.log(`ℹ️ First restored announcement: [${id}] ${title}`);
-                }
-
-                // Link to Default Site (The Multi-Site Magic)
-                const existingLink = await prisma.announcementSite.findUnique({
-                    where: {
-                        announcementId_siteId: {
-                            announcementId: id,
-                            siteId: defaultSite.id
-                        }
-                    }
+                // Create site link
+                const linkExists = await prisma.announcementSite.findUnique({
+                    where: { announcementId_siteId: { announcementId: id, siteId: defaultSite.id } }
                 });
-
-                if (!existingLink) {
+                if (!linkExists) {
                     await prisma.announcementSite.create({
                         data: {
                             announcementId: id,
                             siteId: defaultSite.id,
-                            isPrimary: true, // Legacy content is primary
-                            publishedAt: dateVal(createdAt) || new Date()
+                            isPrimary: true,
+                            publishedAt: date(createdAt) || new Date()
                         }
                     });
-                    restoreStats.relationships++;
+                    stats.links++;
                 }
-
-            } catch (err: any) {
-                console.error(`Error restoring announcement ${id} (${title}):`, err.message);
-                if (err && err.message && err.message.includes("Foreign key constraint failed")) {
-                    console.warn("  -> Likely missing Category. Skipping.");
-                }
+            } catch (err) {
+                console.error(`Error restoring announcement ${id}:`, err.message);
             }
         }
-        // 5. Process Comments
-        // Parsing COPY public.comments (id, "announcementId", "authorName", "authorEmail", content, status, "moderatedAt", "moderatorId", "parentId", "createdAt")
-        console.log("🔄 Restoring Comments...");
-        let inComments = false;
-        for (const line of lines) {
-            if (line.includes('COPY public.comments')) {
-                console.log("  -> Found Comments block!");
-                inComments = true;
-                continue;
-            }
-            if (inComments && line.trim() === '\\.') {
-                console.log("  -> End of Comments block.");
-                inComments = false;
-                break;
-            }
-            if (inComments && line.trim()) {
-                const cols = line.split('\t');
-                if (cols.length < 9) {
-                    console.warn("  -> Skipping invalid comment line (cols < 9):", line.substring(0, 50));
-                    continue;
-                }
-
-                const [
-                    id, announcementId, authorName, authorEmail, content,
-                    status, moderatedAt, moderatorId, parentId, createdAt
-                ] = cols;
-
-                // Helper functions
-                const val = (v: any) => (v === '\\N' ? null : v);
-                const dateVal = (v: any) => (v === '\\N' ? null : new Date(v));
-
-                try {
-                    // Check if announcement exists
-                    const announcementExists = await prisma.announcement.findUnique({
-                        where: { id: announcementId }
-                    });
-
-                    if (!announcementExists) {
-                        console.warn(`  -> Skipping comment for non-existent announcement: ${announcementId}`);
-                        continue;
-                    }
-
-                    // Upsert comment
-                    await prisma.comment.upsert({
-                        where: { id: id },
-                        update: {}, // Don't update if exists
-                        create: {
-                            id,
-                            announcementId,
-                            authorName: val(authorName) || 'Anonymous',
-                            authorEmail: val(authorEmail),
-                            content: val(content) || '',
-                            status: (val(status) as any) || 'PENDING',
-                            moderatedAt: dateVal(moderatedAt),
-                            moderatorId: val(moderatorId),
-                            parentId: val(parentId),
-                            createdAt: dateVal(createdAt) || new Date()
-                        }
-                    });
-
-                    restoreStats.comments++;
-                    if (restoreStats.comments === 1) {
-                        console.log(`ℹ️ First restored comment: [${id}] by ${val(authorName) || 'Anonymous'}`);
-                    }
-                } catch (err: any) {
-                    console.error(`Error restoring comment ${id}:`, err.message);
-                }
-            }
-        }
-
-        console.log("\n=================================");
-        console.log("✅ RESTORATION COMPLETE");
-        console.log(`📊 Categories Restored:    ${restoreStats.categories}`);
-        console.log(`📊 Announcements Restored: ${restoreStats.announcements}`);
-        console.log(`📊 Comments Restored:      ${restoreStats.comments}`);
-        console.log(`🔗 Site Links Created:     ${restoreStats.relationships}`);
-        console.log("=================================\n");
     }
 
-    restoreLegacyData()
-        .catch((e: any) => {
-            console.error(e);
-            process.exit(1);
-        })
-        .finally(async () => {
-            await prisma.$disconnect();
-        });
+    // Process comments
+    console.log("🔄 Restoring Comments...");
+    let inCom = false;
+    for (const line of lines) {
+        if (line.includes('COPY public.comments')) { inCom = true; continue; }
+        if (inCom && line.trim() === '\\.') { inCom = false; break; }
+        if (inCom && line.trim()) {
+            const cols = line.split('\t');
+            if (cols.length < 9) continue;
 
+            const [id, announcementId, authorName, authorEmail, content, status, moderatedAt, moderatorId, parentId, createdAt] = cols;
+            const val = v => v === '\\N' ? null : v;
+            const date = v => v === '\\N' ? null : new Date(v);
+
+            try {
+                const annExists = await prisma.announcement.findUnique({ where: { id: announcementId } });
+                if (!annExists) continue;
+
+                await prisma.comment.upsert({
+                    where: { id },
+                    update: {},
+                    create: {
+                        id,
+                        announcementId,
+                        authorName: val(authorName) || 'Anonymous',
+                        authorEmail: val(authorEmail),
+                        content: val(content) || '',
+                        status: val(status) || 'PENDING',
+                        moderatedAt: date(moderatedAt),
+                        moderatorId: val(moderatorId),
+                        parentId: val(parentId),
+                        createdAt: date(createdAt) || new Date()
+                    }
+                });
+                stats.comments++;
+            } catch (err) {
+                console.error(`Error restoring comment ${id}:`, err.message);
+            }
+        }
+    }
+
+    console.log("\n=================================");
+    console.log("✅ RESTORATION COMPLETE");
+    console.log(`📊 Categories: ${stats.categories}`);
+    console.log(`📊 Announcements: ${stats.announcements}`);
+    console.log(`📊 Comments: ${stats.comments}`);
+    console.log(`🔗 Site Links: ${stats.links}`);
+    console.log("=================================\n");
+}
+
+restoreLegacyData()
+    .catch(e => {
+        console.error(e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
