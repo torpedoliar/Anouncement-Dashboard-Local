@@ -16,6 +16,9 @@ interface Comment {
         id: string;
         title: string;
         slug: string;
+        site: {
+            slug: string;
+        };
     };
     moderator: {
         id: string;
@@ -214,7 +217,7 @@ export default function CommentsPage() {
                                         {getStatusBadge(comment.status)}
                                     </div>
                                     <Link
-                                        href={`/${comment.announcement.slug}`}
+                                        href={`/sesi/${comment.announcement.site.slug}/${comment.announcement.slug}`}
                                         target="_blank"
                                         style={{
                                             display: "inline-flex",

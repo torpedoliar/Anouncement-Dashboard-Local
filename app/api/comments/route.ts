@@ -39,6 +39,11 @@ export async function GET(request: NextRequest) {
                             id: true,
                             title: true,
                             slug: true,
+                            site: {
+                                select: {
+                                    slug: true,
+                                },
+                            },
                         },
                     },
                     moderator: {
