@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import path from "path";
+import crypto from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import sharp from "sharp";
@@ -9,10 +11,33 @@ const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (original size before compression)
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
+// Security: Whitelist allowed file extensions
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
+
 // Compression settings
 const MAX_WIDTH = 1920;  // Max width for images
 const MAX_HEIGHT = 1080; // Max height for images
 const QUALITY = 80;      // WebP quality (0-100)
+
+/**
+ * Sanitize filename to prevent path traversal attacks
+ * @param originalName - Original filename from user
+ * @returns Secure filename with UUID
+ */
+function sanitizeFilename(originalName: string): string {
+    // Extract extension safely using path.extname
+    const ext = path.extname(originalName)
+        .toLowerCase()
+        .replace(/\./g, ""); // Remove dots
+
+    // Validate extension against whitelist
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        throw new Error(`Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}`);
+    }
+
+    // Generate secure filename with crypto UUID
+    return `${Date.now()}-${crypto.randomUUID()}.${ext}`;
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -57,12 +82,14 @@ export async function POST(request: NextRequest) {
 
         if (skipCompression || file.type === "image/gif") {
             // Skip compression for GIFs (to preserve animation) or if explicitly requested
-            const ext = file.name.split(".").pop();
-            filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+            // Use secure filename sanitization
+            filename = sanitizeFilename(file.name);
             finalBuffer = buffer;
         } else {
             // Compress and convert to WebP
-            filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
+            // Force .webp extension for compressed images
+            const baseFilename = sanitizeFilename(file.name);
+            filename = baseFilename.replace(/\.(jpg|jpeg|png|gif)$/, ".webp");
 
             finalBuffer = await sharp(buffer)
                 .resize(MAX_WIDTH, MAX_HEIGHT, {

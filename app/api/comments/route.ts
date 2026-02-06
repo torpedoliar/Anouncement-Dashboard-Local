@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
         if (status) where.status = status;
         if (announcementId) where.announcementId = announcementId;
 
-        const [comments, total] = await Promise.all([
+        // OPTIMIZATION: Two-query approach to eliminate N+1 problem
+        // Query 1: Get comments with basic announcement data (no sites yet)
+        const [rawComments, total] = await Promise.all([
             prisma.comment.findMany({
                 where,
                 orderBy: { createdAt: "desc" },
@@ -39,16 +41,6 @@ export async function GET(request: NextRequest) {
                             id: true,
                             title: true,
                             slug: true,
-                            sites: {
-                                select: {
-                                    site: {
-                                        select: {
-                                            slug: true,
-                                        },
-                                    },
-                                },
-                                take: 1, // Get first site
-                            },
                         },
                     },
                     moderator: {
@@ -61,6 +53,48 @@ export async function GET(request: NextRequest) {
             }),
             prisma.comment.count({ where }),
         ]);
+
+        // Query 2: Batch fetch primary sites for all announcements
+        const announcementIds = rawComments.map((c) => c.announcement.id);
+
+        let siteMappings: { announcementId: string; site: { slug: string } }[] = [];
+        if (announcementIds.length > 0) {
+            siteMappings = await prisma.announcementSite.findMany({
+                where: {
+                    announcementId: { in: announcementIds },
+                },
+                select: {
+                    announcementId: true,
+                    site: {
+                        select: {
+                            slug: true,
+                        },
+                    },
+                },
+                // Get first site per announcement
+                distinct: ['announcementId'],
+            });
+        }
+
+        // Map sites to announcements in memory (O(n) operation)
+        const siteMap = new Map(
+            siteMappings.map((m) => [m.announcementId, m.site.slug])
+        );
+
+        // Enrich comments with site data
+        const comments = rawComments.map((comment) => ({
+            ...comment,
+            announcement: {
+                ...comment.announcement,
+                sites: [
+                    {
+                        site: {
+                            slug: siteMap.get(comment.announcement.id) || 'santos-jaya-abadi',
+                        },
+                    },
+                ],
+            },
+        }));
 
         return NextResponse.json({
             data: comments,
