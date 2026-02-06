@@ -39,10 +39,15 @@ export async function GET(request: NextRequest) {
                             id: true,
                             title: true,
                             slug: true,
-                            site: {
+                            sites: {
                                 select: {
-                                    slug: true,
+                                    site: {
+                                        select: {
+                                            slug: true,
+                                        },
+                                    },
                                 },
+                                take: 1, // Get first site
                             },
                         },
                     },

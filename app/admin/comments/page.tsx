@@ -16,9 +16,11 @@ interface Comment {
         id: string;
         title: string;
         slug: string;
-        site: {
-            slug: string;
-        };
+        sites: {
+            site: {
+                slug: string;
+            };
+        }[];
     };
     moderator: {
         id: string;
@@ -217,7 +219,7 @@ export default function CommentsPage() {
                                         {getStatusBadge(comment.status)}
                                     </div>
                                     <Link
-                                        href={`/sesi/${comment.announcement.site.slug}/${comment.announcement.slug}`}
+                                        href={`/sesi/${comment.announcement.sites[0]?.site.slug || 'santos-jaya-abadi'}/${comment.announcement.slug}`}
                                         target="_blank"
                                         style={{
                                             display: "inline-flex",
