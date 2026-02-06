@@ -227,22 +227,91 @@ async function restoreLegacyData() {
                 }
             }
         }
+        // 5. Process Comments
+        // Parsing COPY public.comments (id, "announcementId", "authorName", "authorEmail", content, status, "moderatedAt", "moderatorId", "parentId", "createdAt")
+        console.log("🔄 Restoring Comments...");
+        let inComments = false;
+        for (const line of lines) {
+            if (line.includes('COPY public.comments')) {
+                console.log("  -> Found Comments block!");
+                inComments = true;
+                continue;
+            }
+            if (inComments && line.trim() === '\\.') {
+                console.log("  -> End of Comments block.");
+                inComments = false;
+                break;
+            }
+            if (inComments && line.trim()) {
+                const cols = line.split('\t');
+                if (cols.length < 9) {
+                    console.warn("  -> Skipping invalid comment line (cols < 9):", line.substring(0, 50));
+                    continue;
+                }
+
+                const [
+                    id, announcementId, authorName, authorEmail, content,
+                    status, moderatedAt, moderatorId, parentId, createdAt
+                ] = cols;
+
+                // Helper functions
+                const val = (v: any) => (v === '\\N' ? null : v);
+                const dateVal = (v: any) => (v === '\\N' ? null : new Date(v));
+
+                try {
+                    // Check if announcement exists
+                    const announcementExists = await prisma.announcement.findUnique({
+                        where: { id: announcementId }
+                    });
+
+                    if (!announcementExists) {
+                        console.warn(`  -> Skipping comment for non-existent announcement: ${announcementId}`);
+                        continue;
+                    }
+
+                    // Upsert comment
+                    await prisma.comment.upsert({
+                        where: { id: id },
+                        update: {}, // Don't update if exists
+                        create: {
+                            id,
+                            announcementId,
+                            authorName: val(authorName) || 'Anonymous',
+                            authorEmail: val(authorEmail),
+                            content: val(content) || '',
+                            status: (val(status) as any) || 'PENDING',
+                            moderatedAt: dateVal(moderatedAt),
+                            moderatorId: val(moderatorId),
+                            parentId: val(parentId),
+                            createdAt: dateVal(createdAt) || new Date()
+                        }
+                    });
+
+                    restoreStats.comments++;
+                    if (restoreStats.comments === 1) {
+                        console.log(`ℹ️ First restored comment: [${id}] by ${val(authorName) || 'Anonymous'}`);
+                    }
+                } catch (err: any) {
+                    console.error(`Error restoring comment ${id}:`, err.message);
+                }
+            }
+        }
+
+        console.log("\n=================================");
+        console.log("✅ RESTORATION COMPLETE");
+        console.log(`📊 Categories Restored:    ${restoreStats.categories}`);
+        console.log(`📊 Announcements Restored: ${restoreStats.announcements}`);
+        console.log(`📊 Comments Restored:      ${restoreStats.comments}`);
+        console.log(`🔗 Site Links Created:     ${restoreStats.relationships}`);
+        console.log("=================================\n");
+
     }
 
-    console.log("\n=================================");
-    console.log("✅ RESTORATION COMPLETE");
-    console.log(`📊 Categories Restored:    ${restoreStats.categories}`);
-    console.log(`📊 Announcements Restored: ${restoreStats.announcements}`);
-    console.log(`📊 Comments Restored:      ${restoreStats.comments}`);
-    console.log(`🔗 Site Links Created:     ${restoreStats.relationships}`);
-    console.log("=================================\n");
-}
-
-restoreLegacyData()
-    .catch((e: any) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+    restoreLegacyData()
+        .catch((e: any) => {
+            console.error(e);
+            process.exit(1);
+        })
+        .finally(async () => {
+            await prisma.$disconnect();
+        });
