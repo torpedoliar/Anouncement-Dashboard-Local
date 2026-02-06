@@ -90,42 +90,16 @@ Write-Host "[6/6] Starting containers and syncing database..." -ForegroundColor 
 docker-compose up -d
 Start-Sleep -Seconds 8
 
-# Sync database schema (db push without data-loss flag for safety)
+# Sync database schema (use migrations for safety)
 Write-Host ""
 Write-Host "Syncing database schema..." -ForegroundColor Yellow
-$pushResult = docker-compose exec -T web npx prisma db push 2>&1
+$migrateResult = docker-compose exec -T web npx prisma migrate deploy 2>&1
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "OK - Database schema synced" -ForegroundColor Green
+    Write-Host "OK - Database migrations applied" -ForegroundColor Green
 }
 else {
-    # Check if it's a data-loss warning
-    if ($pushResult -match "data loss" -or $pushResult -match "destructive") {
-        Write-Host ""
-        Write-Host "WARNING: Schema changes may cause data loss!" -ForegroundColor Red
-        Write-Host "Details: $pushResult" -ForegroundColor Yellow
-        Write-Host ""
-        $confirm = Read-Host "Type 'yes' to continue or press Enter to abort"
-        if ($confirm -eq "yes") {
-            Write-Host "Applying schema with data loss acceptance..." -ForegroundColor Yellow
-            docker-compose exec -T web npx prisma db push --accept-data-loss 2>&1 | Out-Null
-            Write-Host "OK - Schema applied" -ForegroundColor Green
-        }
-        else {
-            Write-Host "Aborted. Database unchanged." -ForegroundColor Yellow
-            Write-Host "Restore from backup if needed: .\restore.ps1" -ForegroundColor Cyan
-        }
-    }
-    else {
-        # Try migrate deploy as fallback
-        Write-Host "Trying migration deploy..." -ForegroundColor Yellow
-        docker-compose exec -T web npx prisma migrate deploy 2>&1 | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "OK - Migrations applied" -ForegroundColor Green
-        }
-        else {
-            Write-Host "WARN - Schema sync completed with warnings (may be normal)" -ForegroundColor Yellow
-        }
-    }
+    Write-Host "WARN - Migration deployment had warnings (check logs)" -ForegroundColor Yellow
+    Write-Host "If this is a new deployment, run baseline setup first" -ForegroundColor Yellow
 }
 
 # Generate Prisma client

@@ -30,4 +30,5 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Start command with migration
-CMD ["sh", "-c", "npx tsx prisma/pre-migration.ts && npx prisma db push --accept-data-loss && npm start"]
+# SAFE: Use migrations instead of destructive db push
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
