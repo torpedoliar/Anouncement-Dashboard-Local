@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 
-# Run database migrations
+# Run database migrations (SAFE - preserves data)
 echo "Running database migrations..."
-npx prisma db push --accept-data-loss
+npx prisma migrate deploy
 
 # Start the application
 echo "Starting Next.js server..."

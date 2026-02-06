@@ -1,7 +1,7 @@
 {
-    "version": "2.4.27",
-    "buildDate": "2026-02-05",
+    "version": "2.5.0",
+    "buildDate": "2026-02-06",
     "schemaVersion": "6",
-    "releaseNotes": "Fix: Implement immersive Hero Section (Full Cover) with mute toggle for Article Detail page.",
+    "releaseNotes": "CRITICAL: Fix data loss during updates - switch to Prisma Migrate system, remove destructive pre-migration script, disable --accept-data-loss flags.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

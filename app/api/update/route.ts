@@ -15,6 +15,15 @@ export async function POST() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        // TEMPORARILY DISABLED: Migration system being implemented
+        return NextResponse.json(
+            {
+                error: "Schema updates temporarily disabled during migration system implementation",
+                message: "Please use update.ps1 script for updates. Web-based updates will be re-enabled soon."
+            },
+            { status: 503 }
+        );
+
         // Check if auto-update is enabled
         if (process.env.ENABLE_AUTO_UPDATE !== "true") {
             return NextResponse.json(
