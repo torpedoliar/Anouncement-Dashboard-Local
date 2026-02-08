@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { validatePagination } from "@/lib/pagination-utils";
+import { CommentCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 
 // GET /api/announcements/[id]/comments - Get approved comments (public)
 export async function GET(
@@ -73,22 +75,17 @@ export async function POST(
     try {
         const { id } = await params;
         const body = await request.json();
-        const { authorName, authorEmail, content, parentId } = body;
 
-        // Validation
-        if (!authorName || !content) {
+        // Zod validation with sanitization
+        const validation = validateInput(CommentCreateSchema, body);
+        if (!validation.success) {
             return NextResponse.json(
-                { error: "Name and content are required" },
+                { error: "Validation failed", details: formatZodErrors(validation.errors) },
                 { status: 400 }
             );
         }
 
-        if (content.length < 2 || content.length > 5000) {
-            return NextResponse.json(
-                { error: "Content must be between 2 and 5000 characters" },
-                { status: 400 }
-            );
-        }
+        const { authorName, authorEmail, content, parentId } = validation.data;
 
         // Check if announcement exists and is published
         const announcement = await prisma.announcement.findUnique({

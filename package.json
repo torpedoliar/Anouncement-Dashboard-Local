@@ -23,11 +23,13 @@
     "@tiptap/pm": "^3.14.0",
     "@tiptap/react": "^3.14.0",
     "@tiptap/starter-kit": "^3.14.0",
+    "@types/dompurify": "^3.0.5",
     "autoprefixer": "^10.4.23",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "handlebars": "^4.7.8",
+    "isomorphic-dompurify": "^3.0.0-rc.2",
     "next": "15.3.4",
     "next-auth": "^4.24.13",
     "nodemailer": "^7.0.12",
@@ -36,7 +38,8 @@
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^10.0.0",
     "recharts": "^3.6.0",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

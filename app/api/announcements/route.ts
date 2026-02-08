@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { validatePagination } from '@/lib/pagination-utils';
 import { getServerSession } from "next-auth";
+import { validatePagination } from '@/lib/pagination-utils';
+import { AnnouncementCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 import { slugify, generateExcerpt } from "@/lib/utils";
 import { canEditOnSite } from "@/lib/site-access";
 
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
         const siteId = searchParams.get("siteId");
         const siteSlug = searchParams.get("siteSlug");
         // Validated by validatePagination
-                const pageParam = searchParams.get("page");
+        const pageParam = searchParams.get("page");
         const limitParam = searchParams.get("limit");
         const { limit, skip, error: paginationError } = validatePagination(pageParam, limitParam);
         if (paginationError) { console.warn(`Pagination warning: ${paginationError}`); }

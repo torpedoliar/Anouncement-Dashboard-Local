@@ -66,6 +66,28 @@ export const authOptions: NextAuthOptions = {
                     console.error("Failed to create user session:", error);
                 }
             }
+
+            // Continuous Session Validation (TASK-008)
+            // Check if session is still valid in database on every access
+            if (token.sessionToken) {
+                try {
+                    const sessionRecord = await prisma.userSession.findUnique({
+                        where: { sessionToken: token.sessionToken as string },
+                        select: { isRevoked: true, expiresAt: true },
+                    });
+
+                    // If session not found, revoked, or expired, reject it
+                    if (!sessionRecord || sessionRecord.isRevoked || new Date() > sessionRecord.expiresAt) {
+                        // Throwing error to invalidate the session/token
+                        throw new Error("Session revoked or expired");
+                    }
+                } catch (error) {
+                    console.error("Error validating session:", error);
+                    // If DB check fails or session is invalid, we must stop here
+                    throw new Error("Session validation failed");
+                }
+            }
+
             return token;
         },
         async session({ session, token }) {
