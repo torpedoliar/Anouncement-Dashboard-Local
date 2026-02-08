@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { validatePagination, getPaginationMeta } from "@/lib/pagination-utils";
 
 // GET /api/comments - List all comments (admin)
 export async function GET(request: NextRequest) {
@@ -17,10 +18,17 @@ export async function GET(request: NextRequest) {
         }
 
         const url = new URL(request.url);
-        const page = parseInt(url.searchParams.get("page") || "1");
-        const limit = parseInt(url.searchParams.get("limit") || "20");
         const status = url.searchParams.get("status");
         const announcementId = url.searchParams.get("announcementId");
+
+        // Validate pagination with limits
+        const pageParam = url.searchParams.get("page");
+        const limitParam = url.searchParams.get("limit");
+        const { limit, skip, error: paginationError } = validatePagination(pageParam, limitParam);
+
+        if (paginationError) {
+            console.warn(`Pagination warning: ${paginationError}`);
+        }
 
         // Build where clause
         const where: Record<string, unknown> = {};
@@ -34,7 +42,7 @@ export async function GET(request: NextRequest) {
                 where,
                 orderBy: { createdAt: "desc" },
                 take: limit,
-                skip: (page - 1) * limit,
+                skip: skip,
                 include: {
                     announcement: {
                         select: {
@@ -99,7 +107,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             data: comments,
             pagination: {
-                page,
+                page: Math.floor(skip / limit) + 1,
                 limit,
                 total,
                 totalPages: Math.ceil(total / limit),

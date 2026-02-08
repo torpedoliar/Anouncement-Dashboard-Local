@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { validatePagination } from "@/lib/pagination-utils";
 
 // GET /api/audit-logs - List activity logs with pagination and filters
 export async function GET(request: NextRequest) {
@@ -12,13 +13,20 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url);
-        const page = parseInt(searchParams.get("page") || "1");
-        const limit = parseInt(searchParams.get("limit") || "20");
+
+        // Validate pagination with limits
+        const pageParam = searchParams.get("page");
+        const limitParam = searchParams.get("limit");
+        const { limit, skip, error: paginationError } = validatePagination(pageParam, limitParam);
+
+        if (paginationError) {
+            console.warn(`Pagination warning: ${paginationError}`);
+        }
+
         const entityType = searchParams.get("entityType");
         const action = searchParams.get("action");
         const userId = searchParams.get("userId");
         const severity = searchParams.get("severity");
-        const skip = (page - 1) * limit;
 
         // Build where clause
         type WhereClause = {
@@ -65,7 +73,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             data: logs,
             pagination: {
-                page,
+                page: Math.floor(skip / limit) + 1,
                 limit,
                 total,
                 totalPages: Math.ceil(total / limit),

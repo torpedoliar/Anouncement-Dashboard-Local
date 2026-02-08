@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { validatePagination } from "@/lib/pagination-utils";
 
 // GET /api/sessions - List all user sessions (admin: all, user: own)
 export async function GET(request: NextRequest) {
@@ -18,8 +19,15 @@ export async function GET(request: NextRequest) {
 
         const url = new URL(request.url);
         const userId = url.searchParams.get("userId");
-        const page = parseInt(url.searchParams.get("page") || "1");
-        const limit = parseInt(url.searchParams.get("limit") || "20");
+
+        // Validate pagination
+        const pageParam = url.searchParams.get("page");
+        const limitParam = url.searchParams.get("limit");
+        const { limit, skip, error: paginationError } = validatePagination(pageParam, limitParam);
+
+        if (paginationError) {
+            console.warn(`Pagination warning: ${paginationError}`);
+        }
 
         const currentUser = session.user as { id: string; role: string };
         const isAdmin = currentUser.role === "ADMIN";
@@ -36,7 +44,7 @@ export async function GET(request: NextRequest) {
                 where,
                 orderBy: { lastActiveAt: "desc" },
                 take: limit,
-                skip: (page - 1) * limit,
+                skip,
                 include: {
                     user: {
                         select: {
@@ -53,7 +61,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             data: sessions,
             pagination: {
-                page,
+                page: Math.floor(skip / limit) + 1,
                 limit,
                 total,
                 totalPages: Math.ceil(total / limit),
