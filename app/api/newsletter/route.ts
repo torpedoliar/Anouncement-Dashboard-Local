@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { validatePagination } from '@/lib/pagination-utils';
 import { sendTemplatedEmail } from "@/lib/email";
 
 // GET /api/newsletter - List subscribers (admin only)
@@ -18,8 +19,11 @@ export async function GET(request: NextRequest) {
         }
 
         const url = new URL(request.url);
-        const page = parseInt(url.searchParams.get("page") || "1");
-        const limit = parseInt(url.searchParams.get("limit") || "50");
+        // Validated by validatePagination
+                const pageParam = url.searchParams.get("page");
+        const limitParam = url.searchParams.get("limit");
+        const { limit, skip, error: paginationError } = validatePagination(pageParam, limitParam);
+        if (paginationError) { console.warn(`Pagination warning: ${paginationError}`); }
         const activeOnly = url.searchParams.get("active") === "true";
         const siteId = url.searchParams.get("siteId");
         const siteSlug = url.searchParams.get("siteSlug");
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
                 where,
                 orderBy: { subscribedAt: "desc" },
                 take: limit,
-                skip: (page - 1) * limit,
+                skip,
             }),
             prisma.newsletterSubscriber.count({ where }),
         ]);
@@ -57,7 +61,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             data: subscribers,
             pagination: {
-                page,
+                page: Math.floor(skip / limit) + 1,
                 limit,
                 total,
                 totalPages: Math.ceil(total / limit),
