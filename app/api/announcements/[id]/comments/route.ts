@@ -14,8 +14,15 @@ export async function GET(
     try {
         const { id } = await params;
         const url = new URL(request.url);
-        const page = parseInt(url.searchParams.get("page") || "1");
-        const limit = parseInt(url.searchParams.get("limit") || "20");
+
+        // Validate pagination with limits
+        const pageParam = url.searchParams.get("page");
+        const limitParam = url.searchParams.get("limit");
+        const { limit, skip, error: paginationError } = validatePagination(pageParam, limitParam);
+
+        if (paginationError) {
+            console.warn(`Pagination warning: ${paginationError}`);
+        }
 
         // Only show approved comments to public
         const where = {
@@ -29,7 +36,7 @@ export async function GET(
                 where,
                 orderBy: { createdAt: "desc" },
                 take: limit,
-                skip: (page - 1) * limit,
+                skip,
                 include: {
                     replies: {
                         where: { status: "APPROVED" },
@@ -43,7 +50,7 @@ export async function GET(
         return NextResponse.json({
             data: comments,
             pagination: {
-                page,
+                page: Math.floor(skip / limit) + 1,
                 limit,
                 total,
                 totalPages: Math.ceil(total / limit),

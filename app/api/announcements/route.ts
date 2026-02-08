@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { validatePagination } from '@/lib/pagination-utils';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { slugify, generateExcerpt } from "@/lib/utils";
@@ -13,9 +14,12 @@ export async function GET(request: NextRequest) {
         const search = searchParams.get("q");
         const siteId = searchParams.get("siteId");
         const siteSlug = searchParams.get("siteSlug");
-        const page = parseInt(searchParams.get("page") || "1");
-        const limit = parseInt(searchParams.get("limit") || "12");
-        const skip = (page - 1) * limit;
+        // Validated by validatePagination
+                const pageParam = searchParams.get("page");
+        const limitParam = searchParams.get("limit");
+        const { limit, skip, error: paginationError } = validatePagination(pageParam, limitParam);
+        if (paginationError) { console.warn(`Pagination warning: ${paginationError}`); }
+        // skip calculated by validatePagination
         const includeAll = searchParams.get("includeAll") === "true"; // For admin view
 
         // Resolve siteId from slug if provided
@@ -90,7 +94,7 @@ export async function GET(request: NextRequest) {
         const response = NextResponse.json({
             data,
             pagination: {
-                page,
+                page: Math.floor(skip / limit) + 1,
                 limit,
                 total,
                 totalPages: Math.ceil(total / limit),
