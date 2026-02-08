@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { getAccessibleSites } from '@/lib/site-access';
 
@@ -99,14 +100,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Name and slug are required' }, { status: 400 });
         }
 
-        // Check if slug already exists
-        const existingSite = await prisma.site.findUnique({
-            where: { slug },
-        });
-
-        if (existingSite) {
-            return NextResponse.json({ error: 'Slug already exists' }, { status: 400 });
-        }
+        // Normalize slug (trim whitespace, lowercase)
+        const normalizedSlug = slug.trim().toLowerCase();
 
         // Create site with settings in a transaction
         const site = await prisma.$transaction(async (tx) => {
@@ -114,7 +109,7 @@ export async function POST(request: NextRequest) {
             const newSite = await tx.site.create({
                 data: {
                     name,
-                    slug,
+                    slug: normalizedSlug,
                     description: description || null,
                     primaryColor: primaryColor || '#ED1C24',
                 },
@@ -177,8 +172,30 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json(site, { status: 201 });
-    } catch (error) {
-        console.error('Error creating site:', error);
-        return NextResponse.json({ error: 'Failed to create site' }, { status: 500 });
+    } catch (error: unknown) {
+        // Handle Prisma unique constraint violation (race condition)
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if ((error as Prisma.PrismaClientKnownRequestError).code === 'P2002') {
+                // Extract which field caused the violation
+                const target = ((error as Prisma.PrismaClientKnownRequestError).meta?.target as string[]) || [];
+                const field = target[0] || 'slug';
+
+                return NextResponse.json(
+                    {
+                        error: 'Site already exists',
+                        field: field,
+                        message: `A site with this ${field} already exists. Please use a different ${field}.`
+                    },
+                    { status: 409 } // Conflict
+                );
+            }
+        }
+
+        // Log unexpected errors
+        console.error('Site creation error:', error);
+        return NextResponse.json(
+            { error: 'Failed to create site' },
+            { status: 500 }
+        );
     }
 }
