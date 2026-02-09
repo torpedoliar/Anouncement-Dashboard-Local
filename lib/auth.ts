@@ -76,15 +76,20 @@ export const authOptions: NextAuthOptions = {
                         select: { isRevoked: true, expiresAt: true },
                     });
 
-                    // If session not found, revoked, or expired, reject it
+                    // If session not found, revoked, or expired, clear the token
                     if (!sessionRecord || sessionRecord.isRevoked || new Date() > sessionRecord.expiresAt) {
-                        // Throwing error to invalidate the session/token
-                        throw new Error("Session revoked or expired");
+                        // Clear critical fields to invalidate the session gracefully
+                        // This prevents infinite login loops while still forcing logout
+                        // Use type assertion to satisfy TypeScript
+                        (token as Record<string, unknown>).id = null;
+                        (token as Record<string, unknown>).role = null;
+                        (token as Record<string, unknown>).sessionToken = null;
+                        console.log("Session invalidated: revoked or expired");
                     }
                 } catch (error) {
-                    console.error("Error validating session:", error);
-                    // If DB check fails or session is invalid, we must stop here
-                    throw new Error("Session validation failed");
+                    // On DB error, log but allow session to continue (fail-open for resilience)
+                    // Security trade-off: prefer availability over strict security for DB issues
+                    console.error("Session validation DB error (allowing session):", error);
                 }
             }
 

@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getRevisionHistory, restoreRevision } from "@/lib/revision";
+import { validatePagination } from "@/lib/pagination-utils";
 
 // GET /api/announcements/[id]/revisions - Get revision history
 export async function GET(
@@ -21,18 +22,25 @@ export async function GET(
 
         const { id } = await params;
         const url = new URL(request.url);
-        const limit = parseInt(url.searchParams.get("limit") || "20");
-        const offset = parseInt(url.searchParams.get("offset") || "0");
 
-        const { revisions, total } = await getRevisionHistory(id, limit, offset);
+        // Apply pagination limits
+        const pageParam = url.searchParams.get("page");
+        const limitParam = url.searchParams.get("limit");
+        const { limit, skip, error: paginationError } = validatePagination(pageParam, limitParam);
+
+        if (paginationError) {
+            return NextResponse.json({ error: paginationError }, { status: 400 });
+        }
+
+        const { revisions, total } = await getRevisionHistory(id, limit, skip);
 
         return NextResponse.json({
             data: revisions,
             pagination: {
                 limit,
-                offset,
+                offset: skip,
                 total,
-                hasMore: offset + revisions.length < total,
+                hasMore: skip + revisions.length < total,
             },
         });
     } catch (error) {

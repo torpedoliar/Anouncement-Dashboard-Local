@@ -61,14 +61,17 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, color, siteId } = body;
 
-        if (!name) {
+        // Zod validation with sanitization
+        const validation = validateInput(CategoryCreateSchema, body);
+        if (!validation.success) {
             return NextResponse.json(
-                { error: "Name is required" },
+                { error: "Validation failed", details: formatZodErrors(validation.errors) },
                 { status: 400 }
             );
         }
+
+        const { name, color, siteId } = validation.data;
 
         // Auto-assign default site if not provided (backward compatibility)
         let resolvedSiteId = siteId;
