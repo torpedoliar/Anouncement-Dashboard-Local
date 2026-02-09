@@ -121,6 +121,16 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
+
+        // Zod validation with XSS sanitization
+        const validation = validateInput(AnnouncementCreateSchema, body);
+        if (!validation.success) {
+            return NextResponse.json(
+                { error: "Validation failed", details: formatZodErrors(validation.errors) },
+                { status: 400 }
+            );
+        }
+
         const {
             title,
             content,
@@ -134,16 +144,9 @@ export async function POST(request: NextRequest) {
             isPublished,
             scheduledAt,
             takedownAt,
-            siteIds,        // Array of site IDs to publish to
-            primarySiteId,  // Which site is the primary (for canonical URL)
-        } = body;
-
-        if (!title || !content || !categoryId) {
-            return NextResponse.json(
-                { error: "Title, content, and category are required" },
-                { status: 400 }
-            );
-        }
+            siteIds,
+            primarySiteId,
+        } = validation.data;
 
         // Validate site IDs - auto-assign default site if not provided (backward compatibility)
         let resolvedSiteIds = siteIds;
