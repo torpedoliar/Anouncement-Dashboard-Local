@@ -78,8 +78,9 @@ export default function AnnouncementCard({
                         <>
                             {videoPath && (!videoType || videoType === 'upload') ? (
                                 <video
-                                    src={videoPath}
+                                    src={`${videoPath}#t=0.1`}
                                     muted
+                                    playsInline
                                     preload="metadata"
                                     style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
                                     className="group-hover:scale-110"
