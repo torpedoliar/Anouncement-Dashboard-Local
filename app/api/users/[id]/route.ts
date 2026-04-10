@@ -28,6 +28,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 isSuperAdmin: true,
                 createdAt: true,
                 updatedAt: true,
+                siteAccess: {
+                    select: { siteId: true }
+                }
             },
         });
 
@@ -35,7 +38,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        return NextResponse.json(user);
+        const formattedUser = {
+            ...user,
+            siteIds: user.siteAccess.map((sa) => sa.siteId)
+        };
+
+        return NextResponse.json(formattedUser);
     } catch (error) {
         console.error("Error fetching user:", error);
         return NextResponse.json(
@@ -64,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }
 
         const body = await request.json();
-        const { email, name, role, password, isSuperAdmin } = body;
+        const { email, name, role, password, isSuperAdmin, siteIds } = body;
 
         const existingUser = await prisma.user.findUnique({
             where: { id },
@@ -103,17 +111,37 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             updateData.passwordHash = await bcrypt.hash(password, 10);
         }
 
-        const user = await prisma.user.update({
-            where: { id },
-            data: updateData,
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
-                isSuperAdmin: true,
-                updatedAt: true,
-            },
+        const user = await prisma.$transaction(async (tx) => {
+            const updatedUser = await tx.user.update({
+                where: { id },
+                data: updateData,
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    role: true,
+                    isSuperAdmin: true,
+                    updatedAt: true,
+                },
+            });
+
+            if (siteIds && Array.isArray(siteIds)) {
+                await tx.userSiteAccess.deleteMany({
+                    where: { userId: id }
+                });
+
+                if (siteIds.length > 0) {
+                    for (const siteId of siteIds) {
+                        await tx.userSiteAccess.create({
+                            data: {
+                                userId: id,
+                                siteId,
+                            }
+                        });
+                    }
+                }
+            }
+            return updatedUser;
         });
 
         // Log activity
@@ -123,11 +151,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 entityType: "USER",
                 entityId: id,
                 userId: (session.user as { id: string }).id,
-                changes: JSON.stringify({ email, name, role, passwordChanged: !!password }),
+                changes: JSON.stringify({ email, name, role, passwordChanged: !!password, siteIds }),
             },
         });
 
-        return NextResponse.json(user);
+        return NextResponse.json({ ...user, siteIds });
     } catch (error) {
         console.error("Error updating user:", error);
         return NextResponse.json(

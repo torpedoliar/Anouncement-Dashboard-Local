@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiShield, FiUser, FiZap } from "react-icons/fi";
 
+interface Site {
+    id: string;
+    name: string;
+}
+
 interface User {
     id: string;
     email: string;
@@ -10,10 +15,12 @@ interface User {
     role: "ADMIN" | "EDITOR";
     isSuperAdmin: boolean;
     createdAt: string;
+    siteIds?: string[];
 }
 
 export default function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);
+    const [sites, setSites] = useState<Site[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -22,12 +29,14 @@ export default function UsersPage() {
         email: "",
         password: "",
         role: "EDITOR" as "ADMIN" | "EDITOR" | "SUPER_ADMIN",
+        siteIds: [] as string[],
     });
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         fetchUsers();
+        fetchSites();
     }, []);
 
     const fetchUsers = async () => {
@@ -41,6 +50,18 @@ export default function UsersPage() {
             console.error("Failed to fetch users:", err);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchSites = async () => {
+        try {
+            const response = await fetch("/api/sites");
+            if (response.ok) {
+                const data = await response.json();
+                setSites(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch sites:", err);
         }
     };
 
@@ -58,6 +79,7 @@ export default function UsersPage() {
                 email: formData.email,
                 role: formData.role === "SUPER_ADMIN" ? "ADMIN" : formData.role,
                 isSuperAdmin: formData.role === "SUPER_ADMIN",
+                siteIds: formData.role === "SUPER_ADMIN" ? [] : formData.siteIds,
             };
             if (formData.password) {
                 body.password = formData.password;
@@ -78,7 +100,7 @@ export default function UsersPage() {
 
             setShowModal(false);
             setEditingUser(null);
-            setFormData({ name: "", email: "", password: "", role: "EDITOR" });
+            setFormData({ name: "", email: "", password: "", role: "EDITOR", siteIds: [] });
             fetchUsers();
         } catch {
             setError("An error occurred");
@@ -114,14 +136,26 @@ export default function UsersPage() {
             email: user.email,
             password: "",
             role: user.isSuperAdmin ? "SUPER_ADMIN" : user.role,
+            siteIds: user.siteIds || [],
         });
         setShowModal(true);
     };
 
     const openAddModal = () => {
         setEditingUser(null);
-        setFormData({ name: "", email: "", password: "", role: "EDITOR" });
+        setFormData({ name: "", email: "", password: "", role: "EDITOR", siteIds: [] });
         setShowModal(true);
+    };
+
+    const handleSiteToggle = (siteId: string) => {
+        setFormData(prev => {
+            const currentSites = prev.siteIds || [];
+            if (currentSites.includes(siteId)) {
+                return { ...prev, siteIds: currentSites.filter(id => id !== siteId) };
+            } else {
+                return { ...prev, siteIds: [...currentSites, siteId] };
+            }
+        });
     };
 
     const formatDate = (dateString: string) => {
@@ -211,6 +245,7 @@ export default function UsersPage() {
                             <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>NAMA</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>EMAIL</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>ROLE</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>SITUS (AKSES)</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>DIBUAT</th>
                             <th style={{ padding: "20px", textAlign: "right", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>AKSI</th>
                         </tr>
@@ -250,6 +285,24 @@ export default function UsersPage() {
                                         }}>
                                             {badge.label}
                                         </span>
+                                    </td>
+                                    <td style={{ padding: "20px", color: "#a1a1aa", fontSize: "13px" }}>
+                                        {user.isSuperAdmin ? (
+                                            <span style={{ fontStyle: "italic" }}>Semua Situs</span>
+                                        ) : user.siteIds && user.siteIds.length > 0 ? (
+                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                                                {user.siteIds.map(id => {
+                                                    const siteName = sites.find(s => s.id === id)?.name || "Unknown";
+                                                    return (
+                                                        <span key={id} style={{ padding: "2px 6px", backgroundColor: "#262626", borderRadius: "4px", fontSize: "11px" }}>
+                                                            {siteName}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <span style={{ color: "#ef4444" }}>Tidak ada akses</span>
+                                        )}
                                     </td>
                                     <td style={{ padding: "20px", color: "#71717a", fontSize: "14px" }}>{formatDate(user.createdAt)}</td>
                                     <td style={{ padding: "16px", textAlign: "right" }}>
@@ -303,6 +356,8 @@ export default function UsersPage() {
                         width: "100%",
                         maxWidth: "400px",
                         padding: "24px",
+                        maxHeight: "90vh",
+                        overflowY: "auto"
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
                             <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#fff" }}>
@@ -392,6 +447,39 @@ export default function UsersPage() {
                                     <option value="SUPER_ADMIN">SUPER ADMIN</option>
                                 </select>
                             </div>
+                            
+                            {formData.role !== "SUPER_ADMIN" && (
+                                <div style={{ marginBottom: "24px" }}>
+                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>AKSES SITUS (Hanya beri centang untuk diizinkan)</label>
+                                    <div style={{
+                                        border: "1px solid #262626",
+                                        backgroundColor: "#111",
+                                        padding: "12px",
+                                        maxHeight: "150px",
+                                        overflowY: "auto",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "8px"
+                                    }}>
+                                        {sites.length === 0 ? (
+                                            <span style={{ color: "#a3a3a3", fontSize: "13px" }}>Tidak ada situs tersedia</span>
+                                        ) : (
+                                            sites.map(site => (
+                                                <label key={site.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#e5e5e5", fontSize: "14px" }}>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={formData.siteIds.includes(site.id)}
+                                                        onChange={() => handleSiteToggle(site.id)}
+                                                        style={{ accentColor: "#dc2626" }}
+                                                    />
+                                                    {site.name}
+                                                </label>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             <button
                                 type="submit"
                                 disabled={isSaving}

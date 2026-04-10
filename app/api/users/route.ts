@@ -22,11 +22,20 @@ export async function GET() {
                 isSuperAdmin: true,
                 createdAt: true,
                 updatedAt: true,
+                siteAccess: {
+                    select: { siteId: true }
+                }
             },
             orderBy: { createdAt: "desc" },
         });
 
-        return NextResponse.json(users);
+        // Flatten siteAccess to array of ids
+        const formattedUsers = users.map((user) => ({
+            ...user,
+            siteIds: user.siteAccess.map((sa) => sa.siteId)
+        }));
+
+        return NextResponse.json(formattedUsers);
     } catch (error) {
         console.error("Error fetching users:", error);
         return NextResponse.json(
@@ -53,7 +62,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { email, password, name, role, isSuperAdmin } = body;
+        const { email, password, name, role, isSuperAdmin, siteIds } = body;
 
         if (!email || !password || !name) {
             return NextResponse.json(
@@ -76,22 +85,28 @@ export async function POST(request: NextRequest) {
         // Hash password
         const passwordHash = await bcrypt.hash(password, 10);
 
-        const user = await prisma.user.create({
-            data: {
-                email,
-                passwordHash,
-                name,
-                role: role || "EDITOR",
-                isSuperAdmin: isSuperAdmin || false,
-            },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
-                isSuperAdmin: true,
-                createdAt: true,
-            },
+        const user = await prisma.$transaction(async (tx) => {
+            const newUser = await tx.user.create({
+                data: {
+                    email,
+                    passwordHash,
+                    name,
+                    role: role || "EDITOR",
+                    isSuperAdmin: isSuperAdmin || false,
+                },
+            });
+
+            if (siteIds && Array.isArray(siteIds) && siteIds.length > 0) {
+                for (const siteId of siteIds) {
+                    await tx.userSiteAccess.create({
+                        data: {
+                            userId: newUser.id,
+                            siteId,
+                        }
+                    });
+                }
+            }
+            return newUser;
         });
 
         // Log activity
@@ -101,11 +116,11 @@ export async function POST(request: NextRequest) {
                 entityType: "USER",
                 entityId: user.id,
                 userId: (session.user as { id: string }).id,
-                changes: JSON.stringify({ email, name, role: role || "EDITOR" }),
+                changes: JSON.stringify({ email, name, role: role || "EDITOR", siteIds }),
             },
         });
 
-        return NextResponse.json(user, { status: 201 });
+        return NextResponse.json({ ...user, siteIds }, { status: 201 });
     } catch (error) {
         console.error("Error creating user:", error);
         return NextResponse.json(
