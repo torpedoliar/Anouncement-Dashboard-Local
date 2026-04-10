@@ -22,6 +22,9 @@ interface HealthMetrics {
     totalCategories: number;
     totalSubscribers: number;
     lastActivityAt: string | null;
+    publishedAnnouncements: number;
+    totalViews: number;
+    totalUsers: number;
 }
 
 interface HealthResponse {
@@ -101,6 +104,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             where: { siteId: id },
         });
 
+        // Published announcements
+        const publishedAnnouncements = await prisma.announcementSite.count({
+            where: {
+                siteId: id,
+                announcement: { isPublished: true },
+            },
+        });
+
+        // Total views
+        const totalViewsResult = await prisma.analytics.aggregate({
+            where: { siteId: id },
+            _sum: { pageViews: true },
+        });
+        const totalViews = totalViewsResult._sum.pageViews || 0;
+
         // Total categories
         const totalCategories = await prisma.category.count({
             where: { siteId: id },
@@ -109,6 +127,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         // Total subscribers
         const totalSubscribers = await prisma.newsletterSubscriber.count({
             where: { siteId: id, isActive: true },
+        });
+
+        // Total users (users who have access to this site)
+        const totalUsers = await prisma.userSiteAccess.count({
+            where: { siteId: id },
         });
 
         // Last activity
@@ -124,8 +147,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             pendingComments,
             scheduledPosts,
             totalAnnouncements,
+            publishedAnnouncements,
+            totalViews,
             totalCategories,
             totalSubscribers,
+            totalUsers,
             lastActivityAt: lastActivity?.createdAt.toISOString() || null,
         };
 

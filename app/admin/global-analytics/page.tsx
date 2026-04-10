@@ -57,14 +57,15 @@ export default function GlobalAnalyticsPage() {
                     const healthRes = await fetch(`/api/sites/${site.id}/health`);
                     if (healthRes.ok) {
                         const health = await healthRes.json();
+                        const metrics = health.metrics || {};
                         return {
                             ...site,
                             stats: {
-                                totalAnnouncements: health.totalAnnouncements || 0,
-                                publishedAnnouncements: health.publishedAnnouncements || 0,
-                                totalViews: health.totalViews || 0,
-                                totalCategories: health.totalCategories || 0,
-                                totalUsers: health.totalUsers || 0,
+                                totalAnnouncements: metrics.totalAnnouncements || 0,
+                                publishedAnnouncements: metrics.publishedAnnouncements || 0,
+                                totalViews: metrics.totalViews || 0,
+                                totalCategories: metrics.totalCategories || 0,
+                                totalUsers: metrics.totalUsers || 0,
                             },
                         };
                     }
