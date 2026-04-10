@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { canEditOnSite } from "@/lib/site-access";
 import { CategoryCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
+import { getCurrentSiteId } from "@/lib/site-context";
 
 // GET /api/categories - Get categories (filtered by site)
 export async function GET(request: NextRequest) {
@@ -20,6 +21,10 @@ export async function GET(request: NextRequest) {
                 select: { id: true },
             });
             resolvedSiteId = site?.id || null;
+        }
+        
+        if (!resolvedSiteId) {
+            resolvedSiteId = await getCurrentSiteId();
         }
 
         // Build where clause

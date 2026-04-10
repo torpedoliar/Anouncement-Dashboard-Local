@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { validatePagination, getPaginationMeta } from "@/lib/pagination-utils";
+import { getCurrentSiteId } from "@/lib/site-context";
 
 // GET /api/comments - List all comments (admin)
 export async function GET(request: NextRequest) {
@@ -31,9 +32,17 @@ export async function GET(request: NextRequest) {
         }
 
         // Build where clause
-        const where: Record<string, unknown> = {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = {};
         if (status) where.status = status;
         if (announcementId) where.announcementId = announcementId;
+        
+        const siteId = await getCurrentSiteId();
+        if (siteId) {
+            where.announcement = {
+                sites: { some: { siteId } }
+            };
+        }
 
         // OPTIMIZATION: Two-query approach to eliminate N+1 problem
         // Query 1: Get comments with basic announcement data (no sites yet)

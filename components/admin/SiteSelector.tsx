@@ -54,11 +54,22 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
 
                 if (savedSite) {
                     setCurrentSite(savedSite);
+                    // Ensure the server has the cookie
+                    fetch('/api/context', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ siteId: savedSite.id, siteSlug: savedSite.slug })
+                    }).catch(console.error);
                 } else if (data.length > 0) {
                     // Find default site or use first
                     const defaultSite = data.find((s: Site & { isDefault?: boolean }) => s.isDefault) || data[0];
                     setCurrentSite(defaultSite);
                     localStorage.setItem('currentSiteId', defaultSite.id);
+                    fetch('/api/context', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ siteId: defaultSite.id, siteSlug: defaultSite.slug })
+                    }).catch(console.error);
                 }
             }
         } catch (error) {
@@ -68,11 +79,22 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
         }
     };
 
-    const handleSiteSelect = (site: Site) => {
+    const handleSiteSelect = async (site: Site) => {
         setCurrentSite(site);
         setIsOpen(false);
         localStorage.setItem('currentSiteId', site.id);
         onSiteChange?.(site);
+
+        // Update server context
+        try {
+            await fetch('/api/context', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ siteId: site.id, siteSlug: site.slug })
+            });
+        } catch (error) {
+            console.error('Failed to set site context:', error);
+        }
 
         // Trigger a page refresh to reload data with new site context
         window.location.reload();
