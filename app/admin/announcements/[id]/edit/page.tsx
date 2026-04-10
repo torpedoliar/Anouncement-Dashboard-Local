@@ -7,6 +7,9 @@ export const dynamic = "force-dynamic";
 async function getAnnouncement(id: string) {
     return prisma.announcement.findUnique({
         where: { id },
+        include: {
+            sites: true,
+        },
     });
 }
 
@@ -75,6 +78,10 @@ export default async function EditAnnouncementPage({
                     isPublished: announcement.isPublished,
                     scheduledAt: announcement.scheduledAt?.toISOString().slice(0, 16) || null,
                     takedownAt: announcement.takedownAt?.toISOString().slice(0, 16) || null,
+                    sites: announcement.sites.map(site => ({
+                        siteId: site.siteId,
+                        isPrimary: site.isPrimary,
+                    })),
                 }}
             />
         </div>

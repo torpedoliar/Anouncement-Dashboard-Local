@@ -53,7 +53,7 @@ export async function PUT(
 
         const { id } = await params;
         const body = await request.json();
-        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, scheduledAt, takedownAt } = body;
+        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, scheduledAt, takedownAt, siteIds, primarySiteId } = body;
 
         const existingAnnouncement = await prisma.announcement.findUnique({ where: { id } });
         if (!existingAnnouncement) {
@@ -89,27 +89,50 @@ export async function PUT(
             // Continue with update even if revision fails
         }
 
-        const announcement = await prisma.announcement.update({
-            where: { id },
-            data: {
-                title: title || existingAnnouncement.title,
-                slug,
-                content: content || existingAnnouncement.content,
-                excerpt,
-                categoryId: categoryId || existingAnnouncement.categoryId,
-                imagePath: imagePath !== undefined ? imagePath : existingAnnouncement.imagePath,
-                videoPath: videoPath !== undefined ? videoPath : existingAnnouncement.videoPath,
-                videoType: videoType !== undefined ? videoType : existingAnnouncement.videoType,
-                youtubeUrl: youtubeUrl !== undefined ? youtubeUrl : existingAnnouncement.youtubeUrl,
-                isHero: isHero !== undefined ? isHero : existingAnnouncement.isHero,
-                isPinned: isPinned !== undefined ? isPinned : existingAnnouncement.isPinned,
-                isPublished: isPublished !== undefined ? isPublished : existingAnnouncement.isPublished,
-                scheduledAt: scheduledAt !== undefined ? (scheduledAt ? new Date(scheduledAt) : null) : existingAnnouncement.scheduledAt,
-                takedownAt: takedownAt !== undefined ? (takedownAt ? new Date(takedownAt) : null) : existingAnnouncement.takedownAt,
-            },
-            include: {
-                category: true,
-            },
+        const announcement = await prisma.$transaction(async (tx) => {
+            const updated = await tx.announcement.update({
+                where: { id },
+                data: {
+                    title: title || existingAnnouncement.title,
+                    slug,
+                    content: content || existingAnnouncement.content,
+                    excerpt,
+                    categoryId: categoryId || existingAnnouncement.categoryId,
+                    imagePath: imagePath !== undefined ? imagePath : existingAnnouncement.imagePath,
+                    videoPath: videoPath !== undefined ? videoPath : existingAnnouncement.videoPath,
+                    videoType: videoType !== undefined ? videoType : existingAnnouncement.videoType,
+                    youtubeUrl: youtubeUrl !== undefined ? youtubeUrl : existingAnnouncement.youtubeUrl,
+                    isHero: isHero !== undefined ? isHero : existingAnnouncement.isHero,
+                    isPinned: isPinned !== undefined ? isPinned : existingAnnouncement.isPinned,
+                    isPublished: isPublished !== undefined ? isPublished : existingAnnouncement.isPublished,
+                    scheduledAt: scheduledAt !== undefined ? (scheduledAt ? new Date(scheduledAt) : null) : existingAnnouncement.scheduledAt,
+                    takedownAt: takedownAt !== undefined ? (takedownAt ? new Date(takedownAt) : null) : existingAnnouncement.takedownAt,
+                },
+                include: {
+                    category: true,
+                },
+            });
+
+            if (siteIds && Array.isArray(siteIds) && siteIds.length > 0) {
+                // Delete existing associations
+                await tx.announcementSite.deleteMany({
+                    where: { announcementId: id },
+                });
+
+                // Create new associations
+                const actualPrimarySiteId = primarySiteId || siteIds[0];
+                for (const sId of siteIds) {
+                    await tx.announcementSite.create({
+                        data: {
+                            announcementId: id,
+                            siteId: sId,
+                            isPrimary: sId === actualPrimarySiteId,
+                        },
+                    });
+                }
+            }
+
+            return updated;
         });
 
         // Log activity - stringify JSON for SQLite compatibility
