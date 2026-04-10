@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheck } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheck, FiFolder } from "react-icons/fi";
 
 interface Category {
     id: string;
@@ -10,6 +10,11 @@ interface Category {
     color: string;
     order: number;
     _count?: { announcements: number };
+    site?: {
+        id: string;
+        name: string;
+        slug: string;
+    };
 }
 
 export default function CategoriesPage() {
@@ -155,6 +160,19 @@ export default function CategoriesPage() {
         fontSize: '14px',
     };
 
+    // Group categories by site
+    const groupedCategories = categories.reduce((acc, category) => {
+        const siteId = category.site?.id || "unknown";
+        if (!acc[siteId]) {
+            acc[siteId] = {
+                siteName: category.site?.name || "Global / Unknown Site",
+                categories: [],
+            };
+        }
+        acc[siteId].categories.push(category);
+        return acc;
+    }, {} as Record<string, { siteName: string; categories: Category[] }>);
+
     return (
         <div style={{ padding: '32px', backgroundColor: '#000', minHeight: '100vh' }}>
             {/* Header */}
@@ -191,7 +209,7 @@ export default function CategoriesPage() {
                         setShowAddForm(true);
                         setError("");
                     }}
-                    style={buttonPrimaryStyle}
+                    style={{ ...buttonPrimaryStyle, borderRadius: '6px' }}
                 >
                     <FiPlus size={18} />
                     Tambah Kategori
@@ -209,6 +227,7 @@ export default function CategoriesPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    borderRadius: '6px',
                 }}>
                     {error}
                     <button
@@ -222,7 +241,7 @@ export default function CategoriesPage() {
 
             {/* Add Form */}
             {showAddForm && (
-                <div style={{ ...cardStyle, marginBottom: '24px' }}>
+                <div style={{ ...cardStyle, marginBottom: '32px' }}>
                     <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
                         Tambah Kategori Baru
                     </h3>
@@ -236,7 +255,7 @@ export default function CategoriesPage() {
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
                                 placeholder="Contoh: Promo"
-                                style={inputStyle}
+                                style={{ ...inputStyle, borderRadius: '6px' }}
                             />
                         </div>
                         <div style={{ width: '120px' }}>
@@ -253,12 +272,13 @@ export default function CategoriesPage() {
                                     backgroundColor: '#0a0a0a',
                                     border: '1px solid #262626',
                                     cursor: 'pointer',
+                                    borderRadius: '6px',
                                 }}
                             />
                         </div>
                         <button
                             onClick={handleAdd}
-                            style={{ ...buttonPrimaryStyle, padding: '10px 16px' }}
+                            style={{ ...buttonPrimaryStyle, padding: '10px 16px', borderRadius: '6px' }}
                         >
                             <FiCheck size={18} />
                         </button>
@@ -275,6 +295,7 @@ export default function CategoriesPage() {
                                 color: '#fff',
                                 border: 'none',
                                 cursor: 'pointer',
+                                borderRadius: '6px',
                             }}
                         >
                             <FiX size={18} />
@@ -283,168 +304,198 @@ export default function CategoriesPage() {
                 </div>
             )}
 
-            {/* Categories List */}
-            <div style={cardStyle}>
-                {isLoading ? (
-                    <p style={{ color: '#737373', textAlign: 'center', padding: '32px' }}>
-                        Memuat...
-                    </p>
-                ) : categories.length === 0 ? (
-                    <p style={{ color: '#737373', textAlign: 'center', padding: '32px' }}>
-                        Belum ada kategori
-                    </p>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid #262626' }}>
-                                <th style={{ textAlign: 'left', padding: '12px', color: '#737373', fontSize: '13px', fontWeight: 500 }}>
-                                    Warna
-                                </th>
-                                <th style={{ textAlign: 'left', padding: '12px', color: '#737373', fontSize: '13px', fontWeight: 500 }}>
-                                    Nama
-                                </th>
-                                <th style={{ textAlign: 'left', padding: '12px', color: '#737373', fontSize: '13px', fontWeight: 500 }}>
-                                    Slug
-                                </th>
-                                <th style={{ textAlign: 'center', padding: '12px', color: '#737373', fontSize: '13px', fontWeight: 500 }}>
-                                    Pengumuman
-                                </th>
-                                <th style={{ textAlign: 'right', padding: '12px', color: '#737373', fontSize: '13px', fontWeight: 500 }}>
-                                    Aksi
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {categories.map((category) => (
-                                <tr
-                                    key={category.id}
-                                    style={{ borderBottom: '1px solid #1a1a1a' }}
-                                >
-                                    {editingId === category.id ? (
-                                        <>
-                                            <td style={{ padding: '12px' }}>
-                                                <input
-                                                    type="color"
-                                                    value={editColor}
-                                                    onChange={(e) => setEditColor(e.target.value)}
-                                                    style={{
-                                                        width: '40px',
-                                                        height: '32px',
-                                                        backgroundColor: '#0a0a0a',
-                                                        border: '1px solid #262626',
-                                                        cursor: 'pointer',
-                                                    }}
-                                                />
-                                            </td>
-                                            <td style={{ padding: '12px' }}>
-                                                <input
-                                                    type="text"
-                                                    value={editName}
-                                                    onChange={(e) => setEditName(e.target.value)}
-                                                    style={{ ...inputStyle, padding: '8px 12px' }}
-                                                />
-                                            </td>
-                                            <td style={{ padding: '12px', color: '#525252' }}>
-                                                {category.slug}
-                                            </td>
-                                            <td style={{ padding: '12px', textAlign: 'center', color: '#a3a3a3' }}>
-                                                {category._count?.announcements || 0}
-                                            </td>
-                                            <td style={{ padding: '12px', textAlign: 'right' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                                    <button
-                                                        onClick={() => handleEdit(category.id)}
-                                                        style={{
-                                                            padding: '8px',
-                                                            backgroundColor: '#16a34a',
-                                                            color: '#fff',
-                                                            border: 'none',
-                                                            cursor: 'pointer',
-                                                        }}
-                                                    >
-                                                        <FiCheck size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setEditingId(null);
-                                                            setError("");
-                                                        }}
-                                                        style={{
-                                                            padding: '8px',
-                                                            backgroundColor: '#262626',
-                                                            color: '#fff',
-                                                            border: 'none',
-                                                            cursor: 'pointer',
-                                                        }}
-                                                    >
-                                                        <FiX size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td style={{ padding: '12px' }}>
-                                                <div
-                                                    style={{
-                                                        width: '32px',
-                                                        height: '32px',
-                                                        backgroundColor: category.color,
-                                                        borderRadius: '4px',
-                                                    }}
-                                                />
-                                            </td>
-                                            <td style={{ padding: '12px', color: '#fff', fontWeight: 500 }}>
-                                                {category.name}
-                                            </td>
-                                            <td style={{ padding: '12px', color: '#525252', fontFamily: 'monospace', fontSize: '13px' }}>
-                                                {category.slug}
-                                            </td>
-                                            <td style={{ padding: '12px', textAlign: 'center', color: '#a3a3a3' }}>
-                                                {category._count?.announcements || 0}
-                                            </td>
-                                            <td style={{ padding: '12px', textAlign: 'right' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                                    <button
-                                                        onClick={() => startEdit(category)}
-                                                        style={{
-                                                            padding: '8px',
-                                                            backgroundColor: 'transparent',
-                                                            color: '#a3a3a3',
-                                                            border: '1px solid #262626',
-                                                            cursor: 'pointer',
-                                                        }}
-                                                    >
-                                                        <FiEdit2 size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            if (confirm(`Hapus kategori "${category.name}"?`)) {
-                                                                handleDelete(category.id);
-                                                            }
-                                                        }}
-                                                        disabled={deletingId === category.id}
-                                                        style={{
-                                                            padding: '8px',
-                                                            backgroundColor: 'transparent',
-                                                            color: '#dc2626',
-                                                            border: '1px solid #262626',
-                                                            cursor: 'pointer',
-                                                            opacity: deletingId === category.id ? 0.5 : 1,
-                                                        }}
-                                                    >
-                                                        <FiTrash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </>
-                                    )}
+            {/* Categories List grouped by Site */}
+            {isLoading ? (
+                <div style={cardStyle}>
+                    <p style={{ color: '#737373', textAlign: 'center', padding: '32px' }}>Memuat...</p>
+                </div>
+            ) : categories.length === 0 ? (
+                <div style={cardStyle}>
+                    <p style={{ color: '#737373', textAlign: 'center', padding: '32px' }}>Belum ada kategori</p>
+                </div>
+            ) : (
+                Object.entries(groupedCategories).map(([siteId, group]) => (
+                    <div key={siteId} style={{ ...cardStyle, marginBottom: '24px', padding: 0, overflow: 'hidden' }}>
+                        <div style={{
+                            backgroundColor: '#111',
+                            padding: '16px 20px',
+                            borderBottom: '2px solid #333',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px'
+                        }}>
+                            <FiFolder color="#a1a1aa" size={18} />
+                            <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#fff', letterSpacing: '0.05em' }}>
+                                SITUS: {group.siteName.toUpperCase()}
+                            </h2>
+                            <span style={{ backgroundColor: '#262626', color: '#a1a1aa', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
+                                {group.categories.length}
+                            </span>
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid #262626', backgroundColor: '#0a0a0a' }}>
+                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600, width: '80px' }}>
+                                        Warna
+                                    </th>
+                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600 }}>
+                                        Nama
+                                    </th>
+                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600 }}>
+                                        Slug
+                                    </th>
+                                    <th style={{ textAlign: 'center', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600 }}>
+                                        Pengumuman
+                                    </th>
+                                    <th style={{ textAlign: 'right', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600 }}>
+                                        Aksi
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                            </thead>
+                            <tbody>
+                                {group.categories.map((category, index) => (
+                                    <tr
+                                        key={category.id}
+                                        style={{
+                                            borderBottom: index < group.categories.length - 1 ? '1px solid #1a1a1a' : 'none',
+                                            backgroundColor: '#0a0a0a',
+                                            transition: 'background-color 0.2s'
+                                        }}
+                                    >
+                                        {editingId === category.id ? (
+                                            <>
+                                                <td style={{ padding: '12px 20px' }}>
+                                                    <input
+                                                        type="color"
+                                                        value={editColor}
+                                                        onChange={(e) => setEditColor(e.target.value)}
+                                                        style={{
+                                                            width: '40px',
+                                                            height: '32px',
+                                                            backgroundColor: '#0a0a0a',
+                                                            border: '1px solid #262626',
+                                                            cursor: 'pointer',
+                                                            borderRadius: '4px',
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '12px 20px' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={editName}
+                                                        onChange={(e) => setEditName(e.target.value)}
+                                                        style={{ ...inputStyle, padding: '8px 12px', borderRadius: '4px' }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '12px 20px', color: '#525252' }}>
+                                                    {category.slug}
+                                                </td>
+                                                <td style={{ padding: '12px 20px', textAlign: 'center', color: '#a3a3a3' }}>
+                                                    {category._count?.announcements || 0}
+                                                </td>
+                                                <td style={{ padding: '12px 20px', textAlign: 'right' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                                        <button
+                                                            onClick={() => handleEdit(category.id)}
+                                                            style={{
+                                                                padding: '8px',
+                                                                backgroundColor: '#16a34a',
+                                                                color: '#fff',
+                                                                border: 'none',
+                                                                cursor: 'pointer',
+                                                                borderRadius: '4px',
+                                                            }}
+                                                        >
+                                                            <FiCheck size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingId(null);
+                                                                setError("");
+                                                            }}
+                                                            style={{
+                                                                padding: '8px',
+                                                                backgroundColor: '#262626',
+                                                                color: '#fff',
+                                                                border: 'none',
+                                                                cursor: 'pointer',
+                                                                borderRadius: '4px',
+                                                            }}
+                                                        >
+                                                            <FiX size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td style={{ padding: '12px 20px' }}>
+                                                    <div
+                                                        style={{
+                                                            width: '28px',
+                                                            height: '28px',
+                                                            backgroundColor: category.color,
+                                                            borderRadius: '6px',
+                                                            border: '1px solid rgba(255,255,255,0.1)'
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '12px 20px', color: '#fff', fontWeight: 500 }}>
+                                                    {category.name}
+                                                </td>
+                                                <td style={{ padding: '12px 20px', color: '#525252', fontFamily: 'monospace', fontSize: '13px' }}>
+                                                    {category.slug}
+                                                </td>
+                                                <td style={{ padding: '12px 20px', textAlign: 'center', color: '#a3a3a3' }}>
+                                                    <span style={{ backgroundColor: '#1a1a1a', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
+                                                        {category._count?.announcements || 0}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '12px 20px', textAlign: 'right' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                                        <button
+                                                            onClick={() => startEdit(category)}
+                                                            style={{
+                                                                padding: '8px',
+                                                                backgroundColor: 'transparent',
+                                                                color: '#a3a3a3',
+                                                                border: '1px solid #262626',
+                                                                cursor: 'pointer',
+                                                                borderRadius: '4px',
+                                                            }}
+                                                        >
+                                                            <FiEdit2 size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (confirm(`Hapus kategori "${category.name}"?`)) {
+                                                                    handleDelete(category.id);
+                                                                }
+                                                            }}
+                                                            disabled={deletingId === category.id}
+                                                            style={{
+                                                                padding: '8px',
+                                                                backgroundColor: 'transparent',
+                                                                color: '#dc2626',
+                                                                border: '1px solid #262626',
+                                                                cursor: 'pointer',
+                                                                opacity: deletingId === category.id ? 0.5 : 1,
+                                                                borderRadius: '4px',
+                                                            }}
+                                                        >
+                                                            <FiTrash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </>
+                                        )}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ))
+            )}
         </div>
     );
 }
