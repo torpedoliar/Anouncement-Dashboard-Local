@@ -135,7 +135,7 @@ export default function HeroSection({
             {/* Background Media (Image or Video) */}
             <div style={{ position: 'absolute', inset: 0 }}>
                 {/* Video Upload */}
-                {currentAnnouncement?.videoPath && currentAnnouncement?.videoType === 'upload' ? (
+                {currentAnnouncement?.videoPath && (!currentAnnouncement?.videoType || currentAnnouncement?.videoType === 'upload') ? (
                     <video
                         ref={videoRef}
                         src={currentAnnouncement.videoPath}

@@ -76,7 +76,7 @@ export default function AnnouncementCard({
                 }}>
                     {thumbnailUrl || videoPath ? (
                         <>
-                            {videoPath && videoType === 'upload' ? (
+                            {videoPath && (!videoType || videoType === 'upload') ? (
                                 <video
                                     src={videoPath}
                                     muted

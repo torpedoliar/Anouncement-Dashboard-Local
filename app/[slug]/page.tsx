@@ -103,7 +103,7 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                 minHeight: '500px',
             }}>
                 {/* Video Upload */}
-                {announcement.videoPath && announcement.videoType === 'upload' ? (
+                {announcement.videoPath && (!announcement.videoType || announcement.videoType === 'upload') ? (
                     <ArticleVideoPlayer
                         videoPath={announcement.videoPath}
                         title={announcement.title}
