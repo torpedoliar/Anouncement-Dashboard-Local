@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { canEditOnSite } from "@/lib/site-access";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -57,6 +58,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json(
                 { error: "Category not found" },
                 { status: 404 }
+            );
+        }
+
+        // Authorization: user must be able to edit on this category's site
+        const userId = (session.user as { id: string }).id;
+        if (!(await canEditOnSite(userId, existingCategory.siteId))) {
+            return NextResponse.json(
+                { error: "No permission to edit categories on this site" },
+                { status: 403 }
             );
         }
 
@@ -138,6 +148,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json(
                 { error: "Category not found" },
                 { status: 404 }
+            );
+        }
+
+        // Authorization: user must be able to edit on this category's site
+        const userId = (session.user as { id: string }).id;
+        if (!(await canEditOnSite(userId, category.siteId))) {
+            return NextResponse.json(
+                { error: "No permission to delete categories on this site" },
+                { status: 403 }
             );
         }
 

@@ -9,10 +9,10 @@ const execAsync = promisify(exec);
 // POST /api/update - Perform one-click update
 export async function POST() {
     try {
-        // Check authentication
+        // Check authentication — system update is destructive, SuperAdmin only
         const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden: SuperAdmin only" }, { status: 403 });
         }
 
         // TEMPORARILY DISABLED: Migration system being implemented

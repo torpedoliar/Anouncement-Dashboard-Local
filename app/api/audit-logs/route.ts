@@ -3,12 +3,15 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { validatePagination } from "@/lib/pagination-utils";
+import { getCurrentSiteId } from "@/lib/site-context";
+import { canAccessSite, getAccessibleSites } from "@/lib/site-access";
+import type { Prisma } from "@prisma/client";
 
-// GET /api/audit-logs - List activity logs with pagination and filters
+// GET /api/audit-logs - List activity logs (scoped to the user's accessible sites)
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -28,15 +31,7 @@ export async function GET(request: NextRequest) {
         const userId = searchParams.get("userId");
         const severity = searchParams.get("severity");
 
-        // Build where clause
-        type WhereClause = {
-            entityType?: string;
-            action?: string;
-            userId?: string;
-            severity?: "INFO" | "WARNING" | "ERROR";
-        };
-
-        const where: WhereClause = {};
+        const where: Prisma.ActivityLogWhereInput = {};
 
         if (entityType) {
             where.entityType = entityType;
@@ -49,6 +44,21 @@ export async function GET(request: NextRequest) {
         }
         if (severity && ["INFO", "WARNING", "ERROR"].includes(severity)) {
             where.severity = severity as "INFO" | "WARNING" | "ERROR";
+        }
+
+        // Scope to site: prefer the current admin site cookie, else all accessible sites.
+        // SuperAdmin with no site context sees everything. Logs with null siteId
+        // (system-level events) are included alongside the current site's logs.
+        const isSuperAdmin = !!session.user.isSuperAdmin;
+        const currentSiteId = await getCurrentSiteId();
+        if (currentSiteId) {
+            if (!isSuperAdmin && !(await canAccessSite(session.user.id, currentSiteId))) {
+                return NextResponse.json({ error: "No access to this site" }, { status: 403 });
+            }
+            where.OR = [{ siteId: currentSiteId }, { siteId: null }];
+        } else if (!isSuperAdmin) {
+            const accessible = await getAccessibleSites(session.user.id);
+            where.OR = [{ siteId: { in: accessible.map((s) => s.id) } }, { siteId: null }];
         }
 
         const [logs, total] = await Promise.all([

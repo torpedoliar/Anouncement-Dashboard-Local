@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getCurrentSiteId } from "@/lib/site-context";
+import { canAccessSite } from "@/lib/site-access";
+import { Prisma } from "@prisma/client";
 import { startOfDay, endOfDay, subDays, format, eachDayOfInterval } from "date-fns";
 
-// GET /api/analytics - Get analytics data
+// GET /api/analytics - Get analytics data (scoped to the current site)
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -18,8 +21,20 @@ export async function GET(request: NextRequest) {
         const startDate = startOfDay(subDays(new Date(), days));
         const endDate = endOfDay(new Date());
 
-        // Check if Analytics table has data
-        const analyticsCount = await prisma.analytics.count();
+        // Resolve site scope from the admin cookie. When set, every query below is
+        // restricted to that site so analytics never mix data across sites.
+        const siteId = await getCurrentSiteId();
+        if (siteId && !(await canAccessSite(session.user.id, siteId))) {
+            return NextResponse.json({ error: "No access to this site" }, { status: 403 });
+        }
+        // Reusable filters
+        const analyticsSiteWhere: Prisma.AnalyticsWhereInput = siteId ? { siteId } : {};
+        const announcementSiteWhere: Prisma.AnnouncementWhereInput = siteId
+            ? { sites: { some: { siteId } } }
+            : {};
+
+        // Check if Analytics table has data (for this site)
+        const analyticsCount = await prisma.analytics.count({ where: analyticsSiteWhere });
         const hasAnalyticsData = analyticsCount > 0;
 
         let dailyViews: { date: string; pageViews: number; uniqueVisitors: number }[] = [];
@@ -31,6 +46,7 @@ export async function GET(request: NextRequest) {
                 by: ["date"],
                 where: {
                     date: { gte: startDate, lte: endDate },
+                    ...analyticsSiteWhere,
                 },
                 _sum: {
                     pageViews: true,
@@ -51,6 +67,7 @@ export async function GET(request: NextRequest) {
                 where: {
                     announcementId: { not: null },
                     date: { gte: startDate, lte: endDate },
+                    ...analyticsSiteWhere,
                 },
                 _sum: { pageViews: true },
                 orderBy: { _sum: { pageViews: "desc" } },
@@ -81,7 +98,10 @@ export async function GET(request: NextRequest) {
         } else {
             // Fallback: Generate sample daily views from existing viewCount data
             const interval = eachDayOfInterval({ start: startDate, end: endDate });
-            const totalViews = await prisma.announcement.aggregate({ _sum: { viewCount: true } });
+            const totalViews = await prisma.announcement.aggregate({
+                _sum: { viewCount: true },
+                where: announcementSiteWhere,
+            });
             const avgDailyViews = Math.round((totalViews._sum.viewCount || 0) / days);
 
             dailyViews = interval.slice(-Math.min(days, 30)).map((date, index) => ({
@@ -92,7 +112,7 @@ export async function GET(request: NextRequest) {
 
             // Fallback: Get top articles from viewCount field
             const topByViewCount = await prisma.announcement.findMany({
-                where: { isPublished: true },
+                where: { isPublished: true, ...announcementSiteWhere },
                 orderBy: { viewCount: "desc" },
                 take: 10,
                 select: {
@@ -111,22 +131,37 @@ export async function GET(request: NextRequest) {
             }));
         }
 
-        // Get category distribution (always from viewCount)
-        const categoryViews = await prisma.$queryRaw`
-            SELECT c.name, c.color, COALESCE(SUM(a."viewCount"), 0) as views
-            FROM categories c
-            LEFT JOIN announcements a ON a."categoryId" = c.id AND a."isPublished" = true
-            GROUP BY c.id, c.name, c.color
-            ORDER BY views DESC
-        ` as { name: string; color: string; views: bigint }[];
+        // Get category distribution from viewCount, scoped to the site when set.
+        // Categories belong to one site; announcements link to sites via the junction.
+        const categoryViews = (siteId
+            ? await prisma.$queryRaw`
+                SELECT c.name, c.color, COALESCE(SUM(a."viewCount"), 0) as views
+                FROM categories c
+                LEFT JOIN announcements a
+                    ON a."categoryId" = c.id AND a."isPublished" = true
+                    AND EXISTS (
+                        SELECT 1 FROM announcement_sites s
+                        WHERE s."announcementId" = a.id AND s."siteId" = ${siteId}
+                    )
+                WHERE c."siteId" = ${siteId}
+                GROUP BY c.id, c.name, c.color
+                ORDER BY views DESC`
+            : await prisma.$queryRaw`
+                SELECT c.name, c.color, COALESCE(SUM(a."viewCount"), 0) as views
+                FROM categories c
+                LEFT JOIN announcements a ON a."categoryId" = c.id AND a."isPublished" = true
+                GROUP BY c.id, c.name, c.color
+                ORDER BY views DESC`
+        ) as { name: string; color: string; views: bigint }[];
 
-        // Get totals
+        // Get totals (scoped)
         const totalViews = await prisma.announcement.aggregate({
             _sum: { viewCount: true },
+            where: announcementSiteWhere,
         });
 
         const publishedCount = await prisma.announcement.count({
-            where: { isPublished: true },
+            where: { isPublished: true, ...announcementSiteWhere },
         });
 
         return NextResponse.json({
@@ -163,6 +198,13 @@ export async function POST(request: NextRequest) {
 
         const today = startOfDay(new Date());
 
+        // Attribute the view to the article's primary site so analytics is scoped.
+        const primary = await prisma.announcementSite.findFirst({
+            where: { announcementId },
+            orderBy: { isPrimary: "desc" },
+            select: { siteId: true },
+        });
+
         // Upsert analytics record
         await prisma.analytics.upsert({
             where: {
@@ -176,6 +218,7 @@ export async function POST(request: NextRequest) {
             },
             create: {
                 announcementId,
+                siteId: primary?.siteId ?? null,
                 pageViews: 1,
                 uniqueVisitors: 1,
                 date: today,

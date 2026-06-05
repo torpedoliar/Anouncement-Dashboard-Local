@@ -1,16 +1,19 @@
 import prisma from "@/lib/prisma";
 import AnnouncementForm from "@/components/admin/AnnouncementForm";
+import { getCurrentSiteId } from "@/lib/site-context";
 
 export const dynamic = "force-dynamic";
 
-async function getCategories() {
+async function getCategories(siteId: string | null) {
     return prisma.category.findMany({
+        where: siteId ? { siteId } : {},
         orderBy: { order: "asc" },
     });
 }
 
 export default async function NewAnnouncementPage() {
-    const categories = await getCategories();
+    const currentSiteId = await getCurrentSiteId();
+    const categories = await getCategories(currentSiteId);
 
     return (
         <div style={{ padding: '32px' }}>
@@ -39,7 +42,7 @@ export default async function NewAnnouncementPage() {
             </div>
 
             {/* Form */}
-            <AnnouncementForm categories={categories} />
+            <AnnouncementForm categories={categories} defaultSiteId={currentSiteId} />
         </div>
     );
 }

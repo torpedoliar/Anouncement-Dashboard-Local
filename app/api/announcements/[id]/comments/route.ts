@@ -86,11 +86,17 @@ export async function POST(
         }
 
         const { authorName, authorEmail, content, parentId } = validation.data;
+        // Optional: which site the reader is on (sent by the public comment form)
+        const siteSlug = typeof body.siteSlug === "string" ? body.siteSlug : null;
 
-        // Check if announcement exists and is published
+        // Check if announcement exists and is published; load its site associations
         const announcement = await prisma.announcement.findUnique({
             where: { id },
-            select: { id: true, isPublished: true },
+            select: {
+                id: true,
+                isPublished: true,
+                sites: { select: { siteId: true, isPrimary: true, site: { select: { slug: true } } } },
+            },
         });
 
         if (!announcement || !announcement.isPublished) {
@@ -115,10 +121,29 @@ export async function POST(
             }
         }
 
-        // Get settings for auto-approve
-        const settings = await prisma.settings.findFirst();
-        const autoApprove = settings?.commentAutoApprove ?? false;
-        const requireEmail = settings?.commentRequireEmail ?? false;
+        // Resolve the relevant site for moderation rules: the site the reader is on
+        // (siteSlug), else the article's primary site, else its first site.
+        const siteAssocs = announcement.sites;
+        const chosen =
+            (siteSlug && siteAssocs.find((s) => s.site.slug === siteSlug)) ||
+            siteAssocs.find((s) => s.isPrimary) ||
+            siteAssocs[0] ||
+            null;
+
+        // Prefer per-site comment settings; fall back to the global Settings singleton.
+        const siteSettings = chosen
+            ? await prisma.siteSettings.findUnique({
+                  where: { siteId: chosen.siteId },
+                  select: { commentAutoApprove: true, commentRequireEmail: true },
+              })
+            : null;
+        const globalSettings =
+            siteSettings ??
+            (await prisma.settings.findFirst({
+                select: { commentAutoApprove: true, commentRequireEmail: true },
+            }));
+        const autoApprove = globalSettings?.commentAutoApprove ?? false;
+        const requireEmail = globalSettings?.commentRequireEmail ?? false;
 
         if (requireEmail && !authorEmail) {
             return NextResponse.json(

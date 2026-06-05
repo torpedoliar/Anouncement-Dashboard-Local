@@ -6,6 +6,8 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { slugify, generateExcerpt } from "@/lib/utils";
 import { canEditOnSite } from "@/lib/site-access";
+import { createRevision } from "@/lib/revision";
+import { maybeSendNewArticleEmails } from "@/lib/email";
 
 // GET /api/announcements - List announcements
 export async function GET(request: NextRequest) {
@@ -146,34 +148,53 @@ export async function POST(request: NextRequest) {
             takedownAt,
             siteIds,
             primarySiteId,
+            sites,
         } = validation.data;
 
-        // Validate site IDs - auto-assign default site if not provided (backward compatibility)
-        let resolvedSiteIds = siteIds;
-        if (!resolvedSiteIds || resolvedSiteIds.length === 0) {
-            // Find default site for backward compatibility
-            const defaultSite = await prisma.site.findFirst({
-                where: { isDefault: true },
-                select: { id: true },
-            });
-            if (defaultSite) {
-                resolvedSiteIds = [defaultSite.id];
-            } else {
-                // Get first site if no default
-                const firstSite = await prisma.site.findFirst({
+        // Normalize site associations with per-site placement flags.
+        // Prefer the new `sites[]` shape; fall back to legacy siteIds + global flags.
+        let siteAssocs: { siteId: string; isPrimary: boolean; isHero: boolean; isPinned: boolean }[];
+        if (sites && sites.length > 0) {
+            siteAssocs = sites.map((s) => ({
+                siteId: s.siteId,
+                isPrimary: s.isPrimary,
+                isHero: s.isHero,
+                isPinned: s.isPinned,
+            }));
+        } else {
+            // Legacy path: resolve siteIds, falling back to the default/first site
+            let resolvedSiteIds = siteIds;
+            if (!resolvedSiteIds || resolvedSiteIds.length === 0) {
+                const defaultSite = await prisma.site.findFirst({
+                    where: { isDefault: true },
+                    select: { id: true },
+                });
+                const fallbackSite = defaultSite ?? await prisma.site.findFirst({
                     where: { isActive: true },
                     select: { id: true },
                 });
-                if (firstSite) {
-                    resolvedSiteIds = [firstSite.id];
-                } else {
+                if (!fallbackSite) {
                     return NextResponse.json(
                         { error: "No sites available. Please create a site first." },
                         { status: 400 }
                     );
                 }
+                resolvedSiteIds = [fallbackSite.id];
             }
+            const legacyPrimary = primarySiteId || resolvedSiteIds[0];
+            siteAssocs = resolvedSiteIds.map((sId) => ({
+                siteId: sId,
+                isPrimary: sId === legacyPrimary,
+                isHero: isHero || false,
+                isPinned: isPinned || false,
+            }));
         }
+
+        // Ensure exactly one primary
+        if (!siteAssocs.some((s) => s.isPrimary)) {
+            siteAssocs[0].isPrimary = true;
+        }
+        const resolvedSiteIds = siteAssocs.map((s) => s.siteId);
 
         // Check user has permission to publish to all specified sites
         const userId = session.user.id;
@@ -186,6 +207,10 @@ export async function POST(request: NextRequest) {
                 );
             }
         }
+
+        // Mirror per-site flags onto the legacy global columns (OR across sites)
+        const anyHero = siteAssocs.some((s) => s.isHero);
+        const anyPinned = siteAssocs.some((s) => s.isPinned);
 
         // Generate unique slug
         let slug = slugify(title);
@@ -210,8 +235,8 @@ export async function POST(request: NextRequest) {
                     videoPath,
                     videoType,
                     youtubeUrl,
-                    isHero: isHero || false,
-                    isPinned: isPinned || false,
+                    isHero: anyHero,
+                    isPinned: anyPinned,
                     isPublished: isPublished || false,
                     scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
                     takedownAt: takedownAt ? new Date(takedownAt) : null,
@@ -219,14 +244,15 @@ export async function POST(request: NextRequest) {
                 },
             });
 
-            // Create site associations (syndication)
-            const actualPrimarySiteId = primarySiteId || resolvedSiteIds[0];
-            for (const sId of resolvedSiteIds) {
+            // Create site associations (syndication) with per-site placement flags
+            for (const assoc of siteAssocs) {
                 await tx.announcementSite.create({
                     data: {
                         announcementId: newAnnouncement.id,
-                        siteId: sId,
-                        isPrimary: sId === actualPrimarySiteId,
+                        siteId: assoc.siteId,
+                        isPrimary: assoc.isPrimary,
+                        isHero: assoc.isHero,
+                        isPinned: assoc.isPinned,
                     },
                 });
             }
@@ -248,6 +274,18 @@ export async function POST(request: NextRequest) {
             },
         });
 
+        // Create the initial v1 revision snapshot (so history has a baseline)
+        try {
+            await createRevision({
+                announcementId: announcement.id,
+                authorId: userId,
+                changeType: "CREATE",
+                changeSummary: "Initial version",
+            });
+        } catch (revErr) {
+            console.warn("Failed to create initial revision:", revErr);
+        }
+
         // Log activity
         await prisma.activityLog.create({
             data: {
@@ -255,10 +293,17 @@ export async function POST(request: NextRequest) {
                 entityType: "ANNOUNCEMENT",
                 entityId: announcement.id,
                 userId,
-                siteId: primarySiteId || resolvedSiteIds[0],
+                siteId: siteAssocs.find((s) => s.isPrimary)?.siteId || resolvedSiteIds[0],
                 changes: JSON.stringify({ title, categoryId, siteIds: resolvedSiteIds }),
             },
         });
+
+        // Auto-send "new article" newsletter when enabled and the article is published
+        if (isPublished) {
+            await maybeSendNewArticleEmails(announcement.id).catch((err) =>
+                console.error("Auto-send new article failed:", err)
+            );
+        }
 
         return NextResponse.json(fullAnnouncement, { status: 201 });
     } catch (error) {

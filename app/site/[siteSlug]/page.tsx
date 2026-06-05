@@ -29,31 +29,35 @@ async function getSiteData(slug: string) {
 
     if (!site) return null;
 
-    // Get announcements for this site
-    const announcements = await prisma.announcement.findMany({
+    // Get announcements for this site, including the per-site placement flags
+    const rawAnnouncements = await prisma.announcement.findMany({
         where: {
             isPublished: true,
             sites: { some: { siteId: site.id } },
         },
-        orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ createdAt: "desc" }],
         take: 12,
         include: {
             category: { select: { name: true, color: true, slug: true } },
             author: { select: { name: true } },
+            sites: {
+                where: { siteId: site.id },
+                select: { isHero: true, isPinned: true },
+            },
         },
     });
 
-    // Get hero announcement
-    const heroAnnouncement = await prisma.announcement.findFirst({
-        where: {
-            isPublished: true,
-            isHero: true,
-            sites: { some: { siteId: site.id } },
-        },
-        include: {
-            category: { select: { name: true, color: true, slug: true } },
-        },
-    });
+    // Flatten per-site flags onto each announcement and sort pinned-first (per this site)
+    const announcements = rawAnnouncements
+        .map((a) => ({
+            ...a,
+            isPinned: a.sites[0]?.isPinned ?? false,
+            isHeroOnSite: a.sites[0]?.isHero ?? false,
+        }))
+        .sort((x, y) => Number(y.isPinned) - Number(x.isPinned));
+
+    // Hero announcement is the one flagged hero FOR THIS SITE (via junction)
+    const heroAnnouncement = announcements.find((a) => a.isHeroOnSite) ?? null;
 
     return { site, announcements, heroAnnouncement };
 }

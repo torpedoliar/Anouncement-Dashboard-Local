@@ -25,12 +25,10 @@ model User {
   siteAccess   UserSiteAccess[]
 
   // Feature Improvements Relations
-  announcements      Announcement[]
-  revisions          AnnouncementRevision[]
-  sessions           UserSession[]
-  moderatedComments  Comment[]
-  submittedApprovals ApprovalRequest[]      @relation("SubmittedBy")
-  reviewedApprovals  ApprovalRequest[]      @relation("ReviewedBy")
+  announcements     Announcement[]
+  revisions         AnnouncementRevision[]
+  sessions          UserSession[]
+  moderatedComments Comment[]
 
   @@map("users")
 }
@@ -89,9 +87,8 @@ model Announcement {
   analytics Analytics[]
 
   // Feature Improvements Relations
-  revisions        AnnouncementRevision[]
-  comments         Comment[]
-  approvalRequests ApprovalRequest[]
+  revisions AnnouncementRevision[]
+  comments  Comment[]
 
   // Author relation
   authorId String?
@@ -297,6 +294,9 @@ model AnnouncementSite {
   announcementId String
   siteId         String
   isPrimary      Boolean  @default(false)
+  // Per-site placement flags (source of truth for hero/pin on each site)
+  isHero         Boolean  @default(false)
+  isPinned       Boolean  @default(false)
   publishedAt    DateTime @default(now())
 
   announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
@@ -305,6 +305,8 @@ model AnnouncementSite {
   @@unique([announcementId, siteId])
   @@index([siteId])
   @@index([announcementId])
+  @@index([siteId, isHero])
+  @@index([siteId, isPinned])
   @@map("announcement_sites")
 }
 
@@ -324,13 +326,6 @@ enum ChangeType {
   PUBLISH
   UNPUBLISH
   RESTORE
-}
-
-enum ApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
 }
 
 enum CommentStatus {
@@ -368,6 +363,11 @@ model AnnouncementRevision {
   excerpt   String?
   imagePath String?
 
+  // Video snapshot fields (so restore preserves video media)
+  videoPath  String?
+  videoType  String?
+  youtubeUrl String?
+
   version       Int
   changeType    ChangeType @default(EDIT)
   changeSummary String?
@@ -379,29 +379,6 @@ model AnnouncementRevision {
   @@index([announcementId, version])
   @@index([createdAt])
   @@map("announcement_revisions")
-}
-
-// Content Approval Workflow
-model ApprovalRequest {
-  id             String       @id @default(cuid())
-  announcementId String
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-
-  status      ApprovalStatus @default(PENDING)
-  submittedAt DateTime       @default(now())
-  reviewedAt  DateTime?
-
-  submitterId String
-  submitter   User   @relation("SubmittedBy", fields: [submitterId], references: [id])
-
-  reviewerId String?
-  reviewer   User?   @relation("ReviewedBy", fields: [reviewerId], references: [id])
-
-  reviewNote String?
-
-  @@index([status])
-  @@index([submittedAt])
-  @@map("approval_requests")
 }
 
 // Session Management

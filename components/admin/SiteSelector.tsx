@@ -48,28 +48,27 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
                 const data = await res.json();
                 setSites(data);
 
-                // Get current site from localStorage or use first site
+                // Pick the active site: saved in localStorage, else default, else first.
                 const savedSiteId = localStorage.getItem('currentSiteId');
                 const savedSite = data.find((s: Site) => s.id === savedSiteId);
+                const activeSite = savedSite
+                    || data.find((s: Site & { isDefault?: boolean }) => s.isDefault)
+                    || (data.length > 0 ? data[0] : null);
 
-                if (savedSite) {
-                    setCurrentSite(savedSite);
-                    // Ensure the server has the cookie
-                    fetch('/api/context', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ siteId: savedSite.id, siteSlug: savedSite.slug })
-                    }).catch(console.error);
-                } else if (data.length > 0) {
-                    // Find default site or use first
-                    const defaultSite = data.find((s: Site & { isDefault?: boolean }) => s.isDefault) || data[0];
-                    setCurrentSite(defaultSite);
-                    localStorage.setItem('currentSiteId', defaultSite.id);
-                    fetch('/api/context', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ siteId: defaultSite.id, siteSlug: defaultSite.slug })
-                    }).catch(console.error);
+                if (activeSite) {
+                    setCurrentSite(activeSite);
+                    localStorage.setItem('currentSiteId', activeSite.id);
+                    // Sync the server cookie so server components read the same site.
+                    // Awaited so getCurrentSiteId() is consistent on the next navigation.
+                    try {
+                        await fetch('/api/context', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ siteId: activeSite.id, siteSlug: activeSite.slug })
+                        });
+                    } catch (err) {
+                        console.error('Failed to sync site context:', err);
+                    }
                 }
             }
         } catch (error) {
@@ -85,19 +84,21 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
         localStorage.setItem('currentSiteId', site.id);
         onSiteChange?.(site);
 
-        // Update server context
+        // Update server context, then reload. Reload ONLY after the cookie is set,
+        // otherwise the new page would render with the previous site's cookie.
         try {
-            await fetch('/api/context', {
+            const res = await fetch('/api/context', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ siteId: site.id, siteSlug: site.slug })
             });
+            if (!res.ok) throw new Error(`Context update failed: ${res.status}`);
+            window.location.reload();
         } catch (error) {
             console.error('Failed to set site context:', error);
+            // Surface the failure instead of silently reloading with stale context
+            alert('Gagal mengganti site. Coba lagi.');
         }
-
-        // Trigger a page refresh to reload data with new site context
-        window.location.reload();
     };
 
     if (isLoading) {

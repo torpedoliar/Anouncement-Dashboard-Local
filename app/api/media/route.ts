@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { validatePagination } from '@/lib/pagination-utils';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getCurrentSiteId } from "@/lib/site-context";
+import { canAccessSite } from "@/lib/site-access";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
@@ -34,9 +36,13 @@ export async function GET(request: NextRequest) {
         const { limit, skip, error: paginationError } = validatePagination(pageParam, limitParam);
         if (paginationError) { console.warn(`Pagination warning: ${paginationError}`); }
         const type = searchParams.get("type"); // "image" | "video" | null (all)
-        const siteId = searchParams.get("siteId"); // Optional: filter by site
+        const siteIdParam = searchParams.get("siteId"); // Optional: explicit site filter
         const sharedOnly = searchParams.get("sharedOnly") === "true"; // Only show shared media
         // skip calculated by validatePagination
+
+        // Resolve effective site: explicit param, else the current admin site cookie.
+        const siteId = siteIdParam || (await getCurrentSiteId());
+        const isSuperAdmin = !!session.user?.isSuperAdmin;
 
         // Build where clause
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,18 +55,19 @@ export async function GET(request: NextRequest) {
                 : { startsWith: "image/" };
         }
 
-        // Site filter (hybrid mode)
+        // Site filter (hybrid mode: site-specific + shared/global media)
         if (sharedOnly) {
-            // Only shared/global media
             where.siteId = null;
         } else if (siteId) {
-            // Site-specific + shared media
-            where.OR = [
-                { siteId: siteId },
-                { siteId: null },
-            ];
+            if (!isSuperAdmin && session.user?.id && !(await canAccessSite(session.user.id, siteId))) {
+                return NextResponse.json({ error: "No access to this site" }, { status: 403 });
+            }
+            where.OR = [{ siteId }, { siteId: null }];
+        } else if (!isSuperAdmin) {
+            // No site context and not SuperAdmin: only shared media (never leak all sites)
+            where.siteId = null;
         }
-        // If no siteId filter, show all media (for SuperAdmin)
+        // SuperAdmin with no site context: show all media
 
         const [media, total] = await Promise.all([
             prisma.mediaLibrary.findMany({
@@ -210,6 +217,25 @@ export async function DELETE(request: NextRequest) {
 
         if (!id) {
             return NextResponse.json({ error: "Media ID is required" }, { status: 400 });
+        }
+
+        // Authorization: site-specific media may only be deleted by users with access
+        // to that site. Shared media (siteId=null) requires SuperAdmin.
+        const media = await prisma.mediaLibrary.findUnique({
+            where: { id },
+            select: { siteId: true },
+        });
+        if (!media) {
+            return NextResponse.json({ error: "Media not found" }, { status: 404 });
+        }
+        const isSuperAdmin = !!session.user?.isSuperAdmin;
+        if (!isSuperAdmin) {
+            if (!media.siteId) {
+                return NextResponse.json({ error: "Only SuperAdmin can delete shared media" }, { status: 403 });
+            }
+            if (!session.user?.id || !(await canAccessSite(session.user.id, media.siteId))) {
+                return NextResponse.json({ error: "No access to this site's media" }, { status: 403 });
+            }
         }
 
         await prisma.mediaLibrary.delete({

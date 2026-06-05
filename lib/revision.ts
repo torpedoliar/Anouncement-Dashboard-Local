@@ -43,6 +43,9 @@ export async function createRevision({
             content: true,
             excerpt: true,
             imagePath: true,
+            videoPath: true,
+            videoType: true,
+            youtubeUrl: true,
         },
     });
 
@@ -59,6 +62,9 @@ export async function createRevision({
             content: announcement.content,
             excerpt: announcement.excerpt,
             imagePath: announcement.imagePath,
+            videoPath: announcement.videoPath,
+            videoType: announcement.videoType,
+            youtubeUrl: announcement.youtubeUrl,
             version,
             changeType,
             changeSummary,
@@ -89,7 +95,7 @@ export async function restoreRevision(revisionId: string, authorId: string) {
         changeSummary: `Restored to version ${revision.version}`,
     });
 
-    // Restore the announcement to the revision state
+    // Restore the announcement to the revision state (including video media)
     const restored = await prisma.announcement.update({
         where: { id: revision.announcementId },
         data: {
@@ -97,6 +103,9 @@ export async function restoreRevision(revisionId: string, authorId: string) {
             content: revision.content,
             excerpt: revision.excerpt,
             imagePath: revision.imagePath,
+            videoPath: revision.videoPath,
+            videoType: revision.videoType,
+            youtubeUrl: revision.youtubeUrl,
         },
     });
 

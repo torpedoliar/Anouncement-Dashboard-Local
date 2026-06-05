@@ -7,6 +7,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { canEditOnSite } from "@/lib/site-access";
+
+/**
+ * Verify the user may moderate a comment: they must be able to edit on at least
+ * one site the comment's announcement belongs to. SuperAdmin passes via canEditOnSite.
+ * Returns true when allowed.
+ */
+async function canModerateComment(userId: string, commentId: string): Promise<boolean> {
+    const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+        select: { announcement: { select: { sites: { select: { siteId: true } } } } },
+    });
+    if (!comment) return false;
+    const siteIds = comment.announcement.sites.map((s) => s.siteId);
+    if (siteIds.length === 0) return false;
+    for (const siteId of siteIds) {
+        if (await canEditOnSite(userId, siteId)) return true;
+    }
+    return false;
+}
 
 // GET /api/comments/[id] - Get single comment
 export async function GET(
@@ -72,6 +92,13 @@ export async function PUT(
 
         const userId = (session.user as { id: string }).id;
 
+        if (!(await canModerateComment(userId, id))) {
+            return NextResponse.json(
+                { error: "No permission to moderate this comment" },
+                { status: 403 }
+            );
+        }
+
         const comment = await prisma.comment.update({
             where: { id },
             data: {
@@ -128,6 +155,13 @@ export async function DELETE(
 
         if (!comment) {
             return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+        }
+
+        if (!(await canModerateComment(userId, id))) {
+            return NextResponse.json(
+                { error: "No permission to delete this comment" },
+                { status: 403 }
+            );
         }
 
         await prisma.comment.delete({ where: { id } });

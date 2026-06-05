@@ -5,7 +5,7 @@ import AnnouncementCard from "@/components/AnnouncementCard";
 import CommentSection from "@/components/CommentSection";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import { FiArrowLeft, FiEye, FiCalendar, FiUser, FiClock } from "react-icons/fi";
 import ArticleVideoPlayer from "@/components/ArticleVideoPlayer";
@@ -15,6 +15,24 @@ export const revalidate = 60;
 
 interface AnnouncementPageProps {
     params: Promise<{ slug: string }>;
+}
+
+/**
+ * Resolve the canonical per-site URL for a bare /<slug> article.
+ * Legacy links must land on a site-scoped page so data stays isolated per site.
+ */
+async function getCanonicalSitePath(slug: string): Promise<string | null> {
+    const announcement = await prisma.announcement.findUnique({
+        where: { slug },
+        select: {
+            sites: {
+                select: { isPrimary: true, site: { select: { slug: true } } },
+            },
+        },
+    });
+    if (!announcement || announcement.sites.length === 0) return null;
+    const primary = announcement.sites.find((s) => s.isPrimary) ?? announcement.sites[0];
+    return `/site/${primary.site.slug}/${slug}`;
 }
 
 async function getAnnouncement(slug: string) {
@@ -73,6 +91,14 @@ function calculateReadingTime(content: string): number {
 
 export default async function AnnouncementPage({ params }: AnnouncementPageProps) {
     const { slug } = await params;
+
+    // Redirect legacy bare-slug URLs to the article's site-scoped canonical page,
+    // so per-site data separation is preserved instead of rendering globally.
+    const canonical = await getCanonicalSitePath(slug);
+    if (canonical) {
+        redirect(canonical);
+    }
+
     const [announcement, settings] = await Promise.all([
         getAnnouncement(slug),
         getSettings(),

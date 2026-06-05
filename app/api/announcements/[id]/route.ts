@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { slugify, generateExcerpt } from "@/lib/utils";
 import { createRevision } from "@/lib/revision";
+import { canEditOnSite } from "@/lib/site-access";
+import { maybeSendNewArticleEmails } from "@/lib/email";
 
 // GET /api/announcements/[id] - Get single announcement
 export async function GET(
@@ -24,11 +26,9 @@ export async function GET(
             return NextResponse.json({ error: "Not found" }, { status: 404 });
         }
 
-        // Increment view count
-        await prisma.announcement.update({
-            where: { id },
-            data: { viewCount: { increment: 1 } },
-        });
+        // NOTE: view count is incremented by the public article pages on render,
+        // not here. This GET is used by the admin edit form and internal fetches,
+        // so counting here would inflate views with admin/API traffic.
 
         return NextResponse.json(announcement);
     } catch (error) {
@@ -53,12 +53,54 @@ export async function PUT(
 
         const { id } = await params;
         const body = await request.json();
-        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, scheduledAt, takedownAt, siteIds, primarySiteId } = body;
+        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, scheduledAt, takedownAt, siteIds, primarySiteId, sites } = body;
 
         const existingAnnouncement = await prisma.announcement.findUnique({ where: { id } });
         if (!existingAnnouncement) {
             return NextResponse.json({ error: "Not found" }, { status: 404 });
         }
+
+        const sessionUserId = (session.user as { id: string }).id;
+
+        // Normalize site associations with per-site placement flags.
+        // Prefer new `sites[]`; fall back to legacy siteIds + global flags.
+        let siteAssocs: { siteId: string; isPrimary: boolean; isHero: boolean; isPinned: boolean }[] | null = null;
+        if (Array.isArray(sites) && sites.length > 0) {
+            siteAssocs = sites.map((s: { siteId: string; isPrimary?: boolean; isHero?: boolean; isPinned?: boolean }) => ({
+                siteId: s.siteId,
+                isPrimary: !!s.isPrimary,
+                isHero: !!s.isHero,
+                isPinned: !!s.isPinned,
+            }));
+        } else if (Array.isArray(siteIds) && siteIds.length > 0) {
+            const legacyPrimary = primarySiteId || siteIds[0];
+            siteAssocs = siteIds.map((sId: string) => ({
+                siteId: sId,
+                isPrimary: sId === legacyPrimary,
+                isHero: isHero !== undefined ? !!isHero : existingAnnouncement.isHero,
+                isPinned: isPinned !== undefined ? !!isPinned : existingAnnouncement.isPinned,
+            }));
+        }
+
+        // Permission: user must be able to edit on every target site
+        if (siteAssocs) {
+            if (!siteAssocs.some((s) => s.isPrimary)) {
+                siteAssocs[0].isPrimary = true;
+            }
+            for (const assoc of siteAssocs) {
+                const canEdit = await canEditOnSite(sessionUserId, assoc.siteId);
+                if (!canEdit) {
+                    return NextResponse.json(
+                        { error: `No permission to publish to site ${assoc.siteId}` },
+                        { status: 403 }
+                    );
+                }
+            }
+        }
+
+        // Mirror per-site flags onto legacy global columns when associations change
+        const mirrorHero = siteAssocs ? siteAssocs.some((s) => s.isHero) : undefined;
+        const mirrorPinned = siteAssocs ? siteAssocs.some((s) => s.isPinned) : undefined;
 
         // Generate new slug if title changed
         let slug = existingAnnouncement.slug;
@@ -102,8 +144,8 @@ export async function PUT(
                     videoPath: videoPath !== undefined ? videoPath : existingAnnouncement.videoPath,
                     videoType: videoType !== undefined ? videoType : existingAnnouncement.videoType,
                     youtubeUrl: youtubeUrl !== undefined ? youtubeUrl : existingAnnouncement.youtubeUrl,
-                    isHero: isHero !== undefined ? isHero : existingAnnouncement.isHero,
-                    isPinned: isPinned !== undefined ? isPinned : existingAnnouncement.isPinned,
+                    isHero: mirrorHero !== undefined ? mirrorHero : (isHero !== undefined ? isHero : existingAnnouncement.isHero),
+                    isPinned: mirrorPinned !== undefined ? mirrorPinned : (isPinned !== undefined ? isPinned : existingAnnouncement.isPinned),
                     isPublished: isPublished !== undefined ? isPublished : existingAnnouncement.isPublished,
                     scheduledAt: scheduledAt !== undefined ? (scheduledAt ? new Date(scheduledAt) : null) : existingAnnouncement.scheduledAt,
                     takedownAt: takedownAt !== undefined ? (takedownAt ? new Date(takedownAt) : null) : existingAnnouncement.takedownAt,
@@ -113,20 +155,20 @@ export async function PUT(
                 },
             });
 
-            if (siteIds && Array.isArray(siteIds) && siteIds.length > 0) {
-                // Delete existing associations
+            if (siteAssocs) {
+                // Replace associations with the new per-site set
                 await tx.announcementSite.deleteMany({
                     where: { announcementId: id },
                 });
 
-                // Create new associations
-                const actualPrimarySiteId = primarySiteId || siteIds[0];
-                for (const sId of siteIds) {
+                for (const assoc of siteAssocs) {
                     await tx.announcementSite.create({
                         data: {
                             announcementId: id,
-                            siteId: sId,
-                            isPrimary: sId === actualPrimarySiteId,
+                            siteId: assoc.siteId,
+                            isPrimary: assoc.isPrimary,
+                            isHero: assoc.isHero,
+                            isPinned: assoc.isPinned,
                         },
                     });
                 }
@@ -145,6 +187,15 @@ export async function PUT(
                 changes: JSON.stringify(body),
             },
         });
+
+        // Auto-send newsletter when this update publishes the article for the
+        // first time. maybeSendNewArticleEmails is idempotent (checks EmailLog).
+        const newlyPublished = announcement.isPublished && !existingAnnouncement.isPublished;
+        if (newlyPublished) {
+            await maybeSendNewArticleEmails(id).catch((err) =>
+                console.error("Auto-send new article failed:", err)
+            );
+        }
 
         return NextResponse.json(announcement);
     } catch (error) {

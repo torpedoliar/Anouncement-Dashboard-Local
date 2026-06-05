@@ -36,9 +36,10 @@ export async function GET() {
 // PUT /api/settings - Update site settings
 export async function PUT(request: NextRequest) {
     try {
+        // Global settings + default-site sync are app-wide config → SuperAdmin only
         const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden: SuperAdmin only" }, { status: 403 });
         }
 
         const body = await request.json();

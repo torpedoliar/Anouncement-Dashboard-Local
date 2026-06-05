@@ -9,12 +9,14 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { validatePagination } from '@/lib/pagination-utils';
 import { sendTemplatedEmail } from "@/lib/email";
+import { getCurrentSiteId } from "@/lib/site-context";
+import { canAccessSite, getAccessibleSites } from "@/lib/site-access";
 
-// GET /api/newsletter - List subscribers (admin only)
+// GET /api/newsletter - List subscribers (scoped to the current/accessible sites)
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session || (session.user as { role: string }).role !== "ADMIN") {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -28,7 +30,7 @@ export async function GET(request: NextRequest) {
         const siteId = url.searchParams.get("siteId");
         const siteSlug = url.searchParams.get("siteSlug");
 
-        // Resolve siteId from slug if provided
+        // Resolve target site: explicit param/slug, else the current admin site cookie
         let resolvedSiteId = siteId;
         if (!resolvedSiteId && siteSlug) {
             const site = await prisma.site.findUnique({
@@ -37,15 +39,25 @@ export async function GET(request: NextRequest) {
             });
             resolvedSiteId = site?.id || null;
         }
+        if (!resolvedSiteId) {
+            resolvedSiteId = await getCurrentSiteId();
+        }
 
-        // Build where clause
+        // Build where clause, always scoped to a site the user can access
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
         if (activeOnly) {
             where.isActive = true;
         }
         if (resolvedSiteId) {
+            if (!(await canAccessSite(session.user.id, resolvedSiteId))) {
+                return NextResponse.json({ error: "No access to this site" }, { status: 403 });
+            }
             where.siteId = resolvedSiteId;
+        } else {
+            // No specific site: limit to all sites the user can access (prevents cross-site leak)
+            const accessible = await getAccessibleSites(session.user.id);
+            where.siteId = { in: accessible.map((s) => s.id) };
         }
 
         const [subscribers, total] = await Promise.all([
@@ -166,13 +178,18 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Get settings for email
-        const settings = await prisma.settings.findFirst();
+        // Use the subscription's own site for branding (fallback to global settings)
+        const site = await prisma.site.findUnique({
+            where: { id: resolvedSiteId },
+            select: { name: true },
+        });
+        const globalSettings = await prisma.settings.findFirst({ select: { siteName: true } });
+        const siteName = site?.name || globalSettings?.siteName || "Santos Jaya Abadi";
 
         // Send welcome email
         await sendTemplatedEmail("welcome", email, {
             subscriberName: name || "Subscriber",
-            siteName: settings?.siteName || "Santos Jaya Abadi",
+            siteName,
             year: new Date().getFullYear(),
         });
 
@@ -225,12 +242,16 @@ export async function DELETE(request: NextRequest) {
             },
         });
 
-        // Get settings for email
-        const settings = await prisma.settings.findFirst();
+        // Use the subscriber's own site for branding (fallback to global settings)
+        const site = await prisma.site.findUnique({
+            where: { id: subscriber.siteId },
+            select: { name: true },
+        });
+        const globalSettings = await prisma.settings.findFirst({ select: { siteName: true } });
 
         // Send confirmation email
         await sendTemplatedEmail("unsubscribe-confirm", subscriber.email, {
-            siteName: settings?.siteName || "Santos Jaya Abadi",
+            siteName: site?.name || globalSettings?.siteName || "Santos Jaya Abadi",
         });
 
         return NextResponse.json({

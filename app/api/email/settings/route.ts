@@ -13,8 +13,8 @@ import { resetTransporter, testConnection } from "@/lib/email";
 export async function GET() {
     try {
         const session = await getServerSession(authOptions);
-        if (!session || (session.user as { role: string }).role !== "ADMIN") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden: SuperAdmin only" }, { status: 403 });
         }
 
         let settings = await prisma.emailSettings.findFirst();
@@ -44,8 +44,8 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session || (session.user as { role: string }).role !== "ADMIN") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden: SuperAdmin only" }, { status: 403 });
         }
 
         const body = await request.json();
@@ -113,8 +113,8 @@ export async function PUT(request: NextRequest) {
 export async function POST() {
     try {
         const session = await getServerSession(authOptions);
-        if (!session || (session.user as { role: string }).role !== "ADMIN") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden: SuperAdmin only" }, { status: 403 });
         }
 
         // Reset transporter to use latest settings

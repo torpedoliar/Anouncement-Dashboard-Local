@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
-import { join } from "path";
+import { join, resolve, sep } from "path";
 import { existsSync } from "fs";
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
+const UPLOAD_DIR = resolve(process.cwd(), "public", "uploads");
 
 const MIME_TYPES: Record<string, string> = {
     // Images
@@ -27,15 +27,16 @@ export async function GET(
     try {
         const { path } = await params;
 
-        // Join path segments to construct file path
-        // e.g., ["videos", "video_123.mp4"] -> "videos/video_123.mp4"
-        const relativePath = path.join("/");
-        const filepath = join(UPLOAD_DIR, ...path);
+        // Reject any segment that could escape the upload dir before touching the FS.
+        if (path.some((seg) => seg === ".." || seg === "." || seg.includes("\0"))) {
+            return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+        }
 
-        // Security check: prevent directory traversal
-        const normalizedPath = filepath.replace(/\\/g, "/");
-        const normalizedUploadDir = UPLOAD_DIR.replace(/\\/g, "/");
-        if (!normalizedPath.startsWith(normalizedUploadDir)) {
+        // Resolve to an absolute path and verify it stays within UPLOAD_DIR.
+        // Using path.resolve + a separator-bounded prefix check defeats traversal
+        // (e.g. "..", encoded segments) on both POSIX and Windows.
+        const filepath = resolve(UPLOAD_DIR, ...path);
+        if (filepath !== UPLOAD_DIR && !filepath.startsWith(UPLOAD_DIR + sep)) {
             return NextResponse.json({ error: "Invalid path" }, { status: 400 });
         }
 

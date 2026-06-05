@@ -4,12 +4,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
-// GET /api/users - List all users
+// GET /api/users - List all users (SuperAdmin only — exposes all accounts/roles)
 export async function GET() {
     try {
         const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!session?.user?.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden: SuperAdmin only" }, { status: 403 });
         }
 
         const users = await prisma.user.findMany({

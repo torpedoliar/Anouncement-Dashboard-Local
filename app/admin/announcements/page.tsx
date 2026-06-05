@@ -11,9 +11,9 @@ async function getAnnouncements() {
     // Also include site relationships so the frontend can display them if needed
     const whereClause = siteId ? { sites: { some: { siteId } } } : {};
 
-    return prisma.announcement.findMany({
+    const announcements = await prisma.announcement.findMany({
         where: whereClause,
-        orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ createdAt: "desc" }],
         include: {
             category: { select: { name: true, color: true } },
             sites: {
@@ -23,6 +23,21 @@ async function getAnnouncements() {
             }
         },
     });
+
+    // When a site context is active, surface that site's per-site pin/hero flags
+    // and sort pinned-first for this site. Otherwise fall back to the global flags.
+    if (!siteId) return announcements;
+
+    return announcements
+        .map((a) => {
+            const here = a.sites.find((s) => s.siteId === siteId);
+            return {
+                ...a,
+                isPinned: here?.isPinned ?? a.isPinned,
+                isHero: here?.isHero ?? a.isHero,
+            };
+        })
+        .sort((x, y) => Number(y.isPinned) - Number(x.isPinned));
 }
 
 async function getCategories() {

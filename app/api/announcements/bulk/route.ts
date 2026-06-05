@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getCurrentSiteId } from "@/lib/site-context";
+import { canAccessSite } from "@/lib/site-access";
+import { Prisma } from "@prisma/client";
 
 type BulkAction = "delete" | "publish" | "unpublish";
 
-// POST /api/announcements/bulk - Bulk operations
+// POST /api/announcements/bulk - Bulk operations (scoped to the current site)
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -23,13 +26,24 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Valid action is required (delete, publish, unpublish)" }, { status: 400 });
         }
 
+        // Scope the operation to the current admin site so bulk actions never
+        // touch articles that belong to other sites.
+        const siteId = await getCurrentSiteId();
+        if (siteId) {
+            const allowed = await canAccessSite(session.user.id, siteId);
+            if (!allowed) {
+                return NextResponse.json({ error: "No access to the current site" }, { status: 403 });
+            }
+        }
+        const where: Prisma.AnnouncementWhereInput = siteId
+            ? { id: { in: ids }, sites: { some: { siteId } } }
+            : { id: { in: ids } };
+
         let result;
 
         switch (action) {
             case "delete":
-                result = await prisma.announcement.deleteMany({
-                    where: { id: { in: ids } },
-                });
+                result = await prisma.announcement.deleteMany({ where });
 
                 // Log activity
                 await prisma.activityLog.create({
@@ -45,7 +59,7 @@ export async function POST(request: NextRequest) {
 
             case "publish":
                 result = await prisma.announcement.updateMany({
-                    where: { id: { in: ids } },
+                    where,
                     data: { isPublished: true },
                 });
 
@@ -62,7 +76,7 @@ export async function POST(request: NextRequest) {
 
             case "unpublish":
                 result = await prisma.announcement.updateMany({
-                    where: { id: { in: ids } },
+                    where,
                     data: { isPublished: false },
                 });
 

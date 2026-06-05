@@ -150,13 +150,35 @@ async function main() {
         ];
 
         for (const announcement of sampleAnnouncements) {
-            await prisma.announcement.upsert({
+            const saved = await prisma.announcement.upsert({
                 where: { slug: announcement.slug },
                 update: announcement,
                 create: announcement,
             });
+
+            // Associate with the default site, carrying per-site hero/pin placement
+            await prisma.announcementSite.upsert({
+                where: {
+                    announcementId_siteId: {
+                        announcementId: saved.id,
+                        siteId: defaultSite.id,
+                    },
+                },
+                update: {
+                    isPrimary: true,
+                    isHero: announcement.isHero ?? false,
+                    isPinned: announcement.isPinned ?? false,
+                },
+                create: {
+                    announcementId: saved.id,
+                    siteId: defaultSite.id,
+                    isPrimary: true,
+                    isHero: announcement.isHero ?? false,
+                    isPinned: announcement.isPinned ?? false,
+                },
+            });
         }
-        console.log("✅ Created sample announcements");
+        console.log("✅ Created sample announcements + site associations");
     }
 
     // Create default email settings (Internal SMTP)

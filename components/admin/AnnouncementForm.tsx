@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FiSave, FiX, FiUpload, FiStar, FiMapPin, FiEye, FiClock, FiImage, FiVideo, FiYoutube, FiPlay, FiFolder } from "react-icons/fi";
 import RichTextEditor from "./RichTextEditor";
 import MediaPickerModal from "./MediaPickerModal";
-import SiteSyndicationPicker from "./SiteSyndicationPicker";
+import SiteSyndicationPicker, { SiteAssoc } from "./SiteSyndicationPicker";
 
 interface Category {
     id: string;
@@ -15,6 +15,8 @@ interface Category {
 
 interface AnnouncementFormProps {
     categories: Category[];
+    /** Current admin site context — used to pre-select the site for new articles. */
+    defaultSiteId?: string | null;
     initialData?: {
         id: string;
         title: string;
@@ -24,18 +26,16 @@ interface AnnouncementFormProps {
         videoPath?: string | null;
         videoType?: string | null;
         youtubeUrl?: string | null;
-        isHero: boolean;
-        isPinned: boolean;
         isPublished: boolean;
         scheduledAt?: string | null;
         takedownAt?: string | null;
-        sites?: { siteId: string; isPrimary: boolean }[];
+        sites?: { siteId: string; isPrimary: boolean; isHero: boolean; isPinned: boolean }[];
     };
 }
 
 type MediaType = "image" | "video" | "youtube";
 
-export default function AnnouncementForm({ categories, initialData }: AnnouncementFormProps) {
+export default function AnnouncementForm({ categories, defaultSiteId, initialData }: AnnouncementFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
@@ -50,18 +50,18 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
         initialData?.videoType === "youtube" ? "youtube" :
             initialData?.videoPath ? "video" : "image"
     );
-    const [isHero, setIsHero] = useState(initialData?.isHero || false);
-    const [isPinned, setIsPinned] = useState(initialData?.isPinned || false);
     const [isPublished, setIsPublished] = useState(initialData?.isPublished || false);
     const [scheduledAt, setScheduledAt] = useState(initialData?.scheduledAt || "");
     const [takedownAt, setTakedownAt] = useState(initialData?.takedownAt || "");
 
-    // Multi-site syndication state
-    const [siteIds, setSiteIds] = useState<string[]>(
-        initialData?.sites?.map(s => s.siteId) || []
-    );
-    const [primarySiteId, setPrimarySiteId] = useState<string | null>(
-        initialData?.sites?.find(s => s.isPrimary)?.siteId || null
+    // Multi-site syndication state with per-site Primary / Hero / Pin flags
+    const [siteAssocs, setSiteAssocs] = useState<SiteAssoc[]>(
+        initialData?.sites?.map(s => ({
+            siteId: s.siteId,
+            isPrimary: s.isPrimary,
+            isHero: s.isHero,
+            isPinned: s.isPinned,
+        })) || []
     );
 
     const [imageUploading, setImageUploading] = useState(false);
@@ -69,6 +69,78 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
     const [showMediaPicker, setShowMediaPicker] = useState(false);
 
     const isEditing = !!initialData?.id;
+
+    // --- Draft autosave (edit mode only) ---
+    const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved">("idle");
+    const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
+    const [pendingDraft, setPendingDraft] = useState<{ content: string; updatedAt: string } | null>(null);
+    const lastSavedContent = useRef<string>(initialData?.content || "");
+
+    // On open: detect an unsaved draft newer than the saved content and offer restore
+    useEffect(() => {
+        if (!isEditing || !initialData?.id) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`/api/announcements/${initialData.id}/draft`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (cancelled) return;
+                if (data.hasDraft && data.draftContent && data.draftContent !== data.content) {
+                    setPendingDraft({ content: data.draftContent, updatedAt: data.draftUpdatedAt });
+                }
+            } catch {
+                // Non-critical: draft detection failure shouldn't block editing
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [isEditing, initialData?.id]);
+
+    // Debounced autosave of content while editing
+    useEffect(() => {
+        if (!isEditing || !initialData?.id) return;
+        if (content === lastSavedContent.current) return;
+
+        const handle = setTimeout(async () => {
+            try {
+                setDraftStatus("saving");
+                const res = await fetch(`/api/announcements/${initialData.id}/draft`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ draftContent: content }),
+                });
+                if (res.ok) {
+                    lastSavedContent.current = content;
+                    setDraftStatus("saved");
+                    setDraftSavedAt(new Date());
+                } else {
+                    setDraftStatus("idle");
+                }
+            } catch {
+                setDraftStatus("idle");
+            }
+        }, 3000); // 3s after the user stops typing
+
+        return () => clearTimeout(handle);
+    }, [content, isEditing, initialData?.id]);
+
+    const restoreDraft = () => {
+        if (pendingDraft) {
+            setContent(pendingDraft.content);
+            setPendingDraft(null);
+        }
+    };
+
+    const discardDraft = async () => {
+        setPendingDraft(null);
+        if (initialData?.id) {
+            try {
+                await fetch(`/api/announcements/${initialData.id}/draft`, { method: "DELETE" });
+            } catch {
+                // Non-critical
+            }
+        }
+    };
 
     const inputStyle = {
         width: '100%',
@@ -191,6 +263,13 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
             return;
         }
 
+        // Require at least one target site
+        if (siteAssocs.length === 0) {
+            setError("Pilih minimal satu site untuk publish");
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const url = isEditing
                 ? `/api/announcements/${initialData.id}`
@@ -207,19 +286,22 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
                     videoPath: mediaType === "video" ? videoPath : null,
                     videoType: mediaType === "youtube" ? "youtube" : (mediaType === "video" ? "upload" : null),
                     youtubeUrl: mediaType === "youtube" ? youtubeUrl : null,
-                    isHero,
-                    isPinned,
                     isPublished,
                     scheduledAt: scheduledAt || null,
                     takedownAt: takedownAt || null,
-                    siteIds,
-                    primarySiteId,
+                    sites: siteAssocs,
                 }),
             });
 
             if (!response.ok) {
                 const data = await response.json();
                 throw new Error(data.error || "Failed to save");
+            }
+
+            // Saved content is now canonical — discard any autosaved draft
+            if (isEditing && initialData?.id) {
+                lastSavedContent.current = content;
+                fetch(`/api/announcements/${initialData.id}/draft`, { method: "DELETE" }).catch(() => {});
             }
 
             router.push("/admin/announcements");
@@ -246,6 +328,47 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
                         fontSize: '14px',
                     }}>
                         {error}
+                    </div>
+                )}
+
+                {/* Unsaved draft restore banner */}
+                {pendingDraft && (
+                    <div style={{
+                        padding: '14px 16px',
+                        backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                        border: '1px solid rgba(234, 179, 8, 0.4)',
+                        color: '#eab308',
+                        fontSize: '13px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                    }}>
+                        <span>
+                            Ditemukan draft otomatis yang belum disimpan
+                            {pendingDraft.updatedAt && ` (${new Date(pendingDraft.updatedAt).toLocaleString('id-ID')})`}.
+                        </span>
+                        <span style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                            <button type="button" onClick={restoreDraft} style={{
+                                padding: '6px 12px', backgroundColor: '#eab308', color: '#000',
+                                border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                            }}>Pulihkan</button>
+                            <button type="button" onClick={discardDraft} style={{
+                                padding: '6px 12px', backgroundColor: 'transparent', color: '#eab308',
+                                border: '1px solid rgba(234,179,8,0.4)', fontSize: '12px', cursor: 'pointer',
+                            }}>Abaikan</button>
+                        </span>
+                    </div>
+                )}
+
+                {/* Autosave indicator */}
+                {isEditing && draftStatus !== "idle" && (
+                    <div style={{ fontSize: '12px', color: '#737373' }}>
+                        {draftStatus === "saving"
+                            ? "Menyimpan draft..."
+                            : draftSavedAt
+                                ? `Draft tersimpan otomatis ${draftSavedAt.toLocaleTimeString('id-ID')}`
+                                : ""}
                     </div>
                 )}
 
@@ -305,12 +428,9 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
                         {/* Site Syndication */}
                         <div style={cardStyle}>
                             <SiteSyndicationPicker
-                                selectedSiteIds={siteIds}
-                                primarySiteId={primarySiteId}
-                                onChange={(newSiteIds, newPrimarySiteId) => {
-                                    setSiteIds(newSiteIds);
-                                    setPrimarySiteId(newPrimarySiteId);
-                                }}
+                                value={siteAssocs}
+                                defaultSiteId={defaultSiteId}
+                                onChange={setSiteAssocs}
                             />
                         </div>
 
@@ -600,27 +720,11 @@ export default function AnnouncementForm({ categories, initialData }: Announceme
                                 <span style={{ color: '#a3a3a3', fontSize: '14px' }}>Publish</span>
                             </label>
 
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={isPinned}
-                                    onChange={(e) => setIsPinned(e.target.checked)}
-                                    style={{ width: '16px', height: '16px', accentColor: '#dc2626' }}
-                                />
-                                <FiMapPin size={16} color="#dc2626" />
-                                <span style={{ color: '#a3a3a3', fontSize: '14px' }}>Pin di atas</span>
-                            </label>
-
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={isHero}
-                                    onChange={(e) => setIsHero(e.target.checked)}
-                                    style={{ width: '16px', height: '16px', accentColor: '#dc2626' }}
-                                />
-                                <FiStar size={16} color="#eab308" />
-                                <span style={{ color: '#a3a3a3', fontSize: '14px' }}>Tampilkan di Hero</span>
-                            </label>
+                            <p style={{ color: '#525252', fontSize: '11px', lineHeight: 1.5 }}>
+                                <FiStar size={11} color="#eab308" style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                                Hero &amp; <FiMapPin size={11} color="#dc2626" style={{ margin: '0 4px', verticalAlign: 'middle' }} />
+                                Pin sekarang diatur per-site di bagian <strong>Publish to Sites</strong> di atas.
+                            </p>
                         </div>
 
                         {/* Scheduled Publish */}

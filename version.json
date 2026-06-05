@@ -1,7 +1,7 @@
 {
-    "version": "2.5.1",
-    "buildDate": "2026-02-06",
-    "schemaVersion": "6",
-    "releaseNotes": "Fix: Add comment restoration to legacy data restore script, improve error handling.",
+    "version": "2.7.0",
+    "buildDate": "2026-06-05",
+    "schemaVersion": "8",
+    "releaseNotes": "Security/isolation hardening (full backup, per-site auth/scoping). Features: draft autosave wired, auto-send newsletter on publish, revision v0 + video fields, reliable cron scheduler, path-traversal hardening. Removed unused approval workflow.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

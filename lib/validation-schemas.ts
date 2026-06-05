@@ -73,8 +73,16 @@ export const AnnouncementCreateSchema = z.object({
     isPublished: z.boolean().default(false),
     scheduledAt: z.string().datetime().nullable().optional(),
     takedownAt: z.string().datetime().nullable().optional(),
+    // Legacy site fields (kept for backward compatibility during transition)
     siteIds: z.array(z.string().cuid()).optional(),
     primarySiteId: z.string().cuid().nullable().optional(),
+    // Per-site syndication with hero/pin placement flags (preferred)
+    sites: z.array(z.object({
+        siteId: z.string().cuid(),
+        isPrimary: z.boolean().default(false),
+        isHero: z.boolean().default(false),
+        isPinned: z.boolean().default(false),
+    })).optional(),
 });
 
 export const AnnouncementUpdateSchema = AnnouncementCreateSchema.partial();

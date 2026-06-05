@@ -208,6 +208,101 @@ export async function sendBulkEmails(
 }
 
 /**
+ * Auto-send the "new article" newsletter for a freshly published announcement.
+ *
+ * No-op unless EmailSettings.autoSendNewArticle is enabled. Sends to active
+ * subscribers of every site the article belongs to, de-duplicating recipients.
+ * Guards against double-send by checking EmailLog for this announcement +
+ * the new-article template.
+ */
+export async function maybeSendNewArticleEmails(announcementId: string): Promise<{
+    success: boolean;
+    sent?: number;
+    failed?: number;
+    skipped?: string;
+}> {
+    const settings = await prisma.emailSettings.findFirst();
+    if (!settings?.autoSendNewArticle) {
+        return { success: true, skipped: "autoSendNewArticle disabled" };
+    }
+
+    const template = await prisma.emailTemplate.findFirst({
+        where: { slug: "new-article", siteId: null },
+        select: { id: true, name: true, isActive: true },
+    });
+    if (!template || !template.isActive) {
+        return { success: true, skipped: "new-article template missing/inactive" };
+    }
+
+    // Idempotency: don't resend if we already logged sends for this article+template
+    const alreadySent = await prisma.emailLog.count({
+        where: { announcementId, templateName: template.name, status: "SENT" },
+    });
+    if (alreadySent > 0) {
+        return { success: true, skipped: "already sent" };
+    }
+
+    const announcement = await prisma.announcement.findUnique({
+        where: { id: announcementId },
+        select: {
+            id: true,
+            title: true,
+            slug: true,
+            excerpt: true,
+            isPublished: true,
+            category: { select: { name: true, color: true } },
+            sites: { select: { siteId: true, isPrimary: true, site: { select: { slug: true, name: true } } } },
+        },
+    });
+    if (!announcement || !announcement.isPublished) {
+        return { success: true, skipped: "not published" };
+    }
+
+    const siteIds = announcement.sites.map((s) => s.siteId);
+    if (siteIds.length === 0) return { success: true, skipped: "no sites" };
+
+    const subscribers = await prisma.newsletterSubscriber.findMany({
+        where: { siteId: { in: siteIds }, isActive: true },
+        select: { email: true, name: true, unsubscribeToken: true },
+    });
+    if (subscribers.length === 0) return { success: true, skipped: "no subscribers" };
+
+    // Canonical (primary) site provides the article URL + branding
+    const primary = announcement.sites.find((s) => s.isPrimary) ?? announcement.sites[0];
+    const siteSlug = primary.site.slug;
+    const siteName = primary.site.name;
+    const year = new Date().getFullYear();
+    const date = new Date().toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" });
+
+    // De-duplicate recipients across syndicated sites
+    const seen = new Set<string>();
+    const emails = subscribers
+        .filter((s) => {
+            const key = s.email.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        })
+        .map((s) => ({
+            to: s.email,
+            data: {
+                subscriberName: s.name || "Subscriber",
+                siteName,
+                articleTitle: announcement.title,
+                articleExcerpt: announcement.excerpt || "",
+                articleUrl: `/site/${siteSlug}/${announcement.slug}`,
+                categoryName: announcement.category?.name || "",
+                categoryColor: announcement.category?.color || "#dc2626",
+                date,
+                year,
+                unsubscribeUrl: `/api/newsletter?token=${s.unsubscribeToken}`,
+            },
+        }));
+
+    return sendBulkEmails(emails, "new-article", announcementId);
+}
+
+/**
  * Test SMTP connection
  */
 export async function testConnection(): Promise<{ success: boolean; error?: string }> {

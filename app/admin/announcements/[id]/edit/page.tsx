@@ -73,14 +73,14 @@ export default async function EditAnnouncementPage({
                     videoPath: announcement.videoPath,
                     videoType: announcement.videoType,
                     youtubeUrl: announcement.youtubeUrl,
-                    isHero: announcement.isHero,
-                    isPinned: announcement.isPinned,
                     isPublished: announcement.isPublished,
                     scheduledAt: announcement.scheduledAt?.toISOString().slice(0, 16) || null,
                     takedownAt: announcement.takedownAt?.toISOString().slice(0, 16) || null,
                     sites: announcement.sites.map(site => ({
                         siteId: site.siteId,
                         isPrimary: site.isPrimary,
+                        isHero: site.isHero,
+                        isPinned: site.isPinned,
                     })),
                 }}
             />
