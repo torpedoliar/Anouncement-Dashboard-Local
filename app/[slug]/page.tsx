@@ -10,8 +10,9 @@ import { formatDate } from "@/lib/utils";
 import { FiArrowLeft, FiEye, FiCalendar, FiUser, FiClock } from "react-icons/fi";
 import ArticleVideoPlayer from "@/components/ArticleVideoPlayer";
 
-// Enable ISR with 60s revalidation for article pages
-export const revalidate = 60;
+// No ISR — redirect to canonical site-scoped URL runs on every request and
+// needs fresh data to determine the correct site. Stale cache would break it.
+export const dynamic = "force-dynamic";
 
 interface AnnouncementPageProps {
     params: Promise<{ slug: string }>;

@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import AnnouncementForm from "@/components/admin/AnnouncementForm";
+import { resolveAdminSiteId } from "@/lib/site-context";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +14,10 @@ async function getAnnouncement(id: string) {
     });
 }
 
-async function getCategories() {
+async function getCategories(siteId: string | null) {
+    if (!siteId) return [];
     return prisma.category.findMany({
+        where: { siteId },
         orderBy: { order: "asc" },
     });
 }
@@ -26,9 +29,10 @@ export default async function EditAnnouncementPage({
 }) {
     const { id } = await params;
 
+    const siteId = await resolveAdminSiteId();
     const [announcement, categories] = await Promise.all([
         getAnnouncement(id),
-        getCategories(),
+        getCategories(siteId),
     ]);
 
     if (!announcement) {

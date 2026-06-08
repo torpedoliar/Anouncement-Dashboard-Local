@@ -40,22 +40,40 @@ export async function GET(
         }
 
         const { id } = await params;
+        const userId = (session.user as { id: string }).id;
 
+        // Fetch comment + announcement sites for permission check in one query
         const comment = await prisma.comment.findUnique({
             where: { id },
             include: {
                 announcement: {
-                    select: { id: true, title: true, slug: true },
+                    select: {
+                        id: true, title: true, slug: true,
+                        sites: { select: { siteId: true } },
+                    },
                 },
                 replies: true,
-                moderator: {
-                    select: { id: true, name: true },
-                },
+                moderator: { select: { id: true, name: true } },
             },
         });
 
         if (!comment) {
             return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+        }
+
+        // Verify user can moderate (has edit access to at least one of the announcement's sites)
+        const siteIds = comment.announcement.sites.map((s) => s.siteId);
+        if (siteIds.length > 0) {
+            let allowed = false;
+            for (const siteId of siteIds) {
+                if (await canEditOnSite(userId, siteId)) { allowed = true; break; }
+            }
+            if (!allowed) {
+                return NextResponse.json(
+                    { error: "No permission to view this comment" },
+                    { status: 403 }
+                );
+            }
         }
 
         return NextResponse.json(comment);

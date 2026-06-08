@@ -15,10 +15,16 @@ export async function GET(
     try {
         const { id } = await params;
 
+        const session = await getServerSession(authOptions);
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const announcement = await prisma.announcement.findUnique({
             where: { id },
             include: {
                 category: true,
+                sites: { select: { siteId: true } },
             },
         });
 
@@ -26,9 +32,20 @@ export async function GET(
             return NextResponse.json({ error: "Not found" }, { status: 404 });
         }
 
-        // NOTE: view count is incremented by the public article pages on render,
-        // not here. This GET is used by the admin edit form and internal fetches,
-        // so counting here would inflate views with admin/API traffic.
+        // Verify user has access to at least one of the announcement's sites
+        const sessionUserId = (session.user as { id: string }).id;
+        const { getAccessibleSites } = await import("@/lib/site-access");
+        const accessible = await getAccessibleSites(sessionUserId);
+        const accessibleIds = accessible.map((s) => s.id);
+        const hasAccess = announcement.sites.some((s) =>
+            accessibleIds.includes(s.siteId)
+        );
+        if (!hasAccess) {
+            return NextResponse.json(
+                { error: "No access to this announcement" },
+                { status: 403 }
+            );
+        }
 
         return NextResponse.json(announcement);
     } catch (error) {
@@ -220,11 +237,34 @@ export async function DELETE(
 
         const { id } = await params;
 
-        // Get announcement title before deleting for activity log
+        // Get announcement + its sites to check permissions
         const announcement = await prisma.announcement.findUnique({
             where: { id },
-            select: { title: true },
+            include: {
+                sites: { select: { siteId: true } },
+            },
         });
+
+        if (!announcement) {
+            return NextResponse.json({ error: "Not found" }, { status: 404 });
+        }
+
+        const sessionUserId = (session.user as { id: string }).id;
+
+        // Must have edit permission on at least one of the announcement's sites
+        const siteIds = announcement.sites.map((s) => s.siteId);
+        if (siteIds.length > 0) {
+            const { getAccessibleSites } = await import("@/lib/site-access");
+            const accessible = await getAccessibleSites(sessionUserId);
+            const accessibleIds = accessible.map((s) => s.id);
+            const overlap = siteIds.some((sid) => accessibleIds.includes(sid));
+            if (!overlap) {
+                return NextResponse.json(
+                    { error: "No permission to delete this announcement" },
+                    { status: 403 }
+                );
+            }
+        }
 
         await prisma.announcement.delete({ where: { id } });
 
