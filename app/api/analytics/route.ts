@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getCurrentSiteId } from "@/lib/site-context";
+import { resolveAdminSiteId } from "@/lib/site-context";
 import { canAccessSite } from "@/lib/site-access";
 import { Prisma } from "@prisma/client";
 import { startOfDay, endOfDay, subDays, format, eachDayOfInterval } from "date-fns";
@@ -21,17 +21,22 @@ export async function GET(request: NextRequest) {
         const startDate = startOfDay(subDays(new Date(), days));
         const endDate = endOfDay(new Date());
 
-        // Resolve site scope from the admin cookie. When set, every query below is
-        // restricted to that site so analytics never mix data across sites.
-        const siteId = await getCurrentSiteId();
+        // Resolve site scope (cookie -> user's default site). When set, every
+        // query below is restricted to that site so analytics never mix data
+        // across sites. Null only when the user has no site at all.
+        const siteId = await resolveAdminSiteId();
         if (siteId && !(await canAccessSite(session.user.id, siteId))) {
             return NextResponse.json({ error: "No access to this site" }, { status: 403 });
         }
-        // Reusable filters
-        const analyticsSiteWhere: Prisma.AnalyticsWhereInput = siteId ? { siteId } : {};
+        // Reusable filters. When no site resolves (user has no site at all),
+        // scope to an impossible match so we return empty analytics rather than
+        // aggregating every site's data.
+        const analyticsSiteWhere: Prisma.AnalyticsWhereInput = siteId
+            ? { siteId }
+            : { siteId: "__none__" };
         const announcementSiteWhere: Prisma.AnnouncementWhereInput = siteId
             ? { sites: { some: { siteId } } }
-            : {};
+            : { id: "__none__" };
 
         // Check if Analytics table has data (for this site)
         const analyticsCount = await prisma.analytics.count({ where: analyticsSiteWhere });
@@ -131,7 +136,8 @@ export async function GET(request: NextRequest) {
             }));
         }
 
-        // Get category distribution from viewCount, scoped to the site when set.
+        // Get category distribution from viewCount, scoped to the site. When no
+        // site resolves, return nothing rather than every site's categories.
         // Categories belong to one site; announcements link to sites via the junction.
         const categoryViews = (siteId
             ? await prisma.$queryRaw`
@@ -146,12 +152,7 @@ export async function GET(request: NextRequest) {
                 WHERE c."siteId" = ${siteId}
                 GROUP BY c.id, c.name, c.color
                 ORDER BY views DESC`
-            : await prisma.$queryRaw`
-                SELECT c.name, c.color, COALESCE(SUM(a."viewCount"), 0) as views
-                FROM categories c
-                LEFT JOIN announcements a ON a."categoryId" = c.id AND a."isPublished" = true
-                GROUP BY c.id, c.name, c.color
-                ORDER BY views DESC`
+            : []
         ) as { name: string; color: string; views: bigint }[];
 
         // Get totals (scoped)

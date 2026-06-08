@@ -8,7 +8,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { validatePagination, getPaginationMeta } from "@/lib/pagination-utils";
-import { getCurrentSiteId } from "@/lib/site-context";
+import { resolveAdminSiteId } from "@/lib/site-context";
+import { getAccessibleSites } from "@/lib/site-access";
 
 // GET /api/comments - List all comments (admin)
 export async function GET(request: NextRequest) {
@@ -37,11 +38,15 @@ export async function GET(request: NextRequest) {
         if (status) where.status = status;
         if (announcementId) where.announcementId = announcementId;
         
-        const siteId = await getCurrentSiteId();
+        // Scope comments to the admin's active site. If none resolves, restrict
+        // to every site the user can access rather than leaking all comments.
+        const siteId = await resolveAdminSiteId();
         if (siteId) {
-            where.announcement = {
-                sites: { some: { siteId } }
-            };
+            where.announcement = { sites: { some: { siteId } } };
+        } else {
+            const userId = (session.user as { id: string }).id;
+            const accessible = await getAccessibleSites(userId);
+            where.announcement = { sites: { some: { siteId: { in: accessible.map((s) => s.id) } } } };
         }
 
         // OPTIMIZATION: Two-query approach to eliminate N+1 problem

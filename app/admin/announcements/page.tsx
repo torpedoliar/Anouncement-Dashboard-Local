@@ -1,27 +1,8 @@
 import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import AnnouncementsList from "@/components/admin/AnnouncementsList";
-import { getCurrentSiteId } from "@/lib/site-context";
-import { getDefaultSite } from "@/lib/site-access";
+import { resolveAdminSiteId } from "@/lib/site-context";
 
 export const dynamic = "force-dynamic";
-
-/**
- * Resolve the admin's active site: the cookie if set, otherwise the user's
- * default/first accessible site. Never returns null when any site exists, so
- * the list is always scoped to exactly one site (no cross-site leak even when
- * the cookie is missing — e.g. Secure-cookie dropped over plain HTTP).
- */
-async function resolveSiteId(): Promise<string | null> {
-    const cookieSiteId = await getCurrentSiteId();
-    if (cookieSiteId) return cookieSiteId;
-
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return null;
-    const fallback = await getDefaultSite(session.user.id);
-    return fallback?.id ?? null;
-}
 
 async function getAnnouncements(siteId: string | null) {
     // Always scope to a site. If we truly cannot resolve one, return nothing
@@ -63,7 +44,7 @@ async function getCategories(siteId: string | null) {
 }
 
 export default async function AnnouncementsPage() {
-    const siteId = await resolveSiteId();
+    const siteId = await resolveAdminSiteId();
     const [announcements, categories] = await Promise.all([
         getAnnouncements(siteId),
         getCategories(siteId),

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getCurrentSiteId } from "@/lib/site-context";
+import { resolveAdminSiteId } from "@/lib/site-context";
 import { canAccessSite } from "@/lib/site-access";
 import { Prisma } from "@prisma/client";
 
@@ -27,17 +27,20 @@ export async function POST(request: NextRequest) {
         }
 
         // Scope the operation to the current admin site so bulk actions never
-        // touch articles that belong to other sites.
-        const siteId = await getCurrentSiteId();
-        if (siteId) {
-            const allowed = await canAccessSite(session.user.id, siteId);
-            if (!allowed) {
-                return NextResponse.json({ error: "No access to the current site" }, { status: 403 });
-            }
+        // touch articles that belong to other sites. Refuse if no site can be
+        // resolved — operating on raw ids unscoped would delete/publish across
+        // every site.
+        const siteId = await resolveAdminSiteId();
+        if (!siteId) {
+            return NextResponse.json({ error: "No active site context" }, { status: 400 });
         }
-        const where: Prisma.AnnouncementWhereInput = siteId
-            ? { id: { in: ids }, sites: { some: { siteId } } }
-            : { id: { in: ids } };
+        if (!(await canAccessSite(session.user.id, siteId))) {
+            return NextResponse.json({ error: "No access to the current site" }, { status: 403 });
+        }
+        const where: Prisma.AnnouncementWhereInput = {
+            id: { in: ids },
+            sites: { some: { siteId } },
+        };
 
         let result;
 

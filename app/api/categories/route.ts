@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { canEditOnSite, getDefaultSite } from "@/lib/site-access";
+import { canEditOnSite } from "@/lib/site-access";
 import { CategoryCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
-import { getCurrentSiteId } from "@/lib/site-context";
+import { resolveAdminSiteId } from "@/lib/site-context";
 
 // GET /api/categories - Get categories (filtered by site)
 export async function GET(request: NextRequest) {
@@ -23,18 +23,11 @@ export async function GET(request: NextRequest) {
             resolvedSiteId = site?.id || null;
         }
         
-        if (!resolvedSiteId) {
-            resolvedSiteId = await getCurrentSiteId();
-        }
-        // Final fallback: a logged-in admin's default site. Prevents returning
-        // every site's categories (cross-site leak) when no context is set —
+        // Fall back to the admin's active site (cookie -> default site). Prevents
+        // returning every site's categories when no explicit param is given —
         // e.g. when the Secure site cookie is dropped over plain HTTP.
         if (!resolvedSiteId) {
-            const session = await getServerSession(authOptions);
-            if (session?.user?.id) {
-                const fallback = await getDefaultSite(session.user.id);
-                resolvedSiteId = fallback?.id ?? null;
-            }
+            resolvedSiteId = await resolveAdminSiteId();
         }
 
         // Build where clause. If we still have no site, scope to nothing rather

@@ -28,6 +28,33 @@ export async function getCurrentSiteId(): Promise<string | null> {
 }
 
 /**
+ * Resolve the admin's active site for server-side queries.
+ *
+ * Order: site cookie -> the logged-in user's default/first accessible site.
+ * Returns null only when there is no session or no site at all.
+ *
+ * Use this (not the raw cookie) for any admin query that must be scoped to one
+ * site. It guarantees a missing cookie never degrades into an unscoped "all
+ * sites" query — the bug that leaked data when the Secure cookie was dropped
+ * over plain HTTP.
+ */
+export async function resolveAdminSiteId(): Promise<string | null> {
+    const cookieId = await getCurrentSiteId();
+    if (cookieId) return cookieId;
+
+    // Lazy imports avoid pulling auth/prisma into modules that only need the
+    // cookie helpers, and sidestep any import-cycle concerns.
+    const { getServerSession } = await import('next-auth');
+    const { authOptions } = await import('@/lib/auth');
+    const { getDefaultSite } = await import('@/lib/site-access');
+
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return null;
+    const fallback = await getDefaultSite(session.user.id);
+    return fallback?.id ?? null;
+}
+
+/**
  * Get current site slug from cookie
  */
 export async function getCurrentSiteSlug(): Promise<string | null> {

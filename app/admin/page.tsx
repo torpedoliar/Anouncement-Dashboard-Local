@@ -10,23 +10,9 @@ import {
 } from "react-icons/fi";
 import { formatNumber, formatDateShort } from "@/lib/utils";
 import { runScheduler } from "@/lib/scheduler";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { getCurrentSiteId } from "@/lib/site-context";
-import { getDefaultSite } from "@/lib/site-access";
+import { resolveAdminSiteId } from "@/lib/site-context";
 
 export const dynamic = "force-dynamic";
-
-// Resolve the admin's active site: cookie first, else the user's default site.
-// Never returns the "all sites" state, so dashboard stats stay scoped to one site.
-async function resolveSiteId(): Promise<string | null> {
-    const cookieId = await getCurrentSiteId();
-    if (cookieId) return cookieId;
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) return null;
-    const fallback = await getDefaultSite(session.user.id);
-    return fallback?.id ?? null;
-}
 
 async function getStats(siteId: string | null) {
     if (!siteId) {
@@ -65,7 +51,7 @@ export default async function AdminDashboard() {
     // Run auto-scheduler check
     await runScheduler();
 
-    const siteId = await resolveSiteId();
+    const siteId = await resolveAdminSiteId();
     const [stats, recentAnnouncements] = await Promise.all([
         getStats(siteId),
         getRecentAnnouncements(siteId),
