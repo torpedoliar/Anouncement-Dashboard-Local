@@ -8,6 +8,11 @@ import { cookies } from 'next/headers';
 const SITE_COOKIE_NAME = 'current_site_id';
 const SITE_SLUG_COOKIE_NAME = 'current_site_slug';
 
+// Only mark cookies Secure when the app is actually served over HTTPS.
+// Many deployments run over plain HTTP on a LAN (e.g. http://192.168.x.x:3100);
+// a Secure cookie would be silently dropped there, breaking the site context.
+const USE_SECURE_COOKIE = (process.env.NEXTAUTH_URL || '').startsWith('https://');
+
 export interface SiteContext {
     siteId: string;
     siteSlug: string;
@@ -37,13 +42,13 @@ export async function setCurrentSite(siteId: string, siteSlug: string): Promise<
     const cookieStore = await cookies();
     cookieStore.set(SITE_COOKIE_NAME, siteId, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: USE_SECURE_COOKIE,
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30, // 30 days
     });
     cookieStore.set(SITE_SLUG_COOKIE_NAME, siteSlug, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: USE_SECURE_COOKIE,
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 30,
     });

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { canEditOnSite } from "@/lib/site-access";
+import { canEditOnSite, getDefaultSite } from "@/lib/site-access";
 import { CategoryCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { getCurrentSiteId } from "@/lib/site-context";
 
@@ -26,13 +26,21 @@ export async function GET(request: NextRequest) {
         if (!resolvedSiteId) {
             resolvedSiteId = await getCurrentSiteId();
         }
-
-        // Build where clause
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = {};
-        if (resolvedSiteId) {
-            where.siteId = resolvedSiteId;
+        // Final fallback: a logged-in admin's default site. Prevents returning
+        // every site's categories (cross-site leak) when no context is set —
+        // e.g. when the Secure site cookie is dropped over plain HTTP.
+        if (!resolvedSiteId) {
+            const session = await getServerSession(authOptions);
+            if (session?.user?.id) {
+                const fallback = await getDefaultSite(session.user.id);
+                resolvedSiteId = fallback?.id ?? null;
+            }
         }
+
+        // Build where clause. If we still have no site, scope to nothing rather
+        // than leaking all categories across sites.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const where: any = resolvedSiteId ? { siteId: resolvedSiteId } : { id: "__none__" };
 
         const categories = await prisma.category.findMany({
             where,

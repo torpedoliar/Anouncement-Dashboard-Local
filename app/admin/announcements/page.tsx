@@ -1,18 +1,35 @@
 import prisma from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import AnnouncementsList from "@/components/admin/AnnouncementsList";
 import { getCurrentSiteId } from "@/lib/site-context";
+import { getDefaultSite } from "@/lib/site-access";
 
 export const dynamic = "force-dynamic";
 
-async function getAnnouncements() {
-    const siteId = await getCurrentSiteId();
-    
-    // If siteId is present, filter announcements that belong to this site
-    // Also include site relationships so the frontend can display them if needed
-    const whereClause = siteId ? { sites: { some: { siteId } } } : {};
+/**
+ * Resolve the admin's active site: the cookie if set, otherwise the user's
+ * default/first accessible site. Never returns null when any site exists, so
+ * the list is always scoped to exactly one site (no cross-site leak even when
+ * the cookie is missing — e.g. Secure-cookie dropped over plain HTTP).
+ */
+async function resolveSiteId(): Promise<string | null> {
+    const cookieSiteId = await getCurrentSiteId();
+    if (cookieSiteId) return cookieSiteId;
+
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return null;
+    const fallback = await getDefaultSite(session.user.id);
+    return fallback?.id ?? null;
+}
+
+async function getAnnouncements(siteId: string | null) {
+    // Always scope to a site. If we truly cannot resolve one, return nothing
+    // rather than leaking every site's announcements.
+    if (!siteId) return [];
 
     const announcements = await prisma.announcement.findMany({
-        where: whereClause,
+        where: { sites: { some: { siteId } } },
         orderBy: [{ createdAt: "desc" }],
         include: {
             category: { select: { name: true, color: true } },
@@ -24,10 +41,7 @@ async function getAnnouncements() {
         },
     });
 
-    // When a site context is active, surface that site's per-site pin/hero flags
-    // and sort pinned-first for this site. Otherwise fall back to the global flags.
-    if (!siteId) return announcements;
-
+    // Surface this site's per-site pin/hero flags and sort pinned-first.
     return announcements
         .map((a) => {
             const here = a.sites.find((s) => s.siteId === siteId);
@@ -40,20 +54,19 @@ async function getAnnouncements() {
         .sort((x, y) => Number(y.isPinned) - Number(x.isPinned));
 }
 
-async function getCategories() {
-    const siteId = await getCurrentSiteId();
-    const whereClause = siteId ? { siteId } : {};
-    
+async function getCategories(siteId: string | null) {
+    if (!siteId) return [];
     return prisma.category.findMany({
-        where: whereClause,
+        where: { siteId },
         orderBy: { order: "asc" },
     });
 }
 
 export default async function AnnouncementsPage() {
+    const siteId = await resolveSiteId();
     const [announcements, categories] = await Promise.all([
-        getAnnouncements(),
-        getCategories(),
+        getAnnouncements(siteId),
+        getCategories(siteId),
     ]);
 
     return (

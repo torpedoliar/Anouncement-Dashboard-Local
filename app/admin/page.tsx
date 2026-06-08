@@ -10,15 +10,35 @@ import {
 } from "react-icons/fi";
 import { formatNumber, formatDateShort } from "@/lib/utils";
 import { runScheduler } from "@/lib/scheduler";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { getCurrentSiteId } from "@/lib/site-context";
+import { getDefaultSite } from "@/lib/site-access";
 
 export const dynamic = "force-dynamic";
 
-async function getStats() {
+// Resolve the admin's active site: cookie first, else the user's default site.
+// Never returns the "all sites" state, so dashboard stats stay scoped to one site.
+async function resolveSiteId(): Promise<string | null> {
+    const cookieId = await getCurrentSiteId();
+    if (cookieId) return cookieId;
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return null;
+    const fallback = await getDefaultSite(session.user.id);
+    return fallback?.id ?? null;
+}
+
+async function getStats(siteId: string | null) {
+    if (!siteId) {
+        return { total: 0, published: 0, drafts: 0, totalViews: 0 };
+    }
+
+    const siteFilter = { sites: { some: { siteId } } };
     const [total, published, drafts, totalViews] = await Promise.all([
-        prisma.announcement.count(),
-        prisma.announcement.count({ where: { isPublished: true } }),
-        prisma.announcement.count({ where: { isPublished: false } }),
-        prisma.announcement.aggregate({ _sum: { viewCount: true } }),
+        prisma.announcement.count({ where: siteFilter }),
+        prisma.announcement.count({ where: { ...siteFilter, isPublished: true } }),
+        prisma.announcement.count({ where: { ...siteFilter, isPublished: false } }),
+        prisma.announcement.aggregate({ _sum: { viewCount: true }, where: siteFilter }),
     ]);
 
     return {
@@ -29,8 +49,10 @@ async function getStats() {
     };
 }
 
-async function getRecentAnnouncements() {
+async function getRecentAnnouncements(siteId: string | null) {
+    if (!siteId) return [];
     return prisma.announcement.findMany({
+        where: { sites: { some: { siteId } } },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: {
@@ -43,9 +65,10 @@ export default async function AdminDashboard() {
     // Run auto-scheduler check
     await runScheduler();
 
+    const siteId = await resolveSiteId();
     const [stats, recentAnnouncements] = await Promise.all([
-        getStats(),
-        getRecentAnnouncements(),
+        getStats(siteId),
+        getRecentAnnouncements(siteId),
     ]);
 
     const statCards = [
