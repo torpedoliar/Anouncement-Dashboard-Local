@@ -58,7 +58,9 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     authorName,
-                    authorEmail,
+                    // Send undefined for a blank email so the optional field is
+                    // treated as "not provided" rather than an invalid "" string.
+                    authorEmail: authorEmail.trim() || undefined,
                     content,
                     parentId: replyTo,
                 }),

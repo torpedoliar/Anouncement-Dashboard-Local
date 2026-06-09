@@ -136,11 +136,17 @@ export const CommentCreateSchema = z.object({
         .min(2, 'Name must be at least 2 characters')
         .max(100, 'Name must be at most 100 characters')
         .transform(sanitizeText),
-    authorEmail: z.string()
-        .email('Invalid email format')
-        .max(255)
-        .optional()
-        .nullable(),
+    // Email is optional: blank input arrives as "" from the form. Coerce empty/
+    // whitespace-only values to undefined BEFORE the email check so a blank field
+    // is treated as "not provided" instead of failing format validation.
+    authorEmail: z.preprocess(
+        (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+        z.string()
+            .email('Invalid email format')
+            .max(255)
+            .optional()
+            .nullable()
+    ),
     content: z.string()
         .min(2, 'Content must be at least 2 characters')
         .max(5000, 'Content must be at most 5000 characters')
