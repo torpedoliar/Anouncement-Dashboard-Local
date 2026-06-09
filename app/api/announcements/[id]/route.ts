@@ -70,7 +70,7 @@ export async function PUT(
 
         const { id } = await params;
         const body = await request.json();
-        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, scheduledAt, takedownAt, siteIds, primarySiteId, sites } = body;
+        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, allowComments, scheduledAt, takedownAt, siteIds, primarySiteId, sites } = body;
 
         const existingAnnouncement = await prisma.announcement.findUnique({ where: { id } });
         if (!existingAnnouncement) {
@@ -164,6 +164,7 @@ export async function PUT(
                     isHero: mirrorHero !== undefined ? mirrorHero : (isHero !== undefined ? isHero : existingAnnouncement.isHero),
                     isPinned: mirrorPinned !== undefined ? mirrorPinned : (isPinned !== undefined ? isPinned : existingAnnouncement.isPinned),
                     isPublished: isPublished !== undefined ? isPublished : existingAnnouncement.isPublished,
+                    allowComments: allowComments !== undefined ? allowComments : existingAnnouncement.allowComments,
                     scheduledAt: scheduledAt !== undefined ? (scheduledAt ? new Date(scheduledAt) : null) : existingAnnouncement.scheduledAt,
                     takedownAt: takedownAt !== undefined ? (takedownAt ? new Date(takedownAt) : null) : existingAnnouncement.takedownAt,
                 },

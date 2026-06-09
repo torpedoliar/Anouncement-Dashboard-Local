@@ -71,6 +71,7 @@ export const AnnouncementCreateSchema = z.object({
     isHero: z.boolean().default(false),
     isPinned: z.boolean().default(false),
     isPublished: z.boolean().default(false),
+    allowComments: z.boolean().default(true),
     scheduledAt: z.string().datetime().nullable().optional(),
     takedownAt: z.string().datetime().nullable().optional(),
     // Legacy site fields (kept for backward compatibility during transition)

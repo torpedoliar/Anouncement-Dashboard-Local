@@ -194,9 +194,11 @@ export default async function ArticlePage({ params }: PageProps) {
             </article>
 
             {/* Comments Section */}
-            <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 24px 60px" }}>
-                <CommentSection announcementId={announcement.id} />
-            </div>
+            {announcement.allowComments && (
+                <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 24px 60px" }}>
+                    <CommentSection announcementId={announcement.id} />
+                </div>
+            )}
 
             {/* Related Articles */}
             {relatedArticles.length > 0 && (

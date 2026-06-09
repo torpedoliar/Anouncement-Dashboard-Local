@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FiSave, FiX, FiUpload, FiStar, FiMapPin, FiEye, FiClock, FiImage, FiVideo, FiYoutube, FiPlay, FiFolder } from "react-icons/fi";
+import { FiSave, FiX, FiUpload, FiStar, FiMapPin, FiEye, FiClock, FiImage, FiVideo, FiYoutube, FiPlay, FiFolder, FiMessageSquare } from "react-icons/fi";
 import RichTextEditor from "./RichTextEditor";
 import MediaPickerModal from "./MediaPickerModal";
 import SiteSyndicationPicker, { SiteAssoc } from "./SiteSyndicationPicker";
@@ -27,6 +27,7 @@ interface AnnouncementFormProps {
         videoType?: string | null;
         youtubeUrl?: string | null;
         isPublished: boolean;
+        allowComments?: boolean;
         scheduledAt?: string | null;
         takedownAt?: string | null;
         sites?: { siteId: string; isPrimary: boolean; isHero: boolean; isPinned: boolean }[];
@@ -51,6 +52,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
             initialData?.videoPath ? "video" : "image"
     );
     const [isPublished, setIsPublished] = useState(initialData?.isPublished || false);
+    const [allowComments, setAllowComments] = useState(initialData?.allowComments ?? true);
     const [scheduledAt, setScheduledAt] = useState(initialData?.scheduledAt || "");
     const [takedownAt, setTakedownAt] = useState(initialData?.takedownAt || "");
 
@@ -287,6 +289,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                     videoType: mediaType === "youtube" ? "youtube" : (mediaType === "video" ? "upload" : null),
                     youtubeUrl: mediaType === "youtube" ? youtubeUrl : null,
                     isPublished,
+                    allowComments,
                     scheduledAt: scheduledAt || null,
                     takedownAt: takedownAt || null,
                     sites: siteAssocs,
@@ -718,6 +721,17 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                 />
                                 <FiEye size={16} color="#22c55e" />
                                 <span style={{ color: '#a3a3a3', fontSize: '14px' }}>Publish</span>
+                            </label>
+
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={allowComments}
+                                    onChange={(e) => setAllowComments(e.target.checked)}
+                                    style={{ width: '16px', height: '16px', accentColor: '#dc2626' }}
+                                />
+                                <FiMessageSquare size={16} color="#60a5fa" />
+                                <span style={{ color: '#a3a3a3', fontSize: '14px' }}>Izinkan Komentar</span>
                             </label>
 
                             <p style={{ color: '#525252', fontSize: '11px', lineHeight: 1.5 }}>
