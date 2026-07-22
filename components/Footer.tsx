@@ -216,6 +216,17 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                     >
                         Admin
                     </Link>
+                    <Link
+                        href="/portal-login"
+                        style={{
+                            color: '#333',
+                            fontSize: '11px',
+                            textDecoration: 'none',
+                            transition: 'color 0.3s',
+                        }}
+                    >
+                        Portal Karyawan
+                    </Link>
                 </div>
             </div>
         </footer>

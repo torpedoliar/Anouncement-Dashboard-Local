@@ -84,17 +84,29 @@ export default function PortalAppsPage() {
             const url = editingApp ? `/api/portal-apps/${editingApp.id}` : "/api/portal-apps";
             const method = editingApp ? "PUT" : "POST";
 
+            // Parse extraFields from JSON string to object
+            let extraFieldsParsed = null;
+            if (formData.extraFields && formData.extraFields.trim()) {
+                try {
+                    extraFieldsParsed = JSON.parse(formData.extraFields);
+                } catch {
+                    setError("Extra Fields harus berformat JSON yang valid");
+                    setIsSaving(false);
+                    return;
+                }
+            }
+
             const body: Record<string, unknown> = {
                 name: formData.name,
                 slug: formData.slug,
                 description: formData.description || null,
                 url: formData.url,
-                loginUrl: formData.loginUrl || null,
+                loginUrl: formData.loginUrl,
                 ssoMode: formData.ssoMode,
                 httpMethod: formData.httpMethod,
-                usernameField: formData.usernameField || null,
-                passwordField: formData.passwordField || null,
-                extraFields: formData.extraFields || null,
+                usernameField: formData.usernameField || "username",
+                passwordField: formData.passwordField || "password",
+                extraFields: extraFieldsParsed,
                 category: formData.category || null,
                 isActive: formData.isActive,
                 displayOrder: Number(formData.displayOrder),
