@@ -224,6 +224,17 @@ export const PortalAppCreateSchema = z.object({
 export const PortalAppUpdateSchema = PortalAppCreateSchema.partial();
 
 // -----------------------------------------
+// Portal Group Schemas
+// -----------------------------------------
+
+export const portalGroupSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).nullable().optional(),
+  isActive: z.boolean().optional().default(true),
+  appIds: z.array(z.string().cuid()).max(200).optional().default([]),
+});
+
+// -----------------------------------------
 // Portal Credential Schemas
 // -----------------------------------------
 

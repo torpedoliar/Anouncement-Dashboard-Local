@@ -72,7 +72,21 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
         }
 
-        const user = await prisma.portalUser.update({ where: { id }, data: validation.data });
+        // Extract groupIds from body (not part of Zod schema, handled separately)
+        const groupIds: string[] | undefined = body.groupIds;
+
+        // Atomic: update user + replace group memberships if groupIds provided
+        const user = await prisma.$transaction(async (tx) => {
+            if (groupIds !== undefined) {
+                await tx.portalUserGroup.deleteMany({ where: { portalUserId: id } });
+                if (groupIds.length > 0) {
+                    await tx.portalUserGroup.createMany({
+                        data: groupIds.map((groupId) => ({ portalUserId: id, groupId })),
+                    });
+                }
+            }
+            return tx.portalUser.update({ where: { id }, data: validation.data });
+        });
 
         await logAudit({
             actorType: "ADMIN_USER",
@@ -81,7 +95,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             action: "PORTAL_USER_UPDATED",
             entityType: "PORTAL_USER",
             entityId: id,
-            changes: validation.data,
+            changes: {
+                ...validation.data,
+                ...(groupIds !== undefined ? { groupIds } : {}),
+            },
             request,
         });
 
