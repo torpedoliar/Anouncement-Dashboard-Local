@@ -1,0 +1,1050 @@
+{
+  "communities": {
+    "0": [
+      "app_admin_announcements_id_edit_page",
+      "app_admin_announcements_id_edit_page_editannouncementpage",
+      "app_admin_announcements_id_edit_page_getannouncement",
+      "app_admin_announcements_id_edit_page_getcategories",
+      "app_admin_announcements_new_page",
+      "app_admin_announcements_new_page_getcategories",
+      "app_admin_announcements_new_page_newannouncementpage",
+      "app_admin_announcements_page",
+      "app_admin_announcements_page_announcementspage",
+      "app_admin_announcements_page_getannouncements",
+      "app_admin_announcements_page_getcategories",
+      "app_api_analytics_route",
+      "app_api_analytics_route_get",
+      "app_api_analytics_route_post",
+      "app_api_announcements_bulk_route",
+      "app_api_announcements_bulk_route_bulkaction",
+      "app_api_announcements_bulk_route_post",
+      "app_api_announcements_id_route_delete",
+      "app_api_announcements_id_route_get",
+      "app_api_audit_logs_route",
+      "app_api_audit_logs_route_get",
+      "app_api_categories_route_get",
+      "app_api_comments_route",
+      "app_api_comments_route_get",
+      "app_api_context_route",
+      "app_api_context_route_post",
+      "app_api_cron_cleanup_sessions_route",
+      "app_api_cron_cleanup_sessions_route_get",
+      "app_api_media_route",
+      "app_api_media_route_delete",
+      "app_api_media_route_get",
+      "app_api_media_route_image_types",
+      "app_api_media_route_post",
+      "app_api_media_route_video_types",
+      "app_api_newsletter_route",
+      "app_api_newsletter_route_get",
+      "app_api_sessions_route",
+      "app_api_sessions_route_delete",
+      "app_api_sessions_route_get",
+      "app_api_sites_id_health_route",
+      "app_api_sites_id_health_route_get",
+      "app_api_sites_id_health_route_healthmetrics",
+      "app_api_sites_id_health_route_healthresponse",
+      "app_api_sites_id_health_route_routeparams",
+      "app_api_sites_route",
+      "app_api_sites_route_get",
+      "app_api_sites_route_post",
+      "app_site_siteslug_search_page",
+      "app_site_siteslug_search_page_pageprops",
+      "app_site_siteslug_search_page_searcharticles",
+      "app_site_siteslug_search_page_sitesearchpage",
+      "lib_pagination_utils",
+      "lib_pagination_utils_getpaginationmeta",
+      "lib_pagination_utils_validatepagination",
+      "lib_prisma",
+      "lib_prisma_globalforprisma",
+      "lib_site_access",
+      "lib_site_access_canaccesssite",
+      "lib_site_access_canaccesssitebyslug",
+      "lib_site_access_getaccessiblesites",
+      "lib_site_access_getdefaultsite",
+      "lib_site_access_getuserwithsiteaccess",
+      "lib_site_access_usersitepermission",
+      "lib_site_access_userwithsiteaccess",
+      "lib_site_context",
+      "lib_site_context_clearcurrentsite",
+      "lib_site_context_extractsiteslugfrompath",
+      "lib_site_context_getadminurl",
+      "lib_site_context_getcurrentsiteid",
+      "lib_site_context_getcurrentsiteslug",
+      "lib_site_context_getsiteurl",
+      "lib_site_context_resolveadminsiteid",
+      "lib_site_context_setcurrentsite",
+      "lib_site_context_sitecontext",
+      "lib_site_context_use_secure_cookie"
+    ],
+    "1": [
+      "app_api_announcements_id_comments_route",
+      "app_api_announcements_id_comments_route_get",
+      "app_api_announcements_id_comments_route_post",
+      "app_api_announcements_id_revisions_route",
+      "app_api_announcements_id_revisions_route_get",
+      "app_api_announcements_id_revisions_route_post",
+      "app_api_announcements_id_route",
+      "app_api_announcements_id_route_put",
+      "app_api_announcements_route",
+      "app_api_announcements_route_get",
+      "app_api_announcements_route_post",
+      "app_api_categories_id_route",
+      "app_api_categories_id_route_delete",
+      "app_api_categories_id_route_get",
+      "app_api_categories_id_route_put",
+      "app_api_categories_id_route_routeparams",
+      "app_api_categories_route",
+      "app_api_categories_route_post",
+      "app_api_comments_id_route",
+      "app_api_comments_id_route_canmoderatecomment",
+      "app_api_comments_id_route_delete",
+      "app_api_comments_id_route_get",
+      "app_api_comments_id_route_put",
+      "lib_email_maybesendnewarticleemails",
+      "lib_revision",
+      "lib_revision_comparerevisions",
+      "lib_revision_createrevision",
+      "lib_revision_createrevisionparams",
+      "lib_revision_getnextversion",
+      "lib_revision_getrevisionhistory",
+      "lib_revision_restorerevision",
+      "lib_site_access_caneditonsite",
+      "lib_utils_generateexcerpt",
+      "lib_utils_slugify",
+      "lib_validation_schemas",
+      "lib_validation_schemas_announcementcreateschema",
+      "lib_validation_schemas_announcementupdateschema",
+      "lib_validation_schemas_categorycreateschema",
+      "lib_validation_schemas_categoryupdateschema",
+      "lib_validation_schemas_commentcreateschema",
+      "lib_validation_schemas_formatzoderrors",
+      "lib_validation_schemas_newslettersubscribeschema",
+      "lib_validation_schemas_sanitizehtml",
+      "lib_validation_schemas_sanitizetext",
+      "lib_validation_schemas_sitecreateschema",
+      "lib_validation_schemas_siteupdateschema",
+      "lib_validation_schemas_usercreateschema",
+      "lib_validation_schemas_userupdateschema",
+      "lib_validation_schemas_validateinput",
+      "lib_validation_schemas_validationresult"
+    ],
+    "2": [
+      "app_slug_page",
+      "app_slug_page_announcementpage",
+      "app_slug_page_announcementpageprops",
+      "app_slug_page_calculatereadingtime",
+      "app_slug_page_getannouncement",
+      "app_slug_page_getcanonicalsitepath",
+      "app_slug_page_getrelatedannouncements",
+      "app_slug_page_getsettings",
+      "components_admin_announcementslist",
+      "components_admin_announcementslist_announcement",
+      "components_admin_announcementslist_announcementslist",
+      "components_admin_announcementslist_announcementslistprops",
+      "components_admin_announcementslist_category",
+      "components_announcementcard",
+      "components_announcementcard_announcementcard",
+      "components_announcementcard_announcementcardprops",
+      "components_announcementcard_extractyoutubeid",
+      "components_articlevideoplayer",
+      "components_articlevideoplayer_articlevideoplayer",
+      "components_articlevideoplayer_articlevideoplayerprops",
+      "components_articlevideoplayer_extractyoutubeid",
+      "components_commentsection",
+      "components_commentsection_comment",
+      "components_commentsection_commentcard",
+      "components_commentsection_commentcardprops",
+      "components_commentsection_commentsection",
+      "components_commentsection_commentsectionprops",
+      "components_readingtime",
+      "components_readingtime_readingtime",
+      "components_readingtime_readingtimeprops",
+      "lib_utils",
+      "lib_utils_calculatereadingtime",
+      "lib_utils_countwords",
+      "lib_utils_formatdate",
+      "lib_utils_formatdateshort",
+      "lib_utils_formatnumber",
+      "lib_utils_formatreadingtime",
+      "lib_utils_getrelativetime",
+      "lib_utils_striphtml",
+      "lib_utils_truncate"
+    ],
+    "3": [
+      "app_admin_analytics_page",
+      "app_admin_analytics_page_analyticspage",
+      "app_admin_media_page",
+      "app_admin_media_page_media",
+      "app_admin_media_page_mediagallerypage",
+      "app_layout",
+      "app_layout_inter",
+      "app_layout_metadata",
+      "app_layout_montserrat",
+      "app_layout_rootlayout",
+      "components_admin_analyticsdashboard",
+      "components_admin_analyticsdashboard_analyticsdashboard",
+      "components_admin_analyticsdashboard_analyticsdata",
+      "components_admin_analyticsdashboard_analyticssummary",
+      "components_admin_analyticsdashboard_categorydistribution",
+      "components_admin_analyticsdashboard_dailyview",
+      "components_admin_analyticsdashboard_emptychartmessage",
+      "components_admin_analyticsdashboard_summarycard",
+      "components_admin_analyticsdashboard_toparticle",
+      "components_admin_bulkactionbar",
+      "components_admin_bulkactionbar_bulkactionbar",
+      "components_admin_bulkactionbar_bulkactionbarprops",
+      "components_providers_nextauthprovider",
+      "components_providers_nextauthprovider_nextauthprovider",
+      "contexts_toastcontext",
+      "contexts_toastcontext_toast",
+      "contexts_toastcontext_toastcontext",
+      "contexts_toastcontext_toastcontexttype",
+      "contexts_toastcontext_toastitem",
+      "contexts_toastcontext_toastprovider",
+      "contexts_toastcontext_toasttype",
+      "contexts_toastcontext_usetoast"
+    ],
+    "4": [
+      "package_dependencies",
+      "package_dependencies_autoprefixer",
+      "package_dependencies_bcryptjs",
+      "package_dependencies_date_fns",
+      "package_dependencies_dotenv",
+      "package_dependencies_handlebars",
+      "package_dependencies_isomorphic_dompurify",
+      "package_dependencies_next",
+      "package_dependencies_next_auth",
+      "package_dependencies_nodemailer",
+      "package_dependencies_prisma_client",
+      "package_dependencies_react",
+      "package_dependencies_react_dom",
+      "package_dependencies_react_icons",
+      "package_dependencies_react_intersection_observer",
+      "package_dependencies_recharts",
+      "package_dependencies_sharp",
+      "package_dependencies_tailwindcss_postcss",
+      "package_dependencies_tiptap_extension_bubble_menu",
+      "package_dependencies_tiptap_extension_image",
+      "package_dependencies_tiptap_extension_link",
+      "package_dependencies_tiptap_extension_placeholder",
+      "package_dependencies_tiptap_extension_text_align",
+      "package_dependencies_tiptap_extension_underline",
+      "package_dependencies_tiptap_pm",
+      "package_dependencies_tiptap_react",
+      "package_dependencies_tiptap_starter_kit",
+      "package_dependencies_types_dompurify",
+      "package_dependencies_zod"
+    ],
+    "5": [
+      "package",
+      "package_devdependencies",
+      "package_devdependencies_eslint",
+      "package_devdependencies_eslint_config_next",
+      "package_devdependencies_postcss",
+      "package_devdependencies_prisma",
+      "package_devdependencies_tailwindcss",
+      "package_devdependencies_tsx",
+      "package_devdependencies_types_bcryptjs",
+      "package_devdependencies_types_node",
+      "package_devdependencies_types_nodemailer",
+      "package_devdependencies_types_react",
+      "package_devdependencies_types_react_dom",
+      "package_devdependencies_types_uuid",
+      "package_devdependencies_typescript",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_dev",
+      "package_scripts_lint",
+      "package_scripts_prisma_generate",
+      "package_scripts_prisma_migrate",
+      "package_scripts_prisma_seed",
+      "package_scripts_start",
+      "package_version"
+    ],
+    "6": [
+      "components_admin_announcementform",
+      "components_admin_announcementform_announcementform",
+      "components_admin_announcementform_announcementformprops",
+      "components_admin_announcementform_category",
+      "components_admin_announcementform_mediatype",
+      "components_admin_mediapickermodal",
+      "components_admin_mediapickermodal_localmedia",
+      "components_admin_mediapickermodal_mediafiltertype",
+      "components_admin_mediapickermodal_mediapickermodal",
+      "components_admin_mediapickermodal_mediapickermodalprops",
+      "components_admin_mediapickermodal_stockmedia",
+      "components_admin_mediapickermodal_tabtype",
+      "components_admin_richtexteditor",
+      "components_admin_richtexteditor_customimage",
+      "components_admin_richtexteditor_richtexteditor",
+      "components_admin_richtexteditor_richtexteditorprops",
+      "components_admin_richtexteditor_video",
+      "components_admin_richtexteditor_youtube",
+      "components_admin_sitesyndicationpicker",
+      "components_admin_sitesyndicationpicker_boxstyle",
+      "components_admin_sitesyndicationpicker_flagbutton",
+      "components_admin_sitesyndicationpicker_site",
+      "components_admin_sitesyndicationpicker_siteassoc",
+      "components_admin_sitesyndicationpicker_sitesyndicationpicker",
+      "components_admin_sitesyndicationpicker_sitesyndicationpickerprops"
+    ],
+    "7": [
+      "tsconfig",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_allowjs",
+      "tsconfig_compileroptions_esmoduleinterop",
+      "tsconfig_compileroptions_incremental",
+      "tsconfig_compileroptions_isolatedmodules",
+      "tsconfig_compileroptions_jsx",
+      "tsconfig_compileroptions_lib",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_moduleresolution",
+      "tsconfig_compileroptions_noemit",
+      "tsconfig_compileroptions_paths",
+      "tsconfig_compileroptions_plugins",
+      "tsconfig_compileroptions_resolvejsonmodule",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_strict",
+      "tsconfig_compileroptions_target",
+      "tsconfig_exclude",
+      "tsconfig_include",
+      "tsconfig_paths"
+    ],
+    "8": [
+      "app_api_email_settings_route",
+      "app_api_email_settings_route_get",
+      "app_api_email_settings_route_post",
+      "app_api_email_settings_route_put",
+      "app_api_newsletter_route_delete",
+      "app_api_newsletter_route_post",
+      "lib_email",
+      "lib_email_compiletemplate",
+      "lib_email_getsenderinfo",
+      "lib_email_gettransporter",
+      "lib_email_resettransporter",
+      "lib_email_sendbulkemails",
+      "lib_email_sendemail",
+      "lib_email_sendemailparams",
+      "lib_email_sendtemplatedemail",
+      "lib_email_testconnection"
+    ],
+    "9": [
+      "app_api_auth_nextauth_route",
+      "app_api_auth_nextauth_route_handler",
+      "app_api_settings_route",
+      "app_api_settings_route_get",
+      "app_api_settings_route_put",
+      "app_api_stock_media_download_route",
+      "app_api_stock_media_download_route_post",
+      "app_api_stock_media_route",
+      "app_api_stock_media_route_get",
+      "app_api_stock_media_route_pexelsphoto",
+      "app_api_stock_media_route_pexelsvideo",
+      "lib_auth",
+      "lib_auth_authoptions"
+    ],
+    "10": [
+      "app_site_siteslug_layout",
+      "app_site_siteslug_layout_sitelayout",
+      "components_sitethemeprovider",
+      "components_sitethemeprovider_adjustbrightness",
+      "components_sitethemeprovider_getcontrastcolor",
+      "components_sitethemeprovider_hextorgba",
+      "components_sitethemeprovider_sitetheme",
+      "components_sitethemeprovider_sitethemecontext",
+      "components_sitethemeprovider_sitethemecontextvalue",
+      "components_sitethemeprovider_sitethemeprovider",
+      "components_sitethemeprovider_sitethemeproviderprops",
+      "components_sitethemeprovider_usesitetheme"
+    ],
+    "11": [
+      "app_api_sites_id_route",
+      "app_api_sites_id_route_delete",
+      "app_api_sites_id_route_get",
+      "app_api_sites_id_route_put",
+      "app_api_sites_id_route_routeparams",
+      "app_api_sites_id_settings_route",
+      "app_api_sites_id_settings_route_get",
+      "app_api_sites_id_settings_route_put",
+      "app_api_sites_id_settings_route_routeparams",
+      "lib_site_access_canadminsite",
+      "lib_site_access_getusersiterole"
+    ],
+    "12": [
+      "app_admin_layout",
+      "app_admin_layout_adminlayout",
+      "components_admin_adminmaincontent",
+      "components_admin_adminmaincontent_adminmaincontent",
+      "components_admin_adminmaincontent_adminmaincontentprops",
+      "components_admin_updatebanner",
+      "components_admin_updatebanner_compareversions",
+      "components_admin_updatebanner_updatebanner",
+      "components_admin_updatebanner_updateinfo"
+    ],
+    "13": [
+      "app_admin_page",
+      "app_admin_page_admindashboard",
+      "app_admin_page_getrecentannouncements",
+      "app_admin_page_getstats",
+      "app_api_scheduler_route",
+      "app_api_scheduler_route_get",
+      "lib_scheduler",
+      "lib_scheduler_runscheduler",
+      "lib_scheduler_schedulerresult"
+    ],
+    "14": [
+      "app_search_page",
+      "app_search_page_getsettings",
+      "app_search_page_searchannouncements",
+      "app_search_page_searchpage",
+      "app_search_page_searchpageprops",
+      "components_pagination",
+      "components_pagination_pagination",
+      "components_pagination_paginationprops"
+    ],
+    "15": [
+      "app_site_siteslug_articleslug_page",
+      "app_site_siteslug_articleslug_page_articlepage",
+      "app_site_siteslug_articleslug_page_calculatereadingtime",
+      "app_site_siteslug_articleslug_page_getarticledata",
+      "app_site_siteslug_articleslug_page_pageprops",
+      "components_site_articlehero",
+      "components_site_articlehero_articlehero",
+      "components_site_articlehero_articleheroprops"
+    ],
+    "16": [
+      "app_site_siteslug_page",
+      "app_site_siteslug_page_getsitedata",
+      "app_site_siteslug_page_pageprops",
+      "app_site_siteslug_page_sitehomepage",
+      "components_fullscreenhero",
+      "components_fullscreenhero_fullscreenhero",
+      "components_fullscreenhero_fullscreenheroprops",
+      "components_fullscreenhero_heroannouncement"
+    ],
+    "17": [
+      "app_api_backup_route",
+      "app_api_backup_route_get",
+      "app_api_backup_route_post",
+      "app_api_backup_route_restorebyid",
+      "app_api_backup_route_restorelegacy",
+      "app_api_backup_route_stripdates",
+      "app_api_backup_route_withdates"
+    ],
+    "18": [
+      "app_site_page",
+      "app_site_page_getactivesites",
+      "app_site_page_getglobalsettings",
+      "app_site_page_sitepickerpage",
+      "components_sitepickercard",
+      "components_sitepickercard_sitepickercard",
+      "components_sitepickercard_sitepickercardprops"
+    ],
+    "19": [
+      "components_admin_adminsidebar",
+      "components_admin_adminsidebar_adminsidebar",
+      "components_admin_adminsidebar_adminsidebarprops",
+      "components_admin_siteselector",
+      "components_admin_siteselector_site",
+      "components_admin_siteselector_siteselector",
+      "components_admin_siteselector_siteselectorprops"
+    ],
+    "20": [
+      "components_footer",
+      "components_footer_footer",
+      "components_footer_footerprops",
+      "components_footer_settings",
+      "components_newslettersubscribe",
+      "components_newslettersubscribe_newslettersubscribe",
+      "components_newslettersubscribe_newslettersubscribeprops"
+    ],
+    "21": [
+      "app_admin_settings_page",
+      "app_admin_settings_page_compareversions",
+      "app_admin_settings_page_settings",
+      "app_admin_settings_page_settingspage",
+      "app_admin_settings_page_versioncheckresult",
+      "app_admin_settings_page_versioninfosection"
+    ],
+    "22": [
+      "app_api_upload_route",
+      "app_api_upload_route_allowed_extensions",
+      "app_api_upload_route_allowed_types",
+      "app_api_upload_route_post",
+      "app_api_upload_route_sanitizefilename",
+      "app_api_upload_route_upload_dir"
+    ],
+    "23": [
+      "app_page",
+      "app_page_getannouncements",
+      "app_page_getcategories",
+      "app_page_getheroannouncements",
+      "app_page_getsettings",
+      "app_page_homepage"
+    ],
+    "24": [
+      "components_categoryfilter",
+      "components_categoryfilter_category",
+      "components_categoryfilter_categoryfilter",
+      "components_categoryfilter_categoryfilterclient",
+      "components_categoryfilter_categoryfilterprops",
+      "components_categoryfilter_categorytab"
+    ],
+    "25": [
+      "scripts_restore_legacy_data",
+      "scripts_restore_legacy_data_fs",
+      "scripts_restore_legacy_data_path",
+      "scripts_restore_legacy_data_prisma",
+      "scripts_restore_legacy_data_prismaclient",
+      "scripts_restore_legacy_data_restorelegacydata"
+    ],
+    "26": [
+      "app_api_users_id_route",
+      "app_api_users_id_route_delete",
+      "app_api_users_id_route_get",
+      "app_api_users_id_route_put",
+      "app_api_users_id_route_routeparams"
+    ],
+    "27": [
+      "components_herosection",
+      "components_herosection_extractyoutubeid",
+      "components_herosection_heroannouncement",
+      "components_herosection_herosection",
+      "components_herosection_herosectionprops"
+    ],
+    "28": [
+      "components_searchbar",
+      "components_searchbar_searchbar",
+      "components_searchbar_searchbarprops",
+      "lib_hooks_usedebounce",
+      "lib_hooks_usedebounce_usedebounce"
+    ],
+    "29": [
+      "app_admin_announcements_id_revisions_page",
+      "app_admin_announcements_id_revisions_page_pagination",
+      "app_admin_announcements_id_revisions_page_revision",
+      "app_admin_announcements_id_revisions_page_revisionspage"
+    ],
+    "30": [
+      "app_admin_audit_logs_page",
+      "app_admin_audit_logs_page_auditlog",
+      "app_admin_audit_logs_page_auditlogspage",
+      "app_admin_audit_logs_page_pagination"
+    ],
+    "31": [
+      "app_admin_comments_page",
+      "app_admin_comments_page_comment",
+      "app_admin_comments_page_commentspage",
+      "app_admin_comments_page_pagination"
+    ],
+    "32": [
+      "app_admin_global_analytics_page",
+      "app_admin_global_analytics_page_globalanalyticspage",
+      "app_admin_global_analytics_page_globalstats",
+      "app_admin_global_analytics_page_sitestats"
+    ],
+    "33": [
+      "app_admin_newsletter_page",
+      "app_admin_newsletter_page_newsletterpage",
+      "app_admin_newsletter_page_pagination",
+      "app_admin_newsletter_page_subscriber"
+    ],
+    "34": [
+      "app_admin_sessions_page",
+      "app_admin_sessions_page_pagination",
+      "app_admin_sessions_page_sessionspage",
+      "app_admin_sessions_page_usersession"
+    ],
+    "35": [
+      "app_admin_sites_id_page",
+      "app_admin_sites_id_page_editsitepage",
+      "app_admin_sites_id_page_pageprops",
+      "app_admin_sites_id_page_site"
+    ],
+    "36": [
+      "app_admin_sites_page",
+      "app_admin_sites_page_healthstatus",
+      "app_admin_sites_page_site",
+      "app_admin_sites_page_sitespage"
+    ],
+    "37": [
+      "app_admin_users_page",
+      "app_admin_users_page_site",
+      "app_admin_users_page_user",
+      "app_admin_users_page_userspage"
+    ],
+    "38": [
+      "app_api_announcements_id_draft_route",
+      "app_api_announcements_id_draft_route_delete",
+      "app_api_announcements_id_draft_route_get",
+      "app_api_announcements_id_draft_route_post"
+    ],
+    "39": [
+      "app_api_update_route",
+      "app_api_update_route_execasync",
+      "app_api_update_route_get",
+      "app_api_update_route_post"
+    ],
+    "40": [
+      "app_api_uploads_filename_route",
+      "app_api_uploads_filename_route_get",
+      "app_api_uploads_filename_route_mime_types",
+      "app_api_uploads_filename_route_upload_dir"
+    ],
+    "41": [
+      "app_api_uploads_path_route",
+      "app_api_uploads_path_route_get",
+      "app_api_uploads_path_route_mime_types",
+      "app_api_uploads_path_route_upload_dir"
+    ],
+    "42": [
+      "components_admin_sitehealthcard",
+      "components_admin_sitehealthcard_healthmetrics",
+      "components_admin_sitehealthcard_sitehealthcard",
+      "components_admin_sitehealthcard_sitehealthcardprops"
+    ],
+    "43": [
+      "components_navbar",
+      "components_navbar_navbar",
+      "components_navbar_navbarprops",
+      "components_navbar_navlink"
+    ],
+    "44": [
+      "middleware",
+      "middleware_config",
+      "middleware_middleware",
+      "middleware_ratelimit"
+    ],
+    "45": [
+      "prisma_quick_mark_baseline",
+      "prisma_quick_mark_baseline_prisma",
+      "prisma_quick_mark_baseline_prismaclient",
+      "prisma_quick_mark_baseline_quickmark"
+    ],
+    "46": [
+      "scripts_debug_local_parser",
+      "scripts_debug_local_parser_debugparser",
+      "scripts_debug_local_parser_fs",
+      "scripts_debug_local_parser_path"
+    ],
+    "47": [
+      "scripts_dump_lines",
+      "scripts_dump_lines_dumplines",
+      "scripts_dump_lines_fs",
+      "scripts_dump_lines_path"
+    ],
+    "48": [
+      "scripts_inspect_backup",
+      "scripts_inspect_backup_fs",
+      "scripts_inspect_backup_inspectbackup",
+      "scripts_inspect_backup_path"
+    ],
+    "49": [
+      "types_next_auth_d",
+      "types_next_auth_d_jwt",
+      "types_next_auth_d_session",
+      "types_next_auth_d_user"
+    ],
+    "50": [
+      "app_admin_categories_page",
+      "app_admin_categories_page_categoriespage",
+      "app_admin_categories_page_category"
+    ],
+    "51": [
+      "app_admin_email_page",
+      "app_admin_email_page_emailpage",
+      "app_admin_email_page_emailsettings"
+    ],
+    "52": [
+      "app_admin_sites_id_settings_page",
+      "app_admin_sites_id_settings_page_sitesettings",
+      "app_admin_sites_id_settings_page_sitesettingspage"
+    ],
+    "53": [
+      "app_admin_sites_new_page",
+      "app_admin_sites_new_page_createsitepage",
+      "app_admin_sites_new_page_site"
+    ],
+    "54": [
+      "app_api_users_route",
+      "app_api_users_route_get",
+      "app_api_users_route_post"
+    ],
+    "55": [
+      "components_sitehero",
+      "components_sitehero_sitehero",
+      "components_sitehero_siteheroprops"
+    ],
+    "56": [
+      "prisma_mark_baseline_applied",
+      "prisma_mark_baseline_applied_main",
+      "prisma_mark_baseline_applied_prisma"
+    ],
+    "57": [
+      "prisma_pre_migration",
+      "prisma_pre_migration_main",
+      "prisma_pre_migration_prisma"
+    ],
+    "58": [
+      "prisma_seed",
+      "prisma_seed_main",
+      "prisma_seed_prisma"
+    ],
+    "59": [
+      "prisma_seed_multisite",
+      "prisma_seed_multisite_main",
+      "prisma_seed_multisite_prisma"
+    ],
+    "60": [
+      "scripts_make_super_admin",
+      "scripts_make_super_admin_main",
+      "scripts_make_super_admin_prisma"
+    ],
+    "61": [
+      "scripts_test_session_revocation",
+      "scripts_test_session_revocation_prisma",
+      "scripts_test_session_revocation_testsessionvalidation"
+    ],
+    "62": [
+      "app_api_version_route",
+      "app_api_version_route_get"
+    ],
+    "63": [
+      "app_auth_admin_login_page",
+      "app_auth_admin_login_page_loginpage"
+    ],
+    "64": [
+      "components_skeletoncard",
+      "components_skeletoncard_skeletoncard"
+    ],
+    "65": [
+      "docker_entrypoint",
+      "docker_entrypoint_sh__entry"
+    ],
+    "66": [
+      "eslint_config",
+      "eslint_config_eslintconfig"
+    ],
+    "67": [
+      "next_config",
+      "next_config_nextconfig"
+    ],
+    "68": [
+      "postcss_config",
+      "postcss_config_config"
+    ],
+    "69": [
+      "scripts_backup_full_sh__entry",
+      "scripts_backup_full_sh_scripts_backup_full"
+    ],
+    "70": [
+      "scripts_backup_sh__entry",
+      "scripts_backup_sh_scripts_backup"
+    ],
+    "71": [
+      "scripts_deploy_sh__entry",
+      "scripts_deploy_sh_scripts_deploy"
+    ],
+    "72": [
+      "scripts_restore_sh__entry",
+      "scripts_restore_sh_scripts_restore"
+    ],
+    "73": [
+      "tailwind_config",
+      "tailwind_config_config"
+    ],
+    "74": [
+      "backup"
+    ],
+    "75": [
+      "backup_full"
+    ],
+    "76": [
+      "deploy"
+    ],
+    "77": [
+      "restore"
+    ],
+    "78": [
+      "restore_full"
+    ],
+    "79": [
+      "restore_legacy_production"
+    ],
+    "80": [
+      "scripts_apply_pagination"
+    ],
+    "81": [
+      "scripts_backup_full_ps1_scripts_backup_full"
+    ],
+    "82": [
+      "scripts_backup_ps1_scripts_backup"
+    ],
+    "83": [
+      "scripts_clean_fix_pagination"
+    ],
+    "84": [
+      "scripts_deploy_ps1_scripts_deploy"
+    ],
+    "85": [
+      "scripts_fix_pagination_bugs"
+    ],
+    "86": [
+      "scripts_restore_full"
+    ],
+    "87": [
+      "scripts_restore_ps1_scripts_restore"
+    ],
+    "88": [
+      "scripts_seed_database"
+    ],
+    "89": [
+      "scripts_seed_user"
+    ],
+    "90": [
+      "update"
+    ]
+  },
+  "cohesion": {
+    "0": 0.058018018018018015,
+    "1": 0.07673469387755102,
+    "2": 0.0782051282051282,
+    "3": 0.07862903225806452,
+    "4": 0.06896551724137931,
+    "5": 0.07692307692307693,
+    "6": 0.09,
+    "7": 0.1,
+    "8": 0.225,
+    "9": 0.20512820512820512,
+    "10": 0.18181818181818182,
+    "11": 0.21818181818181817,
+    "12": 0.25,
+    "13": 0.3888888888888889,
+    "14": 0.32142857142857145,
+    "15": 0.2857142857142857,
+    "16": 0.2857142857142857,
+    "17": 0.42857142857142855,
+    "18": 0.42857142857142855,
+    "19": 0.2857142857142857,
+    "20": 0.2857142857142857,
+    "21": 0.3333333333333333,
+    "22": 0.4,
+    "23": 0.6,
+    "24": 0.3333333333333333,
+    "25": 0.3333333333333333,
+    "26": 0.4,
+    "27": 0.5,
+    "28": 0.6,
+    "29": 0.5,
+    "30": 0.5,
+    "31": 0.5,
+    "32": 0.5,
+    "33": 0.5,
+    "34": 0.5,
+    "35": 0.5,
+    "36": 0.5,
+    "37": 0.5,
+    "38": 0.5,
+    "39": 0.6666666666666666,
+    "40": 0.5,
+    "41": 0.5,
+    "42": 0.5,
+    "43": 0.5,
+    "44": 0.5,
+    "45": 0.5,
+    "46": 0.5,
+    "47": 0.5,
+    "48": 0.5,
+    "49": 0.5,
+    "50": 0.6666666666666666,
+    "51": 0.6666666666666666,
+    "52": 0.6666666666666666,
+    "53": 0.6666666666666666,
+    "54": 0.6666666666666666,
+    "55": 0.6666666666666666,
+    "56": 0.6666666666666666,
+    "57": 0.6666666666666666,
+    "58": 0.6666666666666666,
+    "59": 0.6666666666666666,
+    "60": 0.6666666666666666,
+    "61": 0.6666666666666666,
+    "62": 1.0,
+    "63": 1.0,
+    "64": 1.0,
+    "65": 1.0,
+    "66": 1.0,
+    "67": 1.0,
+    "68": 1.0,
+    "69": 1.0,
+    "70": 1.0,
+    "71": 1.0,
+    "72": 1.0,
+    "73": 1.0,
+    "74": 1.0,
+    "75": 1.0,
+    "76": 1.0,
+    "77": 1.0,
+    "78": 1.0,
+    "79": 1.0,
+    "80": 1.0,
+    "81": 1.0,
+    "82": 1.0,
+    "83": 1.0,
+    "84": 1.0,
+    "85": 1.0,
+    "86": 1.0,
+    "87": 1.0,
+    "88": 1.0,
+    "89": 1.0,
+    "90": 1.0
+  },
+  "gods": [
+    {
+      "id": "lib_auth_authoptions",
+      "label": "authOptions",
+      "degree": 30
+    },
+    {
+      "id": "lib_site_context_resolveadminsiteid",
+      "label": "resolveAdminSiteId()",
+      "degree": 21
+    },
+    {
+      "id": "lib_pagination_utils_validatepagination",
+      "label": "validatePagination()",
+      "degree": 17
+    },
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 16
+    },
+    {
+      "id": "lib_site_access_canaccesssite",
+      "label": "canAccessSite()",
+      "degree": 15
+    },
+    {
+      "id": "lib_site_access_caneditonsite",
+      "label": "canEditOnSite()",
+      "degree": 14
+    },
+    {
+      "id": "lib_site_access_getaccessiblesites",
+      "label": "getAccessibleSites()",
+      "degree": 12
+    },
+    {
+      "id": "app_api_announcements_route_post",
+      "label": "POST()",
+      "degree": 8
+    },
+    {
+      "id": "lib_email_maybesendnewarticleemails",
+      "label": "maybeSendNewArticleEmails()",
+      "degree": 8
+    },
+    {
+      "id": "lib_site_context_getcurrentsiteid",
+      "label": "getCurrentSiteId()",
+      "degree": 8
+    }
+  ],
+  "surprises": [
+    {
+      "source": "GET()",
+      "target": "validatePagination()",
+      "source_files": [
+        "app/api/announcements/[id]/comments/route.ts",
+        "lib/pagination-utils.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `GET()` unexpectedly reaches hub `validatePagination()`"
+    },
+    {
+      "source": "GET()",
+      "target": "validatePagination()",
+      "source_files": [
+        "app/api/announcements/route.ts",
+        "lib/pagination-utils.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `GET()` unexpectedly reaches hub `validatePagination()`"
+    },
+    {
+      "source": "MediaGalleryPage()",
+      "target": "useToast()",
+      "source_files": [
+        "app/admin/media/page.tsx",
+        "contexts/ToastContext.tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `MediaGalleryPage()` unexpectedly reaches hub `useToast()`"
+    },
+    {
+      "source": "AdminDashboard()",
+      "target": "resolveAdminSiteId()",
+      "source_files": [
+        "app/admin/page.tsx",
+        "lib/site-context.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "GET()",
+      "target": "validatePagination()",
+      "source_files": [
+        "app/api/announcements/[id]/revisions/route.ts",
+        "lib/pagination-utils.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `prisma` connect `Community 5` to `Community 0`?",
+      "why": "High betweenness centrality (0.109) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `Community 4` to `Community 5`?",
+      "why": "High betweenness centrality (0.062) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `AnnouncementPageProps`, `Revision`, `Pagination` to the rest of the system?",
+      "why": "229 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.058018018018018015 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 1` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.07673469387755102 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 2` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.0782051282051282 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 3` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.07862903225806452 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

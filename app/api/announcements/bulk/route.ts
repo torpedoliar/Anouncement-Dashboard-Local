@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { resolveAdminSiteId } from "@/lib/site-context";
 import { canAccessSite } from "@/lib/site-access";
+import { logAudit } from "@/lib/audit";
 import { Prisma } from "@prisma/client";
 
 type BulkAction = "delete" | "publish" | "unpublish";
@@ -58,6 +59,18 @@ export async function POST(request: NextRequest) {
                         changes: JSON.stringify({ count: result.count }),
                     },
                 });
+
+                // Audit trail
+                await logAudit({
+                    actorType: "ADMIN_USER",
+                    actorId: session.user.id,
+                    category: "CONTENT",
+                    action: "BULK_DELETE",
+                    entityType: "ANNOUNCEMENT",
+                    entityId: ids.join(","),
+                    changes: { count: result.count },
+                    request,
+                });
                 break;
 
             case "publish":
@@ -75,6 +88,17 @@ export async function POST(request: NextRequest) {
                         changes: JSON.stringify({ count: result.count }),
                     },
                 });
+
+                await logAudit({
+                    actorType: "ADMIN_USER",
+                    actorId: session.user.id,
+                    category: "CONTENT",
+                    action: "BULK_PUBLISH",
+                    entityType: "ANNOUNCEMENT",
+                    entityId: ids.join(","),
+                    changes: { count: result.count },
+                    request,
+                });
                 break;
 
             case "unpublish":
@@ -91,6 +115,17 @@ export async function POST(request: NextRequest) {
                         userId: (session.user as { id: string }).id,
                         changes: JSON.stringify({ count: result.count }),
                     },
+                });
+
+                await logAudit({
+                    actorType: "ADMIN_USER",
+                    actorId: session.user.id,
+                    category: "CONTENT",
+                    action: "BULK_UNPUBLISH",
+                    entityType: "ANNOUNCEMENT",
+                    entityId: ids.join(","),
+                    changes: { count: result.count },
+                    request,
                 });
                 break;
         }

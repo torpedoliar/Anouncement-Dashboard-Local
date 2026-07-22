@@ -8,6 +8,7 @@ import { slugify, generateExcerpt } from "@/lib/utils";
 import { canEditOnSite } from "@/lib/site-access";
 import { createRevision } from "@/lib/revision";
 import { maybeSendNewArticleEmails } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 
 // GET /api/announcements - List announcements
 export async function GET(request: NextRequest) {
@@ -298,6 +299,19 @@ export async function POST(request: NextRequest) {
                 siteId: siteAssocs.find((s) => s.isPrimary)?.siteId || resolvedSiteIds[0],
                 changes: JSON.stringify({ title, categoryId, siteIds: resolvedSiteIds }),
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: userId,
+            category: "CONTENT",
+            action: "CREATE",
+            entityType: "ANNOUNCEMENT",
+            entityId: announcement.id,
+            changes: { title, categoryId, siteIds: resolvedSiteIds },
+            siteId: siteAssocs.find((s) => s.isPrimary)?.siteId || resolvedSiteIds[0],
+            request,
         });
 
         // Auto-send "new article" newsletter when enabled and the article is published

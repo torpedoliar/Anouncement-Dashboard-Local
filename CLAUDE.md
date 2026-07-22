@@ -35,6 +35,30 @@ This is a **multi-tenant** announcement CMS. Sites are first-class; most data is
 
 Always gate writes through `lib/site-access.ts` helpers — `canEditOnSite`, `canAdminSite`, `getAccessibleSites`, `getUserSiteRole`. API routes loop over target `siteIds` and call `canEditOnSite` before mutating (see `app/api/announcements/route.ts` POST). Don't hand-roll permission checks.
 
+### Portal SSO (separate from CMS)
+A web portal SSO layer sits alongside the CMS. Portal users are separate
+(`PortalUser`, table `portal_users`) from admin CMS users (`User`). Key files:
+- `lib/portal-auth.ts` — NextAuth instance with cookie prefix `portal-auth.*`.
+- `lib/portal-crypto.ts` — AES-256-GCM encrypt/decrypt for stored app credentials.
+- `lib/portal-access.ts` — RBAC helpers (`canAccessPortalApp`, `getAccessiblePortalApps`).
+- `lib/audit.ts` — centralized audit logging (`logAudit`) for all transactions.
+- Routes: `/portal-login` → `/portal` (app grid) → `/portal/app/[slug]` (SSO launch).
+- Admin: `/admin/portal-apps`, `/admin/portal-users`, `/admin/portal-sessions`, `/admin/audit-trail`.
+
+SSO uses form-based credential forwarding: portal stores each user's credentials
+per app (encrypted at-rest with `PORTAL_CREDENTIAL_KEY`), then auto-submits a POST form
+to the app's `loginUrl` when the user clicks an app.
+
+### Audit Trail
+`AuditLog` (table `audit_logs`) is the single source of truth for ALL transactions across
+admin CMS, portal users, and system. Use `logAudit()` from `lib/audit.ts` — never write
+to `audit_logs` directly. `ActivityLog` (legacy) is retained + backfilled; new code uses
+`AuditLog` exclusively. Admin page: `/admin/audit-trail` (SuperAdmin only) with export.
+
+### Required env (additional)
+`PORTAL_CREDENTIAL_KEY` (64 hex chars, AES-256-GCM key — MANDATORY, fail-closed at startup),
+`AUDIT_RETENTION_DAYS` (default 365, 0 = forever).
+
 ### Site context propagation
 The "current site" for the admin panel is stored in **httpOnly cookies** (`current_site_id`, `current_site_slug`) managed by `lib/site-context.ts`. Public routes are path-based: `/site/[siteSlug]/...`. `next.config.ts` 301-redirects legacy `/article/*`, `/category/*`, `/search` URLs into `/site/sja-utama/*`. Root `/` redirects to `/site` (the site picker) via `middleware.ts`.
 

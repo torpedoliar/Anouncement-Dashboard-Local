@@ -175,6 +175,66 @@ export const UserCreateSchema = z.object({
 export const UserUpdateSchema = UserCreateSchema.partial().omit({ password: true });
 
 // -----------------------------------------
+// Portal User Schemas
+// -----------------------------------------
+
+export const PortalUserCreateSchema = z.object({
+    email: z.string().email('Invalid email format').max(255),
+    password: z.string()
+        .min(8, 'Password must be at least 8 characters')
+        .max(100, 'Password too long'),
+    name: z.string()
+        .min(2, 'Name must be at least 2 characters')
+        .max(100, 'Name must be at most 100 characters')
+        .transform(sanitizeText),
+    role: z.enum(['PORTAL_ADMIN', 'PORTAL_USER']).default('PORTAL_USER'),
+    isActive: z.boolean().default(true),
+    appIds: z.array(z.string().cuid()).optional(),
+});
+
+export const PortalUserUpdateSchema = PortalUserCreateSchema.partial().omit({ password: true });
+
+// -----------------------------------------
+// Portal App Schemas
+// -----------------------------------------
+
+export const PortalAppCreateSchema = z.object({
+    name: z.string()
+        .min(2, 'Name must be at least 2 characters')
+        .max(100, 'Name must be at most 100 characters')
+        .transform(sanitizeText),
+    slug: z.string()
+        .min(2, 'Slug must be at least 2 characters')
+        .max(50, 'Slug must be at most 50 characters')
+        .regex(slugPattern, 'Slug must be lowercase with hyphens only'),
+    description: z.string().max(500).transform(sanitizeText).nullable().optional(),
+    logoPath: z.string().nullable().optional(),
+    url: z.string().url('Invalid URL').max(500),
+    loginUrl: z.string().url('Invalid login URL').max(500),
+    ssoMode: z.enum(['FORM', 'REDIRECT', 'PROXY', 'TOKEN']).default('FORM'),
+    httpMethod: z.enum(['POST', 'GET']).default('POST'),
+    usernameField: z.string().max(100).default('username'),
+    passwordField: z.string().max(100).default('password'),
+    extraFields: z.any().nullable().optional(), // JSON array
+    category: z.string().max(100).transform(sanitizeText).nullable().optional(),
+    isActive: z.boolean().default(true),
+    displayOrder: z.number().int().default(0),
+});
+
+export const PortalAppUpdateSchema = PortalAppCreateSchema.partial();
+
+// -----------------------------------------
+// Portal Credential Schemas
+// -----------------------------------------
+
+export const PortalCredentialSchema = z.object({
+    appId: z.string().cuid('Invalid app ID'),
+    username: z.string().min(1, 'Username required').max(255),
+    password: z.string().min(1, 'Password required').max(500),
+    extra: z.record(z.string(), z.string()).optional(),
+});
+
+// -----------------------------------------
 // Newsletter Schemas
 // -----------------------------------------
 

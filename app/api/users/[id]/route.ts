@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import bcrypt from "bcryptjs";
 
 interface RouteParams {
@@ -155,6 +156,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             },
         });
 
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: (session.user as { id: string }).id,
+            category: "USER_MGMT",
+            action: "UPDATE",
+            entityType: "USER",
+            entityId: id,
+            changes: { email, name, role, passwordChanged: !!password, siteIds },
+            request,
+        });
+
         return NextResponse.json({ ...user, siteIds });
     } catch (error) {
         console.error("Error updating user:", error);
@@ -219,6 +232,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
                 userId: currentUserId,
                 changes: JSON.stringify({ name: userToDelete.name, email: userToDelete.email }),
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: currentUserId,
+            category: "USER_MGMT",
+            action: "DELETE",
+            entityType: "USER",
+            entityId: id,
+            changes: { name: userToDelete.name, email: userToDelete.email },
+            request,
         });
 
         return NextResponse.json({ success: true });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { logAudit } from "@/lib/audit";
 
 // Backup format version. Bumped to 3.0 when multi-site tables were added.
 const BACKUP_VERSION = "3.0";
@@ -34,6 +35,13 @@ export async function GET() {
             emailTemplates,
             activityLogs,
             settings,
+            // Portal + Audit tables
+            portalUsers,
+            portalApps,
+            portalUserAppAccess,
+            portalUserAppCredentials,
+            portalSessions,
+            auditLogs,
         ] = await Promise.all([
             prisma.user.findMany(), // includes passwordHash so restore keeps logins working
             prisma.site.findMany(),
@@ -49,6 +57,13 @@ export async function GET() {
             prisma.emailTemplate.findMany(),
             prisma.activityLog.findMany({ orderBy: { createdAt: "desc" }, take: 5000 }),
             prisma.settings.findFirst(),
+            // Portal + Audit tables
+            prisma.portalUser.findMany(),
+            prisma.portalApp.findMany(),
+            prisma.portalUserAppAccess.findMany(),
+            prisma.portalUserAppCredential.findMany(),
+            prisma.portalSession.findMany(),
+            prisma.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 5000 }),
         ]);
 
         const tables = {
@@ -66,6 +81,12 @@ export async function GET() {
             emailTemplates,
             activityLogs,
             settings,
+            portalUsers,
+            portalApps,
+            portalUserAppAccess,
+            portalUserAppCredentials,
+            portalSessions,
+            auditLogs,
         };
 
         const backupData = {
@@ -77,6 +98,17 @@ export async function GET() {
             ),
             tables,
         };
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: (session.user as { id: string }).id,
+            category: "SYSTEM",
+            action: "BACKUP",
+            entityType: "SYSTEM",
+            outcome: "SUCCESS",
+            metadata: backupData.summary,
+        });
 
         return new NextResponse(JSON.stringify(backupData, null, 2), {
             status: 200,
@@ -209,6 +241,36 @@ export async function POST(request: Request) {
             prisma.emailTemplate.upsert({ where: { id: e.id }, update: withDates(e), create: withDates(e) })
         );
 
+        // 12b. Portal apps (before portal users, as FK target)
+        restored.portalApps = await restoreById(t.portalApps, (a) =>
+            prisma.portalApp.upsert({ where: { id: a.id }, update: stripDates(a), create: withDates(a) })
+        );
+
+        // 12c. Portal users
+        restored.portalUsers = await restoreById(t.portalUsers, (u) =>
+            prisma.portalUser.upsert({ where: { id: u.id }, update: stripDates(u), create: withDates(u) })
+        );
+
+        // 12d. Portal user-app access
+        restored.portalUserAppAccess = await restoreById(t.portalUserAppAccess, (a) =>
+            prisma.portalUserAppAccess.upsert({ where: { id: a.id }, update: a, create: a })
+        );
+
+        // 12e. Portal user-app credentials (encrypted blob, safe to restore as-is)
+        restored.portalUserAppCredentials = await restoreById(t.portalUserAppCredentials, (c) =>
+            prisma.portalUserAppCredential.upsert({ where: { id: c.id }, update: stripDates(c), create: withDates(c) })
+        );
+
+        // 12f. Portal sessions
+        restored.portalSessions = await restoreById(t.portalSessions, (s) =>
+            prisma.portalSession.upsert({ where: { id: s.id }, update: stripDates(s), create: withDates(s) })
+        );
+
+        // 12g. Audit logs
+        restored.auditLogs = await restoreById(t.auditLogs, (l) =>
+            prisma.auditLog.upsert({ where: { id: l.id }, update: stripDates(l), create: withDates(l) })
+        );
+
         // 13. Global settings singleton
         if (t.settings) {
             try {
@@ -231,6 +293,18 @@ export async function POST(request: Request) {
                 changes: JSON.stringify(restored),
                 userId: session.user.id,
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: session.user.id,
+            category: "SYSTEM",
+            action: "RESTORE_DATABASE",
+            entityType: "SYSTEM",
+            entityId: "backup",
+            severity: "WARNING",
+            metadata: restored as Record<string, unknown>,
         });
 
         return NextResponse.json({ success: true, message: "Database berhasil di-restore!", restored });

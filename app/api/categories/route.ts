@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { canEditOnSite } from "@/lib/site-access";
 import { CategoryCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { resolveAdminSiteId } from "@/lib/site-context";
+import { logAudit } from "@/lib/audit";
 
 // GET /api/categories - Get categories (filtered by site)
 export async function GET(request: NextRequest) {
@@ -160,6 +161,19 @@ export async function POST(request: NextRequest) {
                 siteId: resolvedSiteId,
                 changes: JSON.stringify({ name, color, siteId }),
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: session.user.id,
+            category: "CONTENT",
+            action: "CREATE",
+            entityType: "CATEGORY",
+            entityId: category.id,
+            changes: { name, color, siteId },
+            siteId: resolvedSiteId,
+            request,
         });
 
         return NextResponse.json(category, { status: 201 });

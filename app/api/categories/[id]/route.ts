@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canEditOnSite } from "@/lib/site-access";
+import { logAudit } from "@/lib/audit";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -114,6 +115,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             },
         });
 
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: userId,
+            category: "CONTENT",
+            action: "UPDATE",
+            entityType: "CATEGORY",
+            entityId: id,
+            changes: { name, color, order },
+            request,
+        });
+
         return NextResponse.json(category);
     } catch (error) {
         console.error("Error updating category:", error);
@@ -180,6 +193,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
                 userId: (session.user as { id: string }).id,
                 changes: JSON.stringify({ name: category.name }),
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: userId,
+            category: "CONTENT",
+            action: "DELETE",
+            entityType: "CATEGORY",
+            entityId: id,
+            changes: { name: category.name },
+            request,
         });
 
         return NextResponse.json({ success: true });

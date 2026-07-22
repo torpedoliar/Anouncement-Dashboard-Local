@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { validatePagination } from "@/lib/pagination-utils";
+import { logAudit } from "@/lib/audit";
 
 // GET /api/sessions - List all user sessions (admin: all, user: own)
 export async function GET(request: NextRequest) {
@@ -132,6 +133,18 @@ export async function DELETE(request: NextRequest) {
                 userId: currentUser.id,
                 changes: JSON.stringify({ revokedUserId: targetSession.userId }),
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: currentUser.id,
+            category: "AUTH",
+            action: "SESSION_REVOKED",
+            entityType: "USER_SESSION",
+            entityId: sessionId,
+            changes: { revokedUserId: targetSession.userId },
+            request,
         });
 
         return NextResponse.json({

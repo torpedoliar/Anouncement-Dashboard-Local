@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import prisma from "./prisma";
 import { v4 as uuidv4 } from "uuid";
+import { logAudit } from "./audit";
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -22,14 +23,41 @@ export const authOptions: NextAuthOptions = {
                 });
 
                 if (!user) {
+                    await logAudit({
+                        actorType: "ADMIN_USER",
+                        category: "AUTH",
+                        action: "LOGIN_FAILED",
+                        entityType: "USER_SESSION",
+                        outcome: "FAILURE",
+                        errorMessage: "Email tidak ditemukan",
+                    }).catch(() => {});
                     throw new Error("Email tidak ditemukan");
                 }
 
                 const isValid = await compare(credentials.password, user.passwordHash);
 
                 if (!isValid) {
+                    await logAudit({
+                        actorType: "ADMIN_USER",
+                        actorId: user.id,
+                        category: "AUTH",
+                        action: "LOGIN_FAILED",
+                        entityType: "USER_SESSION",
+                        outcome: "FAILURE",
+                        errorMessage: "Password salah",
+                    }).catch(() => {});
                     throw new Error("Password salah");
                 }
+
+                // Audit login success (non-blocking)
+                await logAudit({
+                    actorType: "ADMIN_USER",
+                    actorId: user.id,
+                    category: "AUTH",
+                    action: "LOGIN_SUCCESS",
+                    entityType: "USER_SESSION",
+                    outcome: "SUCCESS",
+                }).catch(() => {});
 
                 return {
                     id: user.id,

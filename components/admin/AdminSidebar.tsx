@@ -22,7 +22,9 @@ import {
     FiMail,
     FiSend,
     FiGlobe,
-    FiPieChart
+    FiPieChart,
+    FiGrid,
+    FiUserPlus
 } from "react-icons/fi";
 import SiteSelector from "./SiteSelector";
 
@@ -78,8 +80,11 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
         ...(isSuperAdmin ? [
             { href: "/admin/sites", icon: FiGlobe, label: "SITES" },
             { href: "/admin/users", icon: FiUsers, label: "PENGGUNA" },
+            { href: "/admin/portal-apps", icon: FiGrid, label: "PORTAL APPS" },
+            { href: "/admin/portal-users", icon: FiUserPlus, label: "PORTAL USERS" },
+            { href: "/admin/portal-sessions", icon: FiMonitor, label: "PORTAL SESI" },
             { href: "/admin/global-analytics", icon: FiPieChart, label: "GLOBAL ANALYTICS" },
-            { href: "/admin/audit-logs", icon: FiActivity, label: "AUDIT LOG" },
+            { href: "/admin/audit-trail", icon: FiActivity, label: "AUDIT TRAIL" },
         ] : []),
         { href: "/admin/announcements", icon: FiFileText, label: "PENGUMUMAN" },
         { href: "/admin/categories", icon: FiTag, label: "KATEGORI" },

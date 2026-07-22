@@ -327,6 +327,62 @@ async function main() {
     }
     console.log("✅ Created email templates");
 
+    // ===== PORTAL SSO SEED =====
+    const portalAdminPassword = await hash("portal-admin-123", 10);
+    const portalAdmin = await prisma.portalUser.upsert({
+        where: { email: "portal.admin@santosjayaabadi.co.id" },
+        update: {},
+        create: {
+            email: "portal.admin@santosjayaabadi.co.id",
+            passwordHash: portalAdminPassword,
+            name: "Portal Admin",
+            role: "PORTAL_ADMIN",
+            isActive: true,
+        },
+    });
+    console.log("✅ Created portal admin:", portalAdmin.email);
+
+    const portalUserPassword = await hash("portal-user-123", 10);
+    const portalUser = await prisma.portalUser.upsert({
+        where: { email: "portal.user@santosjayaabadi.co.id" },
+        update: {},
+        create: {
+            email: "portal.user@santosjayaabadi.co.id",
+            passwordHash: portalUserPassword,
+            name: "Portal User Demo",
+            role: "PORTAL_USER",
+            isActive: true,
+        },
+    });
+    console.log("✅ Created portal user:", portalUser.email);
+
+    const sampleApp = await prisma.portalApp.upsert({
+        where: { slug: "example-erp" },
+        update: {},
+        create: {
+            name: "Example ERP",
+            slug: "example-erp",
+            description: "Sistem ERP contoh untuk demo SSO",
+            url: "https://erp.example.com",
+            loginUrl: "https://erp.example.com/login",
+            ssoMode: "FORM",
+            httpMethod: "POST",
+            usernameField: "username",
+            passwordField: "password",
+            category: "Internal",
+            isActive: true,
+            displayOrder: 1,
+        },
+    });
+    console.log("✅ Created sample portal app:", sampleApp.slug);
+
+    await prisma.portalUserAppAccess.upsert({
+        where: { portalUserId_appId: { portalUserId: portalUser.id, appId: sampleApp.id } },
+        update: {},
+        create: { portalUserId: portalUser.id, appId: sampleApp.id, role: "USER" },
+    });
+    console.log("✅ Assigned portal user access to sample app");
+
     console.log("🎉 Database seeding completed!");
 }
 

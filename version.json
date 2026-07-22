@@ -1,7 +1,7 @@
 {
-    "version": "2.7.0",
-    "buildDate": "2026-06-05",
-    "schemaVersion": "8",
-    "releaseNotes": "Security/isolation hardening (full backup, per-site auth/scoping). Features: draft autosave wired, auto-send newsletter on publish, revision v0 + video fields, reliable cron scheduler, path-traversal hardening. Removed unused approval workflow.",
+    "version": "3.0.0",
+    "buildDate": "2026-07-22",
+    "schemaVersion": "9",
+    "releaseNotes": "Portal Web SSO (form-based credential forwarding) + RBAC portal + audit trail menyeluruh. Fitur: PortalUser terpisah, PortalApp dengan SSO auto-submit, kredensial AES-256-GCM at-rest, lockout akun, lupa/ubah password, manajemen sesi portal, AuditLog terpadu semua transaksi, export audit, retensi audit. Tabel lama dipertahankan + backfill.",
     "repository": "https://github.com/torpedoliar/Anouncement-Dashboard-Local"
 }

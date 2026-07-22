@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 // GET /api/settings - Get site settings
 export async function GET() {
@@ -160,6 +161,18 @@ export async function PUT(request: NextRequest) {
             console.error("Failed to log activity:", logError);
             // Don't fail the request if logging fails
         }
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: (session.user as { id: string }).id,
+            category: "CONFIG",
+            action: "UPDATE",
+            entityType: "SETTINGS",
+            entityId: String(settings.id),
+            changes: body,
+            request,
+        });
 
         return NextResponse.json(settings);
     } catch (error) {

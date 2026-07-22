@@ -42,6 +42,8 @@ export function middleware(request: NextRequest) {
         let maxRequests = 300; // Default: 300 req/min
         if (path.includes('/auth') || path.includes('/login')) {
             maxRequests = 10; // Auth: 10 req/min (prevent brute force)
+        } else if (path.includes('/portal-auth') || path.includes('/portal-login')) {
+            maxRequests = 10; // Portal auth: 10 req/min
         } else if (path.includes('/backup')) {
             maxRequests = 5; // Backup: 5 req/min
         } else if (path.startsWith('/api/announcements') || path.startsWith('/api/settings') || path.startsWith('/api/sites')) {
@@ -74,5 +76,8 @@ export const config = {
         '/api/:path*',
         '/admin/:path*',
         '/site/:path*',
+        '/portal/:path*',
+        '/portal-login',
+        '/api/portal-auth/:path*',
     ],
 };

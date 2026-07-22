@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { maybeSendNewArticleEmails } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 
 let lastCheck = 0;
 const CHECK_INTERVAL = 60000; // Minimum 60s between throttled (render-triggered) runs
@@ -100,6 +101,40 @@ export async function runScheduler(options: { force?: boolean } = {}): Promise<S
                 }
             } catch (logErr) {
                 console.error("[Scheduler] Failed to write activity log:", logErr);
+            }
+
+            // Audit trail (SYSTEM actor, no userId needed)
+            await logAudit({
+                actorType: "SYSTEM",
+                category: "SYSTEM",
+                action: "SCHEDULER_RUN",
+                entityType: "SYSTEM",
+                entityId: "scheduler",
+                metadata: { published: publishedCount, takenDown: takenDownCount },
+            });
+        }
+
+        // 3. Audit retention purge
+        const retentionDays = parseInt(process.env.AUDIT_RETENTION_DAYS || "365");
+        if (retentionDays > 0) {
+            const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+            try {
+                const purged = await prisma.auditLog.deleteMany({
+                    where: { createdAt: { lt: cutoff } },
+                });
+                if (purged.count > 0) {
+                    console.log(`[Scheduler] Audit retention: purged ${purged.count} logs older than ${retentionDays} days`);
+                    await logAudit({
+                        actorType: "SYSTEM",
+                        category: "SYSTEM",
+                        action: "AUDIT_RETENTION_PURGE",
+                        entityType: "AUDIT_LOG",
+                        outcome: "SUCCESS",
+                        metadata: { purgedCount: purged.count, retentionDays },
+                    });
+                }
+            } catch (purgeErr) {
+                console.error("[Scheduler] Audit retention purge failed:", purgeErr);
             }
         }
     } catch (error) {

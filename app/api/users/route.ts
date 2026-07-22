@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import bcrypt from "bcryptjs";
 
 // GET /api/users - List all users (SuperAdmin only — exposes all accounts/roles)
@@ -118,6 +119,18 @@ export async function POST(request: NextRequest) {
                 userId: (session.user as { id: string }).id,
                 changes: JSON.stringify({ email, name, role: role || "EDITOR", siteIds }),
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: session.user.id,
+            category: "USER_MGMT",
+            action: "CREATE",
+            entityType: "USER",
+            entityId: user.id,
+            changes: { email, name, role: role || "EDITOR", siteIds },
+            request,
         });
 
         return NextResponse.json({ ...user, siteIds }, { status: 201 });

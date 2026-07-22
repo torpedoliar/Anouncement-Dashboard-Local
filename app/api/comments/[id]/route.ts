@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { canEditOnSite } from "@/lib/site-access";
+import { logAudit } from "@/lib/audit";
 
 /**
  * Verify the user may moderate a comment: they must be able to edit on at least
@@ -138,6 +139,18 @@ export async function PUT(
             },
         });
 
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: userId,
+            category: "CONTENT",
+            action: `MODERATE_${status}`,
+            entityType: "COMMENT",
+            entityId: id,
+            changes: { newStatus: status },
+            request,
+        });
+
         return NextResponse.json({
             message: `Comment ${status.toLowerCase()}`,
             comment,
@@ -196,6 +209,18 @@ export async function DELETE(
                     content: comment.content.substring(0, 100),
                 }),
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: userId,
+            category: "CONTENT",
+            action: "DELETE",
+            entityType: "COMMENT",
+            entityId: id,
+            changes: { authorName: comment.authorName },
+            request,
         });
 
         return NextResponse.json({

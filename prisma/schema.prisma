@@ -350,6 +350,52 @@ enum EmailStatus {
 }
 
 // ============================================
+// PORTAL SSO ENUMS
+// ============================================
+
+enum PortalRole {
+  PORTAL_ADMIN // Delegasi manajemen portal (future); saat ini SuperAdmin CMS kelola
+  PORTAL_USER  // User biasa portal
+}
+
+enum PortalAppRole {
+  USER  // Buka app via SSO
+  ADMIN // (future) kelola konfigurasi app tertentu
+}
+
+enum PortalSsoMode {
+  FORM      // Credential forwarding via auto-submit form
+  REDIRECT  // (future) redirect SSO
+  PROXY     // (future) reverse proxy + header injection
+  TOKEN     // (future) OIDC/OAuth2 token
+}
+
+// ============================================
+// AUDIT ENUMS
+// ============================================
+
+enum AuditActor {
+  ADMIN_USER   // User CMS (tabel users)
+  PORTAL_USER  // User portal (tabel portal_users)
+  SYSTEM       // Proses otomatis (scheduler, backup) — actorId null
+}
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+}
+
+enum AuditCategory {
+  AUTH        // Login/logout/revoke (CMS + portal)
+  CONTENT     // Announcement, category, comment, media
+  USER_MGMT   // CRUD user admin + portal + access grant/revoke
+  PORTAL      // CRUD portal app, app launch
+  SECURITY    // Credential save/decrypt/delete, SSO launch, lockout, brute-force
+  SYSTEM      // Backup, restore, scheduler, system update
+  CONFIG      // Settings, email settings
+}
+
+// ============================================
 // NEW MODELS FOR FEATURE IMPROVEMENTS
 // ============================================
 
@@ -516,4 +562,164 @@ model EmailSettings {
   updatedAt DateTime @updatedAt
 
   @@map("email_settings")
+}
+
+// ============================================
+// PORTAL SSO MODELS
+// ============================================
+
+model PortalUser {
+  id               String     @id @default(cuid())
+  email            String     @unique
+  passwordHash     String
+  name             String
+  avatar           String?
+  role             PortalRole @default(PORTAL_USER)
+  isActive         Boolean    @default(true)
+
+  // Lockout (anti brute-force)
+  failedLoginCount Int        @default(0)
+  lockedUntil      DateTime?
+
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  appAccess     PortalUserAppAccess[]
+  credentials   PortalUserAppCredential[]
+  sessions      PortalSession[]
+  auditLogs     AuditLog[]
+
+  @@index([isActive])
+  @@index([role])
+  @@map("portal_users")
+}
+
+model PortalApp {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  description   String?
+  logoPath      String?
+  url           String        // URL aplikasi (link langsung / fallback)
+  loginUrl      String        // Endpoint form login aplikasi (target POST SSO)
+  ssoMode       PortalSsoMode @default(FORM)
+  httpMethod    String        @default("POST") // "POST" | "GET"
+  usernameField String        @default("username")
+  passwordField String        @default("password")
+  extraFields   Json?         // field tambahan form (CSRF token, hidden field)
+  category      String?       // grup di grid portal
+  isActive      Boolean       @default(true)
+  displayOrder  Int           @default(0)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  userAccess    PortalUserAppAccess[]
+  credentials   PortalUserAppCredential[]
+
+  @@index([isActive])
+  @@index([category])
+  @@index([displayOrder])
+  @@map("portal_apps")
+}
+
+model PortalUserAppAccess {
+  id            String         @id @default(cuid())
+  portalUserId  String
+  appId         String
+  role          PortalAppRole  @default(USER)
+
+  portalUser    PortalUser     @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+  app           PortalApp      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([portalUserId, appId])
+  @@index([portalUserId])
+  @@index([appId])
+  @@map("portal_user_app_access")
+}
+
+model PortalUserAppCredential {
+  id              String   @id @default(cuid())
+  portalUserId    String
+  appId           String
+  credentialBlob  String   // AES-256-GCM: base64(iv + tag + ciphertext)
+  lastUsedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  portalUser      PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+  app             PortalApp  @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([portalUserId, appId])
+  @@index([portalUserId])
+  @@index([appId])
+  @@map("portal_user_app_credentials")
+}
+
+model PortalSession {
+  id            String   @id @default(cuid())
+  portalUserId  String
+  portalUser    PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+
+  sessionToken  String   @unique
+  ipAddress     String?
+  userAgent     String?
+  deviceInfo    String?
+
+  createdAt     DateTime @default(now())
+  lastActiveAt  DateTime @default(now())
+  expiresAt     DateTime
+  isRevoked     Boolean  @default(false)
+
+  @@index([portalUserId])
+  @@index([sessionToken])
+  @@map("portal_sessions")
+}
+
+// ============================================
+// AUDIT LOG (Single source of truth)
+// ============================================
+
+model AuditLog {
+  id           String        @id @default(cuid())
+
+  // Siapa (admin + portal + sistem)
+  actorType    AuditActor
+  actorId      String?       // null untuk SYSTEM
+  actorEmail   String?       // denormalisasi — tetap ada walau user dihapus
+  actorName    String?
+
+  // Apa
+  category     AuditCategory
+  action       String        // LOGIN_SUCCESS, CREATE, UPDATE, DELETE, SSO_LAUNCH, ...
+  entityType   String        // ANNOUNCEMENT, PORTAL_APP, PORTAL_CREDENTIAL, ...
+  entityId     String?
+
+  // Hasil
+  outcome      AuditOutcome  @default(SUCCESS)
+  errorMessage String?
+
+  // Detail (field sensitif auto di-redaksi oleh lib/audit.ts)
+  changes      String?
+  metadata     Json?
+
+  // Konteks
+  ipAddress    String?
+  userAgent    String?
+  severity     LogSeverity   @default(INFO)   // reuse enum yang sudah ada
+  siteId       String?       // konteks site CMS (nullable, no FK)
+  appId        String?       // konteks portal app (nullable, no FK)
+  createdAt    DateTime      @default(now())
+
+  // Relasi opsional (actor bisa portal user)
+  portalUser   PortalUser?   @relation(fields: [portalUserId], references: [id], onDelete: SetNull)
+  portalUserId String?
+
+  @@index([actorType, actorId])
+  @@index([category, createdAt])
+  @@index([outcome])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([severity])
+  @@map("audit_logs")
 }

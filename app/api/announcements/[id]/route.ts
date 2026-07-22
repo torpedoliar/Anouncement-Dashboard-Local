@@ -6,6 +6,7 @@ import { slugify, generateExcerpt } from "@/lib/utils";
 import { createRevision } from "@/lib/revision";
 import { canEditOnSite } from "@/lib/site-access";
 import { maybeSendNewArticleEmails } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 
 // GET /api/announcements/[id] - Get single announcement
 export async function GET(
@@ -206,6 +207,18 @@ export async function PUT(
             },
         });
 
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: userId,
+            category: "CONTENT",
+            action: "UPDATE",
+            entityType: "ANNOUNCEMENT",
+            entityId: id,
+            changes: body,
+            request,
+        });
+
         // Auto-send newsletter when this update publishes the article for the
         // first time. maybeSendNewArticleEmails is idempotent (checks EmailLog).
         const newlyPublished = announcement.isPublished && !existingAnnouncement.isPublished;
@@ -278,6 +291,18 @@ export async function DELETE(
                 userId: (session.user as { id: string }).id,
                 changes: announcement ? JSON.stringify({ title: announcement.title }) : null,
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: sessionUserId,
+            category: "CONTENT",
+            action: "DELETE",
+            entityType: "ANNOUNCEMENT",
+            entityId: id,
+            changes: { title: announcement.title },
+            request,
         });
 
         return NextResponse.json({ message: "Deleted successfully" });

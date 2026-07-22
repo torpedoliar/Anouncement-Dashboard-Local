@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { resetTransporter, testConnection } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 
 // GET /api/email/settings - Get email settings (admin only)
 export async function GET() {
@@ -94,6 +95,18 @@ export async function PUT(request: NextRequest) {
                 userId: (session.user as { id: string }).id,
                 changes: JSON.stringify({ fields: Object.keys(updateData) }),
             },
+        });
+
+        // Audit trail
+        await logAudit({
+            actorType: "ADMIN_USER",
+            actorId: (session.user as { id: string }).id,
+            category: "CONFIG",
+            action: "UPDATE",
+            entityType: "EMAIL_SETTINGS",
+            entityId: "1",
+            changes: { fields: Object.keys(updateData) },
+            request,
         });
 
         return NextResponse.json({
