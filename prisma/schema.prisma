@@ -588,6 +588,7 @@ model PortalUser {
   credentials   PortalUserAppCredential[]
   sessions      PortalSession[]
   auditLogs     AuditLog[]
+  groups        PortalUserGroup[]
 
   @@index([isActive])
   @@index([role])
@@ -616,6 +617,7 @@ model PortalApp {
 
   userAccess    PortalUserAppAccess[]
   credentials   PortalUserAppCredential[]
+  groupApps     PortalGroupApp[]
 
   @@index([isActive])
   @@index([category])
@@ -674,6 +676,49 @@ model PortalSession {
   @@index([portalUserId])
   @@index([sessionToken])
   @@map("portal_sessions")
+}
+
+model PortalGroup {
+  id          String   @id @default(cuid())
+  name        String   @unique // "Accounting", "Umum"
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  apps    PortalGroupApp[]
+  members PortalUserGroup[]
+
+  @@index([isActive])
+  @@map("portal_groups")
+}
+
+model PortalGroupApp {
+  id      String @id @default(cuid())
+  groupId String
+  appId   String
+
+  group PortalGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  app   PortalApp   @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, appId])
+  @@index([groupId])
+  @@index([appId])
+  @@map("portal_group_apps")
+}
+
+model PortalUserGroup {
+  id           String @id @default(cuid())
+  portalUserId String
+  groupId      String
+
+  portalUser PortalUser  @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+  group      PortalGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([portalUserId, groupId])
+  @@index([portalUserId])
+  @@index([groupId])
+  @@map("portal_user_groups")
 }
 
 // ============================================
