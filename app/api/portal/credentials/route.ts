@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { portalAuthOptions } from "@/lib/portal-auth";
 import prisma from "@/lib/prisma";
-import { canAccessPortalApp } from "@/lib/portal-access";
+import { canAccessPortalApp, getAccessiblePortalApps } from "@/lib/portal-access";
 import { encryptCredential } from "@/lib/portal-crypto";
 import { PortalCredentialSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
@@ -17,45 +17,17 @@ export async function GET() {
 
         const userId = session.user.id;
 
-        // Get user's accessible apps with credential status
-        const user = await prisma.portalUser.findUnique({
-            where: { id: userId },
-            select: {
-                role: true,
-                appAccess: {
-                    include: {
-                        app: {
-                            select: {
-                                id: true, name: true, slug: true,
-                            },
-                        },
-                    },
-                },
-                credentials: {
-                    select: {
-                        appId: true, lastUsedAt: true,
-                    },
-                },
-            },
+        // Get accessible apps via group + direct access resolution
+        const accessibleApps = await getAccessiblePortalApps(userId);
+
+        // Get credential status
+        const credentials = await prisma.portalUserAppCredential.findMany({
+            where: { portalUserId: userId },
+            select: { appId: true, lastUsedAt: true },
         });
+        const credMap = new Map(credentials.map((c) => [c.appId, c.lastUsedAt]));
 
-        if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
-        }
-
-        // For PORTAL_ADMIN, get all active apps
-        let apps: { id: string; name: string; slug: string }[] = [];
-        if (user.role === "PORTAL_ADMIN") {
-            apps = await prisma.portalApp.findMany({
-                where: { isActive: true },
-                select: { id: true, name: true, slug: true },
-                orderBy: { displayOrder: "asc" },
-            });
-        } else {
-            apps = user.appAccess.map((a) => a.app);
-        }
-
-        const credMap = new Map(user.credentials.map((c) => [c.appId, c.lastUsedAt]));
+        const apps = accessibleApps;
 
         const result = apps.map((app) => ({
             appId: app.id,
