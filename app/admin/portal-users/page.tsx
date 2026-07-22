@@ -16,6 +16,12 @@ interface AppAccess {
     app: PortalApp;
 }
 
+interface PortalGroupInfo {
+    id: string;
+    groupId: string;
+    group: { id: string; name: string };
+}
+
 interface PortalUser {
     id: string;
     email: string;
@@ -24,6 +30,7 @@ interface PortalUser {
     isActive: boolean;
     createdAt: string;
     appAccess?: AppAccess[];
+    groups?: PortalGroupInfo[];
 }
 
 interface Pagination {
@@ -40,11 +47,13 @@ const emptyForm = {
     isActive: true,
     password: "",
     appIds: [] as string[],
+    groupIds: [] as string[],
 };
 
 export default function PortalUsersPage() {
     const [users, setUsers] = useState<PortalUser[]>([]);
     const [apps, setApps] = useState<PortalApp[]>([]);
+    const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -86,9 +95,22 @@ export default function PortalUsersPage() {
         }
     };
 
+    const fetchGroups = async () => {
+        try {
+            const response = await fetch("/api/portal-groups?limit=100");
+            if (response.ok) {
+                const data = await response.json();
+                setGroups((data.data || data).map((g: { id: string; name: string }) => ({ id: g.id, name: g.name })));
+            }
+        } catch (err) {
+            console.error("Gagal memuat groups:", err);
+        }
+    };
+
     useEffect(() => {
         fetchUsers();
         fetchApps();
+        fetchGroups();
     }, [fetchUsers]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -111,6 +133,10 @@ export default function PortalUsersPage() {
             }
             if (!editingUser) {
                 body.appIds = formData.appIds;
+            }
+            // Always send groupIds for edit (atomic replace via API)
+            if (editingUser) {
+                body.groupIds = formData.groupIds;
             }
 
             const response = await fetch(url, {
@@ -249,6 +275,7 @@ export default function PortalUsersPage() {
             isActive: user.isActive,
             password: "",
             appIds: user.appAccess?.map(a => a.appId) || [],
+            groupIds: user.groups?.map(g => g.groupId) || [],
         });
         setError("");
         setShowModal(true);
@@ -273,6 +300,15 @@ export default function PortalUsersPage() {
                 return { ...prev, appIds: prev.appIds.filter(id => id !== appId) };
             }
             return { ...prev, appIds: [...prev.appIds, appId] };
+        });
+    };
+
+    const handleGroupToggle = (groupId: string) => {
+        setFormData(prev => {
+            if (prev.groupIds.includes(groupId)) {
+                return { ...prev, groupIds: prev.groupIds.filter(id => id !== groupId) };
+            }
+            return { ...prev, groupIds: [...prev.groupIds, groupId] };
         });
     };
 
@@ -367,6 +403,7 @@ export default function PortalUsersPage() {
                             <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>EMAIL</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>ROLE</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>GRUP</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>DIBUAT</th>
                             <th style={{ padding: "20px", textAlign: "right", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
@@ -375,7 +412,7 @@ export default function PortalUsersPage() {
                     <tbody>
                         {users.length === 0 ? (
                             <tr>
-                                <td colSpan={6} style={{ padding: "48px", textAlign: "center", color: "#525252" }}>
+                                <td colSpan={7} style={{ padding: "48px", textAlign: "center", color: "#525252" }}>
                                     Tidak ada pengguna portal ditemukan
                                 </td>
                             </tr>
@@ -411,6 +448,26 @@ export default function PortalUsersPage() {
                                             }}>
                                                 {user.role}
                                             </span>
+                                        </td>
+                                        <td style={{ padding: "20px" }}>
+                                            {user.groups && user.groups.length > 0 ? (
+                                                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                                                    {user.groups.map(g => (
+                                                        <span key={g.id} style={{
+                                                            padding: "2px 8px",
+                                                            backgroundColor: "rgba(168, 85, 247, 0.15)",
+                                                            color: "#a855f7",
+                                                            fontSize: "10px",
+                                                            fontWeight: 600,
+                                                            borderRadius: "4px",
+                                                        }}>
+                                                            {g.group.name}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span style={{ color: "#525252", fontSize: "12px" }}>-</span>
+                                            )}
                                         </td>
                                         <td style={{ padding: "20px" }}>
                                             {user.isActive ? (
@@ -464,35 +521,60 @@ export default function PortalUsersPage() {
                                     </tr>
                                     {expandedUserId === user.id && (
                                         <tr key={`${user.id}-expanded`}>
-                                            <td colSpan={6} style={{ padding: "0 20px 20px 20px", backgroundColor: "#0d0d0d", borderBottom: index < users.length - 1 ? "1px solid #262626" : "none" }}>
-                                                <div style={{ padding: "16px", backgroundColor: "#111", border: "1px solid #262626", borderRadius: "4px" }}>
-                                                    <p style={{ color: "#a1a1aa", fontSize: "12px", fontWeight: 600, marginBottom: "12px" }}>AKSES APLIKASI</p>
-                                                    {user.appAccess && user.appAccess.length > 0 ? (
-                                                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                                                            {user.appAccess.map(access => (
-                                                                <div key={access.id} style={{
-                                                                    display: "flex",
-                                                                    alignItems: "center",
-                                                                    gap: "8px",
-                                                                    padding: "6px 12px",
-                                                                    backgroundColor: "#1a1a1a",
-                                                                    border: "1px solid #333",
-                                                                    borderRadius: "4px",
-                                                                }}>
-                                                                    <span style={{ color: "#fff", fontSize: "13px" }}>{access.app.name}</span>
-                                                                    <button
-                                                                        onClick={() => handleRevokeAccess(user.id, access.appId)}
-                                                                        style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "2px" }}
-                                                                        title="Cabut akses"
-                                                                    >
-                                                                        <FiX size={12} />
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <p style={{ color: "#525252", fontSize: "13px" }}>Belum ada akses aplikasi</p>
-                                                    )}
+                                            <td colSpan={7} style={{ padding: "0 20px 20px 20px", backgroundColor: "#0d0d0d", borderBottom: index < users.length - 1 ? "1px solid #262626" : "none" }}>
+                                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                                                    {/* Groups */}
+                                                    <div style={{ padding: "16px", backgroundColor: "#111", border: "1px solid #262626", borderRadius: "4px" }}>
+                                                        <p style={{ color: "#a1a1aa", fontSize: "12px", fontWeight: 600, marginBottom: "12px" }}>GRUP</p>
+                                                        {user.groups && user.groups.length > 0 ? (
+                                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                                                {user.groups.map(g => (
+                                                                    <span key={g.id} style={{
+                                                                        padding: "4px 12px",
+                                                                        backgroundColor: "rgba(168, 85, 247, 0.2)",
+                                                                        color: "#a855f7",
+                                                                        fontSize: "11px",
+                                                                        fontWeight: 600,
+                                                                        borderRadius: "4px",
+                                                                    }}>
+                                                                        {g.group.name}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p style={{ color: "#525252", fontSize: "13px" }}>Tidak ada grup</p>
+                                                        )}
+                                                    </div>
+                                                    {/* Direct access */}
+                                                    <div style={{ padding: "16px", backgroundColor: "#111", border: "1px solid #262626", borderRadius: "4px" }}>
+                                                        <p style={{ color: "#a1a1aa", fontSize: "12px", fontWeight: 600, marginBottom: "12px" }}>AKSES LANGSUNG (OVERRIDE)</p>
+                                                        {user.appAccess && user.appAccess.length > 0 ? (
+                                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                                                {user.appAccess.map(access => (
+                                                                    <div key={access.id} style={{
+                                                                        display: "flex",
+                                                                        alignItems: "center",
+                                                                        gap: "8px",
+                                                                        padding: "6px 12px",
+                                                                        backgroundColor: "#1a1a1a",
+                                                                        border: "1px solid #333",
+                                                                        borderRadius: "4px",
+                                                                    }}>
+                                                                        <span style={{ color: "#fff", fontSize: "13px" }}>{access.app.name}</span>
+                                                                        <button
+                                                                            onClick={() => handleRevokeAccess(user.id, access.appId)}
+                                                                            style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "2px" }}
+                                                                            title="Cabut akses"
+                                                                        >
+                                                                            <FiX size={12} />
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p style={{ color: "#525252", fontSize: "13px" }}>Tidak ada akses langsung</p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -621,8 +703,41 @@ export default function PortalUsersPage() {
                                 </div>
                             </div>
 
+                            {/* Group assignment */}
+                            <div style={{ marginBottom: "16px" }}>
+                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>GRUP</label>
+                                <div style={{
+                                    border: "1px solid #262626",
+                                    backgroundColor: "#111",
+                                    padding: "12px",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "8px",
+                                }}>
+                                    {groups.length === 0 ? (
+                                        <span style={{ color: "#a3a3a3", fontSize: "13px" }}>Tidak ada grup tersedia</span>
+                                    ) : (
+                                        groups.map(group => (
+                                            <label key={group.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#e5e5e5", fontSize: "14px" }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.groupIds.includes(group.id)}
+                                                    onChange={() => handleGroupToggle(group.id)}
+                                                    style={{ accentColor: "#dc2626" }}
+                                                />
+                                                {group.name}
+                                            </label>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Direct app access (override) */}
                             <div style={{ marginBottom: "24px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>AKSES APLIKASI</label>
+                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>AKSES LANGSUNG (OVERRIDE)</label>
+                                <p style={{ color: "#525252", fontSize: "11px", marginBottom: "8px" }}>Akses app di luar grup. Jika app sudah ada di grup, tidak perlu ditambah di sini.</p>
                                 <div style={{
                                     border: "1px solid #262626",
                                     backgroundColor: "#111",

@@ -81,6 +81,7 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
             { href: "/admin/sites", icon: FiGlobe, label: "SITES" },
             { href: "/admin/users", icon: FiUsers, label: "PENGGUNA" },
             { href: "/admin/portal-apps", icon: FiGrid, label: "PORTAL APPS" },
+            { href: "/admin/portal-groups", icon: FiUsers, label: "PORTAL GROUPS" },
             { href: "/admin/portal-users", icon: FiUserPlus, label: "PORTAL USERS" },
             { href: "/admin/portal-sessions", icon: FiMonitor, label: "PORTAL SESI" },
             { href: "/admin/global-analytics", icon: FiPieChart, label: "GLOBAL ANALYTICS" },

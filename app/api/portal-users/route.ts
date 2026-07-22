@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
                     id: true, email: true, name: true, avatar: true,
                     role: true, isActive: true, createdAt: true, updatedAt: true,
                     appAccess: { select: { appId: true, role: true } },
+                    groups: { select: { id: true, groupId: true, group: { select: { id: true, name: true } } } },
                 },
             }),
             prisma.portalUser.count({ where }),
