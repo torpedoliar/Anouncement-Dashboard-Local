@@ -30,7 +30,8 @@ export async function canAccessPortalApp(
     if (!user || !user.isActive) return false;
     if (user.role === "PORTAL_ADMIN") return true;
 
-    // Single query: direct access OR group membership with active group containing the app
+    // Direct access check — app must be active (consistent with getAccessiblePortalApps).
+    // Inactive apps are inaccessible regardless of access method.
     const count = await prisma.portalUserAppAccess.count({
         where: {
             portalUserId,

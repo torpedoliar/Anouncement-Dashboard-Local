@@ -227,11 +227,17 @@ export const PortalAppUpdateSchema = PortalAppCreateSchema.partial();
 // Portal Group Schemas
 // -----------------------------------------
 
-export const portalGroupSchema = z.object({
+export const PortalGroupCreateSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).nullable().optional(),
   isActive: z.boolean().optional().default(true),
   appIds: z.array(z.string().cuid()).max(200).optional().default([]),
+});
+
+export const PortalGroupUpdateSchema = PortalGroupCreateSchema.partial();
+
+export const PortalUserGroupIdsSchema = z.object({
+  groupIds: z.array(z.string().cuid()).max(100).optional().default([]),
 });
 
 // -----------------------------------------

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { PortalUserUpdateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
+import { PortalUserUpdateSchema, PortalUserGroupIdsSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
 
 interface RouteParams {
@@ -72,8 +72,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
         }
 
-        // Extract groupIds from body (not part of Zod schema, handled separately)
-        const groupIds: string[] | undefined = body.groupIds;
+        // Validate groupIds separately (not part of PortalUserUpdateSchema)
+        let groupIds: string[] | undefined;
+        if (body.groupIds !== undefined) {
+            const groupValidation = validateInput(PortalUserGroupIdsSchema, { groupIds: body.groupIds });
+            if (!groupValidation.success) {
+                return NextResponse.json(
+                    { error: "Validation failed", details: formatZodErrors(groupValidation.errors) },
+                    { status: 400 }
+                );
+            }
+            groupIds = groupValidation.data.groupIds;
+        }
 
         // Atomic: update user + replace group memberships if groupIds provided
         const user = await prisma.$transaction(async (tx) => {

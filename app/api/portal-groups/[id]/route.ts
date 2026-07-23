@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { portalGroupSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
+import { PortalGroupCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
 
 interface RouteParams {
@@ -55,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
         const { id } = await params;
         const body = await request.json();
-        const validation = validateInput(portalGroupSchema, body);
+        const validation = validateInput(PortalGroupCreateSchema, body);
         if (!validation.success) {
             return NextResponse.json(
                 { error: "Validation failed", details: formatZodErrors(validation.errors) },
