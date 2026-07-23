@@ -602,7 +602,7 @@ model PortalApp {
   description   String?
   logoPath      String?
   url           String        // URL aplikasi (link langsung / fallback)
-  loginUrl      String        // Endpoint form login aplikasi (target POST SSO)
+  loginUrl      String?       // Endpoint form login aplikasi (target POST SSO)
   ssoMode       PortalSsoMode @default(FORM)
   httpMethod    String        @default("POST") // "POST" | "GET"
   usernameField String        @default("username")

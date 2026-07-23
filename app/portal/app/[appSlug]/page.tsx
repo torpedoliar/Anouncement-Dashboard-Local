@@ -33,6 +33,7 @@ export default async function SsoLaunchPage({ params }: PageProps) {
             id: true,
             name: true,
             slug: true,
+            url: true,
             loginUrl: true,
             httpMethod: true,
             usernameField: true,
@@ -126,7 +127,7 @@ export default async function SsoLaunchPage({ params }: PageProps) {
                 <p>Mengalihkan ke {app.name}...</p>
                 <form
                     method={app.httpMethod.toLowerCase() as "post" | "get"}
-                    action={app.loginUrl}
+                    action={app.loginUrl || app.url}
                     target="_blank"
                 >
                     <input type="hidden" name={app.usernameField} value={cred.username} />

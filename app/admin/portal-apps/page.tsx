@@ -101,7 +101,7 @@ export default function PortalAppsPage() {
                 slug: formData.slug,
                 description: formData.description || null,
                 url: formData.url,
-                loginUrl: formData.loginUrl,
+                loginUrl: formData.loginUrl || null,
                 ssoMode: formData.ssoMode,
                 httpMethod: formData.httpMethod,
                 usernameField: formData.usernameField || "username",
