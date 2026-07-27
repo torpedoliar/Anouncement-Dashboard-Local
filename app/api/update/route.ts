@@ -75,7 +75,7 @@ export async function POST() {
         // Step 3: Run Prisma migrations
         try {
             steps.push({ step: "Updating database schema", status: "running" });
-            const prismaResult = await execAsync('npx prisma db push --accept-data-loss', { timeout: 120000 });
+            const prismaResult = await execAsync('npx prisma migrate deploy', { timeout: 120000 });
             steps[steps.length - 1] = { step: "Updating database schema", status: "success", output: "Schema updated" };
         } catch (prismaError: unknown) {
             steps[steps.length - 1] = { step: "Updating database schema", status: "warning", output: "Migration skipped" };
