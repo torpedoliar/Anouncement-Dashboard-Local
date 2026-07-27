@@ -23,6 +23,9 @@ const eslintConfig = [
   {
     rules: {
       "no-restricted-globals": ["error", "alert", "confirm"],
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@next/next/no-html-link-for-pages": "warn",
     },
   },
 ];

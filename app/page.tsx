@@ -1,7 +1,7 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import AnnouncementCard from "@/components/AnnouncementCard";
-import { CategoryFilterClient } from "@/components/CategoryFilter";
+import CategoryFilter from "@/components/CategoryFilter";
 import SearchBar from "@/components/SearchBar";
 import Footer from "@/components/Footer";
 import Pagination from "@/components/Pagination";
@@ -142,7 +142,7 @@ export default async function HomePage({
 
           {/* Category Filter */}
           <div style={{ marginBottom: '48px' }}>
-            <CategoryFilterClient categories={categories} activeCategory={categorySlug || "all"} />
+            <CategoryFilter categories={categories} activeCategory={categorySlug || "all"} />
           </div>
 
           {/* Announcements Grid */}
