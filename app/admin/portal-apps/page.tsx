@@ -197,6 +197,7 @@ export default function PortalAppsPage() {
         border: "1px solid #262626",
         color: "#fff",
         fontSize: "14px",
+        boxSizing: "border-box",
     };
 
     if (isLoading) {
