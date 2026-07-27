@@ -31,7 +31,7 @@ export function useSiteTheme() {
         return {
             theme: {
                 primaryColor: "#ED1C24",
-                primaryColorLight: "#FF4D54",
+                primaryColorLight: "#FF3B42",
                 primaryColorDark: "#C41920",
                 primaryColorAlpha: "rgba(237, 28, 36, 0.1)",
                 textOnPrimary: "#FFFFFF",

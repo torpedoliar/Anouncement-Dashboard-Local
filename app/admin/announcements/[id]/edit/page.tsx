@@ -44,7 +44,7 @@ export default async function EditAnnouncementPage({
             {/* Header */}
             <div style={{ marginBottom: '32px' }}>
                 <p style={{
-                    color: '#dc2626',
+                    color: 'var(--brand-red)',
                     fontSize: '11px',
                     fontWeight: 600,
                     letterSpacing: '0.2em',
@@ -56,11 +56,11 @@ export default async function EditAnnouncementPage({
                     fontFamily: 'Montserrat, sans-serif',
                     fontSize: '24px',
                     fontWeight: 700,
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                 }}>
                     Edit Pengumuman
                 </h1>
-                <p style={{ color: '#737373', marginTop: '4px' }}>
+                <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
                     Perbarui pengumuman yang sudah ada
                 </p>
             </div>

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FiMonitor, FiSmartphone, FiTrash2, FiRefreshCw, FiUser } from "react-icons/fi";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface UserSession {
     id: string;
@@ -33,6 +35,8 @@ export default function SessionsPage() {
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
+    const { showToast } = useToast();
+    const { confirm, ConfirmDialog } = useConfirm();
 
     const fetchSessions = useCallback(async () => {
         try {
@@ -54,7 +58,7 @@ export default function SessionsPage() {
     }, [fetchSessions]);
 
     const handleRevoke = async (sessionId: string) => {
-        if (!confirm("Apakah Anda yakin ingin mencabut sesi ini?")) return;
+        if (!(await confirm({ title: "Cabut Sesi", message: "Apakah Anda yakin ingin mencabut sesi ini?", variant: "danger" }))) return;
 
         try {
             const response = await fetch(`/api/sessions?id=${sessionId}`, {
@@ -63,13 +67,13 @@ export default function SessionsPage() {
 
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Gagal mencabut sesi");
+                showToast(data.error || "Gagal mencabut sesi", "error");
                 return;
             }
 
             fetchSessions();
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         }
     };
 
@@ -97,7 +101,7 @@ export default function SessionsPage() {
     if (isLoading) {
         return (
             <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "#525252" }}>Loading...</p>
+                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
             </div>
         );
     }
@@ -107,10 +111,10 @@ export default function SessionsPage() {
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
                 <div>
-                    <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
                         SESI
                     </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff" }}>
+                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
                         Sesi Pengguna
                     </h1>
                 </div>
@@ -121,11 +125,11 @@ export default function SessionsPage() {
                         alignItems: "center",
                         gap: "8px",
                         padding: "12px 24px",
-                        backgroundColor: "#1a1a1a",
-                        color: "#fff",
+                        backgroundColor: "var(--bg-tertiary)",
+                        color: "var(--text-primary)",
                         fontSize: "13px",
                         fontWeight: 600,
-                        border: "1px solid #333",
+                        border: "1px solid var(--border-strong)",
                         cursor: "pointer",
                     }}
                 >
@@ -136,52 +140,52 @@ export default function SessionsPage() {
 
             {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>TOTAL SESI</p>
-                    <p style={{ color: "#fff", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || 0}</p>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>TOTAL SESI</p>
+                    <p style={{ color: "var(--text-primary)", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || 0}</p>
                 </div>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>SESI AKTIF</p>
-                    <p style={{ color: "#22c55e", fontSize: "24px", fontWeight: 700 }}>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>SESI AKTIF</p>
+                    <p style={{ color: "var(--color-success)", fontSize: "24px", fontWeight: 700 }}>
                         {sessions.filter(s => !s.isRevoked && !isExpired(s.expiresAt)).length}
                     </p>
                 </div>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>DICABUT/EXPIRED</p>
-                    <p style={{ color: "#ef4444", fontSize: "24px", fontWeight: 700 }}>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>DICABUT/EXPIRED</p>
+                    <p style={{ color: "var(--color-error)", fontSize: "24px", fontWeight: 700 }}>
                         {sessions.filter(s => s.isRevoked || isExpired(s.expiresAt)).length}
                     </p>
                 </div>
             </div>
 
             {/* Sessions Table */}
-            <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", overflow: "hidden" }}>
+            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                        <tr style={{ borderBottom: "2px solid #333", backgroundColor: "#111" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>USER</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>DEVICE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>LAST ACTIVE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
-                            <th style={{ padding: "20px", textAlign: "right", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
+                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>USER</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>DEVICE</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>LAST ACTIVE</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
+                            <th style={{ padding: "20px", textAlign: "right", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
                         {sessions.length === 0 ? (
                             <tr>
-                                <td colSpan={5} style={{ padding: "48px", textAlign: "center", color: "#525252" }}>
+                                <td colSpan={5} style={{ padding: "48px", textAlign: "center", color: "var(--text-tertiary)" }}>
                                     Tidak ada sesi ditemukan
                                 </td>
                             </tr>
                         ) : (
                             sessions.map((session, index) => (
-                                <tr key={session.id} style={{ borderBottom: index < sessions.length - 1 ? "1px solid #262626" : "none" }}>
+                                <tr key={session.id} style={{ borderBottom: index < sessions.length - 1 ? "1px solid var(--border-color)" : "none" }}>
                                     <td style={{ padding: "20px" }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                                             <div style={{
                                                 width: "36px",
                                                 height: "36px",
-                                                backgroundColor: "#1a1a1a",
+                                                backgroundColor: "var(--bg-tertiary)",
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
@@ -190,13 +194,13 @@ export default function SessionsPage() {
                                                 <FiUser size={16} color="#737373" />
                                             </div>
                                             <div>
-                                                <p style={{ color: "#fff", fontSize: "14px", fontWeight: 500 }}>{session.user.name}</p>
-                                                <p style={{ color: "#737373", fontSize: "12px" }}>{session.user.email}</p>
+                                                <p style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>{session.user.name}</p>
+                                                <p style={{ color: "var(--text-muted)", fontSize: "12px" }}>{session.user.email}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td style={{ padding: "20px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#a1a1aa" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-secondary)" }}>
                                             {getDeviceIcon(session.userAgent)}
                                             <span style={{ fontSize: "13px" }}>
                                                 {session.ipAddress || "Unknown"}
@@ -208,7 +212,7 @@ export default function SessionsPage() {
                                     </td>
                                     <td style={{ padding: "20px" }}>
                                         {session.isRevoked ? (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", fontSize: "11px", fontWeight: 600 }}>
+                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "var(--color-error)", fontSize: "11px", fontWeight: 600 }}>
                                                 REVOKED
                                             </span>
                                         ) : isExpired(session.expiresAt) ? (
@@ -216,7 +220,7 @@ export default function SessionsPage() {
                                                 EXPIRED
                                             </span>
                                         ) : (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(34, 197, 94, 0.2)", color: "#22c55e", fontSize: "11px", fontWeight: 600 }}>
+                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(34, 197, 94, 0.2)", color: "var(--color-success)", fontSize: "11px", fontWeight: 600 }}>
                                                 ACTIVE
                                             </span>
                                         )}
@@ -228,8 +232,8 @@ export default function SessionsPage() {
                                                 style={{
                                                     padding: "8px",
                                                     backgroundColor: "transparent",
-                                                    border: "1px solid #262626",
-                                                    color: "#dc2626",
+                                                    border: "1px solid var(--border-color)",
+                                                    color: "var(--brand-red)",
                                                     cursor: "pointer",
                                                 }}
                                                 title="Revoke Session"
@@ -254,8 +258,8 @@ export default function SessionsPage() {
                             onClick={() => setPage(p)}
                             style={{
                                 padding: "8px 16px",
-                                backgroundColor: p === page ? "#dc2626" : "#1a1a1a",
-                                color: "#fff",
+                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
+                                color: "var(--text-primary)",
                                 border: "none",
                                 cursor: "pointer",
                             }}
@@ -265,6 +269,7 @@ export default function SessionsPage() {
                     ))}
                 </div>
             )}
+            <ConfirmDialog />
         </div>
     );
 }

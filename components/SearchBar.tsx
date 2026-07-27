@@ -64,7 +64,7 @@ export default function SearchBar({
                         style={{
                             position: 'absolute',
                             left: '16px',
-                            color: '#dc2626',
+                            color: 'var(--brand-red)',
                             animation: 'spin 1s linear infinite',
                         }}
                     />
@@ -74,7 +74,7 @@ export default function SearchBar({
                         style={{
                             position: 'absolute',
                             left: '16px',
-                            color: '#525252',
+                            color: 'var(--text-tertiary)',
                         }}
                     />
                 )}
@@ -89,11 +89,10 @@ export default function SearchBar({
                     style={{
                         width: '100%',
                         padding: '16px 48px 16px 48px',
-                        backgroundColor: '#0a0a0a',
-                        border: isFocused ? '1px solid #dc2626' : '1px solid #262626',
-                        color: '#fff',
+                        backgroundColor: 'var(--bg-secondary)',
+                        border: isFocused ? '1px solid var(--brand-red)' : '1px solid var(--border-color)',
+                        color: 'var(--text-primary)',
                         fontSize: '14px',
-                        outline: 'none',
                         transition: 'border-color 0.3s',
                     }}
                 />
@@ -105,7 +104,7 @@ export default function SearchBar({
                             position: 'absolute',
                             right: '16px',
                             padding: '4px',
-                            color: '#525252',
+                            color: 'var(--text-tertiary)',
                             background: 'none',
                             border: 'none',
                             cursor: 'pointer',

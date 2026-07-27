@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { FiMessageSquare, FiCheck, FiX, FiTrash2, FiFilter, FiExternalLink } from "react-icons/fi";
 import Link from "next/link";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface Comment {
     id: string;
@@ -41,6 +43,8 @@ export default function CommentsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState<string>("");
+    const { showToast } = useToast();
+    const { confirm, ConfirmDialog } = useConfirm();
 
     const fetchComments = useCallback(async () => {
         try {
@@ -74,18 +78,19 @@ export default function CommentsPage() {
 
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Gagal memperbarui komentar");
+                showToast(data.error || "Gagal memperbarui komentar", "error");
                 return;
             }
 
             fetchComments();
+            showToast("Komentar berhasil diperbarui", "success");
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         }
     };
 
     const handleDelete = async (commentId: string) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus komentar ini?")) return;
+        if (!(await confirm({ title: "Hapus Komentar", message: "Apakah Anda yakin ingin menghapus komentar ini?", variant: "danger" }))) return;
 
         try {
             const response = await fetch(`/api/comments/${commentId}`, {
@@ -94,13 +99,14 @@ export default function CommentsPage() {
 
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Gagal menghapus komentar");
+                showToast(data.error || "Gagal menghapus komentar", "error");
                 return;
             }
 
             fetchComments();
+            showToast("Komentar berhasil dihapus", "success");
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         }
     };
 
@@ -138,7 +144,7 @@ export default function CommentsPage() {
     if (isLoading) {
         return (
             <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "#525252" }}>Loading...</p>
+                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
             </div>
         );
     }
@@ -148,10 +154,10 @@ export default function CommentsPage() {
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
                 <div>
-                    <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
                         KOMENTAR
                     </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff" }}>
+                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
                         Moderasi Komentar
                     </h1>
                 </div>
@@ -162,9 +168,9 @@ export default function CommentsPage() {
                         onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                         style={{
                             padding: "10px 16px",
-                            backgroundColor: "#1a1a1a",
-                            border: "1px solid #333",
-                            color: "#fff",
+                            backgroundColor: "var(--bg-tertiary)",
+                            border: "1px solid var(--border-strong)",
+                            color: "var(--text-primary)",
                             fontSize: "13px",
                         }}
                     >
@@ -180,8 +186,8 @@ export default function CommentsPage() {
             {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
                 {["PENDING", "APPROVED", "REJECTED", "SPAM"].map((status) => (
-                    <div key={status} style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                        <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>{status}</p>
+                    <div key={status} style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                        <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>{status}</p>
                         <p style={{ color: getStatusBadge(status).props.style.color, fontSize: "24px", fontWeight: 700 }}>
                             {comments.filter(c => c.status === status).length}
                         </p>
@@ -193,11 +199,11 @@ export default function CommentsPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 {comments.length === 0 ? (
                     <div style={{
-                        backgroundColor: "#0a0a0a",
-                        border: "1px solid #262626",
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-color)",
                         padding: "48px",
                         textAlign: "center",
-                        color: "#525252",
+                        color: "var(--text-tertiary)",
                     }}>
                         <FiMessageSquare size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
                         <p>Tidak ada komentar ditemukan</p>
@@ -205,16 +211,16 @@ export default function CommentsPage() {
                 ) : (
                     comments.map((comment) => (
                         <div key={comment.id} style={{
-                            backgroundColor: "#0a0a0a",
-                            border: "1px solid #262626",
+                            backgroundColor: "var(--bg-secondary)",
+                            border: "1px solid var(--border-color)",
                             padding: "20px",
                         }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                                 <div>
                                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                                        <span style={{ color: "#fff", fontWeight: 600 }}>{comment.authorName}</span>
+                                        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{comment.authorName}</span>
                                         {comment.authorEmail && (
-                                            <span style={{ color: "#737373", fontSize: "13px" }}>{comment.authorEmail}</span>
+                                            <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>{comment.authorEmail}</span>
                                         )}
                                         {getStatusBadge(comment.status)}
                                     </div>
@@ -225,7 +231,7 @@ export default function CommentsPage() {
                                             display: "inline-flex",
                                             alignItems: "center",
                                             gap: "6px",
-                                            color: "#60a5fa",
+                                            color: "var(--color-info)",
                                             fontSize: "13px",
                                             textDecoration: "none",
                                         }}
@@ -234,7 +240,7 @@ export default function CommentsPage() {
                                         <FiExternalLink size={12} />
                                     </Link>
                                 </div>
-                                <span style={{ color: "#525252", fontSize: "12px" }}>{formatDate(comment.createdAt)}</span>
+                                <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{formatDate(comment.createdAt)}</span>
                             </div>
 
                             <p style={{ color: "#d4d4d4", fontSize: "14px", lineHeight: 1.6, marginBottom: "16px" }}>
@@ -253,7 +259,7 @@ export default function CommentsPage() {
                                                     gap: "6px",
                                                     padding: "8px 16px",
                                                     backgroundColor: "rgba(34, 197, 94, 0.2)",
-                                                    color: "#22c55e",
+                                                    color: "var(--color-success)",
                                                     fontSize: "12px",
                                                     fontWeight: 600,
                                                     border: "none",
@@ -271,7 +277,7 @@ export default function CommentsPage() {
                                                     gap: "6px",
                                                     padding: "8px 16px",
                                                     backgroundColor: "rgba(239, 68, 68, 0.2)",
-                                                    color: "#ef4444",
+                                                    color: "var(--color-error)",
                                                     fontSize: "12px",
                                                     fontWeight: 600,
                                                     border: "none",
@@ -285,11 +291,11 @@ export default function CommentsPage() {
                                                 onClick={() => handleModerate(comment.id, "SPAM")}
                                                 style={{
                                                     padding: "8px 16px",
-                                                    backgroundColor: "#1a1a1a",
-                                                    color: "#737373",
+                                                    backgroundColor: "var(--bg-tertiary)",
+                                                    color: "var(--text-muted)",
                                                     fontSize: "12px",
                                                     fontWeight: 600,
-                                                    border: "1px solid #333",
+                                                    border: "1px solid var(--border-strong)",
                                                     cursor: "pointer",
                                                 }}
                                             >
@@ -303,8 +309,8 @@ export default function CommentsPage() {
                                     style={{
                                         padding: "8px",
                                         backgroundColor: "transparent",
-                                        border: "1px solid #262626",
-                                        color: "#dc2626",
+                                        border: "1px solid var(--border-color)",
+                                        color: "var(--brand-red)",
                                         cursor: "pointer",
                                     }}
                                     title="Delete"
@@ -326,8 +332,8 @@ export default function CommentsPage() {
                             onClick={() => setPage(p)}
                             style={{
                                 padding: "8px 16px",
-                                backgroundColor: p === page ? "#dc2626" : "#1a1a1a",
-                                color: "#fff",
+                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
+                                color: "var(--text-primary)",
                                 border: "none",
                                 cursor: "pointer",
                             }}
@@ -337,6 +343,7 @@ export default function CommentsPage() {
                     ))}
                 </div>
             )}
+            <ConfirmDialog />
         </div>
     );
 }

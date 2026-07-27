@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheck, FiFolder } from "react-icons/fi";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface Category {
     id: string;
@@ -24,6 +25,7 @@ export default function CategoriesPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [error, setError] = useState("");
+    const { confirm, ConfirmDialog } = useConfirm();
 
     // Form states
     const [newName, setNewName] = useState("");
@@ -144,7 +146,6 @@ export default function CategoriesPage() {
         border: '1px solid #262626',
         color: '#fff',
         fontSize: '14px',
-        outline: 'none',
     };
 
     const buttonPrimaryStyle = {
@@ -174,7 +175,7 @@ export default function CategoriesPage() {
     }, {} as Record<string, { siteName: string; categories: Category[] }>);
 
     return (
-        <div style={{ padding: '32px', backgroundColor: '#000', minHeight: '100vh' }}>
+        <div style={{ padding: '32px', backgroundColor: 'var(--bg-primary)', minHeight: '100vh' }}>
             {/* Header */}
             <div style={{
                 display: 'flex',
@@ -184,7 +185,7 @@ export default function CategoriesPage() {
             }}>
                 <div>
                     <p style={{
-                        color: '#dc2626',
+                        color: 'var(--brand-red)',
                         fontSize: '12px',
                         fontWeight: 600,
                         letterSpacing: '0.1em',
@@ -196,11 +197,11 @@ export default function CategoriesPage() {
                         fontFamily: 'Montserrat, sans-serif',
                         fontSize: '28px',
                         fontWeight: 700,
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                     }}>
                         Manajemen Kategori
                     </h1>
-                    <p style={{ color: '#737373', marginTop: '4px' }}>
+                    <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
                         Kelola kategori pengumuman ({categories.length} kategori)
                     </p>
                 </div>
@@ -221,8 +222,8 @@ export default function CategoriesPage() {
                 <div style={{
                     padding: '12px 16px',
                     backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                    border: '1px solid #dc2626',
-                    color: '#dc2626',
+                    border: '1px solid var(--brand-red)',
+                    color: 'var(--brand-red)',
                     marginBottom: '24px',
                     display: 'flex',
                     alignItems: 'center',
@@ -232,7 +233,7 @@ export default function CategoriesPage() {
                     {error}
                     <button
                         onClick={() => setError("")}
-                        style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer' }}
+                        style={{ background: 'none', border: 'none', color: 'var(--brand-red)', cursor: 'pointer' }}
                     >
                         <FiX size={16} />
                     </button>
@@ -242,12 +243,12 @@ export default function CategoriesPage() {
             {/* Add Form */}
             {showAddForm && (
                 <div style={{ ...cardStyle, marginBottom: '32px' }}>
-                    <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
+                    <h3 style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
                         Tambah Kategori Baru
                     </h3>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end' }}>
                         <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', color: '#a3a3a3', fontSize: '13px', marginBottom: '8px' }}>
+                            <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '8px' }}>
                                 Nama Kategori
                             </label>
                             <input
@@ -259,7 +260,7 @@ export default function CategoriesPage() {
                             />
                         </div>
                         <div style={{ width: '120px' }}>
-                            <label style={{ display: 'block', color: '#a3a3a3', fontSize: '13px', marginBottom: '8px' }}>
+                            <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '8px' }}>
                                 Warna
                             </label>
                             <input
@@ -269,8 +270,8 @@ export default function CategoriesPage() {
                                 style={{
                                     width: '100%',
                                     height: '42px',
-                                    backgroundColor: '#0a0a0a',
-                                    border: '1px solid #262626',
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    border: '1px solid var(--border-color)',
                                     cursor: 'pointer',
                                     borderRadius: '6px',
                                 }}
@@ -291,8 +292,8 @@ export default function CategoriesPage() {
                             }}
                             style={{
                                 padding: '10px 16px',
-                                backgroundColor: '#262626',
-                                color: '#fff',
+                                backgroundColor: 'var(--border-color)',
+                                color: 'var(--text-primary)',
                                 border: 'none',
                                 cursor: 'pointer',
                                 borderRadius: '6px',
@@ -307,47 +308,47 @@ export default function CategoriesPage() {
             {/* Categories List grouped by Site */}
             {isLoading ? (
                 <div style={cardStyle}>
-                    <p style={{ color: '#737373', textAlign: 'center', padding: '32px' }}>Memuat...</p>
+                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '32px' }}>Memuat...</p>
                 </div>
             ) : categories.length === 0 ? (
                 <div style={cardStyle}>
-                    <p style={{ color: '#737373', textAlign: 'center', padding: '32px' }}>Belum ada kategori</p>
+                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '32px' }}>Belum ada kategori</p>
                 </div>
             ) : (
                 Object.entries(groupedCategories).map(([siteId, group]) => (
                     <div key={siteId} style={{ ...cardStyle, marginBottom: '24px', padding: 0, overflow: 'hidden' }}>
                         <div style={{
-                            backgroundColor: '#111',
+                            backgroundColor: 'var(--bg-card)',
                             padding: '16px 20px',
-                            borderBottom: '2px solid #333',
+                            borderBottom: '2px solid var(--border-strong)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px'
                         }}>
                             <FiFolder color="#a1a1aa" size={18} />
-                            <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#fff', letterSpacing: '0.05em' }}>
+                            <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
                                 SITUS: {group.siteName.toUpperCase()}
                             </h2>
-                            <span style={{ backgroundColor: '#262626', color: '#a1a1aa', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
+                            <span style={{ backgroundColor: 'var(--border-color)', color: 'var(--text-secondary)', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
                                 {group.categories.length}
                             </span>
                         </div>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid #262626', backgroundColor: '#0a0a0a' }}>
-                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600, width: '80px' }}>
+                                <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
+                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600, width: '80px' }}>
                                         Warna
                                     </th>
-                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600 }}>
+                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
                                         Nama
                                     </th>
-                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600 }}>
+                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
                                         Slug
                                     </th>
-                                    <th style={{ textAlign: 'center', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600 }}>
+                                    <th style={{ textAlign: 'center', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
                                         Pengumuman
                                     </th>
-                                    <th style={{ textAlign: 'right', padding: '12px 20px', color: '#737373', fontSize: '13px', fontWeight: 600 }}>
+                                    <th style={{ textAlign: 'right', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
                                         Aksi
                                     </th>
                                 </tr>
@@ -357,8 +358,8 @@ export default function CategoriesPage() {
                                     <tr
                                         key={category.id}
                                         style={{
-                                            borderBottom: index < group.categories.length - 1 ? '1px solid #1a1a1a' : 'none',
-                                            backgroundColor: '#0a0a0a',
+                                            borderBottom: index < group.categories.length - 1 ? '1px solid var(--bg-tertiary)' : 'none',
+                                            backgroundColor: 'var(--bg-secondary)',
                                             transition: 'background-color 0.2s'
                                         }}
                                     >
@@ -372,8 +373,8 @@ export default function CategoriesPage() {
                                                         style={{
                                                             width: '40px',
                                                             height: '32px',
-                                                            backgroundColor: '#0a0a0a',
-                                                            border: '1px solid #262626',
+                                                            backgroundColor: 'var(--bg-secondary)',
+                                                            border: '1px solid var(--border-color)',
                                                             cursor: 'pointer',
                                                             borderRadius: '4px',
                                                         }}
@@ -387,10 +388,10 @@ export default function CategoriesPage() {
                                                         style={{ ...inputStyle, padding: '8px 12px', borderRadius: '4px' }}
                                                     />
                                                 </td>
-                                                <td style={{ padding: '12px 20px', color: '#525252' }}>
+                                                <td style={{ padding: '12px 20px', color: 'var(--text-tertiary)' }}>
                                                     {category.slug}
                                                 </td>
-                                                <td style={{ padding: '12px 20px', textAlign: 'center', color: '#a3a3a3' }}>
+                                                <td style={{ padding: '12px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                                                     {category._count?.announcements || 0}
                                                 </td>
                                                 <td style={{ padding: '12px 20px', textAlign: 'right' }}>
@@ -400,7 +401,7 @@ export default function CategoriesPage() {
                                                             style={{
                                                                 padding: '8px',
                                                                 backgroundColor: '#16a34a',
-                                                                color: '#fff',
+                                                                color: 'var(--text-primary)',
                                                                 border: 'none',
                                                                 cursor: 'pointer',
                                                                 borderRadius: '4px',
@@ -415,8 +416,8 @@ export default function CategoriesPage() {
                                                             }}
                                                             style={{
                                                                 padding: '8px',
-                                                                backgroundColor: '#262626',
-                                                                color: '#fff',
+                                                                backgroundColor: 'var(--border-color)',
+                                                                color: 'var(--text-primary)',
                                                                 border: 'none',
                                                                 cursor: 'pointer',
                                                                 borderRadius: '4px',
@@ -440,14 +441,14 @@ export default function CategoriesPage() {
                                                         }}
                                                     />
                                                 </td>
-                                                <td style={{ padding: '12px 20px', color: '#fff', fontWeight: 500 }}>
+                                                <td style={{ padding: '12px 20px', color: 'var(--text-primary)', fontWeight: 500 }}>
                                                     {category.name}
                                                 </td>
-                                                <td style={{ padding: '12px 20px', color: '#525252', fontFamily: 'monospace', fontSize: '13px' }}>
+                                                <td style={{ padding: '12px 20px', color: 'var(--text-tertiary)', fontFamily: 'monospace', fontSize: '13px' }}>
                                                     {category.slug}
                                                 </td>
-                                                <td style={{ padding: '12px 20px', textAlign: 'center', color: '#a3a3a3' }}>
-                                                    <span style={{ backgroundColor: '#1a1a1a', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
+                                                <td style={{ padding: '12px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                                    <span style={{ backgroundColor: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
                                                         {category._count?.announcements || 0}
                                                     </span>
                                                 </td>
@@ -458,8 +459,8 @@ export default function CategoriesPage() {
                                                             style={{
                                                                 padding: '8px',
                                                                 backgroundColor: 'transparent',
-                                                                color: '#a3a3a3',
-                                                                border: '1px solid #262626',
+                                                                color: 'var(--text-secondary)',
+                                                                border: '1px solid var(--border-color)',
                                                                 cursor: 'pointer',
                                                                 borderRadius: '4px',
                                                             }}
@@ -467,8 +468,8 @@ export default function CategoriesPage() {
                                                             <FiEdit2 size={14} />
                                                         </button>
                                                         <button
-                                                            onClick={() => {
-                                                                if (confirm(`Hapus kategori "${category.name}"?`)) {
+                                                            onClick={async () => {
+                                                                if (await confirm({ title: "Hapus Kategori", message: `Hapus kategori "${category.name}"?`, variant: "danger" })) {
                                                                     handleDelete(category.id);
                                                                 }
                                                             }}
@@ -476,8 +477,8 @@ export default function CategoriesPage() {
                                                             style={{
                                                                 padding: '8px',
                                                                 backgroundColor: 'transparent',
-                                                                color: '#dc2626',
-                                                                border: '1px solid #262626',
+                                                                color: 'var(--brand-red)',
+                                                                border: '1px solid var(--border-color)',
                                                                 cursor: 'pointer',
                                                                 opacity: deletingId === category.id ? 0.5 : 1,
                                                                 borderRadius: '4px',
@@ -496,6 +497,7 @@ export default function CategoriesPage() {
                     </div>
                 ))
             )}
+            <ConfirmDialog />
         </div>
     );
 }

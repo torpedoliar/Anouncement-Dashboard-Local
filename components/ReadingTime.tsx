@@ -16,7 +16,7 @@ export default function ReadingTime({ content, className }: ReadingTimeProps) {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                color: "#737373",
+                color: "var(--text-muted)",
                 fontSize: "13px",
             }}
         >

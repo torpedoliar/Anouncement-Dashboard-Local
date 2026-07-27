@@ -57,8 +57,8 @@ export default function AnnouncementCard({
     return (
         <Link href={`/${slug}`} style={{ display: 'block' }}>
             <article style={{
-                backgroundColor: '#0a0a0a',
-                border: '1px solid #262626',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
                 height: '100%',
@@ -72,7 +72,7 @@ export default function AnnouncementCard({
                     position: 'relative',
                     aspectRatio: '16/10',
                     overflow: 'hidden',
-                    backgroundColor: '#111',
+                    backgroundColor: 'var(--bg-card)',
                 }}>
                     {thumbnailUrl || videoPath ? (
                         <>
@@ -125,9 +125,9 @@ export default function AnnouncementCard({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            background: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)',
+                            background: 'linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%)',
                         }}>
-                            <span style={{ color: '#333', fontSize: '32px', fontWeight: 'bold' }}>SJA</span>
+                            <span style={{ color: 'var(--border-strong)', fontSize: '32px', fontWeight: 'bold' }}>SJA</span>
                         </div>
                     )}
 
@@ -150,7 +150,7 @@ export default function AnnouncementCard({
                         <span style={{
                             padding: '6px 12px',
                             backgroundColor: category.color,
-                            color: '#fff',
+                            color: 'var(--text-primary)',
                             fontSize: '10px',
                             fontWeight: 700,
                             letterSpacing: '0.1em',
@@ -161,8 +161,8 @@ export default function AnnouncementCard({
                         {isPinned && (
                             <span style={{
                                 padding: '6px 12px',
-                                backgroundColor: '#dc2626',
-                                color: '#fff',
+                                backgroundColor: 'var(--brand-red)',
+                                color: 'var(--text-primary)',
                                 fontSize: '10px',
                                 fontWeight: 700,
                                 letterSpacing: '0.1em',
@@ -180,15 +180,15 @@ export default function AnnouncementCard({
                     padding: '24px',
                     display: 'flex',
                     flexDirection: 'column',
-                    backgroundColor: '#000',
-                    borderTop: '1px solid #1a1a1a',
+                    backgroundColor: 'var(--bg-primary)',
+                    borderTop: '1px solid var(--bg-tertiary)',
                 }}>
                     {/* Meta */}
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        color: '#525252',
+                        color: 'var(--text-tertiary)',
                         fontSize: '12px',
                         marginBottom: '12px',
                     }}>
@@ -206,7 +206,7 @@ export default function AnnouncementCard({
                     <h3 style={{
                         fontFamily: 'Montserrat, sans-serif',
                         fontWeight: 700,
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                         fontSize: '16px',
                         marginBottom: '12px',
                         lineHeight: 1.4,
@@ -217,7 +217,7 @@ export default function AnnouncementCard({
                     {/* Excerpt */}
                     {excerpt && (
                         <p style={{
-                            color: '#737373',
+                            color: 'var(--text-muted)',
                             fontSize: '14px',
                             marginBottom: '16px',
                             flex: 1,
@@ -229,7 +229,7 @@ export default function AnnouncementCard({
 
                     {/* Read More */}
                     <span style={{
-                        color: '#dc2626',
+                        color: 'var(--brand-red)',
                         fontSize: '13px',
                         fontWeight: 700,
                         display: 'inline-flex',

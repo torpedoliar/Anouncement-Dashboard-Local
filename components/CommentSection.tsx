@@ -101,7 +101,7 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
         <section style={{
             marginTop: "64px",
             paddingTop: "48px",
-            borderTop: "1px solid #262626",
+            borderTop: "1px solid var(--border-color)",
         }}>
             <h2 style={{
                 display: "flex",
@@ -110,7 +110,7 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                 fontFamily: "Montserrat, sans-serif",
                 fontSize: "24px",
                 fontWeight: 700,
-                color: "#fff",
+                color: "var(--text-primary)",
                 marginBottom: "32px",
             }}>
                 <FiMessageSquare size={24} />
@@ -119,13 +119,13 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
 
             {/* Comment Form */}
             <form onSubmit={handleSubmit} style={{
-                backgroundColor: "#0a0a0a",
-                border: "1px solid #262626",
+                backgroundColor: "var(--bg-secondary)",
+                border: "1px solid var(--border-color)",
                 padding: "24px",
                 marginBottom: "32px",
             }}>
                 <h3 style={{
-                    color: "#fff",
+                    color: "var(--text-primary)",
                     fontSize: "16px",
                     fontWeight: 600,
                     marginBottom: "20px",
@@ -139,8 +139,8 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                                 marginLeft: "12px",
                                 padding: "4px 8px",
                                 fontSize: "12px",
-                                backgroundColor: "#262626",
-                                color: "#a3a3a3",
+                                backgroundColor: "var(--border-color)",
+                                color: "var(--text-secondary)",
                                 border: "none",
                                 cursor: "pointer",
                             }}
@@ -161,7 +161,7 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                             display: "flex",
                             alignItems: "center",
                             gap: "6px",
-                            color: "#a3a3a3",
+                            color: "var(--text-secondary)",
                             fontSize: "13px",
                             marginBottom: "6px",
                         }}>
@@ -177,11 +177,10 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                             style={{
                                 width: "100%",
                                 padding: "10px 12px",
-                                backgroundColor: "#111",
-                                border: "1px solid #333",
-                                color: "#fff",
+                                backgroundColor: "var(--bg-card)",
+                                border: "1px solid var(--border-strong)",
+                                color: "var(--text-primary)",
                                 fontSize: "14px",
-                                outline: "none",
                             }}
                         />
                     </div>
@@ -190,7 +189,7 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                             display: "flex",
                             alignItems: "center",
                             gap: "6px",
-                            color: "#a3a3a3",
+                            color: "var(--text-secondary)",
                             fontSize: "13px",
                             marginBottom: "6px",
                         }}>
@@ -205,11 +204,10 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                             style={{
                                 width: "100%",
                                 padding: "10px 12px",
-                                backgroundColor: "#111",
-                                border: "1px solid #333",
-                                color: "#fff",
+                                backgroundColor: "var(--bg-card)",
+                                border: "1px solid var(--border-strong)",
+                                color: "var(--text-primary)",
                                 fontSize: "14px",
-                                outline: "none",
                             }}
                         />
                     </div>
@@ -225,24 +223,23 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                         style={{
                             width: "100%",
                             padding: "12px",
-                            backgroundColor: "#111",
-                            border: "1px solid #333",
-                            color: "#fff",
+                            backgroundColor: "var(--bg-card)",
+                            border: "1px solid var(--border-strong)",
+                            color: "var(--text-primary)",
                             fontSize: "14px",
-                            outline: "none",
                             resize: "vertical",
                         }}
                     />
                 </div>
 
                 {error && (
-                    <p style={{ color: "#ef4444", fontSize: "13px", marginBottom: "12px" }}>
+                    <p style={{ color: "var(--color-error)", fontSize: "13px", marginBottom: "12px" }}>
                         {error}
                     </p>
                 )}
 
                 {success && (
-                    <p style={{ color: "#22c55e", fontSize: "13px", marginBottom: "12px" }}>
+                    <p style={{ color: "var(--color-success)", fontSize: "13px", marginBottom: "12px" }}>
                         {success}
                     </p>
                 )}
@@ -255,8 +252,8 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                         alignItems: "center",
                         gap: "8px",
                         padding: "12px 24px",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
+                        backgroundColor: "var(--brand-red)",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         fontWeight: 600,
                         border: "none",
@@ -271,16 +268,16 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
 
             {/* Comments List */}
             {isLoading ? (
-                <div style={{ color: "#525252", textAlign: "center", padding: "32px" }}>
+                <div style={{ color: "var(--text-tertiary)", textAlign: "center", padding: "32px" }}>
                     Memuat komentar...
                 </div>
             ) : comments.length === 0 ? (
                 <div style={{
-                    color: "#525252",
+                    color: "var(--text-tertiary)",
                     textAlign: "center",
                     padding: "48px",
-                    backgroundColor: "#0a0a0a",
-                    border: "1px solid #1a1a1a",
+                    backgroundColor: "var(--bg-secondary)",
+                    border: "1px solid var(--bg-tertiary)",
                 }}>
                     <FiMessageSquare size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
                     <p>Belum ada komentar. Jadilah yang pertama!</p>
@@ -311,8 +308,8 @@ interface CommentCardProps {
 function CommentCard({ comment, formatDate, onReply, isReply }: CommentCardProps) {
     return (
         <div style={{
-            backgroundColor: isReply ? "#111" : "#0a0a0a",
-            border: "1px solid #262626",
+            backgroundColor: isReply ? "var(--bg-card)" : "var(--bg-secondary)",
+            border: "1px solid var(--border-color)",
             padding: "20px",
             marginLeft: isReply ? "32px" : 0,
         }}>
@@ -323,10 +320,10 @@ function CommentCard({ comment, formatDate, onReply, isReply }: CommentCardProps
                 marginBottom: "12px",
             }}>
                 <div>
-                    <span style={{ color: "#fff", fontWeight: 600, fontSize: "15px" }}>
+                    <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "15px" }}>
                         {comment.authorName}
                     </span>
-                    <span style={{ color: "#525252", fontSize: "13px", marginLeft: "12px" }}>
+                    <span style={{ color: "var(--text-tertiary)", fontSize: "13px", marginLeft: "12px" }}>
                         {formatDate(comment.createdAt)}
                     </span>
                 </div>
@@ -339,9 +336,9 @@ function CommentCard({ comment, formatDate, onReply, isReply }: CommentCardProps
                             gap: "4px",
                             padding: "4px 8px",
                             backgroundColor: "transparent",
-                            color: "#737373",
+                            color: "var(--text-muted)",
                             fontSize: "12px",
-                            border: "1px solid #333",
+                            border: "1px solid var(--border-strong)",
                             cursor: "pointer",
                         }}
                     >

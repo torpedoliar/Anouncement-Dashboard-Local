@@ -90,7 +90,7 @@ export default function AnalyticsDashboard() {
                 alignItems: "center",
                 minHeight: "400px",
             }}>
-                <FiLoader size={32} style={{ color: "#dc2626", animation: "spin 1s linear infinite" }} />
+                <FiLoader size={32} style={{ color: "var(--brand-red)", animation: "spin 1s linear infinite" }} />
             </div>
         );
     }
@@ -110,7 +110,7 @@ export default function AnalyticsDashboard() {
             }}>
                 <div>
                     <p style={{
-                        color: "#dc2626",
+                        color: "var(--brand-red)",
                         fontSize: "11px",
                         fontWeight: 600,
                         letterSpacing: "0.2em",
@@ -122,7 +122,7 @@ export default function AnalyticsDashboard() {
                         fontFamily: "Montserrat, sans-serif",
                         fontSize: "24px",
                         fontWeight: 700,
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         display: "flex",
                         alignItems: "center",
                         gap: "12px",
@@ -135,9 +135,9 @@ export default function AnalyticsDashboard() {
                     onChange={(e) => setDays(Number(e.target.value))}
                     style={{
                         padding: "10px 16px",
-                        backgroundColor: "#0a0a0a",
-                        border: "1px solid #262626",
-                        color: "#fff",
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-color)",
+                        color: "var(--text-primary)",
                         fontSize: "13px",
                         cursor: "pointer",
                     }}
@@ -155,13 +155,13 @@ export default function AnalyticsDashboard() {
                     alignItems: "center",
                     gap: "12px",
                     padding: "16px 20px",
-                    backgroundColor: "#1a1a1a",
-                    border: "1px solid #333",
+                    backgroundColor: "var(--bg-tertiary)",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: "8px",
                     marginBottom: "24px",
                 }}>
                     <FiAlertCircle size={20} color="#737373" />
-                    <p style={{ color: "#a3a3a3", fontSize: "12px" }}>
+                    <p style={{ color: "var(--text-secondary)", fontSize: "12px" }}>
                         Data menggunakan estimasi dari total views.
                     </p>
                 </div>
@@ -202,12 +202,12 @@ export default function AnalyticsDashboard() {
             }}>
                 {/* Line Chart - Daily Views */}
                 <div style={{
-                    backgroundColor: "#0a0a0a",
-                    border: "1px solid #262626",
+                    backgroundColor: "var(--bg-secondary)",
+                    border: "1px solid var(--border-color)",
                     padding: "24px",
                 }}>
                     <h3 style={{
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         fontWeight: 600,
                         marginBottom: "24px",
@@ -220,11 +220,11 @@ export default function AnalyticsDashboard() {
                                 <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
                                 <XAxis
                                     dataKey="date"
-                                    stroke="#525252"
+                                    stroke="var(--text-muted)"
                                     fontSize={11}
                                     tickFormatter={(value) => value.slice(5)}
                                 />
-                                <YAxis stroke="#525252" fontSize={11} />
+                                <YAxis stroke="var(--text-muted)" fontSize={11} />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: "#171717",
@@ -250,12 +250,12 @@ export default function AnalyticsDashboard() {
 
                 {/* Bar Chart - Top Articles */}
                 <div style={{
-                    backgroundColor: "#0a0a0a",
-                    border: "1px solid #262626",
+                    backgroundColor: "var(--bg-secondary)",
+                    border: "1px solid var(--border-color)",
                     padding: "24px",
                 }}>
                     <h3 style={{
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         fontWeight: 600,
                         marginBottom: "24px",
@@ -266,11 +266,11 @@ export default function AnalyticsDashboard() {
                         <ResponsiveContainer width="100%" height={250}>
                             <BarChart data={data.topArticles.slice(0, 10)} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                                <XAxis type="number" stroke="#525252" fontSize={11} />
+                                <XAxis type="number" stroke="var(--text-muted)" fontSize={11} />
                                 <YAxis
                                     type="category"
                                     dataKey="title"
-                                    stroke="#525252"
+                                    stroke="var(--text-muted)"
                                     fontSize={10}
                                     width={120}
                                     tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + "..." : value}
@@ -292,12 +292,12 @@ export default function AnalyticsDashboard() {
 
                 {/* Pie Chart - Category Distribution */}
                 <div style={{
-                    backgroundColor: "#0a0a0a",
-                    border: "1px solid #262626",
+                    backgroundColor: "var(--bg-secondary)",
+                    border: "1px solid var(--border-color)",
                     padding: "24px",
                 }}>
                     <h3 style={{
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         fontWeight: 600,
                         marginBottom: "24px",
@@ -337,12 +337,12 @@ export default function AnalyticsDashboard() {
 
                 {/* Top Articles List */}
                 <div style={{
-                    backgroundColor: "#0a0a0a",
-                    border: "1px solid #262626",
+                    backgroundColor: "var(--bg-secondary)",
+                    border: "1px solid var(--border-color)",
                     padding: "24px",
                 }}>
                     <h3 style={{
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         fontWeight: 600,
                         marginBottom: "24px",
@@ -359,7 +359,7 @@ export default function AnalyticsDashboard() {
                                         alignItems: "center",
                                         gap: "12px",
                                         padding: "12px",
-                                        backgroundColor: "#111",
+                                        backgroundColor: "var(--bg-card)",
                                         borderRadius: "8px",
                                     }}
                                 >
@@ -369,8 +369,8 @@ export default function AnalyticsDashboard() {
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        backgroundColor: index === 0 ? "#dc2626" : "#262626",
-                                        color: "#fff",
+                                        backgroundColor: index === 0 ? "var(--brand-red)" : "var(--border-color)",
+                                        color: "var(--text-primary)",
                                         fontSize: "12px",
                                         fontWeight: 600,
                                         borderRadius: "6px",
@@ -379,7 +379,7 @@ export default function AnalyticsDashboard() {
                                     </span>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <p style={{
-                                            color: "#fff",
+                                            color: "var(--text-primary)",
                                             fontSize: "13px",
                                             fontWeight: 500,
                                             overflow: "hidden",
@@ -394,7 +394,7 @@ export default function AnalyticsDashboard() {
                                             </span>
                                         )}
                                     </div>
-                                    <span style={{ color: "#737373", fontSize: "13px", fontWeight: 600 }}>
+                                    <span style={{ color: "var(--text-muted)", fontSize: "13px", fontWeight: 600 }}>
                                         {article.views} views
                                     </span>
                                 </div>
@@ -442,10 +442,10 @@ function SummaryCard({ icon: Icon, label, value, color }: {
                     <Icon size={20} />
                 </div>
             </div>
-            <p style={{ color: "#737373", fontSize: "11px", letterSpacing: "0.1em", marginBottom: "4px" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "11px", letterSpacing: "0.1em", marginBottom: "4px" }}>
                 {label}
             </p>
-            <p style={{ color: "#fff", fontSize: "28px", fontWeight: 700 }}>
+            <p style={{ color: "var(--text-primary)", fontSize: "28px", fontWeight: 700 }}>
                 {value.toLocaleString()}
             </p>
         </div>
@@ -459,9 +459,9 @@ function EmptyChartMessage({ message }: { message: string }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#525252",
+            color: "var(--text-tertiary)",
             fontSize: "14px",
-            backgroundColor: "#111",
+            backgroundColor: "var(--bg-card)",
             borderRadius: "8px",
         }}>
             {message}

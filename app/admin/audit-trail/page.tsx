@@ -149,24 +149,24 @@ export default function AuditTrailPage() {
             {/* Header */}
             <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                    <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
                         AUDIT TRAIL
                     </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff" }}>
+                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
                         Audit Trail
                     </h1>
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
                     <button onClick={() => handleExport("csv")} style={{
                         display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px",
-                        backgroundColor: "transparent", border: "1px solid #262626", color: "#a1a1aa",
+                        backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--text-secondary)",
                         fontSize: "13px", cursor: "pointer", borderRadius: "4px",
                     }}>
                         <FiDownload size={14} /> CSV
                     </button>
                     <button onClick={() => handleExport("json")} style={{
                         display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px",
-                        backgroundColor: "transparent", border: "1px solid #262626", color: "#a1a1aa",
+                        backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--text-secondary)",
                         fontSize: "13px", cursor: "pointer", borderRadius: "4px",
                     }}>
                         <FiDownload size={14} /> JSON
@@ -177,7 +177,7 @@ export default function AuditTrailPage() {
             {/* Filters */}
             <div style={{
                 display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "24px",
-                padding: "16px", backgroundColor: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: "8px",
+                padding: "16px", backgroundColor: "var(--bg-secondary)", border: "1px solid var(--bg-tertiary)", borderRadius: "8px",
             }}>
                 <FiFilter size={16} color="#737373" style={{ marginTop: "8px" }} />
                 <select value={filters.actorType} onChange={(e) => { setFilters({ ...filters, actorType: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle}>
@@ -229,26 +229,26 @@ export default function AuditTrailPage() {
                 <input type="date" value={filters.from} onChange={(e) => { setFilters({ ...filters, from: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle} />
                 <input type="date" value={filters.to} onChange={(e) => { setFilters({ ...filters, to: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle} />
                 <button onClick={resetFilters} style={{
-                    padding: "8px 16px", backgroundColor: "transparent", border: "1px solid #262626",
-                    color: "#737373", fontSize: "13px", cursor: "pointer", borderRadius: "4px",
+                    padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--border-color)",
+                    color: "var(--text-muted)", fontSize: "13px", cursor: "pointer", borderRadius: "4px",
                 }}>Reset</button>
             </div>
 
             {/* Table */}
             {isLoading ? (
-                <div style={{ padding: "64px", textAlign: "center", color: "#525252" }}>Loading...</div>
+                <div style={{ padding: "64px", textAlign: "center", color: "var(--text-tertiary)" }}>Loading...</div>
             ) : logs.length === 0 ? (
-                <div style={{ padding: "64px", textAlign: "center", backgroundColor: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: "8px" }}>
+                <div style={{ padding: "64px", textAlign: "center", backgroundColor: "var(--bg-secondary)", border: "1px solid var(--bg-tertiary)", borderRadius: "8px" }}>
                     <FiActivity size={48} color="#262626" style={{ marginBottom: "16px" }} />
-                    <p style={{ color: "#525252" }}>Belum ada audit log</p>
+                    <p style={{ color: "var(--text-tertiary)" }}>Belum ada audit log</p>
                 </div>
             ) : (
-                <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", overflow: "hidden" }}>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <thead>
-                            <tr style={{ borderBottom: "2px solid #333", backgroundColor: "#111" }}>
+                            <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
                                 {["WAKTU", "ACTOR", "KATEGORI", "AKSI", "ENTITY", "OUTCOME", "IP", "DETAIL"].map((h) => (
-                                    <th key={h} style={{ padding: "14px 16px", textAlign: "left", color: "#a1a1aa", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em" }}>{h}</th>
+                                    <th key={h} style={{ padding: "14px 16px", textAlign: "left", color: "var(--text-secondary)", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em" }}>{h}</th>
                                 ))}
                             </tr>
                         </thead>
@@ -258,22 +258,22 @@ export default function AuditTrailPage() {
                                 const outcomeBadge = getOutcomeBadge(log.outcome);
                                 const isExpanded = expandedId === log.id;
                                 return (
-                                    <tr key={log.id} style={{ borderBottom: i < logs.length - 1 ? "1px solid #262626" : "none" }}>
+                                    <tr key={log.id} style={{ borderBottom: i < logs.length - 1 ? "1px solid var(--border-color)" : "none" }}>
                                         <td style={{ padding: "14px 16px", color: "#71717a", fontSize: "13px", whiteSpace: "nowrap" }}>{formatDate(log.createdAt)}</td>
                                         <td style={{ padding: "14px 16px" }}>
                                             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                                                 <span style={{ padding: "2px 8px", backgroundColor: actorBadge.bg, color: actorBadge.color, fontSize: "11px", fontWeight: 700, borderRadius: "4px", width: "fit-content" }}>{log.actorType}</span>
-                                                <span style={{ color: "#fff", fontSize: "13px" }}>{log.actorName || "-"}</span>
-                                                <span style={{ color: "#525252", fontSize: "12px" }}>{log.actorEmail || ""}</span>
+                                                <span style={{ color: "var(--text-primary)", fontSize: "13px" }}>{log.actorName || "-"}</span>
+                                                <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{log.actorEmail || ""}</span>
                                             </div>
                                         </td>
-                                        <td style={{ padding: "14px 16px", color: "#a1a1aa", fontSize: "13px" }}>{log.category}</td>
+                                        <td style={{ padding: "14px 16px", color: "var(--text-secondary)", fontSize: "13px" }}>{log.category}</td>
                                         <td style={{ padding: "14px 16px" }}>
                                             <span style={{ padding: "4px 10px", backgroundColor: "rgba(115, 115, 115, 0.2)", color: "#d4d4d4", fontSize: "12px", fontWeight: 600, borderRadius: "4px" }}>{log.action}</span>
                                         </td>
-                                        <td style={{ padding: "14px 16px", color: "#a1a1aa", fontSize: "13px" }}>
+                                        <td style={{ padding: "14px 16px", color: "var(--text-secondary)", fontSize: "13px" }}>
                                             <div>{log.entityType}</div>
-                                            {log.entityId && <div style={{ color: "#525252", fontSize: "12px" }}>{log.entityId.substring(0, 12)}...</div>}
+                                            {log.entityId && <div style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{log.entityId.substring(0, 12)}...</div>}
                                         </td>
                                         <td style={{ padding: "14px 16px" }}>
                                             <span style={{ padding: "4px 10px", backgroundColor: outcomeBadge.bg, color: outcomeBadge.color, fontSize: "12px", fontWeight: 700, borderRadius: "4px" }}>{log.outcome}</span>
@@ -281,10 +281,10 @@ export default function AuditTrailPage() {
                                                 <span style={{ marginLeft: "6px", color: getSeverityColor(log.severity), fontSize: "11px", fontWeight: 600 }}>{log.severity}</span>
                                             )}
                                         </td>
-                                        <td style={{ padding: "14px 16px", color: "#525252", fontSize: "12px" }}>{log.ipAddress || "-"}</td>
+                                        <td style={{ padding: "14px 16px", color: "var(--text-tertiary)", fontSize: "12px" }}>{log.ipAddress || "-"}</td>
                                         <td style={{ padding: "14px 16px" }}>
                                             <button onClick={() => setExpandedId(isExpanded ? null : log.id)} style={{
-                                                background: "none", border: "1px solid #262626", color: "#737373",
+                                                background: "none", border: "1px solid var(--border-color)", color: "var(--text-muted)",
                                                 cursor: "pointer", padding: "4px 8px", borderRadius: "4px", fontSize: "12px",
                                                 display: "flex", alignItems: "center", gap: "4px",
                                             }}>
@@ -303,18 +303,18 @@ export default function AuditTrailPage() {
                         const changes = parseJSON(log.changes);
                         const metadata = parseJSON(log.metadata);
                         return (
-                            <div key={`detail-${log.id}`} style={{ padding: "20px", borderTop: "1px solid #262626", backgroundColor: "#0d0d0d" }}>
+                            <div key={`detail-${log.id}`} style={{ padding: "20px", borderTop: "1px solid var(--border-color)", backgroundColor: "#0d0d0d" }}>
                                 {log.errorMessage && (
                                     <div style={{ marginBottom: "12px" }}>
-                                        <span style={{ color: "#dc2626", fontSize: "12px", fontWeight: 600 }}>Error: </span>
+                                        <span style={{ color: "var(--brand-red)", fontSize: "12px", fontWeight: 600 }}>Error: </span>
                                         <span style={{ color: "#fca5a5", fontSize: "13px" }}>{log.errorMessage}</span>
                                     </div>
                                 )}
                                 {changes && (
                                     <div style={{ marginBottom: "12px" }}>
-                                        <span style={{ color: "#a1a1aa", fontSize: "12px", fontWeight: 600 }}>Changes:</span>
+                                        <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600 }}>Changes:</span>
                                         <pre style={{
-                                            marginTop: "6px", padding: "12px", backgroundColor: "#111", border: "1px solid #262626",
+                                            marginTop: "6px", padding: "12px", backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)",
                                             borderRadius: "4px", color: "#d4d4d4", fontSize: "12px", overflowX: "auto",
                                             whiteSpace: "pre-wrap", wordBreak: "break-all",
                                         }}>{JSON.stringify(changes, null, 2)}</pre>
@@ -322,9 +322,9 @@ export default function AuditTrailPage() {
                                 )}
                                 {metadata && (
                                     <div>
-                                        <span style={{ color: "#a1a1aa", fontSize: "12px", fontWeight: 600 }}>Metadata:</span>
+                                        <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600 }}>Metadata:</span>
                                         <pre style={{
-                                            marginTop: "6px", padding: "12px", backgroundColor: "#111", border: "1px solid #262626",
+                                            marginTop: "6px", padding: "12px", backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)",
                                             borderRadius: "4px", color: "#d4d4d4", fontSize: "12px", overflowX: "auto",
                                             whiteSpace: "pre-wrap", wordBreak: "break-all",
                                         }}>{JSON.stringify(metadata, null, 2)}</pre>
@@ -332,8 +332,8 @@ export default function AuditTrailPage() {
                                 )}
                                 {log.userAgent && (
                                     <div style={{ marginTop: "8px" }}>
-                                        <span style={{ color: "#a1a1aa", fontSize: "12px", fontWeight: 600 }}>User-Agent: </span>
-                                        <span style={{ color: "#525252", fontSize: "12px" }}>{log.userAgent}</span>
+                                        <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600 }}>User-Agent: </span>
+                                        <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{log.userAgent}</span>
                                     </div>
                                 )}
                             </div>
@@ -342,16 +342,16 @@ export default function AuditTrailPage() {
 
                     {/* Pagination */}
                     {pagination.totalPages > 1 && (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", borderTop: "1px solid #1a1a1a" }}>
-                            <span style={{ color: "#525252", fontSize: "13px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", borderTop: "1px solid var(--bg-tertiary)" }}>
+                            <span style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>
                                 {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total}
                             </span>
                             <div style={{ display: "flex", gap: "8px" }}>
-                                <button onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })} disabled={pagination.page === 1} style={{ padding: "8px 12px", backgroundColor: "transparent", border: "1px solid #262626", color: pagination.page === 1 ? "#333" : "#737373", cursor: pagination.page === 1 ? "not-allowed" : "pointer", borderRadius: "4px" }}>
+                                <button onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })} disabled={pagination.page === 1} style={{ padding: "8px 12px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: pagination.page === 1 ? "var(--border-strong)" : "var(--text-muted)", cursor: pagination.page === 1 ? "not-allowed" : "pointer", borderRadius: "4px" }}>
                                     <FiChevronLeft size={14} />
                                 </button>
-                                <span style={{ color: "#525252", fontSize: "13px", padding: "8px 12px" }}>{pagination.page} / {pagination.totalPages}</span>
-                                <button onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })} disabled={pagination.page === pagination.totalPages} style={{ padding: "8px 12px", backgroundColor: "transparent", border: "1px solid #262626", color: pagination.page === pagination.totalPages ? "#333" : "#737373", cursor: pagination.page === pagination.totalPages ? "not-allowed" : "pointer", borderRadius: "4px" }}>
+                                <span style={{ color: "var(--text-tertiary)", fontSize: "13px", padding: "8px 12px" }}>{pagination.page} / {pagination.totalPages}</span>
+                                <button onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })} disabled={pagination.page === pagination.totalPages} style={{ padding: "8px 12px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: pagination.page === pagination.totalPages ? "var(--border-strong)" : "var(--text-muted)", cursor: pagination.page === pagination.totalPages ? "not-allowed" : "pointer", borderRadius: "4px" }}>
                                     <FiChevronRight size={14} />
                                 </button>
                             </div>

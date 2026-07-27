@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiShield, FiUser, FiZap } from "react-icons/fi";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/contexts/ToastContext";
 
 interface Site {
     id: string;
@@ -23,6 +25,8 @@ export default function UsersPage() {
     const [sites, setSites] = useState<Site[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const { showToast } = useToast();
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [formData, setFormData] = useState({
         name: "",
@@ -109,9 +113,7 @@ export default function UsersPage() {
         }
     };
 
-    const handleDelete = async (user: User) => {
-        if (!confirm(`Are you sure you want to delete ${user.name}?`)) return;
-
+    const executeDelete = async (user: User) => {
         try {
             const response = await fetch(`/api/users/${user.id}`, {
                 method: "DELETE",
@@ -119,13 +121,14 @@ export default function UsersPage() {
 
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Failed to delete user");
+                showToast(data.error || "Failed to delete user", "error");
                 return;
             }
-
+            
+            showToast("User berhasil dihapus", "success");
             fetchUsers();
         } catch {
-            alert("An error occurred");
+            showToast("An error occurred", "error");
         }
     };
 
@@ -200,7 +203,7 @@ export default function UsersPage() {
     if (isLoading) {
         return (
             <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "#525252" }}>Loading...</p>
+                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
             </div>
         );
     }
@@ -210,10 +213,10 @@ export default function UsersPage() {
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
                 <div>
-                    <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
                         PENGGUNA
                     </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff" }}>
+                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
                         Manajemen User
                     </h1>
                 </div>
@@ -224,8 +227,8 @@ export default function UsersPage() {
                         alignItems: "center",
                         gap: "8px",
                         padding: "12px 24px",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
+                        backgroundColor: "var(--brand-red)",
+                        color: "var(--text-primary)",
                         fontSize: "13px",
                         fontWeight: 600,
                         border: "none",
@@ -238,24 +241,24 @@ export default function UsersPage() {
             </div>
 
             {/* Users Table */}
-            <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", overflow: "hidden" }}>
+            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                        <tr style={{ borderBottom: "2px solid #333", backgroundColor: "#111" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>NAMA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>EMAIL</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>ROLE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>SITUS (AKSES)</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>DIBUAT</th>
-                            <th style={{ padding: "20px", textAlign: "right", color: "#a1a1aa", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>AKSI</th>
+                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>NAMA</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>EMAIL</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>ROLE</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>SITUS (AKSES)</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>DIBUAT</th>
+                            <th style={{ padding: "20px", textAlign: "right", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
                         {users.map((user, index) => {
                             const badge = getRoleBadge(user);
                             return (
-                                <tr key={user.id} style={{ borderBottom: index < users.length - 1 ? "1px solid #262626" : "none", transition: "background-color 0.2s" }}>
-                                    <td style={{ padding: "20px", color: "#fff", fontSize: "15px", fontWeight: 500 }}>
+                                <tr key={user.id} style={{ borderBottom: index < users.length - 1 ? "1px solid var(--border-color)" : "none", transition: "background-color 0.2s" }}>
+                                    <td style={{ padding: "20px", color: "var(--text-primary)", fontSize: "15px", fontWeight: 500 }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                                             <div style={{
                                                 width: "40px",
@@ -272,7 +275,7 @@ export default function UsersPage() {
                                             {user.name}
                                         </div>
                                     </td>
-                                    <td style={{ padding: "20px", color: "#a1a1aa", fontSize: "14px" }}>{user.email}</td>
+                                    <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "14px" }}>{user.email}</td>
                                     <td style={{ padding: "20px" }}>
                                         <span style={{
                                             padding: "6px 14px",
@@ -286,7 +289,7 @@ export default function UsersPage() {
                                             {badge.label}
                                         </span>
                                     </td>
-                                    <td style={{ padding: "20px", color: "#a1a1aa", fontSize: "13px" }}>
+                                    <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "13px" }}>
                                         {user.isSuperAdmin ? (
                                             <span style={{ fontStyle: "italic" }}>Semua Situs</span>
                                         ) : user.siteIds && user.siteIds.length > 0 ? (
@@ -294,14 +297,14 @@ export default function UsersPage() {
                                                 {user.siteIds.map(id => {
                                                     const siteName = sites.find(s => s.id === id)?.name || "Unknown";
                                                     return (
-                                                        <span key={id} style={{ padding: "2px 6px", backgroundColor: "#262626", borderRadius: "4px", fontSize: "11px" }}>
+                                                        <span key={id} style={{ padding: "2px 6px", backgroundColor: "var(--border-color)", borderRadius: "4px", fontSize: "11px" }}>
                                                             {siteName}
                                                         </span>
                                                     );
                                                 })}
                                             </div>
                                         ) : (
-                                            <span style={{ color: "#ef4444" }}>Tidak ada akses</span>
+                                            <span style={{ color: "var(--color-error)" }}>Tidak ada akses</span>
                                         )}
                                     </td>
                                     <td style={{ padding: "20px", color: "#71717a", fontSize: "14px" }}>{formatDate(user.createdAt)}</td>
@@ -311,8 +314,8 @@ export default function UsersPage() {
                                             style={{
                                                 padding: "8px",
                                                 backgroundColor: "transparent",
-                                                border: "1px solid #262626",
-                                                color: "#737373",
+                                                border: "1px solid var(--border-color)",
+                                                color: "var(--text-muted)",
                                                 cursor: "pointer",
                                                 marginRight: "8px",
                                             }}
@@ -320,12 +323,12 @@ export default function UsersPage() {
                                             <FiEdit2 size={14} />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(user)}
+                                            onClick={() => setUserToDelete(user)}
                                             style={{
                                                 padding: "8px",
                                                 backgroundColor: "transparent",
-                                                border: "1px solid #262626",
-                                                color: "#dc2626",
+                                                border: "1px solid var(--border-color)",
+                                                color: "var(--brand-red)",
                                                 cursor: "pointer",
                                             }}
                                         >
@@ -351,8 +354,8 @@ export default function UsersPage() {
                     zIndex: 50,
                 }}>
                     <div style={{
-                        backgroundColor: "#0a0a0a",
-                        border: "1px solid #262626",
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-color)",
                         width: "100%",
                         maxWidth: "400px",
                         padding: "24px",
@@ -360,23 +363,23 @@ export default function UsersPage() {
                         overflowY: "auto"
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#fff" }}>
+                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
                                 {editingUser ? "Edit User" : "Tambah User"}
                             </h2>
-                            <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", color: "#737373", cursor: "pointer" }}>
+                            <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
                                 <FiX size={20} />
                             </button>
                         </div>
 
                         {error && (
-                            <div style={{ padding: "12px", backgroundColor: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "#ef4444", fontSize: "14px", marginBottom: "16px" }}>
+                            <div style={{ padding: "12px", backgroundColor: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "var(--color-error)", fontSize: "14px", marginBottom: "16px" }}>
                                 {error}
                             </div>
                         )}
 
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NAMA</label>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NAMA</label>
                                 <input
                                     type="text"
                                     value={formData.name}
@@ -385,15 +388,15 @@ export default function UsersPage() {
                                     style={{
                                         width: "100%",
                                         padding: "12px",
-                                        backgroundColor: "#111",
-                                        border: "1px solid #262626",
-                                        color: "#fff",
+                                        backgroundColor: "var(--bg-card)",
+                                        border: "1px solid var(--border-color)",
+                                        color: "var(--text-primary)",
                                         fontSize: "14px",
                                     }}
                                 />
                             </div>
                             <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>EMAIL</label>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>EMAIL</label>
                                 <input
                                     type="email"
                                     value={formData.email}
@@ -402,15 +405,15 @@ export default function UsersPage() {
                                     style={{
                                         width: "100%",
                                         padding: "12px",
-                                        backgroundColor: "#111",
-                                        border: "1px solid #262626",
-                                        color: "#fff",
+                                        backgroundColor: "var(--bg-card)",
+                                        border: "1px solid var(--border-color)",
+                                        color: "var(--text-primary)",
                                         fontSize: "14px",
                                     }}
                                 />
                             </div>
                             <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
                                     PASSWORD {editingUser && "(kosongkan jika tidak ingin mengubah)"}
                                 </label>
                                 <input
@@ -421,24 +424,24 @@ export default function UsersPage() {
                                     style={{
                                         width: "100%",
                                         padding: "12px",
-                                        backgroundColor: "#111",
-                                        border: "1px solid #262626",
-                                        color: "#fff",
+                                        backgroundColor: "var(--bg-card)",
+                                        border: "1px solid var(--border-color)",
+                                        color: "var(--text-primary)",
                                         fontSize: "14px",
                                     }}
                                 />
                             </div>
                             <div style={{ marginBottom: "24px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>ROLE</label>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>ROLE</label>
                                 <select
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
                                     style={{
                                         width: "100%",
                                         padding: "12px",
-                                        backgroundColor: "#111",
-                                        border: "1px solid #262626",
-                                        color: "#fff",
+                                        backgroundColor: "var(--bg-card)",
+                                        border: "1px solid var(--border-color)",
+                                        color: "var(--text-primary)",
                                         fontSize: "14px",
                                     }}
                                 >
@@ -450,10 +453,10 @@ export default function UsersPage() {
                             
                             {formData.role !== "SUPER_ADMIN" && (
                                 <div style={{ marginBottom: "24px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>AKSES SITUS (Hanya beri centang untuk diizinkan)</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>AKSES SITUS (Hanya beri centang untuk diizinkan)</label>
                                     <div style={{
-                                        border: "1px solid #262626",
-                                        backgroundColor: "#111",
+                                        border: "1px solid var(--border-color)",
+                                        backgroundColor: "var(--bg-card)",
                                         padding: "12px",
                                         maxHeight: "150px",
                                         overflowY: "auto",
@@ -462,7 +465,7 @@ export default function UsersPage() {
                                         gap: "8px"
                                     }}>
                                         {sites.length === 0 ? (
-                                            <span style={{ color: "#a3a3a3", fontSize: "13px" }}>Tidak ada situs tersedia</span>
+                                            <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>Tidak ada situs tersedia</span>
                                         ) : (
                                             sites.map(site => (
                                                 <label key={site.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#e5e5e5", fontSize: "14px" }}>
@@ -470,7 +473,7 @@ export default function UsersPage() {
                                                         type="checkbox" 
                                                         checked={formData.siteIds.includes(site.id)}
                                                         onChange={() => handleSiteToggle(site.id)}
-                                                        style={{ accentColor: "#dc2626" }}
+                                                        style={{ accentColor: "var(--brand-red)" }}
                                                     />
                                                     {site.name}
                                                 </label>
@@ -486,8 +489,8 @@ export default function UsersPage() {
                                 style={{
                                     width: "100%",
                                     padding: "12px",
-                                    backgroundColor: "#dc2626",
-                                    color: "#fff",
+                                    backgroundColor: "var(--brand-red)",
+                                    color: "var(--text-primary)",
                                     fontSize: "13px",
                                     fontWeight: 600,
                                     border: "none",
@@ -501,6 +504,20 @@ export default function UsersPage() {
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={!!userToDelete}
+                title="Hapus Pengguna"
+                message={`Yakin ingin menghapus ${userToDelete?.name}?`}
+                confirmLabel="Hapus"
+                cancelLabel="Batal"
+                variant="danger"
+                onConfirm={() => {
+                    if (userToDelete) executeDelete(userToDelete);
+                    setUserToDelete(null);
+                }}
+                onCancel={() => setUserToDelete(null)}
+            />
         </div>
     );
 }

@@ -33,7 +33,7 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
             href={`/site/${site.slug}`}
             style={{
                 display: "block",
-                backgroundColor: "#111",
+                backgroundColor: "var(--bg-card)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: "16px",
                 padding: "28px",
@@ -103,7 +103,7 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
                 style={{
                     fontSize: "20px",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--text-primary)",
                     marginBottom: "8px",
                 }}
             >
@@ -115,7 +115,7 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
                 <p
                     style={{
                         fontSize: "14px",
-                        color: "#888",
+                        color: "var(--text-muted)",
                         marginBottom: "20px",
                         lineHeight: 1.5,
                         display: "-webkit-box",
@@ -142,7 +142,7 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
                         alignItems: "center",
                         gap: "6px",
                         fontSize: "13px",
-                        color: "#666",
+                        color: "var(--text-tertiary)",
                     }}
                 >
                     <FiFileText size={14} />
@@ -154,7 +154,7 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
                         alignItems: "center",
                         gap: "6px",
                         fontSize: "13px",
-                        color: "#666",
+                        color: "var(--text-tertiary)",
                     }}
                 >
                     <FiTag size={14} />

@@ -19,7 +19,7 @@ export default async function AdminLayout({
     return (
         <div style={{
             minHeight: '100vh',
-            backgroundColor: '#000000',
+            backgroundColor: 'var(--bg-primary)',
             display: 'flex',
         }}>
             {/* Sidebar */}

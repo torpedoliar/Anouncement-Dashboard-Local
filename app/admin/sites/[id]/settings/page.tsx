@@ -135,8 +135,8 @@ export default function SiteSettingsPage() {
                     right: '24px',
                     padding: '12px 20px',
                     borderRadius: '8px',
-                    backgroundColor: message.type === 'success' ? '#22c55e' : '#ef4444',
-                    color: '#fff',
+                    backgroundColor: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
+                    color: 'var(--text-primary)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
@@ -158,7 +158,7 @@ export default function SiteSettingsPage() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        color: '#a3a3a3',
+                        color: 'var(--text-secondary)',
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
@@ -171,10 +171,10 @@ export default function SiteSettingsPage() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', marginBottom: '8px' }}>
+                        <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '8px' }}>
                             Pengaturan Site
                         </h1>
-                        <p style={{ color: '#a3a3a3', fontSize: '14px' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
                             Konfigurasi tampilan dan fitur untuk site ini
                         </p>
                     </div>
@@ -185,8 +185,8 @@ export default function SiteSettingsPage() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            backgroundColor: '#dc2626',
-                            color: '#fff',
+                            backgroundColor: 'var(--brand-red)',
+                            color: 'var(--text-primary)',
                             border: 'none',
                             padding: '10px 20px',
                             borderRadius: '6px',
@@ -210,7 +210,7 @@ export default function SiteSettingsPage() {
             <div style={{
                 display: 'flex',
                 gap: '24px',
-                borderBottom: '1px solid #262626',
+                borderBottom: '1px solid var(--border-color)',
                 marginBottom: '32px'
             }}>
                 {[
@@ -227,9 +227,9 @@ export default function SiteSettingsPage() {
                             gap: '8px',
                             background: 'none',
                             border: 'none',
-                            borderBottom: activeTab === tab.id ? '2px solid #dc2626' : '2px solid transparent',
+                            borderBottom: activeTab === tab.id ? '2px solid var(--brand-red)' : '2px solid transparent',
                             padding: '12px 4px',
-                            color: activeTab === tab.id ? '#fff' : '#a3a3a3',
+                            color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
                             cursor: 'pointer',
                             fontWeight: activeTab === tab.id ? 600 : 400,
                             marginBottom: '-1px',
@@ -242,7 +242,7 @@ export default function SiteSettingsPage() {
             </div>
 
             {/* Content */}
-            <div style={{ backgroundColor: '#171717', borderRadius: '8px', padding: '24px', border: '1px solid #262626' }}>
+            <div style={{ backgroundColor: 'var(--bg-hover)', borderRadius: '8px', padding: '24px', border: '1px solid var(--border-color)' }}>
 
                 {/* General Tab */}
                 {activeTab === 'general' && (
@@ -251,7 +251,7 @@ export default function SiteSettingsPage() {
                         {/* Site Branding */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
                             <div>
-                                <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
                                     Nama Situs
                                 </label>
                                 <input
@@ -260,19 +260,18 @@ export default function SiteSettingsPage() {
                                     onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
                                     style={{
                                         width: '100%',
-                                        backgroundColor: '#0a0a0a',
-                                        border: '1px solid #262626',
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-color)',
                                         borderRadius: '6px',
                                         padding: '12px',
-                                        color: '#fff',
-                                        outline: 'none',
+                                        color: 'var(--text-primary)',
                                         boxSizing: 'border-box'
                                     }}
                                 />
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
                                     Warna Utama
                                 </label>
                                 <div style={{ display: 'flex', gap: '12px' }}>
@@ -296,13 +295,12 @@ export default function SiteSettingsPage() {
                                         onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
                                         style={{
                                             flex: 1,
-                                            backgroundColor: '#0a0a0a',
-                                            border: '1px solid #262626',
+                                            backgroundColor: 'var(--bg-secondary)',
+                                            border: '1px solid var(--border-color)',
                                             borderRadius: '6px',
                                             padding: '12px',
-                                            color: '#fff',
-                                            outline: 'none',
-                                            boxSizing: 'border-box'
+                                            color: 'var(--text-primary)',
+                                                boxSizing: 'border-box'
                                         }}
                                     />
                                 </div>
@@ -311,11 +309,11 @@ export default function SiteSettingsPage() {
 
                         {/* Logo Upload */}
                         <div>
-                            <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                            <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
                                 Logo Perusahaan
                             </label>
                             {settings.logoPath ? (
-                                <div style={{ position: 'relative', width: '120px', height: '120px', backgroundColor: '#000', borderRadius: '8px', border: '1px solid #262626', overflow: 'hidden' }}>
+                                <div style={{ position: 'relative', width: '120px', height: '120px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
                                     <Image
                                         src={settings.logoPath}
                                         alt="Logo"
@@ -329,8 +327,8 @@ export default function SiteSettingsPage() {
                                             top: '4px',
                                             right: '4px',
                                             padding: '4px',
-                                            backgroundColor: '#dc2626',
-                                            color: '#fff',
+                                            backgroundColor: 'var(--brand-red)',
+                                            color: 'var(--text-primary)',
                                             border: 'none',
                                             borderRadius: '4px',
                                             cursor: 'pointer',
@@ -347,13 +345,13 @@ export default function SiteSettingsPage() {
                                     justifyContent: 'center',
                                     width: '120px',
                                     height: '120px',
-                                    border: '1px dashed #333',
+                                    border: '1px dashed var(--border-strong)',
                                     borderRadius: '8px',
                                     cursor: 'pointer',
-                                    backgroundColor: '#0a0a0a',
+                                    backgroundColor: 'var(--bg-secondary)',
                                 }}>
-                                    <FiUpload size={24} color="#525252" style={{ marginBottom: '8px' }} />
-                                    <span style={{ color: '#525252', fontSize: '11px' }}>Upload Logo</span>
+                                    <FiUpload size={24} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
+                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>Upload Logo</span>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -362,16 +360,16 @@ export default function SiteSettingsPage() {
                                     />
                                 </label>
                             )}
-                            <p style={{ marginTop: '8px', fontSize: '12px', color: '#525252' }}>
+                            <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
                                 Format: PNG, JPG, GIF (max 2MB). Disarankan background transparan.
                             </p>
                         </div>
 
-                        <div style={{ height: '1px', backgroundColor: '#262626', margin: '24px 0' }}></div>
+                        <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '24px 0' }}></div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
                             <div>
-                                <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
                                     Hero Title
                                 </label>
                                 <input
@@ -380,19 +378,18 @@ export default function SiteSettingsPage() {
                                     onChange={(e) => setSettings({ ...settings, heroTitle: e.target.value })}
                                     style={{
                                         width: '100%',
-                                        backgroundColor: '#0a0a0a',
-                                        border: '1px solid #262626',
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-color)',
                                         borderRadius: '6px',
                                         padding: '12px',
-                                        color: '#fff',
-                                        outline: 'none',
+                                        color: 'var(--text-primary)',
                                         boxSizing: 'border-box'
                                     }}
                                 />
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
                                     Hero Subtitle
                                 </label>
                                 <input
@@ -401,12 +398,11 @@ export default function SiteSettingsPage() {
                                     onChange={(e) => setSettings({ ...settings, heroSubtitle: e.target.value })}
                                     style={{
                                         width: '100%',
-                                        backgroundColor: '#0a0a0a',
-                                        border: '1px solid #262626',
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-color)',
                                         borderRadius: '6px',
                                         padding: '12px',
-                                        color: '#fff',
-                                        outline: 'none',
+                                        color: 'var(--text-primary)',
                                         boxSizing: 'border-box'
                                     }}
                                 />
@@ -414,7 +410,7 @@ export default function SiteSettingsPage() {
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                            <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
                                 About Text / Footer Text
                             </label>
                             <textarea
@@ -423,12 +419,11 @@ export default function SiteSettingsPage() {
                                 rows={4}
                                 style={{
                                     width: '100%',
-                                    backgroundColor: '#0a0a0a',
-                                    border: '1px solid #262626',
+                                    backgroundColor: 'var(--bg-secondary)',
+                                    border: '1px solid var(--border-color)',
                                     borderRadius: '6px',
                                     padding: '12px',
-                                    color: '#fff',
-                                    outline: 'none',
+                                    color: 'var(--text-primary)',
                                     resize: 'vertical',
                                     boxSizing: 'border-box',
                                     minHeight: '120px'
@@ -449,7 +444,7 @@ export default function SiteSettingsPage() {
                             { key: 'youtubeUrl', label: 'YouTube URL' },
                         ].map((field) => (
                             <div key={field.key}>
-                                <label style={{ display: 'block', color: '#a3a3a3', marginBottom: '8px', fontSize: '13px' }}>
+                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
                                     {field.label}
                                 </label>
                                 <input
@@ -459,12 +454,11 @@ export default function SiteSettingsPage() {
                                     placeholder="https://..."
                                     style={{
                                         width: '100%',
-                                        backgroundColor: '#0a0a0a',
-                                        border: '1px solid #262626',
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-color)',
                                         borderRadius: '6px',
                                         padding: '12px',
-                                        color: '#fff',
-                                        outline: 'none',
+                                        color: 'var(--text-primary)',
                                         boxSizing: 'border-box'
                                     }}
                                 />
@@ -481,15 +475,15 @@ export default function SiteSettingsPage() {
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             padding: '16px',
-                            backgroundColor: '#0a0a0a',
+                            backgroundColor: 'var(--bg-secondary)',
                             borderRadius: '6px',
-                            border: '1px solid #262626'
+                            border: '1px solid var(--border-color)'
                         }}>
                             <div>
-                                <h3 style={{ color: '#fff', fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
+                                <h3 style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
                                     Auto Approve Komentar
                                 </h3>
-                                <p style={{ color: '#525252', fontSize: '12px', maxWidth: '400px' }}>
+                                <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', maxWidth: '400px' }}>
                                     Jika aktif, komentar akan langsung muncul tanpa perlu persetujuan admin.
                                 </p>
                             </div>
@@ -507,7 +501,7 @@ export default function SiteSettingsPage() {
                                         position: 'absolute',
                                         cursor: 'pointer',
                                         top: 0, left: 0, right: 0, bottom: 0,
-                                        backgroundColor: settings.commentAutoApprove ? '#dc2626' : '#262626',
+                                        backgroundColor: settings.commentAutoApprove ? 'var(--brand-red)' : 'var(--border-color)',
                                         borderRadius: '24px',
                                         transition: '.4s',
                                     }}
@@ -532,15 +526,15 @@ export default function SiteSettingsPage() {
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             padding: '16px',
-                            backgroundColor: '#0a0a0a',
+                            backgroundColor: 'var(--bg-secondary)',
                             borderRadius: '6px',
-                            border: '1px solid #262626'
+                            border: '1px solid var(--border-color)'
                         }}>
                             <div>
-                                <h3 style={{ color: '#fff', fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
+                                <h3 style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
                                     Wajib Email
                                 </h3>
-                                <p style={{ color: '#525252', fontSize: '12px', maxWidth: '400px' }}>
+                                <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', maxWidth: '400px' }}>
                                     Pengunjung harus mengisi alamat email saat berkomentar.
                                 </p>
                             </div>
@@ -558,7 +552,7 @@ export default function SiteSettingsPage() {
                                         position: 'absolute',
                                         cursor: 'pointer',
                                         top: 0, left: 0, right: 0, bottom: 0,
-                                        backgroundColor: settings.commentRequireEmail ? '#dc2626' : '#262626',
+                                        backgroundColor: settings.commentRequireEmail ? 'var(--brand-red)' : 'var(--border-color)',
                                         borderRadius: '24px',
                                         transition: '.4s',
                                     }}

@@ -66,8 +66,8 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                     position: 'absolute',
                     top: '-40px',
                     left: 0,
-                    backgroundColor: '#dc2626',
-                    color: '#fff',
+                    backgroundColor: 'var(--brand-red)',
+                    color: 'var(--text-primary)',
                     padding: '8px 16px',
                     zIndex: 10000,
                     transition: 'top 0.3s',
@@ -86,7 +86,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                     zIndex: 50,
                     transition: 'all 0.3s ease',
                     backgroundColor: isScrolled ? 'rgba(0, 0, 0, 0.95)' : 'transparent',
-                    borderBottom: isScrolled ? '1px solid #262626' : 'none',
+                    borderBottom: isScrolled ? '1px solid var(--border-color)' : 'none',
                     backdropFilter: isScrolled ? 'blur(8px)' : 'none',
                 }}
             >
@@ -106,12 +106,12 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                                 <div style={{
                                     width: '40px',
                                     height: '40px',
-                                    backgroundColor: '#dc2626',
+                                    backgroundColor: 'var(--brand-red)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                 }}>
-                                    <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '18px' }}>
+                                    <span style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '18px' }}>
                                         {siteName.charAt(0).toUpperCase()}
                                     </span>
                                 </div>
@@ -119,7 +119,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                             <span style={{
                                 fontFamily: 'Montserrat, sans-serif',
                                 fontWeight: 700,
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 fontSize: '13px',
                                 letterSpacing: '0.1em',
                                 textTransform: 'uppercase',
@@ -136,7 +136,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                                         key={link.href}
                                         href={link.href}
                                         style={{
-                                            color: '#a3a3a3',
+                                            color: 'var(--text-secondary)',
                                             fontSize: '12px',
                                             fontWeight: 600,
                                             letterSpacing: '0.15em',
@@ -166,7 +166,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 style={{
                                     padding: '8px',
-                                    color: '#fff',
+                                    color: 'var(--text-primary)',
                                     background: 'none',
                                     border: 'none',
                                     cursor: 'pointer',
@@ -181,7 +181,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                     {showMobileMenu && isMobileMenuOpen && (
                         <div style={{
                             padding: '16px 0',
-                            borderTop: '1px solid #262626',
+                            borderTop: '1px solid var(--border-color)',
                             backgroundColor: 'rgba(0, 0, 0, 0.95)',
                         }}>
                             {navLinks.map((link) => (
@@ -192,7 +192,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                                     style={{
                                         display: 'block',
                                         padding: '12px 16px',
-                                        color: '#a3a3a3',
+                                        color: 'var(--text-secondary)',
                                         fontSize: '12px',
                                         fontWeight: 600,
                                         letterSpacing: '0.1em',
@@ -207,7 +207,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                                 style={{
                                     display: 'block',
                                     padding: '12px 16px',
-                                    color: '#dc2626',
+                                    color: 'var(--brand-red)',
                                     fontSize: '12px',
                                     fontWeight: 600,
                                     letterSpacing: '0.1em',

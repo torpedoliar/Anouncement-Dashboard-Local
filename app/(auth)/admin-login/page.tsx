@@ -26,7 +26,7 @@ export default function LoginPage() {
             });
 
             if (result?.error) {
-                setError(result.error);
+                setError("Kredensial tidak valid");
             } else {
                 router.push("/admin");
             }
@@ -97,7 +97,7 @@ export default function LoginPage() {
                         Kelola pengumuman dan konten perusahaan dengan mudah melalui panel admin.
                     </p>
                 </div>
-                <p style={{ color: '#525252', fontSize: '13px' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
                     © 2024 PT. Santos Jaya Abadi
                 </p>
             </div>
@@ -143,7 +143,7 @@ export default function LoginPage() {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '8px',
-                            color: '#525252',
+                            color: 'var(--text-muted)',
                             fontSize: '13px',
                             marginBottom: '32px',
                         }}
@@ -161,7 +161,7 @@ export default function LoginPage() {
                     }}>
                         Masuk ke Admin
                     </h2>
-                    <p style={{ color: '#525252', marginBottom: '32px', fontSize: '14px' }}>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '14px' }}>
                         Gunakan kredensial admin untuk mengakses dashboard
                     </p>
 
@@ -204,7 +204,7 @@ export default function LoginPage() {
                                         left: '16px',
                                         top: '50%',
                                         transform: 'translateY(-50%)',
-                                        color: '#525252',
+                                        color: 'var(--text-muted)',
                                     }}
                                 />
                                 <input
@@ -220,7 +220,6 @@ export default function LoginPage() {
                                         border: '1px solid #262626',
                                         color: '#fff',
                                         fontSize: '14px',
-                                        outline: 'none',
                                     }}
                                 />
                             </div>
@@ -246,7 +245,7 @@ export default function LoginPage() {
                                         left: '16px',
                                         top: '50%',
                                         transform: 'translateY(-50%)',
-                                        color: '#525252',
+                                        color: 'var(--text-muted)',
                                     }}
                                 />
                                 <input
@@ -262,7 +261,6 @@ export default function LoginPage() {
                                         border: '1px solid #262626',
                                         color: '#fff',
                                         fontSize: '14px',
-                                        outline: 'none',
                                     }}
                                 />
                             </div>

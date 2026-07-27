@@ -54,7 +54,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
     ].filter(link => link.href);
 
     return (
-        <footer style={{ backgroundColor: '#000', borderTop: '1px solid #1a1a1a' }}>
+        <footer style={{ backgroundColor: 'var(--bg-primary)', borderTop: '1px solid var(--bg-tertiary)' }}>
             {/* Main Footer */}
             <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '64px 24px' }}>
                 <div style={{
@@ -77,12 +77,12 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                                 <div style={{
                                     width: '40px',
                                     height: '40px',
-                                    backgroundColor: '#dc2626',
+                                    backgroundColor: 'var(--brand-red)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                 }}>
-                                    <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '18px' }}>
+                                    <span style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '18px' }}>
                                         {settings.siteName.charAt(0).toUpperCase()}
                                     </span>
                                 </div>
@@ -90,7 +90,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                             <span style={{
                                 fontFamily: 'Montserrat, sans-serif',
                                 fontWeight: 700,
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 fontSize: '12px',
                                 letterSpacing: '0.1em',
                                 textTransform: 'uppercase',
@@ -99,7 +99,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                             </span>
                         </div>
                         <p style={{
-                            color: '#737373',
+                            color: 'var(--text-muted)',
                             fontSize: '14px',
                             lineHeight: 1.7,
                             marginBottom: '24px',
@@ -120,11 +120,11 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                                         style={{
                                             width: '40px',
                                             height: '40px',
-                                            border: '1px solid #333',
+                                            border: '1px solid var(--border-strong)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            color: '#737373',
+                                            color: 'var(--text-muted)',
                                             transition: 'all 0.3s',
                                         }}
                                         onMouseOver={(e) => {
@@ -148,7 +148,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                     {/* Quick Links */}
                     <div>
                         <h4 style={{
-                            color: '#dc2626',
+                            color: 'var(--brand-red)',
                             fontSize: '11px',
                             fontWeight: 600,
                             letterSpacing: '0.2em',
@@ -167,7 +167,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                                     <Link
                                         href={link.href}
                                         style={{
-                                            color: '#737373',
+                                            color: 'var(--text-muted)',
                                             fontSize: '14px',
                                             transition: 'color 0.3s',
                                         }}
@@ -187,7 +187,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
             </div>
 
             {/* Bottom Bar */}
-            <div style={{ borderTop: '1px solid #1a1a1a' }}>
+            <div style={{ borderTop: '1px solid var(--bg-tertiary)' }}>
                 <div style={{
                     maxWidth: '1280px',
                     margin: '0 auto',
@@ -199,7 +199,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                     gap: '16px',
                 }}>
                     <p style={{
-                        color: '#525252',
+                        color: 'var(--text-tertiary)',
                         fontSize: '12px',
                         letterSpacing: '0.05em',
                     }}>
@@ -208,7 +208,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                     <Link
                         href="/admin-login"
                         style={{
-                            color: '#333',
+                            color: 'var(--border-strong)',
                             fontSize: '11px',
                             textDecoration: 'none',
                             transition: 'color 0.3s',
@@ -219,7 +219,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                     <Link
                         href="/portal-login"
                         style={{
-                            color: '#333',
+                            color: 'var(--border-strong)',
                             fontSize: '11px',
                             textDecoration: 'none',
                             transition: 'color 0.3s',

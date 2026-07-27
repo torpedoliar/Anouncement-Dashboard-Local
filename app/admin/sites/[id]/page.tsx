@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiArrowLeft, FiSave, FiTrash2, FiUsers, FiCheck, FiX } from "react-icons/fi";
 import { use } from "react";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface Site {
     id: string;
@@ -35,6 +36,7 @@ export default function EditSitePage({ params }: PageProps) {
     const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const { confirm, ConfirmDialog } = useConfirm();
 
     // Form state
     const [name, setName] = useState("");
@@ -103,7 +105,7 @@ export default function EditSitePage({ params }: PageProps) {
     };
 
     const handleDelete = async () => {
-        if (!confirm(`Are you sure you want to delete "${name}"? This will delete ALL content on this site!`)) {
+        if (!(await confirm({ title: 'Hapus Site', message: `Are you sure you want to delete "${name}"? This will delete ALL content on this site!`, variant: 'danger' }))) {
             return;
         }
 
@@ -124,7 +126,7 @@ export default function EditSitePage({ params }: PageProps) {
     if (isLoading) {
         return (
             <div style={{ padding: "40px", textAlign: "center" }}>
-                <div style={{ color: "#888" }}>Loading site...</div>
+                <div style={{ color: "var(--text-muted)" }}>Loading site...</div>
             </div>
         );
     }
@@ -132,8 +134,8 @@ export default function EditSitePage({ params }: PageProps) {
     if (!site) {
         return (
             <div style={{ padding: "40px", textAlign: "center" }}>
-                <div style={{ color: "#ef4444" }}>{error || "Site not found"}</div>
-                <Link href="/admin/sites" style={{ color: "#888", marginTop: "16px", display: "inline-block" }}>
+                <div style={{ color: "var(--color-error)" }}>{error || "Site not found"}</div>
+                <Link href="/admin/sites" style={{ color: "var(--text-muted)", marginTop: "16px", display: "inline-block" }}>
                     Back to Sites
                 </Link>
             </div>
@@ -150,7 +152,7 @@ export default function EditSitePage({ params }: PageProps) {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "8px",
-                        color: "#888",
+                        color: "var(--text-muted)",
                         textDecoration: "none",
                         marginBottom: "16px",
                     }}
@@ -163,7 +165,7 @@ export default function EditSitePage({ params }: PageProps) {
                         <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "8px" }}>
                             Edit Site
                         </h1>
-                        <p style={{ color: "#888", fontSize: "14px" }}>
+                        <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
                             Manage site details and settings
                         </p>
                     </div>
@@ -172,7 +174,7 @@ export default function EditSitePage({ params }: PageProps) {
                             fontSize: "11px",
                             padding: "6px 12px",
                             backgroundColor: "rgba(237,28,36,0.1)",
-                            color: "#ED1C24",
+                            color: "var(--brand-red)",
                             borderRadius: "6px",
                             fontWeight: 600,
                         }}>
@@ -198,7 +200,7 @@ export default function EditSitePage({ params }: PageProps) {
                         backgroundColor: "rgba(255,255,255,0.05)",
                         border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: "8px",
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         textDecoration: "none",
                         fontSize: "13px",
                     }}
@@ -215,7 +217,7 @@ export default function EditSitePage({ params }: PageProps) {
                         backgroundColor: "rgba(255,255,255,0.05)",
                         border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: "8px",
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         textDecoration: "none",
                         fontSize: "13px",
                     }}
@@ -228,7 +230,7 @@ export default function EditSitePage({ params }: PageProps) {
             {/* Form */}
             <form onSubmit={handleSave}>
                 <div style={{
-                    backgroundColor: "#1a1a1a",
+                    backgroundColor: "var(--bg-tertiary)",
                     borderRadius: "12px",
                     border: "1px solid rgba(255,255,255,0.1)",
                     padding: "24px",
@@ -240,7 +242,7 @@ export default function EditSitePage({ params }: PageProps) {
 
                     {/* Name */}
                     <div style={{ marginBottom: "20px" }}>
-                        <label style={{ display: "block", fontSize: "13px", color: "#888", marginBottom: "8px" }}>
+                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
                             Site Name *
                         </label>
                         <input
@@ -254,7 +256,7 @@ export default function EditSitePage({ params }: PageProps) {
                                 backgroundColor: "rgba(255,255,255,0.05)",
                                 border: "1px solid rgba(255,255,255,0.1)",
                                 borderRadius: "8px",
-                                color: "#fff",
+                                color: "var(--text-primary)",
                                 fontSize: "14px",
                             }}
                         />
@@ -262,11 +264,11 @@ export default function EditSitePage({ params }: PageProps) {
 
                     {/* Slug */}
                     <div style={{ marginBottom: "20px" }}>
-                        <label style={{ display: "block", fontSize: "13px", color: "#888", marginBottom: "8px" }}>
+                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
                             URL Slug *
                         </label>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ color: "#666", fontSize: "14px" }}>/site/</span>
+                            <span style={{ color: "var(--text-tertiary)", fontSize: "14px" }}>/site/</span>
                             <input
                                 type="text"
                                 value={slug}
@@ -279,7 +281,7 @@ export default function EditSitePage({ params }: PageProps) {
                                     backgroundColor: "rgba(255,255,255,0.05)",
                                     border: "1px solid rgba(255,255,255,0.1)",
                                     borderRadius: "8px",
-                                    color: "#fff",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
@@ -288,7 +290,7 @@ export default function EditSitePage({ params }: PageProps) {
 
                     {/* Description */}
                     <div style={{ marginBottom: "20px" }}>
-                        <label style={{ display: "block", fontSize: "13px", color: "#888", marginBottom: "8px" }}>
+                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
                             Description
                         </label>
                         <textarea
@@ -301,7 +303,7 @@ export default function EditSitePage({ params }: PageProps) {
                                 backgroundColor: "rgba(255,255,255,0.05)",
                                 border: "1px solid rgba(255,255,255,0.1)",
                                 borderRadius: "8px",
-                                color: "#fff",
+                                color: "var(--text-primary)",
                                 fontSize: "14px",
                                 resize: "vertical",
                             }}
@@ -310,7 +312,7 @@ export default function EditSitePage({ params }: PageProps) {
 
                     {/* Primary Color */}
                     <div style={{ marginBottom: "20px" }}>
-                        <label style={{ display: "block", fontSize: "13px", color: "#888", marginBottom: "8px" }}>
+                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
                             Primary Color
                         </label>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -336,7 +338,7 @@ export default function EditSitePage({ params }: PageProps) {
                                     backgroundColor: "rgba(255,255,255,0.05)",
                                     border: "1px solid rgba(255,255,255,0.1)",
                                     borderRadius: "8px",
-                                    color: "#fff",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
@@ -345,7 +347,7 @@ export default function EditSitePage({ params }: PageProps) {
 
                     {/* Active Toggle */}
                     <div>
-                        <label style={{ display: "block", fontSize: "13px", color: "#888", marginBottom: "8px" }}>
+                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
                             Site Status
                         </label>
                         <button
@@ -365,12 +367,12 @@ export default function EditSitePage({ params }: PageProps) {
                             {isActive ? (
                                 <>
                                     <FiCheck color="#22c55e" />
-                                    <span style={{ color: "#22c55e", fontWeight: 600 }}>Active</span>
+                                    <span style={{ color: "var(--color-success)", fontWeight: 600 }}>Active</span>
                                 </>
                             ) : (
                                 <>
                                     <FiX color="#ef4444" />
-                                    <span style={{ color: "#ef4444", fontWeight: 600 }}>Inactive</span>
+                                    <span style={{ color: "var(--color-error)", fontWeight: 600 }}>Inactive</span>
                                 </>
                             )}
                         </button>
@@ -384,7 +386,7 @@ export default function EditSitePage({ params }: PageProps) {
                         backgroundColor: "rgba(239,68,68,0.1)",
                         border: "1px solid rgba(239,68,68,0.2)",
                         borderRadius: "8px",
-                        color: "#ef4444",
+                        color: "var(--color-error)",
                         marginBottom: "24px",
                     }}>
                         {error}
@@ -397,7 +399,7 @@ export default function EditSitePage({ params }: PageProps) {
                         backgroundColor: "rgba(34,197,94,0.1)",
                         border: "1px solid rgba(34,197,94,0.2)",
                         borderRadius: "8px",
-                        color: "#22c55e",
+                        color: "var(--color-success)",
                         marginBottom: "24px",
                     }}>
                         {success}
@@ -418,7 +420,7 @@ export default function EditSitePage({ params }: PageProps) {
                             backgroundColor: "rgba(239,68,68,0.1)",
                             border: "1px solid rgba(239,68,68,0.2)",
                             borderRadius: "8px",
-                            color: "#ef4444",
+                            color: "var(--color-error)",
                             fontWeight: 600,
                             cursor: isDeleting || site.isDefault ? "not-allowed" : "pointer",
                             opacity: isDeleting || site.isDefault ? 0.5 : 1,
@@ -436,10 +438,10 @@ export default function EditSitePage({ params }: PageProps) {
                             alignItems: "center",
                             gap: "8px",
                             padding: "14px 28px",
-                            backgroundColor: "#ED1C24",
+                            backgroundColor: "var(--brand-red)",
                             border: "none",
                             borderRadius: "8px",
-                            color: "#fff",
+                            color: "var(--text-primary)",
                             fontWeight: 600,
                             cursor: isSaving ? "not-allowed" : "pointer",
                             opacity: isSaving ? 0.7 : 1,
@@ -450,6 +452,7 @@ export default function EditSitePage({ params }: PageProps) {
                     </button>
                 </div>
             </form>
+            <ConfirmDialog />
         </div>
     );
 }

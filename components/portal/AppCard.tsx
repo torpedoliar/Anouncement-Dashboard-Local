@@ -15,8 +15,8 @@ interface AppCardProps {
 export default function AppCard({ name, slug, description, logoPath, category, hasCredential }: AppCardProps) {
     return (
         <div style={{
-            backgroundColor: "#111",
-            border: "1px solid #262626",
+            backgroundColor: "var(--bg-card)",
+            border: "1px solid var(--border-color)",
             borderRadius: "12px",
             padding: "24px",
             display: "flex",
@@ -36,11 +36,11 @@ export default function AppCard({ name, slug, description, logoPath, category, h
                         width: "40px",
                         height: "40px",
                         borderRadius: "8px",
-                        backgroundColor: "#262626",
+                        backgroundColor: "var(--border-color)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: "#737373",
+                        color: "var(--text-muted)",
                         fontSize: "18px",
                         fontWeight: 700,
                     }}>
@@ -48,16 +48,16 @@ export default function AppCard({ name, slug, description, logoPath, category, h
                     </div>
                 )}
                 <div>
-                    <h3 style={{ color: "#fff", fontSize: "15px", fontWeight: 600, margin: 0 }}>{name}</h3>
+                    <h3 style={{ color: "var(--text-primary)", fontSize: "15px", fontWeight: 600, margin: 0 }}>{name}</h3>
                     {category && (
-                        <span style={{ color: "#525252", fontSize: "12px" }}>{category}</span>
+                        <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{category}</span>
                     )}
                 </div>
             </div>
 
             {/* Description */}
             {description && (
-                <p style={{ color: "#737373", fontSize: "13px", margin: 0, lineHeight: "1.5" }}>
+                <p style={{ color: "var(--text-muted)", fontSize: "13px", margin: 0, lineHeight: "1.5" }}>
                     {description.length > 100 ? description.substring(0, 100) + "..." : description}
                 </p>
             )}
@@ -68,7 +68,7 @@ export default function AppCard({ name, slug, description, logoPath, category, h
                 alignItems: "center",
                 gap: "6px",
                 fontSize: "12px",
-                color: hasCredential ? "#22c55e" : "#eab308",
+                color: hasCredential ? "var(--color-success)" : "var(--color-warning)",
             }}>
                 {hasCredential ? "✓ Kredensial tersimpan" : "⚠ Belum ada kredensial"}
             </div>
@@ -81,8 +81,8 @@ export default function AppCard({ name, slug, description, logoPath, category, h
                         display: "block",
                         textAlign: "center",
                         padding: "10px",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
+                        backgroundColor: "var(--brand-red)",
+                        color: "var(--text-primary)",
                         borderRadius: "8px",
                         fontSize: "13px",
                         fontWeight: 600,
@@ -98,8 +98,8 @@ export default function AppCard({ name, slug, description, logoPath, category, h
                         display: "block",
                         textAlign: "center",
                         padding: "10px",
-                        backgroundColor: "#262626",
-                        color: "#a1a1aa",
+                        backgroundColor: "var(--border-color)",
+                        color: "var(--text-secondary)",
                         borderRadius: "8px",
                         fontSize: "13px",
                         fontWeight: 500,

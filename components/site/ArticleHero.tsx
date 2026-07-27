@@ -62,7 +62,7 @@ export default function ArticleHero({
                 overflow: "hidden",
                 display: "flex",
                 alignItems: "flex-end", // Align content to bottom
-                backgroundColor: "#000"
+                backgroundColor: "var(--bg-primary)"
             }}
         >
             {/* 1. Media Layer */}
@@ -102,7 +102,7 @@ export default function ArticleHero({
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                color: "#fff",
+                                color: "var(--text-primary)",
                                 cursor: "pointer",
                                 transition: "all 0.2s"
                             }}
@@ -174,7 +174,7 @@ export default function ArticleHero({
                         display: "inline-block",
                         padding: "6px 14px",
                         backgroundColor: category.color,
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         borderRadius: "4px",
                         fontSize: "12px",
                         fontWeight: 700,
@@ -194,7 +194,7 @@ export default function ArticleHero({
                         fontWeight: 800,
                         lineHeight: 1.1,
                         marginBottom: "24px",
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         textShadow: "0 2px 4px rgba(0,0,0,0.5)"
                     }}
                 >

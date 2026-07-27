@@ -4,6 +4,7 @@ import { FiTrash2, FiEye, FiEyeOff, FiX } from "react-icons/fi";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface BulkActionBarProps {
     selectedCount: number;
@@ -14,11 +15,13 @@ interface BulkActionBarProps {
 export default function BulkActionBar({ selectedCount, onClear, selectedIds }: BulkActionBarProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const router = useRouter();
     const { showToast } = useToast();
 
     const performBulkAction = async (action: "delete" | "publish" | "unpublish") => {
-        if (action === "delete" && !confirm(`Yakin hapus ${selectedCount} pengumuman?`)) {
+        if (action === "delete" && !showConfirmDialog) {
+            setShowConfirmDialog(true);
             return;
         }
 
@@ -68,18 +71,18 @@ export default function BulkActionBar({ selectedCount, onClear, selectedIds }: B
                 alignItems: "center",
                 gap: "16px",
                 padding: "16px 24px",
-                backgroundColor: "#171717",
-                border: "1px solid #262626",
+                backgroundColor: "var(--bg-hover)",
+                border: "1px solid var(--border-color)",
                 borderRadius: "12px",
                 boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
                 zIndex: 100,
             }}
         >
-            <span style={{ color: "#fff", fontSize: "14px", fontWeight: 600 }}>
+            <span style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 600 }}>
                 {selectedCount} dipilih
             </span>
 
-            <div style={{ width: "1px", height: "24px", backgroundColor: "#333" }} />
+            <div style={{ width: "1px", height: "24px", backgroundColor: "var(--border-strong)" }} />
 
             <button
                 onClick={() => performBulkAction("publish")}
@@ -90,8 +93,8 @@ export default function BulkActionBar({ selectedCount, onClear, selectedIds }: B
                     gap: "6px",
                     padding: "8px 16px",
                     backgroundColor: "#14532d",
-                    border: "1px solid #22c55e",
-                    color: "#22c55e",
+                    border: "1px solid var(--color-success)",
+                    color: "var(--color-success)",
                     fontSize: "13px",
                     fontWeight: 500,
                     borderRadius: "6px",
@@ -134,8 +137,8 @@ export default function BulkActionBar({ selectedCount, onClear, selectedIds }: B
                     gap: "6px",
                     padding: "8px 16px",
                     backgroundColor: "#7f1d1d",
-                    border: "1px solid #ef4444",
-                    color: "#ef4444",
+                    border: "1px solid var(--color-error)",
+                    color: "var(--color-error)",
                     fontSize: "13px",
                     fontWeight: 500,
                     borderRadius: "6px",
@@ -147,7 +150,7 @@ export default function BulkActionBar({ selectedCount, onClear, selectedIds }: B
                 {actionInProgress === "delete" ? "..." : "Hapus"}
             </button>
 
-            <div style={{ width: "1px", height: "24px", backgroundColor: "#333" }} />
+            <div style={{ width: "1px", height: "24px", backgroundColor: "var(--border-strong)" }} />
 
             <button
                 onClick={onClear}
@@ -159,8 +162,8 @@ export default function BulkActionBar({ selectedCount, onClear, selectedIds }: B
                     width: "32px",
                     height: "32px",
                     backgroundColor: "transparent",
-                    border: "1px solid #333",
-                    color: "#737373",
+                    border: "1px solid var(--border-strong)",
+                    color: "var(--text-muted)",
                     borderRadius: "6px",
                     cursor: "pointer",
                 }}
@@ -168,6 +171,20 @@ export default function BulkActionBar({ selectedCount, onClear, selectedIds }: B
             >
                 <FiX size={16} />
             </button>
+
+            <ConfirmDialog
+                open={showConfirmDialog}
+                title="Hapus Pengumuman"
+                message={`Yakin hapus ${selectedCount} pengumuman yang dipilih?`}
+                confirmLabel="Hapus"
+                cancelLabel="Batal"
+                variant="danger"
+                onConfirm={() => {
+                    setShowConfirmDialog(false);
+                    performBulkAction("delete");
+                }}
+                onCancel={() => setShowConfirmDialog(false)}
+            />
         </div>
     );
 }

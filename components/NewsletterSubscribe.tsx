@@ -55,8 +55,8 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
     if (variant === "card") {
         return (
             <div style={{
-                backgroundColor: "#0a0a0a",
-                border: "1px solid #262626",
+                backgroundColor: "var(--bg-secondary)",
+                border: "1px solid var(--border-color)",
                 padding: "32px",
                 maxWidth: "400px",
             }}>
@@ -72,10 +72,10 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                         <FiMail size={20} color="#dc2626" />
                     </div>
                     <div>
-                        <h3 style={{ color: "#fff", fontSize: "16px", fontWeight: 600, margin: 0 }}>
+                        <h3 style={{ color: "var(--text-primary)", fontSize: "16px", fontWeight: 600, margin: 0 }}>
                             Newsletter
                         </h3>
-                        <p style={{ color: "#737373", fontSize: "13px", margin: 0 }}>
+                        <p style={{ color: "var(--text-muted)", fontSize: "13px", margin: 0 }}>
                             Dapatkan berita terbaru
                         </p>
                     </div>
@@ -90,9 +90,9 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                         style={{
                             width: "100%",
                             padding: "12px 14px",
-                            backgroundColor: "#111",
-                            border: "1px solid #333",
-                            color: "#fff",
+                            backgroundColor: "var(--bg-card)",
+                            border: "1px solid var(--border-strong)",
+                            color: "var(--text-primary)",
                             fontSize: "14px",
                             marginBottom: "12px",
                         }}
@@ -106,9 +106,9 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                         style={{
                             width: "100%",
                             padding: "12px 14px",
-                            backgroundColor: "#111",
-                            border: "1px solid #333",
-                            color: "#fff",
+                            backgroundColor: "var(--bg-card)",
+                            border: "1px solid var(--border-strong)",
+                            color: "var(--text-primary)",
                             fontSize: "14px",
                             marginBottom: "12px",
                         }}
@@ -123,8 +123,8 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                             justifyContent: "center",
                             gap: "8px",
                             padding: "12px",
-                            backgroundColor: "#dc2626",
-                            color: "#fff",
+                            backgroundColor: "var(--brand-red)",
+                            color: "var(--text-primary)",
                             fontSize: "13px",
                             fontWeight: 600,
                             border: "none",
@@ -167,7 +167,7 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
     return (
         <div>
             <h4 style={{
-                color: "#dc2626",
+                color: "var(--brand-red)",
                 fontSize: "11px",
                 fontWeight: 600,
                 letterSpacing: "0.2em",
@@ -177,7 +177,7 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                 NEWSLETTER
             </h4>
             <p style={{
-                color: "#737373",
+                color: "var(--text-muted)",
                 fontSize: "14px",
                 marginBottom: "16px",
                 lineHeight: 1.6,
@@ -194,9 +194,9 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                     required
                     style={{
                         padding: "12px 14px",
-                        backgroundColor: "#111",
-                        border: "1px solid #333",
-                        color: "#fff",
+                        backgroundColor: "var(--bg-card)",
+                        border: "1px solid var(--border-strong)",
+                        color: "var(--text-primary)",
                         fontSize: "14px",
                         width: "100%",
                         maxWidth: "280px",
@@ -210,8 +210,8 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                         alignItems: "center",
                         gap: "8px",
                         padding: "12px 20px",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
+                        backgroundColor: "var(--brand-red)",
+                        color: "var(--text-primary)",
                         fontSize: "12px",
                         fontWeight: 600,
                         letterSpacing: "0.05em",

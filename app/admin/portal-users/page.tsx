@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { FiUsers, FiPlus, FiEdit, FiTrash, FiKey, FiToggleLeft, FiToggleRight, FiX, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface PortalApp {
     id: string;
@@ -67,6 +69,8 @@ export default function PortalUsersPage() {
     const [newPassword, setNewPassword] = useState("");
     const [isResetting, setIsResetting] = useState(false);
     const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+    const { showToast } = useToast();
+    const { confirm, ConfirmDialog } = useConfirm();
 
     const fetchUsers = useCallback(async () => {
         try {
@@ -182,18 +186,19 @@ export default function PortalUsersPage() {
     };
 
     const handleDelete = async (user: PortalUser) => {
-        if (!confirm(`Hapus pengguna "${user.name}" (${user.email})?`)) return;
+        if (!(await confirm({ title: "Hapus Pengguna", message: `Hapus pengguna "${user.name}" (${user.email})?`, variant: "danger" }))) return;
 
         try {
             const response = await fetch(`/api/portal-users/${user.id}`, { method: "DELETE" });
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Gagal menghapus");
+                showToast(data.error || "Gagal menghapus", "error");
                 return;
             }
             fetchUsers();
+            showToast("Pengguna berhasil dihapus", "success");
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         }
     };
 
@@ -206,12 +211,13 @@ export default function PortalUsersPage() {
             });
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Gagal mengubah status");
+                showToast(data.error || "Gagal mengubah status", "error");
                 return;
             }
             fetchUsers();
+            showToast("Status berhasil diubah", "success");
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         }
     };
 
@@ -227,22 +233,22 @@ export default function PortalUsersPage() {
             });
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Gagal reset password");
+                showToast(data.error || "Gagal reset password", "error");
                 return;
             }
             setShowResetModal(false);
             setResetTarget(null);
             setNewPassword("");
-            alert("Password berhasil direset");
+            showToast("Password berhasil direset", "success");
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         } finally {
             setIsResetting(false);
         }
     };
 
     const handleRevokeAccess = async (userId: string, appId: string) => {
-        if (!confirm("Cabut akses aplikasi ini?")) return;
+        if (!(await confirm({ title: "Cabut Akses", message: "Cabut akses aplikasi ini?", variant: "danger" }))) return;
 
         try {
             const response = await fetch(`/api/portal-users/${userId}/access?appId=${appId}`, {
@@ -250,12 +256,13 @@ export default function PortalUsersPage() {
             });
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Gagal mencabut akses");
+                showToast(data.error || "Gagal mencabut akses", "error");
                 return;
             }
             fetchUsers();
+            showToast("Akses berhasil dicabut", "success");
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         }
     };
 
@@ -332,7 +339,7 @@ export default function PortalUsersPage() {
     if (isLoading) {
         return (
             <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "#525252" }}>Loading...</p>
+                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
             </div>
         );
     }
@@ -342,10 +349,10 @@ export default function PortalUsersPage() {
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
                 <div>
-                    <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
                         PORTAL
                     </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff" }}>
+                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
                         Pengguna Portal
                     </h1>
                 </div>
@@ -356,8 +363,8 @@ export default function PortalUsersPage() {
                         alignItems: "center",
                         gap: "8px",
                         padding: "12px 24px",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
+                        backgroundColor: "var(--brand-red)",
+                        color: "var(--text-primary)",
                         fontSize: "13px",
                         fontWeight: 600,
                         border: "none",
@@ -371,24 +378,24 @@ export default function PortalUsersPage() {
 
             {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>TOTAL PENGGUNA</p>
-                    <p style={{ color: "#fff", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || users.length}</p>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>TOTAL PENGGUNA</p>
+                    <p style={{ color: "var(--text-primary)", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || users.length}</p>
                 </div>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>AKTIF</p>
-                    <p style={{ color: "#22c55e", fontSize: "24px", fontWeight: 700 }}>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>AKTIF</p>
+                    <p style={{ color: "var(--color-success)", fontSize: "24px", fontWeight: 700 }}>
                         {users.filter(u => u.isActive).length}
                     </p>
                 </div>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>NONAKTIF</p>
-                    <p style={{ color: "#ef4444", fontSize: "24px", fontWeight: 700 }}>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>NONAKTIF</p>
+                    <p style={{ color: "var(--color-error)", fontSize: "24px", fontWeight: 700 }}>
                         {users.filter(u => !u.isActive).length}
                     </p>
                 </div>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>PORTAL ADMIN</p>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>PORTAL ADMIN</p>
                     <p style={{ color: "#a855f7", fontSize: "24px", fontWeight: 700 }}>
                         {users.filter(u => u.role === "PORTAL_ADMIN").length}
                     </p>
@@ -396,53 +403,53 @@ export default function PortalUsersPage() {
             </div>
 
             {/* Table */}
-            <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", overflow: "hidden" }}>
+            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                        <tr style={{ borderBottom: "2px solid #333", backgroundColor: "#111" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>EMAIL</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>ROLE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>GRUP</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>DIBUAT</th>
-                            <th style={{ padding: "20px", textAlign: "right", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
+                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>EMAIL</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>ROLE</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>GRUP</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>DIBUAT</th>
+                            <th style={{ padding: "20px", textAlign: "right", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
                         {users.length === 0 ? (
                             <tr>
-                                <td colSpan={7} style={{ padding: "48px", textAlign: "center", color: "#525252" }}>
+                                <td colSpan={7} style={{ padding: "48px", textAlign: "center", color: "var(--text-tertiary)" }}>
                                     Tidak ada pengguna portal ditemukan
                                 </td>
                             </tr>
                         ) : (
                             users.map((user, index) => (
                                 <Fragment key={user.id}>
-                                    <tr style={{ borderBottom: expandedUserId === user.id ? "none" : (index < users.length - 1 ? "1px solid #262626" : "none") }}>
+                                    <tr style={{ borderBottom: expandedUserId === user.id ? "none" : (index < users.length - 1 ? "1px solid var(--border-color)" : "none") }}>
                                         <td style={{ padding: "20px" }}>
                                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                                                 <div style={{
                                                     width: "36px",
                                                     height: "36px",
-                                                    backgroundColor: user.role === "PORTAL_ADMIN" ? "rgba(168, 85, 247, 0.15)" : "#1a1a1a",
+                                                    backgroundColor: user.role === "PORTAL_ADMIN" ? "rgba(168, 85, 247, 0.15)" : "var(--bg-tertiary)",
                                                     display: "flex",
                                                     alignItems: "center",
                                                     justifyContent: "center",
                                                     borderRadius: "8px",
-                                                    border: user.role === "PORTAL_ADMIN" ? "1px solid rgba(168, 85, 247, 0.3)" : "1px solid #333",
+                                                    border: user.role === "PORTAL_ADMIN" ? "1px solid rgba(168, 85, 247, 0.3)" : "1px solid var(--border-strong)",
                                                 }}>
                                                     <FiUsers size={16} color={user.role === "PORTAL_ADMIN" ? "#a855f7" : "#737373"} />
                                                 </div>
-                                                <span style={{ color: "#fff", fontSize: "14px", fontWeight: 500 }}>{user.name}</span>
+                                                <span style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>{user.name}</span>
                                             </div>
                                         </td>
-                                        <td style={{ padding: "20px", color: "#a1a1aa", fontSize: "14px" }}>{user.email}</td>
+                                        <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "14px" }}>{user.email}</td>
                                         <td style={{ padding: "20px" }}>
                                             <span style={{
                                                 padding: "4px 12px",
                                                 backgroundColor: user.role === "PORTAL_ADMIN" ? "rgba(168, 85, 247, 0.2)" : "rgba(59, 130, 246, 0.2)",
-                                                color: user.role === "PORTAL_ADMIN" ? "#a855f7" : "#60a5fa",
+                                                color: user.role === "PORTAL_ADMIN" ? "#a855f7" : "var(--color-info)",
                                                 fontSize: "11px",
                                                 fontWeight: 600,
                                             }}>
@@ -466,16 +473,16 @@ export default function PortalUsersPage() {
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <span style={{ color: "#525252", fontSize: "12px" }}>-</span>
+                                                <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>-</span>
                                             )}
                                         </td>
                                         <td style={{ padding: "20px" }}>
                                             {user.isActive ? (
-                                                <span style={{ padding: "4px 12px", backgroundColor: "rgba(34, 197, 94, 0.2)", color: "#22c55e", fontSize: "11px", fontWeight: 600 }}>
+                                                <span style={{ padding: "4px 12px", backgroundColor: "rgba(34, 197, 94, 0.2)", color: "var(--color-success)", fontSize: "11px", fontWeight: 600 }}>
                                                     AKTIF
                                                 </span>
                                             ) : (
-                                                <span style={{ padding: "4px 12px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", fontSize: "11px", fontWeight: 600 }}>
+                                                <span style={{ padding: "4px 12px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "var(--color-error)", fontSize: "11px", fontWeight: 600 }}>
                                                     NONAKTIF
                                                 </span>
                                             )}
@@ -484,35 +491,35 @@ export default function PortalUsersPage() {
                                         <td style={{ padding: "16px", textAlign: "right" }}>
                                             <button
                                                 onClick={() => setExpandedUserId(expandedUserId === user.id ? null : user.id)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid #262626", color: "#737373", cursor: "pointer", marginRight: "4px" }}
+                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--text-muted)", cursor: "pointer", marginRight: "4px" }}
                                                 title="Lihat Akses"
                                             >
                                                 {expandedUserId === user.id ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
                                             </button>
                                             <button
                                                 onClick={() => handleToggleStatus(user)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid #262626", color: user.isActive ? "#22c55e" : "#ef4444", cursor: "pointer", marginRight: "4px" }}
+                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: user.isActive ? "var(--color-success)" : "var(--color-error)", cursor: "pointer", marginRight: "4px" }}
                                                 title={user.isActive ? "Nonaktifkan" : "Aktifkan"}
                                             >
                                                 {user.isActive ? <FiToggleRight size={14} /> : <FiToggleLeft size={14} />}
                                             </button>
                                             <button
                                                 onClick={() => openResetModal(user)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid #262626", color: "#fbbf24", cursor: "pointer", marginRight: "4px" }}
+                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "#fbbf24", cursor: "pointer", marginRight: "4px" }}
                                                 title="Reset Password"
                                             >
                                                 <FiKey size={14} />
                                             </button>
                                             <button
                                                 onClick={() => openEditModal(user)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid #262626", color: "#737373", cursor: "pointer", marginRight: "4px" }}
+                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--text-muted)", cursor: "pointer", marginRight: "4px" }}
                                                 title="Edit"
                                             >
                                                 <FiEdit size={14} />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(user)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid #262626", color: "#dc2626", cursor: "pointer" }}
+                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--brand-red)", cursor: "pointer" }}
                                                 title="Hapus"
                                             >
                                                 <FiTrash size={14} />
@@ -521,11 +528,11 @@ export default function PortalUsersPage() {
                                     </tr>
                                     {expandedUserId === user.id && (
                                         <tr key={`${user.id}-expanded`}>
-                                            <td colSpan={7} style={{ padding: "0 20px 20px 20px", backgroundColor: "#0d0d0d", borderBottom: index < users.length - 1 ? "1px solid #262626" : "none" }}>
+                                            <td colSpan={7} style={{ padding: "0 20px 20px 20px", backgroundColor: "#0d0d0d", borderBottom: index < users.length - 1 ? "1px solid var(--border-color)" : "none" }}>
                                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                                                     {/* Groups */}
-                                                    <div style={{ padding: "16px", backgroundColor: "#111", border: "1px solid #262626", borderRadius: "4px" }}>
-                                                        <p style={{ color: "#a1a1aa", fontSize: "12px", fontWeight: 600, marginBottom: "12px" }}>GRUP</p>
+                                                    <div style={{ padding: "16px", backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "4px" }}>
+                                                        <p style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600, marginBottom: "12px" }}>GRUP</p>
                                                         {user.groups && user.groups.length > 0 ? (
                                                             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                                                                 {user.groups.map(g => (
@@ -542,12 +549,12 @@ export default function PortalUsersPage() {
                                                                 ))}
                                                             </div>
                                                         ) : (
-                                                            <p style={{ color: "#525252", fontSize: "13px" }}>Tidak ada grup</p>
+                                                            <p style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>Tidak ada grup</p>
                                                         )}
                                                     </div>
                                                     {/* Direct access */}
-                                                    <div style={{ padding: "16px", backgroundColor: "#111", border: "1px solid #262626", borderRadius: "4px" }}>
-                                                        <p style={{ color: "#a1a1aa", fontSize: "12px", fontWeight: 600, marginBottom: "12px" }}>AKSES LANGSUNG (OVERRIDE)</p>
+                                                    <div style={{ padding: "16px", backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "4px" }}>
+                                                        <p style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600, marginBottom: "12px" }}>AKSES LANGSUNG (OVERRIDE)</p>
                                                         {user.appAccess && user.appAccess.length > 0 ? (
                                                             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                                                                 {user.appAccess.map(access => (
@@ -556,14 +563,14 @@ export default function PortalUsersPage() {
                                                                         alignItems: "center",
                                                                         gap: "8px",
                                                                         padding: "6px 12px",
-                                                                        backgroundColor: "#1a1a1a",
-                                                                        border: "1px solid #333",
+                                                                        backgroundColor: "var(--bg-tertiary)",
+                                                                        border: "1px solid var(--border-strong)",
                                                                         borderRadius: "4px",
                                                                     }}>
-                                                                        <span style={{ color: "#fff", fontSize: "13px" }}>{access.app.name}</span>
+                                                                        <span style={{ color: "var(--text-primary)", fontSize: "13px" }}>{access.app.name}</span>
                                                                         <button
                                                                             onClick={() => handleRevokeAccess(user.id, access.appId)}
-                                                                            style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "2px" }}
+                                                                            style={{ background: "none", border: "none", color: "var(--color-error)", cursor: "pointer", padding: "2px" }}
                                                                             title="Cabut akses"
                                                                         >
                                                                             <FiX size={12} />
@@ -572,7 +579,7 @@ export default function PortalUsersPage() {
                                                                 ))}
                                                             </div>
                                                         ) : (
-                                                            <p style={{ color: "#525252", fontSize: "13px" }}>Tidak ada akses langsung</p>
+                                                            <p style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>Tidak ada akses langsung</p>
                                                         )}
                                                     </div>
                                                 </div>
@@ -595,8 +602,8 @@ export default function PortalUsersPage() {
                             onClick={() => setPage(p)}
                             style={{
                                 padding: "8px 16px",
-                                backgroundColor: p === page ? "#dc2626" : "#1a1a1a",
-                                color: "#fff",
+                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
+                                color: "var(--text-primary)",
                                 border: "none",
                                 cursor: "pointer",
                             }}
@@ -619,8 +626,8 @@ export default function PortalUsersPage() {
                     zIndex: 50,
                 }}>
                     <div style={{
-                        backgroundColor: "#0a0a0a",
-                        border: "1px solid #262626",
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-color)",
                         width: "100%",
                         maxWidth: "500px",
                         padding: "24px",
@@ -628,23 +635,23 @@ export default function PortalUsersPage() {
                         overflowY: "auto",
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#fff" }}>
+                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
                                 {editingUser ? "Edit Pengguna" : "Tambah Pengguna"}
                             </h2>
-                            <button onClick={closeModal} style={{ background: "none", border: "none", color: "#737373", cursor: "pointer" }}>
+                            <button onClick={closeModal} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
                                 <FiX size={20} />
                             </button>
                         </div>
 
                         {error && (
-                            <div style={{ padding: "12px", backgroundColor: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "#ef4444", fontSize: "14px", marginBottom: "16px" }}>
+                            <div style={{ padding: "12px", backgroundColor: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "var(--color-error)", fontSize: "14px", marginBottom: "16px" }}>
                                 {error}
                             </div>
                         )}
 
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NAMA *</label>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NAMA *</label>
                                 <input
                                     type="text"
                                     value={formData.name}
@@ -655,7 +662,7 @@ export default function PortalUsersPage() {
                             </div>
 
                             <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>EMAIL *</label>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>EMAIL *</label>
                                 <input
                                     type="email"
                                     value={formData.email}
@@ -667,7 +674,7 @@ export default function PortalUsersPage() {
 
                             {!editingUser && (
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>PASSWORD *</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>PASSWORD *</label>
                                     <input
                                         type="password"
                                         value={formData.password}
@@ -680,7 +687,7 @@ export default function PortalUsersPage() {
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>ROLE</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>ROLE</label>
                                     <select
                                         value={formData.role}
                                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
@@ -691,12 +698,12 @@ export default function PortalUsersPage() {
                                     </select>
                                 </div>
                                 <div style={{ marginBottom: "16px", display: "flex", alignItems: "flex-end" }}>
-                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#a1a1aa", fontSize: "14px", paddingBottom: "12px" }}>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--text-secondary)", fontSize: "14px", paddingBottom: "12px" }}>
                                         <input
                                             type="checkbox"
                                             checked={formData.isActive}
                                             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                            style={{ accentColor: "#dc2626", width: "18px", height: "18px" }}
+                                            style={{ accentColor: "var(--brand-red)", width: "18px", height: "18px" }}
                                         />
                                         Aktif
                                     </label>
@@ -705,10 +712,10 @@ export default function PortalUsersPage() {
 
                             {/* Group assignment */}
                             <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>GRUP</label>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>GRUP</label>
                                 <div style={{
-                                    border: "1px solid #262626",
-                                    backgroundColor: "#111",
+                                    border: "1px solid var(--border-color)",
+                                    backgroundColor: "var(--bg-card)",
                                     padding: "12px",
                                     maxHeight: "150px",
                                     overflowY: "auto",
@@ -717,7 +724,7 @@ export default function PortalUsersPage() {
                                     gap: "8px",
                                 }}>
                                     {groups.length === 0 ? (
-                                        <span style={{ color: "#a3a3a3", fontSize: "13px" }}>Tidak ada grup tersedia</span>
+                                        <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>Tidak ada grup tersedia</span>
                                     ) : (
                                         groups.map(group => (
                                             <label key={group.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#e5e5e5", fontSize: "14px" }}>
@@ -725,7 +732,7 @@ export default function PortalUsersPage() {
                                                     type="checkbox"
                                                     checked={formData.groupIds.includes(group.id)}
                                                     onChange={() => handleGroupToggle(group.id)}
-                                                    style={{ accentColor: "#dc2626" }}
+                                                    style={{ accentColor: "var(--brand-red)" }}
                                                 />
                                                 {group.name}
                                             </label>
@@ -736,11 +743,11 @@ export default function PortalUsersPage() {
 
                             {/* Direct app access (override) */}
                             <div style={{ marginBottom: "24px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>AKSES LANGSUNG (OVERRIDE)</label>
-                                <p style={{ color: "#525252", fontSize: "11px", marginBottom: "8px" }}>Akses app di luar grup. Jika app sudah ada di grup, tidak perlu ditambah di sini.</p>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>AKSES LANGSUNG (OVERRIDE)</label>
+                                <p style={{ color: "var(--text-tertiary)", fontSize: "11px", marginBottom: "8px" }}>Akses app di luar grup. Jika app sudah ada di grup, tidak perlu ditambah di sini.</p>
                                 <div style={{
-                                    border: "1px solid #262626",
-                                    backgroundColor: "#111",
+                                    border: "1px solid var(--border-color)",
+                                    backgroundColor: "var(--bg-card)",
                                     padding: "12px",
                                     maxHeight: "150px",
                                     overflowY: "auto",
@@ -749,7 +756,7 @@ export default function PortalUsersPage() {
                                     gap: "8px",
                                 }}>
                                     {apps.length === 0 ? (
-                                        <span style={{ color: "#a3a3a3", fontSize: "13px" }}>Tidak ada aplikasi tersedia</span>
+                                        <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>Tidak ada aplikasi tersedia</span>
                                     ) : (
                                         apps.map(app => (
                                             <label key={app.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#e5e5e5", fontSize: "14px" }}>
@@ -757,11 +764,11 @@ export default function PortalUsersPage() {
                                                     type="checkbox"
                                                     checked={formData.appIds.includes(app.id)}
                                                     onChange={() => handleAppToggle(app.id)}
-                                                    style={{ accentColor: "#dc2626" }}
+                                                    style={{ accentColor: "var(--brand-red)" }}
                                                 />
                                                 {app.name}
                                                 {!app.isActive && (
-                                                    <span style={{ color: "#525252", fontSize: "11px" }}>(nonaktif)</span>
+                                                    <span style={{ color: "var(--text-tertiary)", fontSize: "11px" }}>(nonaktif)</span>
                                                 )}
                                             </label>
                                         ))
@@ -775,8 +782,8 @@ export default function PortalUsersPage() {
                                 style={{
                                     width: "100%",
                                     padding: "12px",
-                                    backgroundColor: "#dc2626",
-                                    color: "#fff",
+                                    backgroundColor: "var(--brand-red)",
+                                    color: "var(--text-primary)",
                                     fontSize: "13px",
                                     fontWeight: 600,
                                     border: "none",
@@ -803,27 +810,27 @@ export default function PortalUsersPage() {
                     zIndex: 60,
                 }}>
                     <div style={{
-                        backgroundColor: "#0a0a0a",
-                        border: "1px solid #262626",
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-color)",
                         width: "100%",
                         maxWidth: "400px",
                         padding: "24px",
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#fff" }}>
+                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
                                 Reset Password
                             </h2>
-                            <button onClick={() => { setShowResetModal(false); setResetTarget(null); }} style={{ background: "none", border: "none", color: "#737373", cursor: "pointer" }}>
+                            <button onClick={() => { setShowResetModal(false); setResetTarget(null); }} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
                                 <FiX size={20} />
                             </button>
                         </div>
 
-                        <p style={{ color: "#a1a1aa", fontSize: "14px", marginBottom: "16px" }}>
-                            Reset password untuk <strong style={{ color: "#fff" }}>{resetTarget.name}</strong> ({resetTarget.email})
+                        <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginBottom: "16px" }}>
+                            Reset password untuk <strong style={{ color: "var(--text-primary)" }}>{resetTarget.name}</strong> ({resetTarget.email})
                         </p>
 
                         <div style={{ marginBottom: "24px" }}>
-                            <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>PASSWORD BARU</label>
+                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>PASSWORD BARU</label>
                             <input
                                 type="password"
                                 value={newPassword}
@@ -840,7 +847,7 @@ export default function PortalUsersPage() {
                                 width: "100%",
                                 padding: "12px",
                                 backgroundColor: "#fbbf24",
-                                color: "#000",
+                                color: "var(--bg-primary)",
                                 fontSize: "13px",
                                 fontWeight: 600,
                                 border: "none",
@@ -853,6 +860,7 @@ export default function PortalUsersPage() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog />
         </div>
     );
 }

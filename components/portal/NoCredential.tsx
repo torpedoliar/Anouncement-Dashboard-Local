@@ -12,7 +12,7 @@ export default function NoCredential({ appName, appSlug }: NoCredentialProps) {
     return (
         <div style={{
             minHeight: "100vh",
-            backgroundColor: "#0a0a0a",
+            backgroundColor: "var(--bg-secondary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -39,26 +39,26 @@ export default function NoCredential({ appName, appSlug }: NoCredentialProps) {
                     fontFamily: "Montserrat, sans-serif",
                     fontSize: "20px",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--text-primary)",
                     margin: "0 0 12px",
                 }}>
                     Kredensial Belum Disimpan
                 </h1>
                 <p style={{
-                    color: "#a1a1aa",
+                    color: "var(--text-secondary)",
                     fontSize: "14px",
                     lineHeight: "1.6",
                     margin: "0 0 24px",
                 }}>
-                    Anda belum menyimpan kredensial untuk <strong style={{ color: "#fff" }}>{appName}</strong>
+                    Anda belum menyimpan kredensial untuk <strong style={{ color: "var(--text-primary)" }}>{appName}</strong>
                 </p>
                 <Link
                     href={`/portal/credentials?app=${appSlug}`}
                     style={{
                         display: "inline-block",
                         padding: "10px 24px",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
+                        backgroundColor: "var(--brand-red)",
+                        color: "var(--text-primary)",
                         borderRadius: "8px",
                         fontSize: "13px",
                         fontWeight: 600,

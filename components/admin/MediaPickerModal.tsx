@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FiX, FiSearch, FiImage, FiVideo, FiFolder, FiGlobe, FiCheck, FiLoader, FiChevronDown } from "react-icons/fi";
+import { useToast } from "@/contexts/ToastContext";
 
 interface LocalMedia {
     id: string;
@@ -45,6 +46,7 @@ export default function MediaPickerModal({
     const [mediaFilter, setMediaFilter] = useState<MediaFilterType>(mediaType === "all" ? "all" : mediaType);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
+    const { showToast } = useToast();
 
     // Local media state
     const [localMedia, setLocalMedia] = useState<LocalMedia[]>([]);
@@ -180,11 +182,11 @@ export default function MediaPickerModal({
                     onSelect(data.url, selectedMedia.type === "video" ? "video" : "image");
                     onClose();
                 } else {
-                    alert("Gagal download media");
+                    showToast("Gagal download media", "error");
                 }
             } catch (error) {
                 console.error("Error downloading:", error);
-                alert("Gagal download media");
+                showToast("Gagal download media", "error");
             } finally {
                 setDownloading(false);
             }
@@ -221,12 +223,12 @@ export default function MediaPickerModal({
                 {/* Header */}
                 <div style={{
                     padding: "16px 20px",
-                    borderBottom: "1px solid #262626",
+                    borderBottom: "1px solid var(--border-color)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                 }}>
-                    <h2 style={{ color: "#fff", fontSize: "18px", fontWeight: 600, margin: 0 }}>
+                    <h2 style={{ color: "var(--text-primary)", fontSize: "18px", fontWeight: 600, margin: 0 }}>
                         Media Library
                     </h2>
                     <button
@@ -234,7 +236,7 @@ export default function MediaPickerModal({
                         style={{
                             background: "none",
                             border: "none",
-                            color: "#737373",
+                            color: "var(--text-muted)",
                             cursor: "pointer",
                             padding: "4px",
                         }}
@@ -246,7 +248,7 @@ export default function MediaPickerModal({
                 {/* Tabs & Filters */}
                 <div style={{
                     padding: "12px 20px",
-                    borderBottom: "1px solid #1a1a1a",
+                    borderBottom: "1px solid var(--bg-tertiary)",
                     display: "flex",
                     gap: "16px",
                     alignItems: "center",
@@ -262,8 +264,8 @@ export default function MediaPickerModal({
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "6px",
-                                backgroundColor: activeTab === "local" ? "#dc2626" : "#1a1a1a",
-                                color: activeTab === "local" ? "#fff" : "#737373",
+                                backgroundColor: activeTab === "local" ? "var(--brand-red)" : "var(--bg-tertiary)",
+                                color: activeTab === "local" ? "var(--text-primary)" : "var(--text-muted)",
                                 border: "none",
                                 borderRadius: "4px",
                                 fontSize: "13px",
@@ -280,8 +282,8 @@ export default function MediaPickerModal({
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "6px",
-                                backgroundColor: activeTab === "stock" ? "#dc2626" : "#1a1a1a",
-                                color: activeTab === "stock" ? "#fff" : "#737373",
+                                backgroundColor: activeTab === "stock" ? "var(--brand-red)" : "var(--bg-tertiary)",
+                                color: activeTab === "stock" ? "var(--text-primary)" : "var(--text-muted)",
                                 border: "none",
                                 borderRadius: "4px",
                                 fontSize: "13px",
@@ -300,9 +302,9 @@ export default function MediaPickerModal({
                                 onClick={() => setMediaFilter("all")}
                                 style={{
                                     padding: "6px 12px",
-                                    backgroundColor: mediaFilter === "all" ? "#262626" : "transparent",
-                                    color: mediaFilter === "all" ? "#fff" : "#737373",
-                                    border: "1px solid #333",
+                                    backgroundColor: mediaFilter === "all" ? "var(--border-color)" : "transparent",
+                                    color: mediaFilter === "all" ? "var(--text-primary)" : "var(--text-muted)",
+                                    border: "1px solid var(--border-strong)",
                                     borderRadius: "4px",
                                     fontSize: "12px",
                                     cursor: "pointer",
@@ -318,9 +320,9 @@ export default function MediaPickerModal({
                                     display: "flex",
                                     alignItems: "center",
                                     gap: "4px",
-                                    backgroundColor: mediaFilter === "image" ? "#262626" : "transparent",
-                                    color: mediaFilter === "image" ? "#fff" : "#737373",
-                                    border: "1px solid #333",
+                                    backgroundColor: mediaFilter === "image" ? "var(--border-color)" : "transparent",
+                                    color: mediaFilter === "image" ? "var(--text-primary)" : "var(--text-muted)",
+                                    border: "1px solid var(--border-strong)",
                                     borderRadius: "4px",
                                     fontSize: "12px",
                                     cursor: "pointer",
@@ -336,9 +338,9 @@ export default function MediaPickerModal({
                                     display: "flex",
                                     alignItems: "center",
                                     gap: "4px",
-                                    backgroundColor: mediaFilter === "video" ? "#262626" : "transparent",
-                                    color: mediaFilter === "video" ? "#fff" : "#737373",
-                                    border: "1px solid #333",
+                                    backgroundColor: mediaFilter === "video" ? "var(--border-color)" : "transparent",
+                                    color: mediaFilter === "video" ? "var(--text-primary)" : "var(--text-muted)",
+                                    border: "1px solid var(--border-strong)",
                                     borderRadius: "4px",
                                     fontSize: "12px",
                                     cursor: "pointer",
@@ -354,8 +356,8 @@ export default function MediaPickerModal({
                         <div style={{
                             display: "flex",
                             alignItems: "center",
-                            backgroundColor: "#1a1a1a",
-                            border: "1px solid #333",
+                            backgroundColor: "var(--bg-tertiary)",
+                            border: "1px solid var(--border-strong)",
                             borderRadius: "4px",
                             padding: "0 12px",
                         }}>
@@ -370,9 +372,8 @@ export default function MediaPickerModal({
                                     padding: "8px 12px",
                                     backgroundColor: "transparent",
                                     border: "none",
-                                    color: "#fff",
+                                    color: "var(--text-primary)",
                                     fontSize: "13px",
-                                    outline: "none",
                                 }}
                             />
                         </div>
@@ -389,12 +390,12 @@ export default function MediaPickerModal({
                         // Local Media Grid
                         <>
                             {localLoading && localMedia.length === 0 ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "#737373" }}>
+                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
                                     <FiLoader size={24} style={{ animation: "spin 1s linear infinite" }} />
                                     <p style={{ marginTop: "8px" }}>Memuat media...</p>
                                 </div>
                             ) : localMedia.length === 0 ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "#737373" }}>
+                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
                                     <FiFolder size={48} style={{ opacity: 0.3, marginBottom: "12px" }} />
                                     <p>Belum ada media</p>
                                 </div>
@@ -416,11 +417,11 @@ export default function MediaPickerModal({
                                                     style={{
                                                         position: "relative",
                                                         aspectRatio: "1",
-                                                        backgroundColor: "#1a1a1a",
+                                                        backgroundColor: "var(--bg-tertiary)",
                                                         borderRadius: "4px",
                                                         overflow: "hidden",
                                                         cursor: "pointer",
-                                                        border: isSelected ? "2px solid #dc2626" : "2px solid transparent",
+                                                        border: isSelected ? "2px solid var(--brand-red)" : "2px solid transparent",
                                                     }}
                                                 >
                                                     {isVideo ? (
@@ -481,9 +482,9 @@ export default function MediaPickerModal({
                                                 disabled={localLoading}
                                                 style={{
                                                     padding: "8px 24px",
-                                                    backgroundColor: "#1a1a1a",
-                                                    color: "#fff",
-                                                    border: "1px solid #333",
+                                                    backgroundColor: "var(--bg-tertiary)",
+                                                    color: "var(--text-primary)",
+                                                    border: "1px solid var(--border-strong)",
                                                     borderRadius: "4px",
                                                     cursor: "pointer",
                                                     display: "inline-flex",
@@ -503,18 +504,18 @@ export default function MediaPickerModal({
                         // Stock Media Grid
                         <>
                             {!stockAvailable ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "#737373" }}>
+                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
                                     <FiGlobe size={48} style={{ opacity: 0.3, marginBottom: "12px" }} />
                                     <p>Stock media tidak tersedia</p>
                                     <p style={{ fontSize: "12px", marginTop: "4px" }}>Pexels API key tidak dikonfigurasi</p>
                                 </div>
                             ) : stockLoading && stockMedia.length === 0 ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "#737373" }}>
+                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
                                     <FiLoader size={24} style={{ animation: "spin 1s linear infinite" }} />
                                     <p style={{ marginTop: "8px" }}>Mencari stock media...</p>
                                 </div>
                             ) : stockMedia.length === 0 ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "#737373" }}>
+                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
                                     <FiSearch size={48} style={{ opacity: 0.3, marginBottom: "12px" }} />
                                     <p>Tidak ditemukan</p>
                                     <p style={{ fontSize: "12px", marginTop: "4px" }}>Coba kata kunci lain</p>
@@ -536,11 +537,11 @@ export default function MediaPickerModal({
                                                     style={{
                                                         position: "relative",
                                                         aspectRatio: "1",
-                                                        backgroundColor: "#1a1a1a",
+                                                        backgroundColor: "var(--bg-tertiary)",
                                                         borderRadius: "4px",
                                                         overflow: "hidden",
                                                         cursor: "pointer",
-                                                        border: isSelected ? "2px solid #dc2626" : "2px solid transparent",
+                                                        border: isSelected ? "2px solid var(--brand-red)" : "2px solid transparent",
                                                     }}
                                                 >
                                                     <img
@@ -566,7 +567,7 @@ export default function MediaPickerModal({
                                                         }}>
                                                             <FiVideo size={12} color="#fff" />
                                                             {media.duration && (
-                                                                <span style={{ color: "#fff", fontSize: "10px" }}>
+                                                                <span style={{ color: "var(--text-primary)", fontSize: "10px" }}>
                                                                     {Math.floor(media.duration / 60)}:{String(media.duration % 60).padStart(2, "0")}
                                                                 </span>
                                                             )}
@@ -581,7 +582,7 @@ export default function MediaPickerModal({
                                                         background: "linear-gradient(transparent, rgba(0,0,0,0.8))",
                                                     }}>
                                                         <p style={{
-                                                            color: "#fff",
+                                                            color: "var(--text-primary)",
                                                             fontSize: "10px",
                                                             margin: 0,
                                                             overflow: "hidden",
@@ -617,9 +618,9 @@ export default function MediaPickerModal({
                                                 disabled={stockLoading}
                                                 style={{
                                                     padding: "8px 24px",
-                                                    backgroundColor: "#1a1a1a",
-                                                    color: "#fff",
-                                                    border: "1px solid #333",
+                                                    backgroundColor: "var(--bg-tertiary)",
+                                                    color: "var(--text-primary)",
+                                                    border: "1px solid var(--border-strong)",
                                                     borderRadius: "4px",
                                                     cursor: "pointer",
                                                     display: "inline-flex",
@@ -636,7 +637,7 @@ export default function MediaPickerModal({
                                     {/* Pexels Attribution */}
                                     <p style={{
                                         textAlign: "center",
-                                        color: "#525252",
+                                        color: "var(--text-tertiary)",
                                         fontSize: "11px",
                                         marginTop: "16px",
                                     }}>
@@ -659,12 +660,12 @@ export default function MediaPickerModal({
                 {/* Footer */}
                 <div style={{
                     padding: "12px 20px",
-                    borderTop: "1px solid #262626",
+                    borderTop: "1px solid var(--border-color)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                 }}>
-                    <div style={{ color: "#737373", fontSize: "12px" }}>
+                    <div style={{ color: "var(--text-muted)", fontSize: "12px" }}>
                         {selectedMedia ? (
                             "filename" in selectedMedia ? (
                                 <span>Dipilih: {selectedMedia.filename}</span>
@@ -682,8 +683,8 @@ export default function MediaPickerModal({
                             style={{
                                 padding: "8px 16px",
                                 backgroundColor: "transparent",
-                                color: "#737373",
-                                border: "1px solid #333",
+                                color: "var(--text-muted)",
+                                border: "1px solid var(--border-strong)",
                                 borderRadius: "4px",
                                 cursor: "pointer",
                                 fontSize: "13px",
@@ -697,8 +698,8 @@ export default function MediaPickerModal({
                             disabled={!selectedMedia || downloading}
                             style={{
                                 padding: "8px 16px",
-                                backgroundColor: selectedMedia ? "#dc2626" : "#333",
-                                color: "#fff",
+                                backgroundColor: selectedMedia ? "var(--brand-red)" : "var(--border-strong)",
+                                color: "var(--text-primary)",
                                 border: "none",
                                 borderRadius: "4px",
                                 cursor: selectedMedia ? "pointer" : "not-allowed",

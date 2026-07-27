@@ -23,7 +23,7 @@ export default async function NewAnnouncementPage() {
             {/* Header */}
             <div style={{ marginBottom: '32px' }}>
                 <p style={{
-                    color: '#dc2626',
+                    color: 'var(--brand-red)',
                     fontSize: '11px',
                     fontWeight: 600,
                     letterSpacing: '0.2em',
@@ -35,11 +35,11 @@ export default async function NewAnnouncementPage() {
                     fontFamily: 'Montserrat, sans-serif',
                     fontSize: '24px',
                     fontWeight: 700,
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                 }}>
                     Buat Pengumuman Baru
                 </h1>
-                <p style={{ color: '#737373', marginTop: '4px' }}>
+                <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
                     Tambahkan pengumuman baru ke dashboard
                 </p>
             </div>

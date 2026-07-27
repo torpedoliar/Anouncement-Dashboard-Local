@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FiMail, FiSave, FiRefreshCw, FiCheck, FiX, FiServer } from "react-icons/fi";
+import { useToast } from "@/contexts/ToastContext";
 
 interface EmailSettings {
     id: number;
@@ -23,6 +24,7 @@ export default function EmailPage() {
     const [isTesting, setIsTesting] = useState(false);
     const [testResult, setTestResult] = useState<{ success: boolean; error?: string } | null>(null);
     const [successMessage, setSuccessMessage] = useState("");
+    const { showToast } = useToast();
 
     useEffect(() => {
         fetchSettings();
@@ -62,10 +64,10 @@ export default function EmailPage() {
                 fetchSettings();
             } else {
                 const data = await response.json();
-                alert(data.error || "Gagal menyimpan pengaturan");
+                showToast(data.error || "Gagal menyimpan pengaturan", "error");
             }
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         } finally {
             setIsSaving(false);
         }
@@ -91,14 +93,14 @@ export default function EmailPage() {
     if (isLoading) {
         return (
             <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "#525252" }}>Loading...</p>
+                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
             </div>
         );
     }
 
     if (!settings) {
         return (
-            <div style={{ padding: "32px", textAlign: "center", color: "#ef4444" }}>
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--color-error)" }}>
                 Failed to load email settings
             </div>
         );
@@ -108,10 +110,10 @@ export default function EmailPage() {
         <div style={{ padding: "32px" }}>
             {/* Header */}
             <div style={{ marginBottom: "32px" }}>
-                <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
                     EMAIL
                 </p>
-                <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff" }}>
+                <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
                     Pengaturan Email
                 </h1>
             </div>
@@ -119,14 +121,14 @@ export default function EmailPage() {
             <form onSubmit={handleSave}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
                     {/* SMTP Settings */}
-                    <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", padding: "24px" }}>
-                        <h2 style={{ display: "flex", alignItems: "center", gap: "10px", color: "#fff", fontSize: "16px", fontWeight: 600, marginBottom: "24px" }}>
+                    <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", padding: "24px" }}>
+                        <h2 style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--text-primary)", fontSize: "16px", fontWeight: 600, marginBottom: "24px" }}>
                             <FiServer size={18} />
                             Konfigurasi SMTP
                         </h2>
 
                         <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
+                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
                                 SMTP HOST
                             </label>
                             <input
@@ -137,16 +139,16 @@ export default function EmailPage() {
                                 style={{
                                     width: "100%",
                                     padding: "12px",
-                                    backgroundColor: "#111",
-                                    border: "1px solid #333",
-                                    color: "#fff",
+                                    backgroundColor: "var(--bg-card)",
+                                    border: "1px solid var(--border-strong)",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
                         </div>
 
                         <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
+                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
                                 PORT
                             </label>
                             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -157,18 +159,18 @@ export default function EmailPage() {
                                     style={{
                                         width: "100px",
                                         padding: "12px",
-                                        backgroundColor: "#111",
-                                        border: "1px solid #333",
-                                        color: "#fff",
+                                        backgroundColor: "var(--bg-card)",
+                                        border: "1px solid var(--border-strong)",
+                                        color: "var(--text-primary)",
                                         fontSize: "14px",
                                     }}
                                 />
-                                <label style={{ display: "flex", alignItems: "center", gap: "8px", color: "#a1a1aa", fontSize: "13px", cursor: "pointer" }}>
+                                <label style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-secondary)", fontSize: "13px", cursor: "pointer" }}>
                                     <input
                                         type="checkbox"
                                         checked={settings.smtpSecure}
                                         onChange={(e) => setSettings({ ...settings, smtpSecure: e.target.checked })}
-                                        style={{ width: "18px", height: "18px", accentColor: "#dc2626" }}
+                                        style={{ width: "18px", height: "18px", accentColor: "var(--brand-red)" }}
                                     />
                                     SSL/TLS (port 465)
                                 </label>
@@ -176,7 +178,7 @@ export default function EmailPage() {
                         </div>
 
                         <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
+                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
                                 USERNAME (opsional)
                             </label>
                             <input
@@ -187,16 +189,16 @@ export default function EmailPage() {
                                 style={{
                                     width: "100%",
                                     padding: "12px",
-                                    backgroundColor: "#111",
-                                    border: "1px solid #333",
-                                    color: "#fff",
+                                    backgroundColor: "var(--bg-card)",
+                                    border: "1px solid var(--border-strong)",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
                         </div>
 
                         <div style={{ marginBottom: "24px" }}>
-                            <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
+                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
                                 PASSWORD (opsional)
                             </label>
                             <input
@@ -207,9 +209,9 @@ export default function EmailPage() {
                                 style={{
                                     width: "100%",
                                     padding: "12px",
-                                    backgroundColor: "#111",
-                                    border: "1px solid #333",
-                                    color: "#fff",
+                                    backgroundColor: "var(--bg-card)",
+                                    border: "1px solid var(--border-strong)",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
@@ -224,11 +226,11 @@ export default function EmailPage() {
                                 alignItems: "center",
                                 gap: "8px",
                                 padding: "12px 20px",
-                                backgroundColor: "#1a1a1a",
-                                color: "#fff",
+                                backgroundColor: "var(--bg-tertiary)",
+                                color: "var(--text-primary)",
                                 fontSize: "13px",
                                 fontWeight: 600,
-                                border: "1px solid #333",
+                                border: "1px solid var(--border-strong)",
                                 cursor: isTesting ? "not-allowed" : "pointer",
                                 opacity: isTesting ? 0.6 : 1,
                             }}
@@ -256,14 +258,14 @@ export default function EmailPage() {
                     </div>
 
                     {/* Sender Settings */}
-                    <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", padding: "24px" }}>
-                        <h2 style={{ display: "flex", alignItems: "center", gap: "10px", color: "#fff", fontSize: "16px", fontWeight: 600, marginBottom: "24px" }}>
+                    <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", padding: "24px" }}>
+                        <h2 style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--text-primary)", fontSize: "16px", fontWeight: 600, marginBottom: "24px" }}>
                             <FiMail size={18} />
                             Informasi Pengirim
                         </h2>
 
                         <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
+                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
                                 NAMA PENGIRIM
                             </label>
                             <input
@@ -274,16 +276,16 @@ export default function EmailPage() {
                                 style={{
                                     width: "100%",
                                     padding: "12px",
-                                    backgroundColor: "#111",
-                                    border: "1px solid #333",
-                                    color: "#fff",
+                                    backgroundColor: "var(--bg-card)",
+                                    border: "1px solid var(--border-strong)",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
                         </div>
 
                         <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
+                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
                                 EMAIL PENGIRIM
                             </label>
                             <input
@@ -294,16 +296,16 @@ export default function EmailPage() {
                                 style={{
                                     width: "100%",
                                     padding: "12px",
-                                    backgroundColor: "#111",
-                                    border: "1px solid #333",
-                                    color: "#fff",
+                                    backgroundColor: "var(--bg-card)",
+                                    border: "1px solid var(--border-strong)",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
                         </div>
 
                         <div style={{ marginBottom: "24px" }}>
-                            <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
+                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
                                 REPLY-TO EMAIL (opsional)
                             </label>
                             <input
@@ -314,16 +316,16 @@ export default function EmailPage() {
                                 style={{
                                     width: "100%",
                                     padding: "12px",
-                                    backgroundColor: "#111",
-                                    border: "1px solid #333",
-                                    color: "#fff",
+                                    backgroundColor: "var(--bg-card)",
+                                    border: "1px solid var(--border-strong)",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
                         </div>
 
-                        <div style={{ borderTop: "1px solid #262626", paddingTop: "24px" }}>
-                            <label style={{ display: "flex", alignItems: "center", gap: "12px", color: "#a1a1aa", fontSize: "14px", cursor: "pointer" }}>
+                        <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "24px" }}>
+                            <label style={{ display: "flex", alignItems: "center", gap: "12px", color: "var(--text-secondary)", fontSize: "14px", cursor: "pointer" }}>
                                 <input
                                     type="checkbox"
                                     checked={settings.autoSendNewArticle}
@@ -346,8 +348,8 @@ export default function EmailPage() {
                             alignItems: "center",
                             gap: "8px",
                             padding: "14px 28px",
-                            backgroundColor: "#dc2626",
-                            color: "#fff",
+                            backgroundColor: "var(--brand-red)",
+                            color: "var(--text-primary)",
                             fontSize: "14px",
                             fontWeight: 600,
                             border: "none",
@@ -360,7 +362,7 @@ export default function EmailPage() {
                     </button>
 
                     {successMessage && (
-                        <span style={{ color: "#22c55e", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ color: "var(--color-success)", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
                             <FiCheck size={16} />
                             {successMessage}
                         </span>

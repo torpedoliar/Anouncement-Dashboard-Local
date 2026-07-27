@@ -112,7 +112,7 @@ export default function SitesPage() {
     if (isLoading) {
         return (
             <div style={{ padding: '40px', textAlign: 'center' }}>
-                <div style={{ color: '#888' }}>Loading sites...</div>
+                <div style={{ color: 'var(--text-muted)' }}>Loading sites...</div>
             </div>
         );
     }
@@ -130,7 +130,7 @@ export default function SitesPage() {
                     <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>
                         Site Management
                     </h1>
-                    <p style={{ color: '#888', fontSize: '14px' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
                         Manage all sites in your multi-site network
                     </p>
                 </div>
@@ -141,8 +141,8 @@ export default function SitesPage() {
                         alignItems: 'center',
                         gap: '8px',
                         padding: '12px 24px',
-                        backgroundColor: '#ED1C24',
-                        color: '#fff',
+                        backgroundColor: 'var(--brand-red)',
+                        color: 'var(--text-primary)',
                         borderRadius: '8px',
                         textDecoration: 'none',
                         fontWeight: 600,
@@ -166,7 +166,7 @@ export default function SitesPage() {
                         <div
                             key={site.id}
                             style={{
-                                backgroundColor: '#1a1a1a',
+                                backgroundColor: 'var(--bg-tertiary)',
                                 borderRadius: '12px',
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 overflow: 'hidden',
@@ -200,7 +200,7 @@ export default function SitesPage() {
                                                     fontSize: '10px',
                                                     padding: '2px 8px',
                                                     backgroundColor: 'rgba(237,28,36,0.2)',
-                                                    color: '#ED1C24',
+                                                    color: 'var(--brand-red)',
                                                     borderRadius: '4px',
                                                     textTransform: 'uppercase',
                                                     fontWeight: 600,
@@ -209,7 +209,7 @@ export default function SitesPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <div style={{ color: '#888', fontSize: '13px' }}>
+                                        <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
                                             /site/{site.slug}
                                         </div>
                                     </div>
@@ -235,7 +235,7 @@ export default function SitesPage() {
                                 borderBottom: '1px solid rgba(255,255,255,0.1)',
                             }}>
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ color: '#888', fontSize: '11px', marginBottom: '4px' }}>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>
                                         <FiFileText size={12} style={{ marginRight: '4px' }} />
                                         Articles
                                     </div>
@@ -244,7 +244,7 @@ export default function SitesPage() {
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ color: '#888', fontSize: '11px', marginBottom: '4px' }}>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>
                                         <FiFolder size={12} style={{ marginRight: '4px' }} />
                                         Categories
                                     </div>
@@ -253,7 +253,7 @@ export default function SitesPage() {
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ color: '#888', fontSize: '11px', marginBottom: '4px' }}>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>
                                         <FiUsers size={12} style={{ marginRight: '4px' }} />
                                         Users
                                     </div>
@@ -262,7 +262,7 @@ export default function SitesPage() {
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ color: '#888', fontSize: '11px', marginBottom: '4px' }}>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>
                                         Views (7d)
                                     </div>
                                     <div style={{ fontSize: '18px', fontWeight: 600 }}>
@@ -285,7 +285,7 @@ export default function SitesPage() {
                                         backgroundColor: 'rgba(255,255,255,0.05)',
                                         border: '1px solid rgba(255,255,255,0.1)',
                                         borderRadius: '8px',
-                                        color: '#fff',
+                                        color: 'var(--text-primary)',
                                         textDecoration: 'none',
                                         fontSize: '13px',
                                         transition: 'background 0.2s',
@@ -306,7 +306,7 @@ export default function SitesPage() {
                                         backgroundColor: 'rgba(255,255,255,0.05)',
                                         border: '1px solid rgba(255,255,255,0.1)',
                                         borderRadius: '8px',
-                                        color: '#fff',
+                                        color: 'var(--text-primary)',
                                         textDecoration: 'none',
                                         fontSize: '13px',
                                         transition: 'background 0.2s',
@@ -328,7 +328,7 @@ export default function SitesPage() {
                                         backgroundColor: 'rgba(237,28,36,0.1)',
                                         border: '1px solid rgba(237,28,36,0.2)',
                                         borderRadius: '8px',
-                                        color: '#ED1C24',
+                                        color: 'var(--brand-red)',
                                         textDecoration: 'none',
                                         fontSize: '13px',
                                         transition: 'background 0.2s',
@@ -347,13 +347,13 @@ export default function SitesPage() {
                 <div style={{
                     textAlign: 'center',
                     padding: '60px 20px',
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: 'var(--bg-tertiary)',
                     borderRadius: '12px',
                     border: '1px solid rgba(255,255,255,0.1)',
                 }}>
                     <FiGlobe size={48} color="#666" style={{ marginBottom: '16px' }} />
                     <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>No Sites Yet</h3>
-                    <p style={{ color: '#888', marginBottom: '24px' }}>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
                         Create your first site to get started with multi-site management.
                     </p>
                     <Link
@@ -363,8 +363,8 @@ export default function SitesPage() {
                             alignItems: 'center',
                             gap: '8px',
                             padding: '12px 24px',
-                            backgroundColor: '#ED1C24',
-                            color: '#fff',
+                            backgroundColor: 'var(--brand-red)',
+                            color: 'var(--text-primary)',
                             borderRadius: '8px',
                             textDecoration: 'none',
                             fontWeight: 600,

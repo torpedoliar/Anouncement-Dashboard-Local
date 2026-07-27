@@ -12,7 +12,7 @@ export default function CorruptCredential({ appName, appSlug }: CorruptCredentia
     return (
         <div style={{
             minHeight: "100vh",
-            backgroundColor: "#0a0a0a",
+            backgroundColor: "var(--bg-secondary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -39,13 +39,13 @@ export default function CorruptCredential({ appName, appSlug }: CorruptCredentia
                     fontFamily: "Montserrat, sans-serif",
                     fontSize: "20px",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--text-primary)",
                     margin: "0 0 12px",
                 }}>
                     Kredensial Rusak
                 </h1>
                 <p style={{
-                    color: "#a1a1aa",
+                    color: "var(--text-secondary)",
                     fontSize: "14px",
                     lineHeight: "1.6",
                     margin: "0 0 8px",
@@ -53,20 +53,20 @@ export default function CorruptCredential({ appName, appSlug }: CorruptCredentia
                     Kredensial rusak. Silakan simpan ulang.
                 </p>
                 <p style={{
-                    color: "#737373",
+                    color: "var(--text-muted)",
                     fontSize: "13px",
                     lineHeight: "1.6",
                     margin: "0 0 24px",
                 }}>
-                    Kredensial untuk <strong style={{ color: "#a1a1aa" }}>{appName}</strong> tidak dapat dibaca. Silakan simpan ulang untuk melanjutkan.
+                    Kredensial untuk <strong style={{ color: "var(--text-secondary)" }}>{appName}</strong> tidak dapat dibaca. Silakan simpan ulang untuk melanjutkan.
                 </p>
                 <Link
                     href={`/portal/credentials?app=${appSlug}`}
                     style={{
                         display: "inline-block",
                         padding: "10px 24px",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
+                        backgroundColor: "var(--brand-red)",
+                        color: "var(--text-primary)",
                         borderRadius: "8px",
                         fontSize: "13px",
                         fontWeight: 600,

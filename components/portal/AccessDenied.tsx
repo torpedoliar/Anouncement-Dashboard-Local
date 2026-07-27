@@ -11,7 +11,7 @@ export default function AccessDenied({ appName }: AccessDeniedProps) {
     return (
         <div style={{
             minHeight: "100vh",
-            backgroundColor: "#0a0a0a",
+            backgroundColor: "var(--bg-secondary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -38,31 +38,31 @@ export default function AccessDenied({ appName }: AccessDeniedProps) {
                     fontFamily: "Montserrat, sans-serif",
                     fontSize: "20px",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "var(--text-primary)",
                     margin: "0 0 12px",
                 }}>
                     Akses Ditolak
                 </h1>
                 <p style={{
-                    color: "#a1a1aa",
+                    color: "var(--text-secondary)",
                     fontSize: "14px",
                     lineHeight: "1.6",
                     margin: "0 0 24px",
                 }}>
-                    Anda tidak punya akses ke <strong style={{ color: "#fff" }}>{appName}</strong>
+                    Anda tidak punya akses ke <strong style={{ color: "var(--text-primary)" }}>{appName}</strong>
                 </p>
                 <Link
                     href="/portal"
                     style={{
                         display: "inline-block",
                         padding: "10px 24px",
-                        backgroundColor: "#262626",
-                        color: "#a1a1aa",
+                        backgroundColor: "var(--border-color)",
+                        color: "var(--text-secondary)",
                         borderRadius: "8px",
                         fontSize: "13px",
                         fontWeight: 500,
                         textDecoration: "none",
-                        border: "1px solid #262626",
+                        border: "1px solid var(--border-color)",
                     }}
                 >
                     Kembali ke Portal

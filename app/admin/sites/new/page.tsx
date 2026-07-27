@@ -99,7 +99,7 @@ export default function CreateSitePage() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "8px",
-                        color: "#888",
+                        color: "var(--text-muted)",
                         textDecoration: "none",
                         marginBottom: "16px",
                     }}
@@ -110,7 +110,7 @@ export default function CreateSitePage() {
                 <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "8px" }}>
                     Create New Site
                 </h1>
-                <p style={{ color: "#888", fontSize: "14px" }}>
+                <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
                     Add a new site to your multi-site network
                 </p>
             </div>
@@ -119,7 +119,7 @@ export default function CreateSitePage() {
             <form onSubmit={handleSubmit}>
                 <div
                     style={{
-                        backgroundColor: "#1a1a1a",
+                        backgroundColor: "var(--bg-tertiary)",
                         borderRadius: "12px",
                         border: "1px solid rgba(255,255,255,0.1)",
                         padding: "24px",
@@ -136,7 +136,7 @@ export default function CreateSitePage() {
                             style={{
                                 display: "block",
                                 fontSize: "13px",
-                                color: "#888",
+                                color: "var(--text-muted)",
                                 marginBottom: "8px",
                             }}
                         >
@@ -154,7 +154,7 @@ export default function CreateSitePage() {
                                 backgroundColor: "rgba(255,255,255,0.05)",
                                 border: "1px solid rgba(255,255,255,0.1)",
                                 borderRadius: "8px",
-                                color: "#fff",
+                                color: "var(--text-primary)",
                                 fontSize: "14px",
                             }}
                         />
@@ -166,14 +166,14 @@ export default function CreateSitePage() {
                             style={{
                                 display: "block",
                                 fontSize: "13px",
-                                color: "#888",
+                                color: "var(--text-muted)",
                                 marginBottom: "8px",
                             }}
                         >
                             URL Slug *
                         </label>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ color: "#666", fontSize: "14px" }}>/site/</span>
+                            <span style={{ color: "var(--text-tertiary)", fontSize: "14px" }}>/site/</span>
                             <input
                                 type="text"
                                 value={slug}
@@ -187,12 +187,12 @@ export default function CreateSitePage() {
                                     backgroundColor: "rgba(255,255,255,0.05)",
                                     border: "1px solid rgba(255,255,255,0.1)",
                                     borderRadius: "8px",
-                                    color: "#fff",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
                         </div>
-                        <div style={{ color: "#666", fontSize: "11px", marginTop: "6px" }}>
+                        <div style={{ color: "var(--text-tertiary)", fontSize: "11px", marginTop: "6px" }}>
                             Only lowercase letters, numbers, and hyphens
                         </div>
                     </div>
@@ -203,7 +203,7 @@ export default function CreateSitePage() {
                             style={{
                                 display: "block",
                                 fontSize: "13px",
-                                color: "#888",
+                                color: "var(--text-muted)",
                                 marginBottom: "8px",
                             }}
                         >
@@ -220,7 +220,7 @@ export default function CreateSitePage() {
                                 backgroundColor: "rgba(255,255,255,0.05)",
                                 border: "1px solid rgba(255,255,255,0.1)",
                                 borderRadius: "8px",
-                                color: "#fff",
+                                color: "var(--text-primary)",
                                 fontSize: "14px",
                                 resize: "vertical",
                             }}
@@ -233,7 +233,7 @@ export default function CreateSitePage() {
                             style={{
                                 display: "block",
                                 fontSize: "13px",
-                                color: "#888",
+                                color: "var(--text-muted)",
                                 marginBottom: "8px",
                             }}
                         >
@@ -262,7 +262,7 @@ export default function CreateSitePage() {
                                     backgroundColor: "rgba(255,255,255,0.05)",
                                     border: "1px solid rgba(255,255,255,0.1)",
                                     borderRadius: "8px",
-                                    color: "#fff",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             />
@@ -273,7 +273,7 @@ export default function CreateSitePage() {
                 {/* Template Selection */}
                 <div
                     style={{
-                        backgroundColor: "#1a1a1a",
+                        backgroundColor: "var(--bg-tertiary)",
                         borderRadius: "12px",
                         border: "1px solid rgba(255,255,255,0.1)",
                         padding: "24px",
@@ -301,10 +301,10 @@ export default function CreateSitePage() {
                         >
                             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
                                 <FiGlobe size={24} color={cloneMode === "blank" ? "#ED1C24" : "#888"} />
-                                <span style={{ fontWeight: 600, color: "#fff" }}>Blank Site</span>
+                                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Blank Site</span>
                                 {cloneMode === "blank" && <FiCheck color="#ED1C24" size={18} />}
                             </div>
-                            <p style={{ color: "#888", fontSize: "13px" }}>
+                            <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
                                 Start fresh with default settings
                             </p>
                         </button>
@@ -327,10 +327,10 @@ export default function CreateSitePage() {
                         >
                             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
                                 <FiCopy size={24} color={cloneMode === "clone" ? "#ED1C24" : "#888"} />
-                                <span style={{ fontWeight: 600, color: "#fff" }}>Clone Existing</span>
+                                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Clone Existing</span>
                                 {cloneMode === "clone" && <FiCheck color="#ED1C24" size={18} />}
                             </div>
-                            <p style={{ color: "#888", fontSize: "13px" }}>
+                            <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
                                 Copy settings & categories from another site
                             </p>
                         </button>
@@ -343,7 +343,7 @@ export default function CreateSitePage() {
                                 style={{
                                     display: "block",
                                     fontSize: "13px",
-                                    color: "#888",
+                                    color: "var(--text-muted)",
                                     marginBottom: "8px",
                                 }}
                             >
@@ -359,7 +359,7 @@ export default function CreateSitePage() {
                                     backgroundColor: "rgba(255,255,255,0.05)",
                                     border: "1px solid rgba(255,255,255,0.1)",
                                     borderRadius: "8px",
-                                    color: "#fff",
+                                    color: "var(--text-primary)",
                                     fontSize: "14px",
                                 }}
                             >
@@ -382,7 +382,7 @@ export default function CreateSitePage() {
                             backgroundColor: "rgba(239,68,68,0.1)",
                             border: "1px solid rgba(239,68,68,0.2)",
                             borderRadius: "8px",
-                            color: "#ef4444",
+                            color: "var(--color-error)",
                             marginBottom: "24px",
                         }}
                     >
@@ -399,7 +399,7 @@ export default function CreateSitePage() {
                             backgroundColor: "rgba(255,255,255,0.05)",
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: "8px",
-                            color: "#fff",
+                            color: "var(--text-primary)",
                             textDecoration: "none",
                             fontWeight: 600,
                         }}
@@ -412,10 +412,10 @@ export default function CreateSitePage() {
                         style={{
                             flex: 1,
                             padding: "14px 28px",
-                            backgroundColor: "#ED1C24",
+                            backgroundColor: "var(--brand-red)",
                             border: "none",
                             borderRadius: "8px",
-                            color: "#fff",
+                            color: "var(--text-primary)",
                             fontWeight: 600,
                             cursor: isSubmitting ? "not-allowed" : "pointer",
                             opacity: isSubmitting ? 0.7 : 1,

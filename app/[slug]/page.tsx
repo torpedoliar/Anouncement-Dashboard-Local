@@ -292,7 +292,7 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                         </div>
                         <div style={{ flex: 1 }}>
                             <p style={{
-                                color: '#525252',
+                                color: 'var(--text-muted)',
                                 fontSize: '11px',
                                 fontWeight: 600,
                                 letterSpacing: '0.1em',
@@ -343,7 +343,7 @@ export default async function AnnouncementPage({ params }: AnnouncementPageProps
                         alignItems: 'center',
                         gap: '12px',
                     }}>
-                        <span style={{ color: '#525252', fontSize: '13px' }}>Kategori:</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Kategori:</span>
                         <span
                             style={{
                                 padding: '6px 14px',

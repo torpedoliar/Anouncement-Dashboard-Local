@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, use } from "react";
 import { FiClock, FiRotateCcw, FiUser, FiArrowLeft, FiGitCommit } from "react-icons/fi";
 import Link from "next/link";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface Revision {
     id: string;
@@ -39,6 +41,8 @@ export default function RevisionsPage({
     const [isLoading, setIsLoading] = useState(true);
     const [isRestoring, setIsRestoring] = useState<string | null>(null);
     const [announcement, setAnnouncement] = useState<{ id: string; title: string } | null>(null);
+    const { showToast } = useToast();
+    const { confirm, ConfirmDialog } = useConfirm();
 
     const fetchRevisions = useCallback(async () => {
         try {
@@ -73,7 +77,7 @@ export default function RevisionsPage({
     }, [fetchRevisions, fetchAnnouncement]);
 
     const handleRestore = async (revisionId: string) => {
-        if (!confirm("Apakah Anda yakin ingin memulihkan ke versi ini? Versi saat ini akan disimpan terlebih dahulu.")) {
+        if (!(await confirm({ title: "Pulihkan Versi", message: "Apakah Anda yakin ingin memulihkan ke versi ini? Versi saat ini akan disimpan terlebih dahulu.", variant: "default" }))) {
             return;
         }
 
@@ -87,15 +91,15 @@ export default function RevisionsPage({
 
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Gagal memulihkan");
+                showToast(data.error || "Gagal memulihkan", "error");
                 return;
             }
 
-            alert("Berhasil dipulihkan ke versi sebelumnya");
+            showToast("Berhasil dipulihkan ke versi sebelumnya", "success");
             fetchRevisions();
             fetchAnnouncement();
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         } finally {
             setIsRestoring(null);
         }
@@ -137,7 +141,7 @@ export default function RevisionsPage({
     if (isLoading) {
         return (
             <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "#525252" }}>Loading...</p>
+                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
             </div>
         );
     }
@@ -152,7 +156,7 @@ export default function RevisionsPage({
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "6px",
-                        color: "#737373",
+                        color: "var(--text-muted)",
                         fontSize: "13px",
                         marginBottom: "16px",
                         textDecoration: "none",
@@ -161,13 +165,13 @@ export default function RevisionsPage({
                     <FiArrowLeft size={14} />
                     Kembali ke Editor
                 </Link>
-                <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
                     RIWAYAT REVISI
                 </p>
-                <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "24px", fontWeight: 700, color: "#fff" }}>
+                <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "24px", fontWeight: 700, color: "var(--text-primary)" }}>
                     {announcement?.title || "Loading..."}
                 </h1>
-                <p style={{ color: "#737373", fontSize: "14px", marginTop: "8px" }}>
+                <p style={{ color: "var(--text-muted)", fontSize: "14px", marginTop: "8px" }}>
                     {pagination?.total || 0} versi tersimpan
                 </p>
             </div>
@@ -181,16 +185,16 @@ export default function RevisionsPage({
                     top: "0",
                     bottom: "0",
                     width: "2px",
-                    backgroundColor: "#262626",
+                    backgroundColor: "var(--border-color)",
                 }} />
 
                 {revisions.length === 0 ? (
                     <div style={{
-                        backgroundColor: "#0a0a0a",
-                        border: "1px solid #262626",
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-color)",
                         padding: "48px",
                         textAlign: "center",
-                        color: "#525252",
+                        color: "var(--text-tertiary)",
                         marginLeft: "40px",
                     }}>
                         <FiClock size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
@@ -212,22 +216,22 @@ export default function RevisionsPage({
                                         width: "12px",
                                         height: "12px",
                                         borderRadius: "50%",
-                                        backgroundColor: index === 0 ? "#dc2626" : "#333",
-                                        border: "2px solid #0a0a0a",
+                                        backgroundColor: index === 0 ? "var(--brand-red)" : "var(--border-strong)",
+                                        border: "2px solid var(--bg-secondary)",
                                     }} />
                                 </div>
 
                                 {/* Revision card */}
                                 <div style={{
                                     flex: 1,
-                                    backgroundColor: "#0a0a0a",
-                                    border: index === 0 ? "1px solid #dc2626" : "1px solid #262626",
+                                    backgroundColor: "var(--bg-secondary)",
+                                    border: index === 0 ? "1px solid var(--brand-red)" : "1px solid var(--border-color)",
                                     padding: "20px",
                                 }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                                         <div>
                                             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                                                <span style={{ color: "#fff", fontWeight: 600, fontSize: "15px" }}>
+                                                <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "15px" }}>
                                                     <FiGitCommit style={{ marginRight: "6px", verticalAlign: "middle" }} />
                                                     v{revision.version}
                                                 </span>
@@ -244,11 +248,11 @@ export default function RevisionsPage({
                                                     </span>
                                                 )}
                                             </div>
-                                            <p style={{ color: "#a1a1aa", fontSize: "14px", fontWeight: 500 }}>
+                                            <p style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: 500 }}>
                                                 {revision.title}
                                             </p>
                                             {revision.changeSummary && (
-                                                <p style={{ color: "#737373", fontSize: "13px", marginTop: "4px" }}>
+                                                <p style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "4px" }}>
                                                     {revision.changeSummary}
                                                 </p>
                                             )}
@@ -263,8 +267,8 @@ export default function RevisionsPage({
                                                     gap: "6px",
                                                     padding: "8px 14px",
                                                     backgroundColor: "transparent",
-                                                    border: "1px solid #333",
-                                                    color: "#a1a1aa",
+                                                    border: "1px solid var(--border-strong)",
+                                                    color: "var(--text-secondary)",
                                                     fontSize: "12px",
                                                     fontWeight: 600,
                                                     cursor: isRestoring ? "not-allowed" : "pointer",
@@ -277,7 +281,7 @@ export default function RevisionsPage({
                                         )}
                                     </div>
 
-                                    <div style={{ display: "flex", alignItems: "center", gap: "16px", color: "#525252", fontSize: "12px" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "16px", color: "var(--text-tertiary)", fontSize: "12px" }}>
                                         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                                             <FiUser size={12} />
                                             {revision.author.name}
@@ -293,6 +297,7 @@ export default function RevisionsPage({
                     </div>
                 )}
             </div>
+            <ConfirmDialog />
         </div>
     );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FiDownload, FiX, FiExternalLink, FiAlertCircle, FiDatabase } from "react-icons/fi";
+import { useToast } from "@/contexts/ToastContext";
 
 interface UpdateInfo {
     hasUpdate: boolean;
@@ -31,6 +32,7 @@ export default function UpdateBanner() {
     const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
     const [isDismissed, setIsDismissed] = useState(false);
     const [isBackingUp, setIsBackingUp] = useState(false);
+    const { showToast } = useToast();
 
     useEffect(() => {
         // Check localStorage for dismiss timestamp
@@ -103,7 +105,7 @@ export default function UpdateBanner() {
             const response = await fetch("/api/backup");
             if (!response.ok) {
                 const error = await response.json();
-                alert(error.error || "Backup gagal");
+                showToast(error.error || "Backup gagal", "error");
                 return;
             }
 
@@ -118,7 +120,7 @@ export default function UpdateBanner() {
             document.body.removeChild(a);
         } catch (error) {
             console.error("Backup error:", error);
-            alert("Gagal membuat backup");
+            showToast("Gagal membuat backup", "error");
         } finally {
             setIsBackingUp(false);
         }
@@ -140,7 +142,7 @@ export default function UpdateBanner() {
             <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <FiDownload color="#60a5fa" size={20} />
-                    <span style={{ color: "#fff", fontSize: "14px" }}>
+                    <span style={{ color: "var(--text-primary)", fontSize: "14px" }}>
                         Update tersedia: <strong>v{updateInfo.latestVersion}</strong>
                     </span>
                 </div>
@@ -202,7 +204,7 @@ export default function UpdateBanner() {
                         padding: "8px 16px",
                         backgroundColor: "rgba(59, 130, 246, 0.2)",
                         border: "1px solid rgba(59, 130, 246, 0.4)",
-                        color: "#60a5fa",
+                        color: "var(--color-info)",
                         fontSize: "12px",
                         fontWeight: 600,
                         textDecoration: "none",

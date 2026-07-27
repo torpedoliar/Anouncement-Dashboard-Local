@@ -108,7 +108,6 @@ export default function PortalLoginPage() {
                                 borderRadius: "8px",
                                 color: "#fff",
                                 fontSize: "14px",
-                                outline: "none",
                             }}
                             placeholder="email@example.com"
                         />
@@ -135,7 +134,6 @@ export default function PortalLoginPage() {
                                 borderRadius: "8px",
                                 color: "#fff",
                                 fontSize: "14px",
-                                outline: "none",
                             }}
                             placeholder="Password"
                         />

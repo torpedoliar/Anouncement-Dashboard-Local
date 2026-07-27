@@ -23,8 +23,8 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
 
     return (
         <header style={{
-            backgroundColor: "#111",
-            borderBottom: "1px solid #262626",
+            backgroundColor: "var(--bg-card)",
+            borderBottom: "1px solid var(--border-color)",
             padding: "0 24px",
             height: "60px",
             display: "flex",
@@ -33,13 +33,13 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
         }}>
             {/* Logo */}
             <Link href="/portal" style={{
-                color: "#fff",
+                color: "var(--text-primary)",
                 fontSize: "16px",
                 fontWeight: 700,
                 textDecoration: "none",
                 fontFamily: "Montserrat, sans-serif",
             }}>
-                <span style={{ color: "#dc2626" }}>PORTAL</span> SSO
+                <span style={{ color: "var(--brand-red)" }}>PORTAL</span> SSO
             </Link>
 
             {/* Desktop nav */}
@@ -56,8 +56,8 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
                                 gap: "6px",
                                 padding: "8px 14px",
                                 borderRadius: "6px",
-                                color: isActive(item.href) ? "#fff" : "#737373",
-                                backgroundColor: isActive(item.href) ? "#262626" : "transparent",
+                                color: isActive(item.href) ? "var(--text-primary)" : "var(--text-muted)",
+                                backgroundColor: isActive(item.href) ? "var(--border-color)" : "transparent",
                                 textDecoration: "none",
                                 fontSize: "13px",
                                 fontWeight: 500,
@@ -72,7 +72,7 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
 
             {/* Right side */}
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ color: "#a1a1aa", fontSize: "13px" }}>{userName}</span>
+                <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>{userName}</span>
                 <button
                     onClick={() => signOut({ callbackUrl: "/portal-login" })}
                     style={{
@@ -81,9 +81,9 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
                         gap: "6px",
                         padding: "8px 14px",
                         backgroundColor: "transparent",
-                        border: "1px solid #262626",
+                        border: "1px solid var(--border-color)",
                         borderRadius: "6px",
-                        color: "#737373",
+                        color: "var(--text-muted)",
                         fontSize: "13px",
                         cursor: "pointer",
                     }}
@@ -99,7 +99,7 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
                         display: "none",
                         background: "none",
                         border: "none",
-                        color: "#737373",
+                        color: "var(--text-muted)",
                         cursor: "pointer",
                         padding: "4px",
                     }}
@@ -116,8 +116,8 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
                     top: "60px",
                     left: 0,
                     right: 0,
-                    backgroundColor: "#111",
-                    borderBottom: "1px solid #262626",
+                    backgroundColor: "var(--bg-card)",
+                    borderBottom: "1px solid var(--border-color)",
                     padding: "12px",
                     zIndex: 50,
                 }}>
@@ -134,8 +134,8 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
                                     gap: "8px",
                                     padding: "12px 16px",
                                     borderRadius: "6px",
-                                    color: isActive(item.href) ? "#fff" : "#737373",
-                                    backgroundColor: isActive(item.href) ? "#262626" : "transparent",
+                                    color: isActive(item.href) ? "var(--text-primary)" : "var(--text-muted)",
+                                    backgroundColor: isActive(item.href) ? "var(--border-color)" : "transparent",
                                     textDecoration: "none",
                                     fontSize: "14px",
                                 }}

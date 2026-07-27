@@ -23,10 +23,10 @@ export default function AdminMainContent({ children }: AdminMainContentProps) {
         <main style={{
             flex: 1,
             minHeight: '100vh',
-            backgroundColor: '#0a0a0a',
+            backgroundColor: 'var(--bg-secondary)',
             marginLeft: isDesktop ? '256px' : '0',
             paddingTop: isDesktop ? '0' : '60px', // Space for mobile menu button
-            transition: 'margin-left 0.3s ease-in-out',
+
         }}>
             {children}
         </main>

@@ -70,7 +70,7 @@ export default function SiteHealthCard({
                 border: '1px solid rgba(255,255,255,0.1)',
                 padding: compact ? '16px' : '24px',
             }}>
-                <div style={{ color: '#666', fontSize: '13px', textAlign: 'center' }}>
+                <div style={{ color: 'var(--text-tertiary)', fontSize: '13px', textAlign: 'center' }}>
                     Loading health metrics...
                 </div>
             </div>
@@ -85,7 +85,7 @@ export default function SiteHealthCard({
                 border: '1px solid rgba(239,68,68,0.2)',
                 padding: compact ? '16px' : '24px',
             }}>
-                <div style={{ color: '#ef4444', fontSize: '13px', textAlign: 'center' }}>
+                <div style={{ color: 'var(--color-error)', fontSize: '13px', textAlign: 'center' }}>
                     {error || 'Failed to load metrics'}
                 </div>
                 <button
@@ -100,7 +100,7 @@ export default function SiteHealthCard({
                         backgroundColor: 'transparent',
                         border: '1px solid rgba(255,255,255,0.1)',
                         borderRadius: '6px',
-                        color: '#888',
+                        color: 'var(--text-muted)',
                         fontSize: '12px',
                         cursor: 'pointer',
                     }}
@@ -154,7 +154,7 @@ export default function SiteHealthCard({
                 {statItems.map((item) => (
                     <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <item.icon size={14} color={item.color} />
-                        <span style={{ color: '#fff', fontSize: '13px', fontWeight: 600 }}>
+                        <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}>
                             {item.value}
                         </span>
                     </div>
@@ -165,7 +165,7 @@ export default function SiteHealthCard({
 
     return (
         <div style={{
-            backgroundColor: '#1a1a1a',
+            backgroundColor: 'var(--bg-tertiary)',
             borderRadius: '12px',
             border: '1px solid rgba(255,255,255,0.1)',
             overflow: 'hidden',
@@ -181,7 +181,7 @@ export default function SiteHealthCard({
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <FiActivity size={18} color={primaryColor} />
-                    <span style={{ fontWeight: 600, color: '#fff' }}>{siteName} Health</span>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{siteName} Health</span>
                 </div>
                 <button
                     onClick={fetchHealth}
@@ -190,7 +190,7 @@ export default function SiteHealthCard({
                         backgroundColor: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#888',
+                        color: 'var(--text-muted)',
                     }}
                     title="Refresh"
                 >
@@ -210,20 +210,20 @@ export default function SiteHealthCard({
                         key={item.label}
                         style={{
                             padding: '20px',
-                            backgroundColor: '#1a1a1a',
+                            backgroundColor: 'var(--bg-tertiary)',
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                             <item.icon size={16} color={item.color} />
-                            <span style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase' }}>
+                            <span style={{ color: 'var(--text-tertiary)', fontSize: '12px', textTransform: 'uppercase' }}>
                                 {item.label}
                             </span>
                         </div>
-                        <div style={{ fontSize: '28px', fontWeight: 700, color: '#fff' }}>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)' }}>
                             {item.value}
                         </div>
                         {item.subValue && (
-                            <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
                                 {item.subValue}
                             </div>
                         )}
@@ -237,7 +237,7 @@ export default function SiteHealthCard({
                     padding: '16px 20px',
                     borderTop: '1px solid rgba(255,255,255,0.05)',
                 }}>
-                    <h4 style={{ fontSize: '12px', color: '#666', marginBottom: '12px', textTransform: 'uppercase' }}>
+                    <h4 style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '12px', textTransform: 'uppercase' }}>
                         Recent Activity
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -256,16 +256,16 @@ export default function SiteHealthCard({
                                     backgroundColor: activity.action === 'CREATE' ? 'rgba(34,197,94,0.1)' :
                                         activity.action === 'UPDATE' ? 'rgba(59,130,246,0.1)' :
                                             'rgba(239,68,68,0.1)',
-                                    color: activity.action === 'CREATE' ? '#22c55e' :
+                                    color: activity.action === 'CREATE' ? 'var(--color-success)' :
                                         activity.action === 'UPDATE' ? '#3b82f6' :
-                                            '#ef4444',
+                                            'var(--color-error)',
                                     borderRadius: '4px',
                                     fontSize: '10px',
                                     fontWeight: 600,
                                 }}>
                                     {activity.action}
                                 </span>
-                                <span style={{ color: '#888' }}>{activity.entityType}</span>
+                                <span style={{ color: 'var(--text-muted)' }}>{activity.entityType}</span>
                             </div>
                         ))}
                     </div>

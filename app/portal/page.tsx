@@ -47,7 +47,7 @@ export default async function PortalPage() {
                     borderRadius: "12px",
                 }}>
                     <FiGrid size={48} color="#262626" style={{ marginBottom: "16px" }} />
-                    <p style={{ color: "#525252", fontSize: "15px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "15px" }}>
                         Anda belum punya akses ke aplikasi apapun. Hubungi administrator.
                     </p>
                 </div>

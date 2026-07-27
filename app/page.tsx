@@ -194,7 +194,7 @@ export default async function HomePage({
               backgroundColor: '#0a0a0a',
               border: '1px solid #1a1a1a',
             }}>
-              <p style={{ color: '#525252', fontSize: '18px', marginBottom: '8px' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '18px', marginBottom: '8px' }}>
                 {activeCategory
                   ? `Belum ada artikel di kategori "${activeCategory}".`
                   : 'Belum ada pengumuman yang dipublikasikan.'}

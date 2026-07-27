@@ -166,7 +166,6 @@ export default function ForgotPasswordPage() {
                                         borderRadius: "8px",
                                         color: "#fff",
                                         fontSize: "14px",
-                                        outline: "none",
                                     }}
                                     placeholder="email@example.com"
                                 />

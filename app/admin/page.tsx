@@ -77,7 +77,7 @@ export default async function AdminDashboard() {
             }}>
                 <div>
                     <p style={{
-                        color: '#dc2626',
+                        color: 'var(--brand-red)',
                         fontSize: '11px',
                         fontWeight: 600,
                         letterSpacing: '0.2em',
@@ -89,7 +89,7 @@ export default async function AdminDashboard() {
                         fontFamily: 'Montserrat, sans-serif',
                         fontSize: '24px',
                         fontWeight: 700,
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                     }}>
                         Dashboard
                     </h1>
@@ -101,8 +101,8 @@ export default async function AdminDashboard() {
                         alignItems: 'center',
                         gap: '8px',
                         padding: '12px 24px',
-                        backgroundColor: '#dc2626',
-                        color: '#fff',
+                        backgroundColor: 'var(--brand-red)',
+                        color: 'var(--text-primary)',
                         fontSize: '11px',
                         fontWeight: 600,
                         letterSpacing: '0.1em',
@@ -161,7 +161,7 @@ export default async function AdminDashboard() {
                                 <stat.icon size={22} />
                             </div>
                             <p style={{
-                                color: '#a1a1aa',
+                                color: 'var(--text-secondary)',
                                 fontSize: '12px',
                                 fontWeight: 700,
                                 letterSpacing: '0.15em',
@@ -173,7 +173,7 @@ export default async function AdminDashboard() {
                                 fontFamily: 'Montserrat, sans-serif',
                                 fontSize: '36px',
                                 fontWeight: 800,
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 lineHeight: 1,
                             }}>
                                 {formatNumber(stat.value)}
@@ -185,19 +185,19 @@ export default async function AdminDashboard() {
 
             {/* Recent Announcements */}
             <div style={{
-                backgroundColor: '#0a0a0a',
-                border: '1px solid #1a1a1a',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--bg-tertiary)',
             }}>
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '24px',
-                    borderBottom: '1px solid #1a1a1a',
+                    borderBottom: '1px solid var(--bg-tertiary)',
                 }}>
                     <div>
                         <p style={{
-                            color: '#dc2626',
+                            color: 'var(--brand-red)',
                             fontSize: '11px',
                             fontWeight: 600,
                             letterSpacing: '0.2em',
@@ -208,7 +208,7 @@ export default async function AdminDashboard() {
                         <h2 style={{
                             fontFamily: 'Montserrat, sans-serif',
                             fontWeight: 700,
-                            color: '#fff',
+                            color: 'var(--text-primary)',
                         }}>
                             Pengumuman Terbaru
                         </h2>
@@ -219,7 +219,7 @@ export default async function AdminDashboard() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            color: '#dc2626',
+                            color: 'var(--brand-red)',
                             fontSize: '11px',
                             fontWeight: 600,
                             letterSpacing: '0.1em',
@@ -240,7 +240,7 @@ export default async function AdminDashboard() {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     padding: '20px 24px',
-                                    borderBottom: '1px solid #1a1a1a',
+                                    borderBottom: '1px solid var(--bg-tertiary)',
                                 }}
                             >
                                 <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -258,7 +258,7 @@ export default async function AdminDashboard() {
                                             <span style={{
                                                 padding: '4px 8px',
                                                 backgroundColor: 'rgba(220, 38, 38, 0.2)',
-                                                color: '#dc2626',
+                                                color: 'var(--brand-red)',
                                                 fontSize: '10px',
                                                 fontWeight: 600,
                                             }}>
@@ -269,7 +269,7 @@ export default async function AdminDashboard() {
                                             <span style={{
                                                 padding: '4px 8px',
                                                 backgroundColor: 'rgba(234, 179, 8, 0.2)',
-                                                color: '#eab308',
+                                                color: 'var(--color-warning)',
                                                 fontSize: '10px',
                                                 fontWeight: 600,
                                             }}>
@@ -278,7 +278,7 @@ export default async function AdminDashboard() {
                                         )}
                                     </div>
                                     <h3 style={{
-                                        color: '#fff',
+                                        color: 'var(--text-primary)',
                                         fontWeight: 500,
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
@@ -286,15 +286,16 @@ export default async function AdminDashboard() {
                                     }}>
                                         {announcement.title}
                                     </h3>
-                                    <p style={{ color: '#525252', fontSize: '13px' }}>
+                                    <p style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>
                                         {formatDateShort(announcement.createdAt)} • {formatNumber(announcement.viewCount)} views
                                     </p>
                                 </div>
                                 <Link
                                     href={`/admin/announcements/${announcement.id}/edit`}
+                                    aria-label="Edit pengumuman"
                                     style={{
                                         padding: '8px',
-                                        color: '#737373',
+                                        color: 'var(--text-muted)',
                                     }}
                                 >
                                     <FiEdit size={18} />
@@ -304,10 +305,10 @@ export default async function AdminDashboard() {
                     </div>
                 ) : (
                     <div style={{ textAlign: 'center', padding: '48px' }}>
-                        <p style={{ color: '#525252', marginBottom: '16px' }}>Belum ada pengumuman.</p>
+                        <p style={{ color: 'var(--text-tertiary)', marginBottom: '16px' }}>Belum ada pengumuman.</p>
                         <Link
                             href="/admin/announcements/new"
-                            style={{ color: '#dc2626', fontWeight: 700 }}
+                            style={{ color: 'var(--brand-red)', fontWeight: 700 }}
                         >
                             Buat pengumuman pertama &gt;&gt;
                         </Link>

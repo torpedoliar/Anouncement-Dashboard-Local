@@ -100,7 +100,7 @@ export default function SiteSyndicationPicker({
     if (isLoading) {
         return (
             <div style={boxStyle}>
-                <div style={{ color: '#666', fontSize: '13px' }}>Loading sites...</div>
+                <div style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>Loading sites...</div>
             </div>
         );
     }
@@ -108,7 +108,7 @@ export default function SiteSyndicationPicker({
     if (sites.length === 0) {
         return (
             <div style={boxStyle}>
-                <div style={{ color: '#888', fontSize: '13px' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
                     No sites available. Please create a site first.
                 </div>
             </div>
@@ -117,7 +117,7 @@ export default function SiteSyndicationPicker({
 
     return (
         <div>
-            <label style={{ display: 'block', fontSize: '13px', color: '#888', marginBottom: '8px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
                 Publish to Sites
             </label>
 
@@ -164,12 +164,12 @@ export default function SiteSyndicationPicker({
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{
-                                        fontSize: '14px', fontWeight: 600, color: '#fff',
+                                        fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)',
                                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                                     }}>
                                         {site.name}
                                     </div>
-                                    <div style={{ fontSize: '11px', color: '#666' }}>/site/{site.slug}</div>
+                                    <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>/site/{site.slug}</div>
                                 </div>
                             </button>
 
@@ -206,7 +206,7 @@ export default function SiteSyndicationPicker({
                                                 padding: '8px',
                                                 backgroundColor: assoc?.isPrimary ? site.primaryColor : 'rgba(255,255,255,0.05)',
                                                 border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)',
-                                                color: assoc?.isPrimary ? '#fff' : '#888',
+                                                color: assoc?.isPrimary ? 'var(--text-primary)' : 'var(--text-muted)',
                                                 fontSize: '11px', fontWeight: 600,
                                                 cursor: disabled ? 'not-allowed' : 'pointer',
                                             }}
@@ -223,14 +223,14 @@ export default function SiteSyndicationPicker({
             </div>
 
             {value.length > 1 && (
-                <div style={{ marginTop: '12px', fontSize: '12px', color: '#666' }}>
+                <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
                     <FiStar size={10} style={{ marginRight: '6px' }} />
                     Primary site digunakan untuk canonical URL (SEO). Hero &amp; Pin diatur terpisah per site.
                 </div>
             )}
 
             {value.length === 0 && (
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#ef4444' }}>
+                <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--color-error)' }}>
                     Pilih minimal satu site
                 </div>
             )}
@@ -263,7 +263,7 @@ function FlagButton({
                 backgroundColor: active ? color : 'rgba(255,255,255,0.05)',
                 border: 'none',
                 borderLeft: borderLeft ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                color: active ? '#fff' : '#888',
+                color: active ? 'var(--text-primary)' : 'var(--text-muted)',
                 fontSize: '11px', fontWeight: 600,
                 cursor: disabled ? 'not-allowed' : 'pointer',
             }}

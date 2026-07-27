@@ -28,6 +28,7 @@ import {
 } from "react-icons/fi";
 import { LuHeading1, LuHeading2, LuHeading3, LuListOrdered } from "react-icons/lu";
 import MediaPickerModal from "./MediaPickerModal";
+import { useToast } from "@/contexts/ToastContext";
 
 interface RichTextEditorProps {
     content: string;
@@ -132,6 +133,7 @@ export default function RichTextEditor({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
     const [showMediaPicker, setShowMediaPicker] = useState(false);
+    const { showToast } = useToast();
 
     const editor = useEditor({
         immediatelyRender: false,
@@ -195,7 +197,6 @@ export default function RichTextEditor({
                 style: `
                     min-height: 300px;
                     padding: 16px;
-                    outline: none;
                     color: #fff;
                     font-size: 15px;
                     line-height: 1.7;
@@ -230,7 +231,7 @@ export default function RichTextEditor({
         } catch (error) {
             console.error("Image upload failed:", error);
             const message = error instanceof Error ? error.message : "Gagal mengupload gambar";
-            alert(message);
+            showToast(message, "error");
         } finally {
             setIsUploading(false);
         }
@@ -245,13 +246,13 @@ export default function RichTextEditor({
 
         // Validate file type
         if (!file.type.startsWith('video/')) {
-            alert('Format file tidak valid. Hanya video yang diperbolehkan.');
+            showToast('Format file tidak valid. Hanya video yang diperbolehkan.', 'error');
             return;
         }
 
         // Validate file size (max 100MB)
         if (file.size > 100 * 1024 * 1024) {
-            alert('Ukuran video terlalu besar. Maksimal 100MB.');
+            showToast('Ukuran video terlalu besar. Maksimal 100MB.', 'error');
             return;
         }
 
@@ -278,7 +279,7 @@ export default function RichTextEditor({
         } catch (error) {
             console.error("Video upload failed:", error);
             const message = error instanceof Error ? error.message : "Gagal mengupload video";
-            alert(message);
+            showToast(message, "error");
         } finally {
             setIsVideoUploading(false);
         }
@@ -306,7 +307,7 @@ export default function RichTextEditor({
 
         const videoId = extractYoutubeId(youtubeUrl);
         if (!videoId) {
-            alert('URL YouTube tidak valid. Gunakan format:\n• youtube.com/watch?v=XXX\n• youtu.be/XXX');
+            showToast('URL YouTube tidak valid. Gunakan format:\n• youtube.com/watch?v=XXX\n• youtu.be/XXX', 'error');
             return;
         }
 
@@ -364,13 +365,13 @@ export default function RichTextEditor({
     if (!editor) {
         return (
             <div style={{
-                backgroundColor: '#0a0a0a',
-                border: '1px solid #262626',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
                 minHeight: '350px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#525252',
+                color: 'var(--text-tertiary)',
             }}>
                 Loading editor...
             </div>
@@ -411,8 +412,8 @@ export default function RichTextEditor({
 
     return (
         <div style={{
-            backgroundColor: '#0a0a0a',
-            border: '1px solid #262626',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
             display: 'flex',
             flexDirection: 'column',
             maxHeight: '80vh',
@@ -424,7 +425,7 @@ export default function RichTextEditor({
                 alignItems: 'center',
                 gap: '2px',
                 padding: '8px 12px',
-                borderBottom: '1px solid #262626',
+                borderBottom: '1px solid var(--border-color)',
                 backgroundColor: '#0f0f0f',
                 flexShrink: 0,
             }}>
@@ -555,7 +556,7 @@ export default function RichTextEditor({
                 </button>
 
                 {isUploading && (
-                    <span style={{ color: '#737373', fontSize: '12px', marginLeft: '8px' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '12px', marginLeft: '8px' }}>
                         Uploading...
                     </span>
                 )}
@@ -587,13 +588,13 @@ export default function RichTextEditor({
                 </button>
 
                 {isVideoUploading && (
-                    <span style={{ color: '#737373', fontSize: '12px' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
                         Uploading video...
                     </span>
                 )}
 
                 {/* Hint for image resize */}
-                <span style={{ color: '#525252', fontSize: '11px', marginLeft: 'auto' }}>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginLeft: 'auto' }}>
                     💡 Klik gambar untuk resize
                 </span>
 
@@ -605,8 +606,8 @@ export default function RichTextEditor({
                         ...buttonStyle(),
                         marginLeft: '8px',
                         padding: '6px 12px',
-                        backgroundColor: '#1a1a1a',
-                        border: '1px solid #333',
+                        backgroundColor: 'var(--bg-tertiary)',
+                        border: '1px solid var(--border-strong)',
                         borderRadius: '4px',
                         gap: '6px',
                         display: 'flex',
@@ -625,11 +626,11 @@ export default function RichTextEditor({
                     alignItems: 'center',
                     gap: '8px',
                     padding: '10px 12px',
-                    borderBottom: '1px solid #262626',
-                    backgroundColor: '#171717',
+                    borderBottom: '1px solid var(--border-color)',
+                    backgroundColor: 'var(--bg-hover)',
                     flexShrink: 0,
                 }}>
-                    <span style={{ color: '#a3a3a3', fontSize: '12px', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>
                         Gambar:
                     </span>
 
@@ -681,18 +682,18 @@ export default function RichTextEditor({
                             style={{
                                 width: '50px',
                                 padding: '5px 8px',
-                                backgroundColor: '#0a0a0a',
-                                border: '1px solid #333',
+                                backgroundColor: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-strong)',
                                 borderRadius: '4px',
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 fontSize: '12px',
                                 textAlign: 'center',
                             }}
                         />
-                        <span style={{ color: '#737373', fontSize: '12px' }}>%</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>%</span>
                     </div>
 
-                    <div style={{ width: '1px', height: '20px', backgroundColor: '#333' }} />
+                    <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-strong)' }} />
 
                     {/* Alignment Controls */}
                     <button
@@ -720,7 +721,7 @@ export default function RichTextEditor({
                         <FiAlignRight size={14} /> Kanan
                     </button>
 
-                    <div style={{ width: '1px', height: '20px', backgroundColor: '#333' }} />
+                    <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-strong)' }} />
 
                     {/* Delete */}
                     <button
@@ -742,11 +743,11 @@ export default function RichTextEditor({
                     alignItems: 'center',
                     gap: '8px',
                     padding: '10px 12px',
-                    borderBottom: '1px solid #262626',
-                    backgroundColor: '#171717',
+                    borderBottom: '1px solid var(--border-color)',
+                    backgroundColor: 'var(--bg-hover)',
                     flexShrink: 0,
                 }}>
-                    <span style={{ color: '#a3a3a3', fontSize: '12px', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>
                         Video:
                     </span>
 
@@ -798,7 +799,6 @@ export default function RichTextEditor({
                 .tiptap {
                     min-height: 300px;
                     padding: 16px;
-                    outline: none;
                 }
                 .tiptap p {
                     margin: 0 0 12px 0;
@@ -838,7 +838,7 @@ export default function RichTextEditor({
                     position: relative;
                 }
                 .tiptap img:hover {
-                    outline: 2px dashed #525252;
+                    outline: 2px dashed var(--text-muted);
                     outline-offset: 4px;
                 }
                 .tiptap img.ProseMirror-selectednode {
@@ -866,12 +866,12 @@ export default function RichTextEditor({
                 .tiptap p.is-editor-empty:first-child::before {
                     content: attr(data-placeholder);
                     float: left;
-                    color: #525252;
+                    color: var(--text-muted);
                     pointer-events: none;
                     height: 0;
                 }
                 .tiptap:focus {
-                    outline: none;
+                    /* rely on globals.css focus-visible */
                 }
             `}</style>
 
@@ -887,8 +887,8 @@ export default function RichTextEditor({
                     zIndex: 100,
                 }}>
                     <div style={{
-                        backgroundColor: '#171717',
-                        border: '1px solid #262626',
+                        backgroundColor: 'var(--bg-hover)',
+                        border: '1px solid var(--border-color)',
                         borderRadius: '8px',
                         padding: '24px',
                         width: '100%',
@@ -900,13 +900,13 @@ export default function RichTextEditor({
                             alignItems: 'center',
                             marginBottom: '16px',
                         }}>
-                            <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h3 style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <FiYoutube color="#dc2626" /> Embed YouTube Video
                             </h3>
                             <button
                                 type="button"
                                 onClick={() => { setShowYoutubeDialog(false); setYoutubeUrl(''); }}
-                                style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer' }}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
                             >
                                 <FiX size={20} />
                             </button>
@@ -920,16 +920,16 @@ export default function RichTextEditor({
                             style={{
                                 width: '100%',
                                 padding: '12px',
-                                backgroundColor: '#0a0a0a',
-                                border: '1px solid #333',
+                                backgroundColor: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-strong)',
                                 borderRadius: '6px',
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 fontSize: '14px',
                                 marginBottom: '12px',
                             }}
                             autoFocus
                         />
-                        <p style={{ color: '#737373', fontSize: '11px', marginBottom: '16px' }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '16px' }}>
                             Format: youtube.com/watch?v=XXX atau youtu.be/XXX
                         </p>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -939,8 +939,8 @@ export default function RichTextEditor({
                                 style={{
                                     padding: '8px 16px',
                                     backgroundColor: 'transparent',
-                                    border: '1px solid #333',
-                                    color: '#a3a3a3',
+                                    border: '1px solid var(--border-strong)',
+                                    color: 'var(--text-secondary)',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
                                 }}
@@ -953,9 +953,9 @@ export default function RichTextEditor({
                                 disabled={!youtubeUrl}
                                 style={{
                                     padding: '8px 16px',
-                                    backgroundColor: '#dc2626',
+                                    backgroundColor: 'var(--brand-red)',
                                     border: 'none',
-                                    color: '#fff',
+                                    color: 'var(--text-primary)',
                                     borderRadius: '6px',
                                     cursor: youtubeUrl ? 'pointer' : 'not-allowed',
                                     opacity: youtubeUrl ? 1 : 0.5,

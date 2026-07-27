@@ -87,7 +87,7 @@ export default function NewsletterPage() {
     if (isLoading && subscribers.length === 0) {
         return (
             <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "#525252" }}>Loading...</p>
+                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
             </div>
         );
     }
@@ -97,10 +97,10 @@ export default function NewsletterPage() {
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
                 <div>
-                    <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
                         NEWSLETTER
                     </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff" }}>
+                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
                         Subscribers
                     </h1>
                 </div>
@@ -112,10 +112,10 @@ export default function NewsletterPage() {
                             alignItems: "center",
                             gap: "8px",
                             padding: "10px 16px",
-                            backgroundColor: "#1a1a1a",
-                            color: "#fff",
+                            backgroundColor: "var(--bg-tertiary)",
+                            color: "var(--text-primary)",
                             fontSize: "13px",
-                            border: "1px solid #333",
+                            border: "1px solid var(--border-strong)",
                             cursor: "pointer",
                         }}
                     >
@@ -129,8 +129,8 @@ export default function NewsletterPage() {
                             alignItems: "center",
                             gap: "8px",
                             padding: "10px 16px",
-                            backgroundColor: "#dc2626",
-                            color: "#fff",
+                            backgroundColor: "var(--brand-red)",
+                            color: "var(--text-primary)",
                             fontSize: "13px",
                             fontWeight: 600,
                             border: "none",
@@ -145,19 +145,19 @@ export default function NewsletterPage() {
 
             {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>TOTAL SUBSCRIBERS</p>
-                    <p style={{ color: "#fff", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || 0}</p>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>TOTAL SUBSCRIBERS</p>
+                    <p style={{ color: "var(--text-primary)", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || 0}</p>
                 </div>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>ACTIVE</p>
-                    <p style={{ color: "#22c55e", fontSize: "24px", fontWeight: 700 }}>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>ACTIVE</p>
+                    <p style={{ color: "var(--color-success)", fontSize: "24px", fontWeight: 700 }}>
                         {subscribers.filter(s => s.isActive).length}
                     </p>
                 </div>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>UNSUBSCRIBED</p>
-                    <p style={{ color: "#ef4444", fontSize: "24px", fontWeight: 700 }}>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>UNSUBSCRIBED</p>
+                    <p style={{ color: "var(--color-error)", fontSize: "24px", fontWeight: 700 }}>
                         {subscribers.filter(s => !s.isActive).length}
                     </p>
                 </div>
@@ -166,7 +166,7 @@ export default function NewsletterPage() {
             {/* Filters */}
             <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
                 <div style={{ flex: 1, position: "relative" }}>
-                    <FiSearch size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#525252" }} />
+                    <FiSearch size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)" }} />
                     <input
                         type="text"
                         placeholder="Cari email atau nama..."
@@ -175,9 +175,9 @@ export default function NewsletterPage() {
                         style={{
                             width: "100%",
                             padding: "12px 12px 12px 40px",
-                            backgroundColor: "#111",
-                            border: "1px solid #333",
-                            color: "#fff",
+                            backgroundColor: "var(--bg-card)",
+                            border: "1px solid var(--border-strong)",
+                            color: "var(--text-primary)",
                             fontSize: "14px",
                         }}
                     />
@@ -187,9 +187,9 @@ export default function NewsletterPage() {
                     alignItems: "center",
                     gap: "8px",
                     padding: "0 16px",
-                    backgroundColor: "#1a1a1a",
-                    border: "1px solid #333",
-                    color: "#a1a1aa",
+                    backgroundColor: "var(--bg-tertiary)",
+                    border: "1px solid var(--border-strong)",
+                    color: "var(--text-secondary)",
                     fontSize: "13px",
                     cursor: "pointer",
                 }}>
@@ -204,34 +204,34 @@ export default function NewsletterPage() {
             </div>
 
             {/* Subscribers Table */}
-            <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", overflow: "hidden" }}>
+            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                        <tr style={{ borderBottom: "2px solid #333", backgroundColor: "#111" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>EMAIL</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>SOURCE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>SUBSCRIBED</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
+                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>EMAIL</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>SOURCE</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>SUBSCRIBED</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredSubscribers.length === 0 ? (
                             <tr>
-                                <td colSpan={5} style={{ padding: "48px", textAlign: "center", color: "#525252" }}>
+                                <td colSpan={5} style={{ padding: "48px", textAlign: "center", color: "var(--text-tertiary)" }}>
                                     <FiMail size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
                                     <p>Tidak ada subscriber ditemukan</p>
                                 </td>
                             </tr>
                         ) : (
                             filteredSubscribers.map((subscriber, index) => (
-                                <tr key={subscriber.id} style={{ borderBottom: index < filteredSubscribers.length - 1 ? "1px solid #262626" : "none" }}>
+                                <tr key={subscriber.id} style={{ borderBottom: index < filteredSubscribers.length - 1 ? "1px solid var(--border-color)" : "none" }}>
                                     <td style={{ padding: "20px" }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                             <div style={{
                                                 width: "32px",
                                                 height: "32px",
-                                                backgroundColor: "#1a1a1a",
+                                                backgroundColor: "var(--bg-tertiary)",
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
@@ -239,17 +239,17 @@ export default function NewsletterPage() {
                                             }}>
                                                 <FiMail size={14} color="#737373" />
                                             </div>
-                                            <span style={{ color: "#fff", fontSize: "14px" }}>{subscriber.email}</span>
+                                            <span style={{ color: "var(--text-primary)", fontSize: "14px" }}>{subscriber.email}</span>
                                         </div>
                                     </td>
-                                    <td style={{ padding: "20px", color: "#a1a1aa", fontSize: "14px" }}>
+                                    <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "14px" }}>
                                         {subscriber.name || "-"}
                                     </td>
                                     <td style={{ padding: "20px" }}>
                                         <span style={{
                                             padding: "4px 10px",
-                                            backgroundColor: "#1a1a1a",
-                                            color: "#737373",
+                                            backgroundColor: "var(--bg-tertiary)",
+                                            color: "var(--text-muted)",
                                             fontSize: "11px",
                                             fontWeight: 600,
                                         }}>
@@ -264,7 +264,7 @@ export default function NewsletterPage() {
                                             <span style={{
                                                 padding: "4px 12px",
                                                 backgroundColor: "rgba(34, 197, 94, 0.2)",
-                                                color: "#22c55e",
+                                                color: "var(--color-success)",
                                                 fontSize: "11px",
                                                 fontWeight: 600,
                                             }}>
@@ -274,7 +274,7 @@ export default function NewsletterPage() {
                                             <span style={{
                                                 padding: "4px 12px",
                                                 backgroundColor: "rgba(239, 68, 68, 0.2)",
-                                                color: "#ef4444",
+                                                color: "var(--color-error)",
                                                 fontSize: "11px",
                                                 fontWeight: 600,
                                             }}>
@@ -298,8 +298,8 @@ export default function NewsletterPage() {
                             onClick={() => setPage(p)}
                             style={{
                                 padding: "8px 16px",
-                                backgroundColor: p === page ? "#dc2626" : "#1a1a1a",
-                                color: "#fff",
+                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
+                                color: "var(--text-primary)",
                                 border: "none",
                                 cursor: "pointer",
                             }}

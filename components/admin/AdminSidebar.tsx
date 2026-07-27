@@ -113,10 +113,10 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                         left: '16px',
                         zIndex: 60,
                         padding: '8px',
-                        backgroundColor: '#171717',
-                        border: '1px solid #262626',
+                        backgroundColor: 'var(--bg-hover)',
+                        border: '1px solid var(--border-color)',
                         borderRadius: '6px',
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                         cursor: 'pointer',
                         transform: isOpen ? 'translateX(256px)' : 'translateX(0)',
                         transition: 'transform 0.3s ease-in-out',
@@ -148,20 +148,20 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                 zIndex: 50,
                 height: '100%',
                 width: '256px',
-                backgroundColor: '#000',
-                borderRight: '1px solid #1a1a1a',
+                backgroundColor: 'var(--bg-primary)',
+                borderRight: '1px solid var(--bg-tertiary)',
                 display: 'flex',
                 flexDirection: 'column',
                 transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
                 transition: 'transform 0.3s ease-in-out',
             }}>
                 {/* Logo */}
-                <div style={{ padding: '24px', borderBottom: '1px solid #1a1a1a' }}>
+                <div style={{ padding: '24px', borderBottom: '1px solid var(--bg-tertiary)' }}>
                     <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{
                             width: '40px',
                             height: '40px',
-                            backgroundColor: '#dc2626',
+                            backgroundColor: 'var(--brand-red)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -169,7 +169,7 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                             <span style={{
                                 fontFamily: 'Montserrat, sans-serif',
                                 fontWeight: 'bold',
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 fontSize: '18px',
                             }}>S</span>
                         </div>
@@ -177,11 +177,11 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                             <h1 style={{
                                 fontFamily: 'Montserrat, sans-serif',
                                 fontWeight: 700,
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 fontSize: '11px',
                                 letterSpacing: '0.1em',
                             }}>ADMIN</h1>
-                            <p style={{ fontSize: '11px', color: '#525252' }}>Dashboard</p>
+                            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Dashboard</p>
                         </div>
                     </Link>
                     {/* Current Date & Time */}
@@ -192,15 +192,15 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                             gap: '8px',
                             marginTop: '12px',
                             padding: '8px 10px',
-                            backgroundColor: '#0a0a0a',
+                            backgroundColor: 'var(--bg-secondary)',
                             borderRadius: '4px',
                         }}>
-                            <FiClock size={14} style={{ color: '#dc2626' }} />
+                            <FiClock size={14} style={{ color: 'var(--brand-red)' }} />
                             <div>
-                                <p style={{ fontSize: '10px', color: '#a3a3a3', fontWeight: 500 }}>
+                                <p style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 500 }}>
                                     {currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
                                 </p>
-                                <p style={{ fontSize: '13px', color: '#fff', fontWeight: 600, fontFamily: 'monospace' }}>
+                                <p style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, fontFamily: 'monospace' }}>
                                     {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                 </p>
                             </div>
@@ -209,7 +209,7 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                 </div>
 
                 {/* Quick Action */}
-                <div style={{ padding: '16px', borderBottom: '1px solid #1a1a1a' }}>
+                <div style={{ padding: '16px', borderBottom: '1px solid var(--bg-tertiary)' }}>
                     <Link
                         href="/admin/announcements/new"
                         style={{
@@ -220,8 +220,8 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                             width: '100%',
                             boxSizing: 'border-box',
                             padding: '12px 16px',
-                            backgroundColor: '#dc2626',
-                            color: '#fff',
+                            backgroundColor: 'var(--brand-red)',
+                            color: 'var(--text-primary)',
                             fontSize: '11px',
                             fontWeight: 600,
                             letterSpacing: '0.1em',
@@ -233,7 +233,7 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                 </div>
 
                 {/* Site Selector */}
-                <div style={{ padding: '0 16px 16px', borderBottom: '1px solid #1a1a1a' }}>
+                <div style={{ padding: '0 16px 16px', borderBottom: '1px solid var(--bg-tertiary)' }}>
                     <SiteSelector />
                 </div>
 
@@ -251,9 +251,9 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                                             alignItems: 'center',
                                             gap: '12px',
                                             padding: '12px 24px',
-                                            color: isActive ? '#dc2626' : '#a3a3a3',
-                                            backgroundColor: isActive ? '#0a0a0a' : 'transparent',
-                                            borderLeft: isActive ? '2px solid #dc2626' : '2px solid transparent',
+                                            color: isActive ? 'var(--brand-red)' : 'var(--text-secondary)',
+                                            backgroundColor: isActive ? 'var(--bg-secondary)' : 'transparent',
+                                            borderLeft: isActive ? '2px solid var(--brand-red)' : '2px solid transparent',
                                             fontSize: '11px',
                                             fontWeight: 600,
                                             letterSpacing: '0.1em',
@@ -272,8 +272,8 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                 {/* User Profile & Logout */}
                 <div style={{
                     padding: '16px',
-                    borderTop: '1px solid #1a1a1a',
-                    backgroundColor: '#000',
+                    borderTop: '1px solid var(--bg-tertiary)',
+                    backgroundColor: 'var(--bg-primary)',
                 }}>
                     <div style={{
                         display: 'flex',
@@ -284,19 +284,19 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                         <div style={{
                             width: '40px',
                             height: '40px',
-                            backgroundColor: '#1a1a1a',
+                            backgroundColor: 'var(--bg-tertiary)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}>
-                            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>
+                            <span style={{ color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '14px' }}>
                                 {userName?.charAt(0)?.toUpperCase() || "A"}
                             </span>
                         </div>
                         <div style={{ flex: 1, overflow: 'hidden' }}>
                             <p style={{
                                 fontSize: '13px',
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 fontWeight: 500,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -306,7 +306,7 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                             </p>
                             <p style={{
                                 fontSize: '11px',
-                                color: '#525252',
+                                color: 'var(--text-tertiary)',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -326,7 +326,7 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                             padding: '8px 16px',
                             backgroundColor: 'transparent',
                             border: 'none',
-                            color: '#737373',
+                            color: 'var(--text-muted)',
                             fontSize: '11px',
                             fontWeight: 600,
                             letterSpacing: '0.1em',

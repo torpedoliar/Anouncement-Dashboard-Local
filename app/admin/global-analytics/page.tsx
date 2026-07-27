@@ -111,7 +111,7 @@ export default function GlobalAnalyticsPage() {
     };
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
+        <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-secondary)", color: "var(--text-primary)" }}>
             {/* Header */}
             <div style={{
                 display: "flex",
@@ -127,7 +127,7 @@ export default function GlobalAnalyticsPage() {
                             padding: "8px",
                             backgroundColor: "transparent",
                             border: "none",
-                            color: "#888",
+                            color: "var(--text-muted)",
                             cursor: "pointer",
                         }}
                     >
@@ -137,7 +137,7 @@ export default function GlobalAnalyticsPage() {
                         <h1 style={{ fontSize: "24px", fontWeight: 700, display: "flex", alignItems: "center", gap: "10px" }}>
                             <FiPieChart /> Global Analytics
                         </h1>
-                        <p style={{ color: "#666", fontSize: "13px" }}>Cross-site performance overview</p>
+                        <p style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>Cross-site performance overview</p>
                     </div>
                 </div>
                 <button
@@ -148,10 +148,10 @@ export default function GlobalAnalyticsPage() {
                         alignItems: "center",
                         gap: "8px",
                         padding: "10px 20px",
-                        backgroundColor: "#262626",
+                        backgroundColor: "var(--border-color)",
                         border: "none",
                         borderRadius: "8px",
-                        color: "#fff",
+                        color: "var(--text-primary)",
                         cursor: isLoading ? "not-allowed" : "pointer",
                         opacity: isLoading ? 0.6 : 1,
                     }}
@@ -168,7 +168,7 @@ export default function GlobalAnalyticsPage() {
                         backgroundColor: "rgba(239,68,68,0.1)",
                         border: "1px solid rgba(239,68,68,0.3)",
                         borderRadius: "8px",
-                        color: "#ef4444",
+                        color: "var(--color-error)",
                         marginBottom: "24px",
                     }}>
                         {error}
@@ -176,7 +176,7 @@ export default function GlobalAnalyticsPage() {
                 )}
 
                 {isLoading && !stats ? (
-                    <div style={{ textAlign: "center", padding: "60px", color: "#666" }}>
+                    <div style={{ textAlign: "center", padding: "60px", color: "var(--text-tertiary)" }}>
                         Loading analytics...
                     </div>
                 ) : stats && (
@@ -191,35 +191,35 @@ export default function GlobalAnalyticsPage() {
                             <div style={cardStyle}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                                     <FiGlobe size={20} color="#3b82f6" />
-                                    <span style={{ color: "#888", fontSize: "13px" }}>Sites</span>
+                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Sites</span>
                                 </div>
                                 <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalSites}</div>
                             </div>
                             <div style={cardStyle}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                                     <FiFileText size={20} color="#22c55e" />
-                                    <span style={{ color: "#888", fontSize: "13px" }}>Articles</span>
+                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Articles</span>
                                 </div>
                                 <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalAnnouncements}</div>
                             </div>
                             <div style={cardStyle}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                                     <FiEye size={20} color="#a855f7" />
-                                    <span style={{ color: "#888", fontSize: "13px" }}>Total Views</span>
+                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Total Views</span>
                                 </div>
                                 <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalViews.toLocaleString()}</div>
                             </div>
                             <div style={cardStyle}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                                     <FiBarChart2 size={20} color="#f59e0b" />
-                                    <span style={{ color: "#888", fontSize: "13px" }}>Categories</span>
+                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Categories</span>
                                 </div>
                                 <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalCategories}</div>
                             </div>
                             <div style={cardStyle}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                                     <FiUsers size={20} color="#ec4899" />
-                                    <span style={{ color: "#888", fontSize: "13px" }}>Users</span>
+                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Users</span>
                                 </div>
                                 <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalUsers}</div>
                             </div>
@@ -258,8 +258,8 @@ export default function GlobalAnalyticsPage() {
                                             <FiGlobe color="#fff" size={20} />
                                         </div>
                                         <div>
-                                            <h3 style={{ fontSize: "16px", fontWeight: 600, color: "#fff" }}>{site.name}</h3>
-                                            <span style={{ fontSize: "12px", color: "#666" }}>/site/{site.slug}</span>
+                                            <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text-primary)" }}>{site.name}</h3>
+                                            <span style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>/site/{site.slug}</span>
                                         </div>
                                     </div>
 
@@ -271,28 +271,28 @@ export default function GlobalAnalyticsPage() {
                                         borderTop: "1px solid rgba(255,255,255,0.1)",
                                     }}>
                                         <div style={{ textAlign: "center" }}>
-                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
+                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
                                                 {site.stats.publishedAnnouncements}
                                             </div>
-                                            <div style={{ fontSize: "10px", color: "#666", textTransform: "uppercase" }}>Articles</div>
+                                            <div style={{ fontSize: "10px", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Articles</div>
                                         </div>
                                         <div style={{ textAlign: "center" }}>
-                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
+                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
                                                 {site.stats.totalViews.toLocaleString()}
                                             </div>
-                                            <div style={{ fontSize: "10px", color: "#666", textTransform: "uppercase" }}>Views</div>
+                                            <div style={{ fontSize: "10px", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Views</div>
                                         </div>
                                         <div style={{ textAlign: "center" }}>
-                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
+                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
                                                 {site.stats.totalCategories}
                                             </div>
-                                            <div style={{ fontSize: "10px", color: "#666", textTransform: "uppercase" }}>Categories</div>
+                                            <div style={{ fontSize: "10px", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Categories</div>
                                         </div>
                                         <div style={{ textAlign: "center" }}>
-                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "#fff" }}>
+                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
                                                 {site.stats.totalUsers}
                                             </div>
-                                            <div style={{ fontSize: "10px", color: "#666", textTransform: "uppercase" }}>Users</div>
+                                            <div style={{ fontSize: "10px", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Users</div>
                                         </div>
                                     </div>
 

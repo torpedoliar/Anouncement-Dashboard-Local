@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { FiKey, FiSave, FiTrash2 } from "react-icons/fi";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/contexts/ToastContext";
 
 interface CredentialStatus {
     appId: string;
@@ -21,6 +23,8 @@ export default function CredentialsPage() {
     const [expandedApp, setExpandedApp] = useState<string | null>(highlightApp);
     const [formData, setFormData] = useState<Record<string, { username: string; password: string }>>({});
     const [saving, setSaving] = useState<string | null>(null);
+    const [appToDelete, setAppToDelete] = useState<string | null>(null);
+    const { showToast } = useToast();
 
     const fetchCredentials = useCallback(async () => {
         try {
@@ -55,7 +59,7 @@ export default function CredentialsPage() {
     const handleSave = async (appId: string) => {
         const data = formData[appId];
         if (!data?.username || !data?.password) {
-            alert("Username dan password harus diisi");
+            showToast("Username dan password harus diisi", "error");
             return;
         }
 
@@ -78,29 +82,31 @@ export default function CredentialsPage() {
                 }));
                 await fetchCredentials();
                 setExpandedApp(null);
+                showToast("Kredensial berhasil disimpan", "success");
             } else {
                 const err = await res.json();
-                alert(err.error || "Gagal menyimpan kredensial");
+                showToast(err.error || "Gagal menyimpan kredensial", "error");
             }
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         } finally {
             setSaving(null);
         }
     };
 
-    const handleDelete = async (appId: string) => {
-        if (!confirm("Hapus kredensial untuk aplikasi ini?")) return;
-
+    const executeDelete = async (appId: string) => {
         try {
             const res = await fetch(`/api/portal/credentials?appId=${appId}`, {
                 method: "DELETE",
             });
             if (res.ok) {
                 await fetchCredentials();
+                showToast("Kredensial berhasil dihapus", "success");
+            } else {
+                showToast("Gagal menghapus kredensial", "error");
             }
         } catch {
-            alert("Gagal menghapus kredensial");
+            showToast("Gagal menghapus kredensial", "error");
         }
     };
 
@@ -113,17 +119,17 @@ export default function CredentialsPage() {
                 <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff", margin: 0 }}>
                     Kelola Kredensial
                 </h1>
-                <p style={{ color: "#525252", fontSize: "14px", marginTop: "8px" }}>
+                <p style={{ color: "var(--text-muted)", fontSize: "14px", marginTop: "8px" }}>
                     Simpan username dan password untuk setiap aplikasi. Kredensial disimpan terenkripsi.
                 </p>
             </div>
 
             {isLoading ? (
-                <div style={{ padding: "64px", textAlign: "center", color: "#525252" }}>Loading...</div>
+                <div style={{ padding: "64px", textAlign: "center", color: "var(--text-muted)" }}>Loading...</div>
             ) : apps.length === 0 ? (
                 <div style={{ padding: "64px", textAlign: "center", backgroundColor: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: "12px" }}>
                     <FiKey size={48} color="#262626" style={{ marginBottom: "16px" }} />
-                    <p style={{ color: "#525252" }}>Belum ada aplikasi yang di-assign ke Anda.</p>
+                    <p style={{ color: "var(--text-muted)" }}>Belum ada aplikasi yang di-assign ke Anda.</p>
                 </div>
             ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -178,7 +184,7 @@ export default function CredentialsPage() {
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         {app.hasCredential && (
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); handleDelete(app.appId); }}
+                                                onClick={(e) => { e.stopPropagation(); setAppToDelete(app.appId); }}
                                                 style={{
                                                     padding: "6px 12px",
                                                     backgroundColor: "transparent",
@@ -219,7 +225,6 @@ export default function CredentialsPage() {
                                                         borderRadius: "8px",
                                                         color: "#fff",
                                                         fontSize: "14px",
-                                                        outline: "none",
                                                     }}
                                                     placeholder="Username aplikasi"
                                                 />
@@ -241,7 +246,6 @@ export default function CredentialsPage() {
                                                         borderRadius: "8px",
                                                         color: "#fff",
                                                         fontSize: "14px",
-                                                        outline: "none",
                                                     }}
                                                     placeholder="Password aplikasi"
                                                 />
@@ -274,6 +278,20 @@ export default function CredentialsPage() {
                     })}
                 </div>
             )}
+
+            <ConfirmDialog
+                open={!!appToDelete}
+                title="Hapus Kredensial"
+                message="Yakin hapus kredensial untuk aplikasi ini?"
+                confirmLabel="Hapus"
+                cancelLabel="Batal"
+                variant="danger"
+                onConfirm={() => {
+                    if (appToDelete) executeDelete(appToDelete);
+                    setAppToDelete(null);
+                }}
+                onCancel={() => setAppToDelete(null)}
+            />
         </div>
     );
 }

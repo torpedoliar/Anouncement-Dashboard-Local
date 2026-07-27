@@ -151,7 +151,6 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
         border: '1px solid #262626',
         color: '#fff',
         fontSize: '14px',
-        outline: 'none',
     };
 
     const labelStyle = {
@@ -327,7 +326,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         padding: '16px',
                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
                         border: '1px solid rgba(239, 68, 68, 0.3)',
-                        color: '#ef4444',
+                        color: 'var(--color-error)',
                         fontSize: '14px',
                     }}>
                         {error}
@@ -340,7 +339,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         padding: '14px 16px',
                         backgroundColor: 'rgba(234, 179, 8, 0.1)',
                         border: '1px solid rgba(234, 179, 8, 0.4)',
-                        color: '#eab308',
+                        color: 'var(--color-warning)',
                         fontSize: '13px',
                         display: 'flex',
                         alignItems: 'center',
@@ -353,11 +352,11 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         </span>
                         <span style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                             <button type="button" onClick={restoreDraft} style={{
-                                padding: '6px 12px', backgroundColor: '#eab308', color: '#000',
+                                padding: '6px 12px', backgroundColor: 'var(--color-warning)', color: 'var(--bg-primary)',
                                 border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
                             }}>Pulihkan</button>
                             <button type="button" onClick={discardDraft} style={{
-                                padding: '6px 12px', backgroundColor: 'transparent', color: '#eab308',
+                                padding: '6px 12px', backgroundColor: 'transparent', color: 'var(--color-warning)',
                                 border: '1px solid rgba(234,179,8,0.4)', fontSize: '12px', cursor: 'pointer',
                             }}>Abaikan</button>
                         </span>
@@ -366,7 +365,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
 
                 {/* Autosave indicator */}
                 {isEditing && draftStatus !== "idle" && (
-                    <div style={{ fontSize: '12px', color: '#737373' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                         {draftStatus === "saving"
                             ? "Menyimpan draft..."
                             : draftSavedAt
@@ -453,8 +452,8 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         gap: '6px',
-                                        backgroundColor: mediaType === "image" ? '#dc2626' : '#1a1a1a',
-                                        color: mediaType === "image" ? '#fff' : '#737373',
+                                        backgroundColor: mediaType === "image" ? 'var(--brand-red)' : 'var(--bg-tertiary)',
+                                        color: mediaType === "image" ? 'var(--text-primary)' : 'var(--text-muted)',
                                         border: 'none',
                                         fontSize: '12px',
                                         cursor: 'pointer',
@@ -472,8 +471,8 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         gap: '6px',
-                                        backgroundColor: mediaType === "video" ? '#dc2626' : '#1a1a1a',
-                                        color: mediaType === "video" ? '#fff' : '#737373',
+                                        backgroundColor: mediaType === "video" ? 'var(--brand-red)' : 'var(--bg-tertiary)',
+                                        color: mediaType === "video" ? 'var(--text-primary)' : 'var(--text-muted)',
                                         border: 'none',
                                         fontSize: '12px',
                                         cursor: 'pointer',
@@ -491,8 +490,8 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         gap: '6px',
-                                        backgroundColor: mediaType === "youtube" ? '#dc2626' : '#1a1a1a',
-                                        color: mediaType === "youtube" ? '#fff' : '#737373',
+                                        backgroundColor: mediaType === "youtube" ? 'var(--brand-red)' : 'var(--bg-tertiary)',
+                                        color: mediaType === "youtube" ? 'var(--text-primary)' : 'var(--text-muted)',
                                         border: 'none',
                                         fontSize: '12px',
                                         cursor: 'pointer',
@@ -524,7 +523,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                                 right: '8px',
                                                 padding: '4px',
                                                 backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                color: '#fff',
+                                                color: 'var(--text-primary)',
                                                 border: 'none',
                                                 cursor: 'pointer',
                                             }}
@@ -540,11 +539,11 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             height: '100px',
-                                            border: '2px dashed #333',
+                                            border: '2px dashed var(--border-strong)',
                                             cursor: 'pointer',
                                         }}>
-                                            <FiImage size={24} color="#525252" style={{ marginBottom: '4px' }} />
-                                            <span style={{ color: '#525252', fontSize: '12px' }}>
+                                            <FiImage size={24} color="var(--text-muted)" style={{ marginBottom: '4px' }} />
+                                            <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
                                                 {imageUploading ? "Uploading..." : "Upload gambar"}
                                             </span>
                                             <input
@@ -564,9 +563,9 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 gap: '6px',
-                                                backgroundColor: '#1a1a1a',
-                                                color: '#a3a3a3',
-                                                border: '1px solid #333',
+                                                backgroundColor: 'var(--bg-tertiary)',
+                                                color: 'var(--text-secondary)',
+                                                border: '1px solid var(--border-strong)',
                                                 fontSize: '12px',
                                                 cursor: 'pointer',
                                             }}
@@ -587,7 +586,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                                 width: '100%',
                                                 height: '128px',
                                                 objectFit: 'cover',
-                                                backgroundColor: '#000',
+                                                backgroundColor: 'var(--bg-primary)',
                                             }}
                                         />
                                         <div style={{
@@ -609,7 +608,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                                 right: '8px',
                                                 padding: '4px',
                                                 backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                color: '#fff',
+                                                color: 'var(--text-primary)',
                                                 border: 'none',
                                                 cursor: 'pointer',
                                             }}
@@ -625,12 +624,12 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             height: '128px',
-                                            border: '2px dashed #333',
+                                            border: '2px dashed var(--border-strong)',
                                             cursor: videoUploading ? 'not-allowed' : 'pointer',
                                             opacity: videoUploading ? 0.6 : 1,
                                         }}>
-                                            <FiVideo size={32} color="#525252" style={{ marginBottom: '8px' }} />
-                                            <span style={{ color: '#525252', fontSize: '14px' }}>
+                                            <FiVideo size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
+                                            <span style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>
                                                 {videoUploading ? "Uploading video..." : "Klik untuk upload video"}
                                             </span>
                                             <span style={{ color: '#404040', fontSize: '11px', marginTop: '4px' }}>
@@ -653,9 +652,9 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 gap: '6px',
-                                                backgroundColor: '#1a1a1a',
-                                                color: '#a3a3a3',
-                                                border: '1px solid #333',
+                                                backgroundColor: 'var(--bg-tertiary)',
+                                                color: 'var(--text-secondary)',
+                                                border: '1px solid var(--border-strong)',
                                                 fontSize: '12px',
                                                 cursor: 'pointer',
                                             }}
@@ -700,7 +699,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                         </div>
                                     )}
                                     {!youtubeVideoId && youtubeUrl && (
-                                        <p style={{ color: '#ef4444', fontSize: '12px' }}>
+                                        <p style={{ color: 'var(--color-error)', fontSize: '12px' }}>
                                             URL YouTube tidak valid
                                         </p>
                                     )}
@@ -710,17 +709,17 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
 
                         {/* Options */}
                         <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <h4 style={{ color: '#fff', fontWeight: 500 }}>Opsi</h4>
+                            <h4 style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Opsi</h4>
 
                             <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                                 <input
                                     type="checkbox"
                                     checked={isPublished}
                                     onChange={(e) => setIsPublished(e.target.checked)}
-                                    style={{ width: '16px', height: '16px', accentColor: '#dc2626' }}
+                                    style={{ width: '16px', height: '16px', accentColor: 'var(--brand-red)' }}
                                 />
                                 <FiEye size={16} color="#22c55e" />
-                                <span style={{ color: '#a3a3a3', fontSize: '14px' }}>Publish</span>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Publish</span>
                             </label>
 
                             <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
@@ -728,13 +727,13 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                     type="checkbox"
                                     checked={allowComments}
                                     onChange={(e) => setAllowComments(e.target.checked)}
-                                    style={{ width: '16px', height: '16px', accentColor: '#dc2626' }}
+                                    style={{ width: '16px', height: '16px', accentColor: 'var(--brand-red)' }}
                                 />
                                 <FiMessageSquare size={16} color="#60a5fa" />
-                                <span style={{ color: '#a3a3a3', fontSize: '14px' }}>Izinkan Komentar</span>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Izinkan Komentar</span>
                             </label>
 
-                            <p style={{ color: '#525252', fontSize: '11px', lineHeight: 1.5 }}>
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', lineHeight: 1.5 }}>
                                 <FiStar size={11} color="#eab308" style={{ marginRight: '4px', verticalAlign: 'middle' }} />
                                 Hero &amp; <FiMapPin size={11} color="#dc2626" style={{ margin: '0 4px', verticalAlign: 'middle' }} />
                                 Pin sekarang diatur per-site di bagian <strong>Publish to Sites</strong> di atas.
@@ -753,7 +752,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                 onChange={(e) => setScheduledAt(e.target.value)}
                                 style={inputStyle}
                             />
-                            <p style={{ color: '#525252', fontSize: '11px', marginTop: '4px' }}>
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginTop: '4px' }}>
                                 Kosongkan jika ingin publish manual
                             </p>
                         </div>
@@ -770,7 +769,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                 onChange={(e) => setTakedownAt(e.target.value)}
                                 style={inputStyle}
                             />
-                            <p style={{ color: '#525252', fontSize: '11px', marginTop: '4px' }}>
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginTop: '4px' }}>
                                 Kosongkan jika tidak ingin auto-takedown
                             </p>
                         </div>
@@ -783,7 +782,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                     alignItems: 'center',
                     gap: '16px',
                     paddingTop: '24px',
-                    borderTop: '1px solid #1a1a1a',
+                    borderTop: '1px solid var(--bg-tertiary)',
                 }}>
                     <button
                         type="submit"
@@ -793,8 +792,8 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                             alignItems: 'center',
                             gap: '8px',
                             padding: '12px 24px',
-                            backgroundColor: '#dc2626',
-                            color: '#fff',
+                            backgroundColor: 'var(--brand-red)',
+                            color: 'var(--text-primary)',
                             fontSize: '13px',
                             fontWeight: 600,
                             border: 'none',
@@ -811,10 +810,10 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         style={{
                             padding: '12px 24px',
                             backgroundColor: 'transparent',
-                            color: '#737373',
+                            color: 'var(--text-muted)',
                             fontSize: '13px',
                             fontWeight: 600,
-                            border: '1px solid #333',
+                            border: '1px solid var(--border-strong)',
                             cursor: 'pointer',
                         }}
                     >

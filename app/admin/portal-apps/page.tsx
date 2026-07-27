@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FiGrid, FiPlus, FiEdit, FiTrash, FiX } from "react-icons/fi";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface PortalApp {
     id: string;
@@ -55,6 +57,8 @@ export default function PortalAppsPage() {
     const [formData, setFormData] = useState(emptyForm);
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const { showToast } = useToast();
+    const { confirm, ConfirmDialog } = useConfirm();
 
     const fetchApps = useCallback(async () => {
         try {
@@ -135,18 +139,19 @@ export default function PortalAppsPage() {
     };
 
     const handleDelete = async (app: PortalApp) => {
-        if (!confirm(`Hapus aplikasi "${app.name}"?`)) return;
+        if (!(await confirm({ title: "Hapus Aplikasi", message: `Hapus aplikasi "${app.name}"?`, variant: "danger" }))) return;
 
         try {
             const response = await fetch(`/api/portal-apps/${app.id}`, { method: "DELETE" });
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || "Gagal menghapus");
+                showToast(data.error || "Gagal menghapus", "error");
                 return;
             }
             fetchApps();
+            showToast("Aplikasi berhasil dihapus", "success");
         } catch {
-            alert("Terjadi kesalahan");
+            showToast("Terjadi kesalahan", "error");
         }
     };
 
@@ -197,7 +202,7 @@ export default function PortalAppsPage() {
     if (isLoading) {
         return (
             <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "#525252" }}>Loading...</p>
+                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
             </div>
         );
     }
@@ -207,10 +212,10 @@ export default function PortalAppsPage() {
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
                 <div>
-                    <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
                         PORTAL
                     </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff" }}>
+                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
                         Aplikasi Portal
                     </h1>
                 </div>
@@ -221,8 +226,8 @@ export default function PortalAppsPage() {
                         alignItems: "center",
                         gap: "8px",
                         padding: "12px 24px",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
+                        backgroundColor: "var(--brand-red)",
+                        color: "var(--text-primary)",
                         fontSize: "13px",
                         fontWeight: 600,
                         border: "none",
@@ -236,54 +241,54 @@ export default function PortalAppsPage() {
 
             {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>TOTAL APLIKASI</p>
-                    <p style={{ color: "#fff", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || apps.length}</p>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>TOTAL APLIKASI</p>
+                    <p style={{ color: "var(--text-primary)", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || apps.length}</p>
                 </div>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>AKTIF</p>
-                    <p style={{ color: "#22c55e", fontSize: "24px", fontWeight: 700 }}>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>AKTIF</p>
+                    <p style={{ color: "var(--color-success)", fontSize: "24px", fontWeight: 700 }}>
                         {apps.filter(a => a.isActive).length}
                     </p>
                 </div>
-                <div style={{ backgroundColor: "#0a0a0a", border: "1px solid #262626", padding: "20px" }}>
-                    <p style={{ color: "#737373", fontSize: "12px", marginBottom: "8px" }}>NONAKTIF</p>
-                    <p style={{ color: "#ef4444", fontSize: "24px", fontWeight: 700 }}>
+                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>NONAKTIF</p>
+                    <p style={{ color: "var(--color-error)", fontSize: "24px", fontWeight: 700 }}>
                         {apps.filter(a => !a.isActive).length}
                     </p>
                 </div>
             </div>
 
             {/* Table */}
-            <div style={{ backgroundColor: "#0a0a0a", border: "2px solid #333", borderRadius: "8px", overflow: "hidden" }}>
+            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                        <tr style={{ borderBottom: "2px solid #333", backgroundColor: "#111" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>SLUG</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>KATEGORI</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>SSO MODE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>URUTAN</th>
-                            <th style={{ padding: "20px", textAlign: "right", color: "#a1a1aa", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
+                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>SLUG</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>KATEGORI</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>SSO MODE</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>URUTAN</th>
+                            <th style={{ padding: "20px", textAlign: "right", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
                         {apps.length === 0 ? (
                             <tr>
-                                <td colSpan={7} style={{ padding: "48px", textAlign: "center", color: "#525252" }}>
+                                <td colSpan={7} style={{ padding: "48px", textAlign: "center", color: "var(--text-tertiary)" }}>
                                     Tidak ada aplikasi portal ditemukan
                                 </td>
                             </tr>
                         ) : (
                             apps.map((app, index) => (
-                                <tr key={app.id} style={{ borderBottom: index < apps.length - 1 ? "1px solid #262626" : "none" }}>
+                                <tr key={app.id} style={{ borderBottom: index < apps.length - 1 ? "1px solid var(--border-color)" : "none" }}>
                                     <td style={{ padding: "20px" }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                                             <div style={{
                                                 width: "36px",
                                                 height: "36px",
-                                                backgroundColor: "#1a1a1a",
+                                                backgroundColor: "var(--bg-tertiary)",
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
@@ -292,23 +297,23 @@ export default function PortalAppsPage() {
                                                 <FiGrid size={16} color="#737373" />
                                             </div>
                                             <div>
-                                                <p style={{ color: "#fff", fontSize: "14px", fontWeight: 500 }}>{app.name}</p>
+                                                <p style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>{app.name}</p>
                                                 {app.description && (
-                                                    <p style={{ color: "#525252", fontSize: "12px", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                    <p style={{ color: "var(--text-tertiary)", fontSize: "12px", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                                         {app.description}
                                                     </p>
                                                 )}
                                             </div>
                                         </div>
                                     </td>
-                                    <td style={{ padding: "20px", color: "#a1a1aa", fontSize: "13px", fontFamily: "monospace" }}>{app.slug}</td>
+                                    <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "13px", fontFamily: "monospace" }}>{app.slug}</td>
                                     <td style={{ padding: "20px" }}>
                                         {app.category ? (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(59, 130, 246, 0.2)", color: "#60a5fa", fontSize: "11px", fontWeight: 600 }}>
+                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(59, 130, 246, 0.2)", color: "var(--color-info)", fontSize: "11px", fontWeight: 600 }}>
                                                 {app.category}
                                             </span>
                                         ) : (
-                                            <span style={{ color: "#525252", fontSize: "13px" }}>-</span>
+                                            <span style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>-</span>
                                         )}
                                     </td>
                                     <td style={{ padding: "20px" }}>
@@ -318,11 +323,11 @@ export default function PortalAppsPage() {
                                     </td>
                                     <td style={{ padding: "20px" }}>
                                         {app.isActive ? (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(34, 197, 94, 0.2)", color: "#22c55e", fontSize: "11px", fontWeight: 600 }}>
+                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(34, 197, 94, 0.2)", color: "var(--color-success)", fontSize: "11px", fontWeight: 600 }}>
                                                 AKTIF
                                             </span>
                                         ) : (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "#ef4444", fontSize: "11px", fontWeight: 600 }}>
+                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "var(--color-error)", fontSize: "11px", fontWeight: 600 }}>
                                                 NONAKTIF
                                             </span>
                                         )}
@@ -334,8 +339,8 @@ export default function PortalAppsPage() {
                                             style={{
                                                 padding: "8px",
                                                 backgroundColor: "transparent",
-                                                border: "1px solid #262626",
-                                                color: "#737373",
+                                                border: "1px solid var(--border-color)",
+                                                color: "var(--text-muted)",
                                                 cursor: "pointer",
                                                 marginRight: "8px",
                                             }}
@@ -348,8 +353,8 @@ export default function PortalAppsPage() {
                                             style={{
                                                 padding: "8px",
                                                 backgroundColor: "transparent",
-                                                border: "1px solid #262626",
-                                                color: "#dc2626",
+                                                border: "1px solid var(--border-color)",
+                                                color: "var(--brand-red)",
                                                 cursor: "pointer",
                                             }}
                                             title="Hapus"
@@ -373,8 +378,8 @@ export default function PortalAppsPage() {
                             onClick={() => setPage(p)}
                             style={{
                                 padding: "8px 16px",
-                                backgroundColor: p === page ? "#dc2626" : "#1a1a1a",
-                                color: "#fff",
+                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
+                                color: "var(--text-primary)",
                                 border: "none",
                                 cursor: "pointer",
                             }}
@@ -397,8 +402,8 @@ export default function PortalAppsPage() {
                     zIndex: 50,
                 }}>
                     <div style={{
-                        backgroundColor: "#0a0a0a",
-                        border: "1px solid #262626",
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-color)",
                         width: "100%",
                         maxWidth: "600px",
                         padding: "24px",
@@ -406,16 +411,16 @@ export default function PortalAppsPage() {
                         overflowY: "auto",
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#fff" }}>
+                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
                                 {editingApp ? "Edit Aplikasi" : "Tambah Aplikasi"}
                             </h2>
-                            <button onClick={closeModal} style={{ background: "none", border: "none", color: "#737373", cursor: "pointer" }}>
+                            <button onClick={closeModal} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
                                 <FiX size={20} />
                             </button>
                         </div>
 
                         {error && (
-                            <div style={{ padding: "12px", backgroundColor: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "#ef4444", fontSize: "14px", marginBottom: "16px" }}>
+                            <div style={{ padding: "12px", backgroundColor: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "var(--color-error)", fontSize: "14px", marginBottom: "16px" }}>
                                 {error}
                             </div>
                         )}
@@ -423,7 +428,7 @@ export default function PortalAppsPage() {
                         <form onSubmit={handleSubmit}>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NAMA *</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NAMA *</label>
                                     <input
                                         type="text"
                                         value={formData.name}
@@ -433,7 +438,7 @@ export default function PortalAppsPage() {
                                     />
                                 </div>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>SLUG *</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>SLUG *</label>
                                     <input
                                         type="text"
                                         value={formData.slug}
@@ -445,7 +450,7 @@ export default function PortalAppsPage() {
                             </div>
 
                             <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>DESKRIPSI</label>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>DESKRIPSI</label>
                                 <input
                                     type="text"
                                     value={formData.description}
@@ -456,7 +461,7 @@ export default function PortalAppsPage() {
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>URL *</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>URL *</label>
                                     <input
                                         type="text"
                                         value={formData.url}
@@ -467,7 +472,7 @@ export default function PortalAppsPage() {
                                     />
                                 </div>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>LOGIN URL</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>LOGIN URL</label>
                                     <input
                                         type="text"
                                         value={formData.loginUrl}
@@ -480,7 +485,7 @@ export default function PortalAppsPage() {
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>SSO MODE</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>SSO MODE</label>
                                     <select
                                         value={formData.ssoMode}
                                         onChange={(e) => setFormData({ ...formData, ssoMode: e.target.value })}
@@ -493,7 +498,7 @@ export default function PortalAppsPage() {
                                     </select>
                                 </div>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>HTTP METHOD</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>HTTP METHOD</label>
                                     <select
                                         value={formData.httpMethod}
                                         onChange={(e) => setFormData({ ...formData, httpMethod: e.target.value })}
@@ -507,7 +512,7 @@ export default function PortalAppsPage() {
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>USERNAME FIELD</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>USERNAME FIELD</label>
                                     <input
                                         type="text"
                                         value={formData.usernameField}
@@ -517,7 +522,7 @@ export default function PortalAppsPage() {
                                     />
                                 </div>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>PASSWORD FIELD</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>PASSWORD FIELD</label>
                                     <input
                                         type="text"
                                         value={formData.passwordField}
@@ -529,7 +534,7 @@ export default function PortalAppsPage() {
                             </div>
 
                             <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>EXTRA FIELDS (JSON)</label>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>EXTRA FIELDS (JSON)</label>
                                 <textarea
                                     value={formData.extraFields}
                                     onChange={(e) => setFormData({ ...formData, extraFields: e.target.value })}
@@ -541,7 +546,7 @@ export default function PortalAppsPage() {
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>KATEGORI</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>KATEGORI</label>
                                     <input
                                         type="text"
                                         value={formData.category}
@@ -550,7 +555,7 @@ export default function PortalAppsPage() {
                                     />
                                 </div>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "#737373", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>URUTAN</label>
+                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>URUTAN</label>
                                     <input
                                         type="number"
                                         value={formData.displayOrder}
@@ -559,12 +564,12 @@ export default function PortalAppsPage() {
                                     />
                                 </div>
                                 <div style={{ marginBottom: "16px", display: "flex", alignItems: "flex-end" }}>
-                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#a1a1aa", fontSize: "14px", paddingBottom: "12px" }}>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--text-secondary)", fontSize: "14px", paddingBottom: "12px" }}>
                                         <input
                                             type="checkbox"
                                             checked={formData.isActive}
                                             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                            style={{ accentColor: "#dc2626", width: "18px", height: "18px" }}
+                                            style={{ accentColor: "var(--brand-red)", width: "18px", height: "18px" }}
                                         />
                                         Aktif
                                     </label>
@@ -577,8 +582,8 @@ export default function PortalAppsPage() {
                                 style={{
                                     width: "100%",
                                     padding: "12px",
-                                    backgroundColor: "#dc2626",
-                                    color: "#fff",
+                                    backgroundColor: "var(--brand-red)",
+                                    color: "var(--text-primary)",
                                     fontSize: "13px",
                                     fontWeight: 600,
                                     border: "none",
@@ -592,6 +597,7 @@ export default function PortalAppsPage() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog />
         </div>
     );
 }

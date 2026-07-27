@@ -61,6 +61,9 @@ export default function HeroSection({
 
     useEffect(() => {
         if (!isAutoPlaying || announcements.length <= 1) return;
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        if (prefersReducedMotion.matches) return;
+        
         const interval = setInterval(nextSlide, 6000);
         return () => clearInterval(interval);
     }, [isAutoPlaying, nextSlide, announcements.length]);
@@ -72,7 +75,7 @@ export default function HeroSection({
             <section style={{
                 position: 'relative',
                 height: '100vh',
-                background: heroImage ? undefined : 'linear-gradient(135deg, #1a0000 0%, #000000 50%, #0a0a0a 100%)',
+                background: heroImage ? undefined : 'linear-gradient(135deg, #1a0000 0%, var(--bg-primary) 50%, var(--bg-secondary) 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -95,7 +98,7 @@ export default function HeroSection({
                 )}
                 <div style={{ textAlign: 'center', padding: '0 24px' }}>
                     <p style={{
-                        color: '#dc2626',
+                        color: 'var(--brand-red)',
                         fontSize: '12px',
                         fontWeight: 600,
                         letterSpacing: '0.2em',
@@ -108,12 +111,12 @@ export default function HeroSection({
                         fontFamily: 'Montserrat, sans-serif',
                         fontSize: 'clamp(32px, 6vw, 64px)',
                         fontWeight: 700,
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                         marginBottom: '16px',
                     }}>
                         {heroTitle}
                     </h1>
-                    <p style={{ color: '#737373', fontSize: '18px' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '18px' }}>
                         {heroSubtitle}
                     </p>
                 </div>
@@ -127,7 +130,7 @@ export default function HeroSection({
                 position: 'relative',
                 height: '100vh',
                 overflow: 'hidden',
-                backgroundColor: '#000',
+                backgroundColor: 'var(--bg-primary)',
             }}
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
@@ -189,7 +192,7 @@ export default function HeroSection({
                             <div style={{
                                 width: '100%',
                                 height: '100%',
-                                background: 'linear-gradient(135deg, #1a0000 0%, #000000 50%, #0a0a0a 100%)',
+                                background: 'linear-gradient(135deg, #1a0000 0%, var(--bg-primary) 50%, var(--bg-secondary) 100%)',
                             }} />
                         )}
                 {/* Overlays */}
@@ -223,7 +226,7 @@ export default function HeroSection({
                             borderRadius: '50%',
                             backgroundColor: 'rgba(0,0,0,0.6)',
                             border: '1px solid #404040',
-                            color: '#fff',
+                            color: 'var(--text-primary)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -250,7 +253,7 @@ export default function HeroSection({
                     <div style={{ maxWidth: '720px' }} className="animate-slide-up">
                         {/* Category Label */}
                         <p style={{
-                            color: '#dc2626',
+                            color: 'var(--brand-red)',
                             fontSize: '12px',
                             fontWeight: 600,
                             letterSpacing: '0.2em',
@@ -265,7 +268,7 @@ export default function HeroSection({
                             fontFamily: 'Montserrat, sans-serif',
                             fontSize: 'clamp(28px, 5vw, 52px)',
                             fontWeight: 700,
-                            color: '#fff',
+                            color: 'var(--text-primary)',
                             marginBottom: '24px',
                             lineHeight: 1.2,
                         }}>
@@ -292,7 +295,7 @@ export default function HeroSection({
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                color: '#dc2626',
+                                color: 'var(--brand-red)',
                                 fontSize: '14px',
                                 fontWeight: 700,
                             }}
@@ -326,7 +329,7 @@ export default function HeroSection({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 background: 'transparent',
                                 cursor: 'pointer',
                                 transition: 'all 0.3s',
@@ -351,7 +354,7 @@ export default function HeroSection({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 background: 'transparent',
                                 cursor: 'pointer',
                                 transition: 'all 0.3s',
@@ -386,7 +389,7 @@ export default function HeroSection({
                                 style={{
                                     height: '4px',
                                     width: index === currentIndex ? '48px' : '24px',
-                                    backgroundColor: index === currentIndex ? '#dc2626' : '#525252',
+                                    backgroundColor: index === currentIndex ? 'var(--brand-red)' : 'var(--text-tertiary)',
                                     border: 'none',
                                     cursor: 'pointer',
                                     transition: 'all 0.3s',

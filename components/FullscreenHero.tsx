@@ -56,7 +56,7 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
     const youtubeId = getYoutubeId(current.youtubeUrl);
 
     return (
-        <div style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden", backgroundColor: "#000" }}>
+        <div style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden", backgroundColor: "var(--bg-primary)" }}>
             {/* Background Media */}
             {youtubeId ? (
                 // YouTube Video Background
@@ -150,7 +150,7 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                         style={{
                             fontSize: "clamp(32px, 5vw, 56px)",
                             fontWeight: 900,
-                            color: "#fff",
+                            color: "var(--text-primary)",
                             marginBottom: "12px",
                             textShadow: "0 2px 8px rgba(0,0,0,0.5)",
                             maxWidth: "800px",
@@ -212,7 +212,7 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                             borderRadius: "50%",
                             backgroundColor: "rgba(255,255,255,0.1)",
                             border: "1px solid rgba(255,255,255,0.2)",
-                            color: "#fff",
+                            color: "var(--text-primary)",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -234,7 +234,7 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                                 borderRadius: "50%",
                                 backgroundColor: "rgba(255,255,255,0.1)",
                                 border: "1px solid rgba(255,255,255,0.2)",
-                                color: "#fff",
+                                color: "var(--text-primary)",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
@@ -251,7 +251,7 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                                 borderRadius: "50%",
                                 backgroundColor: "rgba(255,255,255,0.1)",
                                 border: "1px solid rgba(255,255,255,0.2)",
-                                color: "#fff",
+                                color: "var(--text-primary)",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",

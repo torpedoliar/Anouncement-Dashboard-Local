@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FiUpload, FiTrash2, FiImage, FiLoader, FiCopy, FiCheck, FiX, FiPlay, FiVideo, FiEye } from "react-icons/fi";
 import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/hooks/useConfirm";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
@@ -24,6 +25,7 @@ export default function MediaGalleryPage() {
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [previewItem, setPreviewItem] = useState<Media | null>(null);
     const { showToast } = useToast();
+    const { confirm, ConfirmDialog } = useConfirm();
 
     useEffect(() => {
         fetchMedia();
@@ -78,7 +80,7 @@ export default function MediaGalleryPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Yakin hapus file ini?")) return;
+        if (!(await confirm({ title: "Hapus File", message: "Yakin hapus file ini?", variant: "danger" }))) return;
 
         try {
             const response = await fetch(`/api/media?id=${id}`, { method: "DELETE" });
@@ -128,7 +130,7 @@ export default function MediaGalleryPage() {
                 <div>
                     <p
                         style={{
-                            color: "#dc2626",
+                            color: "var(--brand-red)",
                             fontSize: "11px",
                             fontWeight: 600,
                             letterSpacing: "0.2em",
@@ -142,7 +144,7 @@ export default function MediaGalleryPage() {
                             fontFamily: "Montserrat, sans-serif",
                             fontSize: "24px",
                             fontWeight: 700,
-                            color: "#fff",
+                            color: "var(--text-primary)",
                             display: "flex",
                             alignItems: "center",
                             gap: "12px",
@@ -157,8 +159,8 @@ export default function MediaGalleryPage() {
                         alignItems: "center",
                         gap: "8px",
                         padding: "12px 24px",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
+                        backgroundColor: "var(--brand-red)",
+                        color: "var(--text-primary)",
                         fontSize: "11px",
                         fontWeight: 600,
                         letterSpacing: "0.1em",
@@ -183,28 +185,28 @@ export default function MediaGalleryPage() {
             <div
                 style={{
                     padding: "16px 20px",
-                    backgroundColor: "#0a0a0a",
-                    border: "1px solid #262626",
+                    backgroundColor: "var(--bg-secondary)",
+                    border: "1px solid var(--border-color)",
                     marginBottom: "24px",
                     display: "flex",
                     gap: "32px",
                 }}
             >
                 <div>
-                    <span style={{ color: "#525252", fontSize: "12px" }}>Total Media</span>
-                    <p style={{ color: "#fff", fontSize: "20px", fontWeight: 600 }}>{media.length}</p>
+                    <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>Total Media</span>
+                    <p style={{ color: "var(--text-primary)", fontSize: "20px", fontWeight: 600 }}>{media.length}</p>
                 </div>
                 <div>
-                    <span style={{ color: "#525252", fontSize: "12px" }}>Gambar</span>
-                    <p style={{ color: "#22c55e", fontSize: "20px", fontWeight: 600 }}>{imageCount}</p>
+                    <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>Gambar</span>
+                    <p style={{ color: "var(--color-success)", fontSize: "20px", fontWeight: 600 }}>{imageCount}</p>
                 </div>
                 <div>
-                    <span style={{ color: "#525252", fontSize: "12px" }}>Video</span>
-                    <p style={{ color: "#60a5fa", fontSize: "20px", fontWeight: 600 }}>{videoCount}</p>
+                    <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>Video</span>
+                    <p style={{ color: "var(--color-info)", fontSize: "20px", fontWeight: 600 }}>{videoCount}</p>
                 </div>
                 <div>
-                    <span style={{ color: "#525252", fontSize: "12px" }}>Total Ukuran</span>
-                    <p style={{ color: "#fff", fontSize: "20px", fontWeight: 600 }}>
+                    <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>Total Ukuran</span>
+                    <p style={{ color: "var(--text-primary)", fontSize: "20px", fontWeight: 600 }}>
                         {formatFileSize(media.reduce((sum, m) => sum + m.size, 0))}
                     </p>
                 </div>
@@ -212,7 +214,7 @@ export default function MediaGalleryPage() {
 
             {/* Gallery */}
             {isLoading ? (
-                <div style={{ textAlign: "center", padding: "60px", color: "#525252" }}>
+                <div style={{ textAlign: "center", padding: "60px", color: "var(--text-tertiary)" }}>
                     <FiLoader size={32} style={{ animation: "spin 1s linear infinite" }} />
                     <p style={{ marginTop: "12px" }}>Memuat media...</p>
                 </div>
@@ -221,12 +223,12 @@ export default function MediaGalleryPage() {
                     style={{
                         textAlign: "center",
                         padding: "80px",
-                        backgroundColor: "#0a0a0a",
-                        border: "1px dashed #333",
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px dashed var(--border-strong)",
                     }}
                 >
-                    <FiImage size={48} style={{ color: "#333", marginBottom: "16px" }} />
-                    <p style={{ color: "#525252", fontSize: "16px" }}>Belum ada media</p>
+                    <FiImage size={48} style={{ color: "var(--border-strong)", marginBottom: "16px" }} />
+                    <p style={{ color: "var(--text-tertiary)", fontSize: "16px" }}>Belum ada media</p>
                     <p style={{ color: "#404040", fontSize: "14px" }}>Upload gambar atau video pertama Anda</p>
                 </div>
             ) : (
@@ -241,8 +243,8 @@ export default function MediaGalleryPage() {
                         <div
                             key={item.id}
                             style={{
-                                backgroundColor: "#0a0a0a",
-                                border: "1px solid #262626",
+                                backgroundColor: "var(--bg-secondary)",
+                                border: "1px solid var(--border-color)",
                                 overflow: "hidden",
                             }}
                         >
@@ -251,7 +253,7 @@ export default function MediaGalleryPage() {
                                 style={{
                                     position: "relative",
                                     aspectRatio: "4/3",
-                                    backgroundColor: "#111",
+                                    backgroundColor: "var(--bg-card)",
                                     cursor: "pointer",
                                 }}
                                 onClick={() => setPreviewItem(item)}
@@ -301,7 +303,7 @@ export default function MediaGalleryPage() {
                                             gap: "4px",
                                             fontSize: "10px",
                                             fontWeight: 600,
-                                            color: "#fff",
+                                            color: "var(--text-primary)",
                                         }}>
                                             <FiVideo size={10} /> VIDEO
                                         </div>
@@ -337,7 +339,7 @@ export default function MediaGalleryPage() {
                             <div style={{ padding: "12px" }}>
                                 <p
                                     style={{
-                                        color: "#fff",
+                                        color: "var(--text-primary)",
                                         fontSize: "13px",
                                         fontWeight: 500,
                                         marginBottom: "4px",
@@ -348,7 +350,7 @@ export default function MediaGalleryPage() {
                                 >
                                     {item.filename}
                                 </p>
-                                <p style={{ color: "#525252", fontSize: "11px", marginBottom: "12px" }}>
+                                <p style={{ color: "var(--text-tertiary)", fontSize: "11px", marginBottom: "12px" }}>
                                     {formatFileSize(item.size)} •{" "}
                                     {formatDistanceToNow(new Date(item.uploadedAt), { addSuffix: true, locale: localeId })}
                                 </p>
@@ -357,9 +359,9 @@ export default function MediaGalleryPage() {
                                         onClick={() => setPreviewItem(item)}
                                         style={{
                                             padding: "8px 12px",
-                                            backgroundColor: "#171717",
-                                            border: "1px solid #333",
-                                            color: "#a3a3a3",
+                                            backgroundColor: "var(--bg-hover)",
+                                            border: "1px solid var(--border-strong)",
+                                            color: "var(--text-secondary)",
                                             fontSize: "11px",
                                             cursor: "pointer",
                                             display: "flex",
@@ -378,9 +380,9 @@ export default function MediaGalleryPage() {
                                             justifyContent: "center",
                                             gap: "4px",
                                             padding: "8px",
-                                            backgroundColor: "#171717",
-                                            border: "1px solid #333",
-                                            color: "#a3a3a3",
+                                            backgroundColor: "var(--bg-hover)",
+                                            border: "1px solid var(--border-strong)",
+                                            color: "var(--text-secondary)",
                                             fontSize: "11px",
                                             cursor: "pointer",
                                         }}
@@ -394,7 +396,7 @@ export default function MediaGalleryPage() {
                                             padding: "8px 12px",
                                             backgroundColor: "#7f1d1d",
                                             border: "none",
-                                            color: "#fff",
+                                            color: "var(--text-primary)",
                                             fontSize: "11px",
                                             cursor: "pointer",
                                         }}
@@ -433,7 +435,7 @@ export default function MediaGalleryPage() {
                             padding: "12px",
                             backgroundColor: "rgba(255,255,255,0.1)",
                             border: "none",
-                            color: "#fff",
+                            color: "var(--text-primary)",
                             cursor: "pointer",
                             borderRadius: "50%",
                             display: "flex",
@@ -463,7 +465,7 @@ export default function MediaGalleryPage() {
                                 style={{
                                     maxWidth: "100%",
                                     maxHeight: "75vh",
-                                    backgroundColor: "#000",
+                                    backgroundColor: "var(--bg-primary)",
                                 }}
                             />
                         ) : (
@@ -493,10 +495,10 @@ export default function MediaGalleryPage() {
                             flexWrap: "wrap",
                             justifyContent: "center",
                         }}>
-                            <span style={{ color: "#fff", fontSize: "14px", fontWeight: 500 }}>
+                            <span style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>
                                 {previewItem.filename}
                             </span>
-                            <span style={{ color: "#a3a3a3", fontSize: "13px" }}>
+                            <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
                                 {formatFileSize(previewItem.size)}
                             </span>
                             <button
@@ -506,9 +508,9 @@ export default function MediaGalleryPage() {
                                     alignItems: "center",
                                     gap: "6px",
                                     padding: "8px 16px",
-                                    backgroundColor: "#dc2626",
+                                    backgroundColor: "var(--brand-red)",
                                     border: "none",
-                                    color: "#fff",
+                                    color: "var(--text-primary)",
                                     fontSize: "12px",
                                     fontWeight: 600,
                                     cursor: "pointer",
@@ -521,6 +523,7 @@ export default function MediaGalleryPage() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog />
         </div>
     );
 }

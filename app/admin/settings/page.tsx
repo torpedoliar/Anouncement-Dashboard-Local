@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { FiSave, FiUpload, FiX, FiInstagram, FiLinkedin, FiFacebook, FiTwitter, FiYoutube, FiInfo, FiDatabase, FiRefreshCw, FiExternalLink, FiUploadCloud } from "react-icons/fi";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface Settings {
     siteName: string;
@@ -52,6 +54,8 @@ function VersionInfoSection() {
     const [isRestoring, setIsRestoring] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [updateProgress, setUpdateProgress] = useState<{ step: string; status: string }[]>([]);
+    const { showToast } = useToast();
+    const { confirm, ConfirmDialog } = useConfirm();
 
     useEffect(() => {
         fetchVersion();
@@ -117,7 +121,7 @@ function VersionInfoSection() {
             const response = await fetch("/api/backup");
             if (!response.ok) {
                 const error = await response.json();
-                alert(error.error || "Backup gagal");
+                showToast(error.error || "Backup gagal", "error");
                 return;
             }
             const blob = await response.blob();
@@ -131,7 +135,7 @@ function VersionInfoSection() {
             document.body.removeChild(a);
         } catch (err) {
             console.error("Backup error:", err);
-            alert("Gagal membuat backup");
+            showToast("Gagal membuat backup", "error");
         } finally {
             setIsBackingUp(false);
         }
@@ -147,7 +151,7 @@ function VersionInfoSection() {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (!file) return;
 
-            if (!confirm('PERHATIAN: Restore akan menimpa data yang ada dengan data dari backup. Lanjutkan?')) {
+            if (!(await confirm({ title: 'Perhatian', message: 'Restore akan menimpa data yang ada dengan data dari backup. Lanjutkan?', variant: 'danger' }))) {
                 return;
             }
 
@@ -165,14 +169,14 @@ function VersionInfoSection() {
                 const result = await response.json();
 
                 if (response.ok) {
-                    alert(`Restore berhasil!\n\nSettings: ${result.restored.settings ? '✓' : '✗'}\nKategori: ${result.restored.categories}\nPengumuman: ${result.restored.announcements}`);
+                    showToast(`Restore berhasil!`, "success");
                     window.location.reload();
                 } else {
-                    alert('Gagal restore: ' + (result.error || 'Unknown error'));
+                    showToast('Gagal restore: ' + (result.error || 'Unknown error'), "error");
                 }
             } catch (err) {
                 console.error('Restore error:', err);
-                alert('Gagal membaca file backup. Pastikan format file benar.');
+                showToast('Gagal membaca file backup. Pastikan format file benar.', "error");
             } finally {
                 setIsRestoring(false);
             }
@@ -189,8 +193,8 @@ function VersionInfoSection() {
 
     return (
         <div style={{
-            backgroundColor: '#0a0a0a',
-            border: '2px solid #333',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '2px solid var(--border-strong)',
             borderRadius: '8px',
             padding: '28px',
             marginTop: '32px',
@@ -202,19 +206,19 @@ function VersionInfoSection() {
                 marginBottom: '24px',
             }}>
                 <FiInfo size={20} color="#3b82f6" />
-                <h2 style={{ fontWeight: 700, fontSize: '16px', color: '#fff' }}>
+                <h2 style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>
                     INFORMASI VERSI
                 </h2>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-                <div style={{ padding: '16px', backgroundColor: '#111', border: '1px solid #262626', borderRadius: '8px' }}>
+                <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
                     <p style={{ color: '#71717a', fontSize: '12px', marginBottom: '4px' }}>Versi Aplikasi</p>
-                    <p style={{ color: '#fff', fontSize: '24px', fontWeight: 700 }}>v{versionInfo?.version || "..."}</p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '24px', fontWeight: 700 }}>v{versionInfo?.version || "..."}</p>
                 </div>
-                <div style={{ padding: '16px', backgroundColor: '#111', border: '1px solid #262626', borderRadius: '8px' }}>
+                <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
                     <p style={{ color: '#71717a', fontSize: '12px', marginBottom: '4px' }}>Schema Database</p>
-                    <p style={{ color: '#fff', fontSize: '24px', fontWeight: 700 }}>v{versionInfo?.schemaVersion || "..."}</p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '24px', fontWeight: 700 }}>v{versionInfo?.schemaVersion || "..."}</p>
                 </div>
             </div>
 
@@ -225,7 +229,7 @@ function VersionInfoSection() {
                     style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
                         padding: '12px 20px', backgroundColor: '#1e40af', border: 'none',
-                        color: '#fff', fontSize: '13px', fontWeight: 600, cursor: isChecking ? 'not-allowed' : 'pointer',
+                        color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, cursor: isChecking ? 'not-allowed' : 'pointer',
                         borderRadius: '6px', opacity: isChecking ? 0.7 : 1,
                     }}
                 >
@@ -238,7 +242,7 @@ function VersionInfoSection() {
                     style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
                         padding: '12px 20px', backgroundColor: '#14532d', border: 'none',
-                        color: '#fff', fontSize: '13px', fontWeight: 600, cursor: isBackingUp ? 'not-allowed' : 'pointer',
+                        color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, cursor: isBackingUp ? 'not-allowed' : 'pointer',
                         borderRadius: '6px', opacity: isBackingUp ? 0.7 : 1,
                     }}
                 >
@@ -251,7 +255,7 @@ function VersionInfoSection() {
                     style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
                         padding: '12px 20px', backgroundColor: '#7c2d12', border: 'none',
-                        color: '#fff', fontSize: '13px', fontWeight: 600, cursor: isRestoring ? 'not-allowed' : 'pointer',
+                        color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, cursor: isRestoring ? 'not-allowed' : 'pointer',
                         borderRadius: '6px', opacity: isRestoring ? 0.7 : 1,
                     }}
                 >
@@ -264,8 +268,8 @@ function VersionInfoSection() {
                     rel="noopener noreferrer"
                     style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
-                        padding: '12px 20px', backgroundColor: '#262626', border: 'none',
-                        color: '#a1a1aa', fontSize: '13px', fontWeight: 600, textDecoration: 'none',
+                        padding: '12px 20px', backgroundColor: 'var(--border-color)', border: 'none',
+                        color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, textDecoration: 'none',
                         borderRadius: '6px',
                     }}
                 >
@@ -286,7 +290,7 @@ function VersionInfoSection() {
                     ) : checkResult.hasUpdate ? (
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                <p style={{ color: '#60a5fa', fontWeight: 600 }}>
+                                <p style={{ color: 'var(--color-info)', fontWeight: 600 }}>
                                     Update tersedia: v{checkResult.latestVersion}
                                 </p>
                                 <button
@@ -294,8 +298,8 @@ function VersionInfoSection() {
                                     disabled={isUpdating}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: '6px',
-                                        padding: '8px 16px', backgroundColor: isUpdating ? '#166534' : '#22c55e', border: 'none',
-                                        color: '#fff', fontSize: '12px', fontWeight: 600,
+                                        padding: '8px 16px', backgroundColor: isUpdating ? '#166534' : 'var(--color-success)', border: 'none',
+                                        color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600,
                                         cursor: isUpdating ? 'not-allowed' : 'pointer',
                                         borderRadius: '4px', opacity: isUpdating ? 0.8 : 1,
                                     }}
@@ -312,17 +316,17 @@ function VersionInfoSection() {
                             )}
                             {/* Progress indicator */}
                             {updateProgress.length > 0 && (
-                                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#0a0a0a', borderRadius: '6px' }}>
+                                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}>
                                     {updateProgress.map((p, i) => (
                                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                                             <span style={{
-                                                color: p.status === 'success' ? '#22c55e' :
-                                                    p.status === 'error' ? '#ef4444' :
-                                                        p.status === 'warning' ? '#fbbf24' : '#60a5fa'
+                                                color: p.status === 'success' ? 'var(--color-success)' :
+                                                    p.status === 'error' ? 'var(--color-error)' :
+                                                        p.status === 'warning' ? '#fbbf24' : 'var(--color-info)'
                                             }}>
                                                 {p.status === 'success' ? '✓' : p.status === 'error' ? '✗' : p.status === 'running' ? '⏳' : '⚠'}
                                             </span>
-                                            <span style={{ color: '#a1a1aa', fontSize: '12px' }}>{p.step}</span>
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{p.step}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -353,46 +357,46 @@ function VersionInfoSection() {
                 }}
             >
                 <div style={{
-                    backgroundColor: '#1a1a1a',
-                    border: '1px solid #333',
+                    backgroundColor: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border-strong)',
                     borderRadius: '12px',
                     padding: '32px',
                     maxWidth: '650px',
                     width: '90%',
                 }}>
-                    <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
+                    <h3 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
                         📦 Cara Update Aplikasi
                     </h3>
                     <p style={{ color: '#fbbf24', marginBottom: '16px', fontSize: '13px', padding: '10px', backgroundColor: 'rgba(251, 191, 36, 0.1)', borderRadius: '6px' }}>
                         ⚠️ Jalankan perintah ini di <strong>PowerShell server</strong> tempat aplikasi diinstall
                     </p>
                     <div style={{
-                        backgroundColor: '#0a0a0a',
-                        border: '1px solid #262626',
+                        backgroundColor: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
                         borderRadius: '8px',
                         padding: '20px',
                         fontFamily: 'monospace',
                         fontSize: '12px',
                         lineHeight: 1.8,
                     }}>
-                        <p style={{ color: '#22c55e' }}># 1. Masuk ke folder project</p>
+                        <p style={{ color: 'var(--color-success)' }}># 1. Masuk ke folder project</p>
                         <p style={{ color: '#e5e5e5', marginBottom: '12px' }}>cd &quot;E:\Vibe\Dashboard SJA\announcement-dashboard&quot;</p>
 
-                        <p style={{ color: '#22c55e' }}># 2. Download kode terbaru</p>
+                        <p style={{ color: 'var(--color-success)' }}># 2. Download kode terbaru</p>
                         <p style={{ color: '#e5e5e5', marginBottom: '12px' }}>git pull origin main</p>
 
-                        <p style={{ color: '#22c55e' }}># 3. Rebuild dan restart (tunggu 3-5 menit)</p>
+                        <p style={{ color: 'var(--color-success)' }}># 3. Rebuild dan restart (tunggu 3-5 menit)</p>
                         <p style={{ color: '#e5e5e5' }}>docker-compose down; docker-compose build --no-cache; docker-compose up -d</p>
                     </div>
                     <div style={{ marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                         <button
                             onClick={() => {
                                 navigator.clipboard.writeText(`cd "E:\\Vibe\\Dashboard SJA\\announcement-dashboard"\ngit pull origin main\ndocker-compose down; docker-compose build --no-cache; docker-compose up -d`);
-                                alert('Perintah sudah dicopy! Paste ke PowerShell server.');
+                                showToast('Perintah sudah dicopy! Paste ke PowerShell server.', 'success');
                             }}
                             style={{
-                                padding: '10px 20px', backgroundColor: '#22c55e', border: 'none',
-                                color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                                padding: '10px 20px', backgroundColor: 'var(--color-success)', border: 'none',
+                                color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                                 borderRadius: '6px',
                             }}
                         >
@@ -404,8 +408,8 @@ function VersionInfoSection() {
                                 if (modal) modal.style.display = 'none';
                             }}
                             style={{
-                                padding: '10px 20px', backgroundColor: '#333', border: 'none',
-                                color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                                padding: '10px 20px', backgroundColor: 'var(--border-strong)', border: 'none',
+                                color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                                 borderRadius: '6px',
                             }}
                         >
@@ -414,6 +418,7 @@ function VersionInfoSection() {
                     </div>
                 </div>
             </div>
+            <ConfirmDialog />
         </div>
     );
 }
@@ -523,7 +528,7 @@ export default function SettingsPage() {
                 justifyContent: 'center',
                 minHeight: '60vh',
             }}>
-                <p style={{ color: '#525252' }}>Loading...</p>
+                <p style={{ color: 'var(--text-tertiary)' }}>Loading...</p>
             </div>
         );
     }
@@ -535,7 +540,6 @@ export default function SettingsPage() {
         border: '1px solid #262626',
         color: '#fff',
         fontSize: '14px',
-        outline: 'none',
         boxSizing: 'border-box' as const,
     };
 
@@ -560,7 +564,7 @@ export default function SettingsPage() {
             }}>
                 <div>
                     <p style={{
-                        color: '#dc2626',
+                        color: 'var(--brand-red)',
                         fontSize: '11px',
                         fontWeight: 600,
                         letterSpacing: '0.2em',
@@ -572,7 +576,7 @@ export default function SettingsPage() {
                         fontFamily: 'Montserrat, sans-serif',
                         fontSize: '24px',
                         fontWeight: 700,
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                     }}>
                         Pengaturan
                     </h1>
@@ -585,8 +589,8 @@ export default function SettingsPage() {
                         alignItems: 'center',
                         gap: '8px',
                         padding: '12px 24px',
-                        backgroundColor: '#dc2626',
-                        color: '#fff',
+                        backgroundColor: 'var(--brand-red)',
+                        color: 'var(--text-primary)',
                         fontSize: '11px',
                         fontWeight: 600,
                         letterSpacing: '0.1em',
@@ -607,7 +611,7 @@ export default function SettingsPage() {
                     marginBottom: '32px',
                     backgroundColor: message.includes("berhasil") ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                     border: message.includes("berhasil") ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
-                    color: message.includes("berhasil") ? '#22c55e' : '#ef4444',
+                    color: message.includes("berhasil") ? 'var(--color-success)' : 'var(--color-error)',
                 }}>
                     {message}
                 </div>
@@ -621,13 +625,13 @@ export default function SettingsPage() {
             }}>
                 {/* General Settings */}
                 <div style={{
-                    backgroundColor: '#000',
-                    border: '1px solid #1a1a1a',
+                    backgroundColor: 'var(--bg-primary)',
+                    border: '1px solid var(--bg-tertiary)',
                     padding: '24px',
                     overflow: 'hidden',
                 }}>
                     <p style={{
-                        color: '#dc2626',
+                        color: 'var(--brand-red)',
                         fontSize: '11px',
                         fontWeight: 600,
                         letterSpacing: '0.2em',
@@ -636,7 +640,7 @@ export default function SettingsPage() {
                     <h2 style={{
                         fontFamily: 'Montserrat, sans-serif',
                         fontWeight: 700,
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                         marginBottom: '24px',
                     }}>
                         Pengaturan Situs
@@ -665,7 +669,7 @@ export default function SettingsPage() {
                                         height: '48px',
                                         cursor: 'pointer',
                                         backgroundColor: 'transparent',
-                                        border: '1px solid #1a1a1a',
+                                        border: '1px solid var(--bg-tertiary)',
                                     }}
                                 />
                                 <input
@@ -687,7 +691,7 @@ export default function SettingsPage() {
                                         style={{
                                             height: '64px',
                                             objectFit: 'contain',
-                                            backgroundColor: '#0a0a0a',
+                                            backgroundColor: 'var(--bg-secondary)',
                                             padding: '12px',
                                         }}
                                     />
@@ -698,8 +702,8 @@ export default function SettingsPage() {
                                             top: '-8px',
                                             right: '-8px',
                                             padding: '4px',
-                                            backgroundColor: '#dc2626',
-                                            color: '#fff',
+                                            backgroundColor: 'var(--brand-red)',
+                                            color: 'var(--text-primary)',
                                             border: 'none',
                                             cursor: 'pointer',
                                         }}
@@ -713,11 +717,11 @@ export default function SettingsPage() {
                                     alignItems: 'center',
                                     gap: '12px',
                                     padding: '16px',
-                                    border: '1px dashed #333',
+                                    border: '1px dashed var(--border-strong)',
                                     cursor: 'pointer',
                                 }}>
-                                    <FiUpload size={20} color="#525252" />
-                                    <span style={{ color: '#525252', fontSize: '14px' }}>Upload Logo</span>
+                                    <FiUpload size={20} color="var(--text-muted)" />
+                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>Upload Logo</span>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -732,12 +736,12 @@ export default function SettingsPage() {
 
                 {/* Hero Settings */}
                 <div style={{
-                    backgroundColor: '#000',
-                    border: '1px solid #1a1a1a',
+                    backgroundColor: 'var(--bg-primary)',
+                    border: '1px solid var(--bg-tertiary)',
                     padding: '24px',
                 }}>
                     <p style={{
-                        color: '#dc2626',
+                        color: 'var(--brand-red)',
                         fontSize: '11px',
                         fontWeight: 600,
                         letterSpacing: '0.2em',
@@ -746,7 +750,7 @@ export default function SettingsPage() {
                     <h2 style={{
                         fontFamily: 'Montserrat, sans-serif',
                         fontWeight: 700,
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                         marginBottom: '24px',
                     }}>
                         Hero Section
@@ -793,8 +797,8 @@ export default function SettingsPage() {
                                             top: '8px',
                                             right: '8px',
                                             padding: '4px',
-                                            backgroundColor: '#dc2626',
-                                            color: '#fff',
+                                            backgroundColor: 'var(--brand-red)',
+                                            color: 'var(--text-primary)',
                                             border: 'none',
                                             cursor: 'pointer',
                                         }}
@@ -809,11 +813,11 @@ export default function SettingsPage() {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     height: '128px',
-                                    border: '1px dashed #333',
+                                    border: '1px dashed var(--border-strong)',
                                     cursor: 'pointer',
                                 }}>
-                                    <FiUpload size={32} color="#525252" style={{ marginBottom: '8px' }} />
-                                    <span style={{ color: '#525252', fontSize: '14px' }}>Upload Background</span>
+                                    <FiUpload size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
+                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>Upload Background</span>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -828,15 +832,15 @@ export default function SettingsPage() {
 
                 {/* About Text Section */}
                 <div style={{
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #1a1a1a',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--bg-tertiary)',
                     padding: '24px',
                 }}>
                     <h2 style={{
                         fontFamily: 'Montserrat, sans-serif',
                         fontSize: '16px',
                         fontWeight: 700,
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                         marginBottom: '24px',
                     }}>
                         Tentang (Footer)
@@ -848,11 +852,10 @@ export default function SettingsPage() {
                         style={{
                             width: '100%',
                             padding: '12px 16px',
-                            backgroundColor: '#111',
-                            border: '1px solid #262626',
-                            color: '#fff',
+                            backgroundColor: 'var(--bg-card)',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--text-primary)',
                             fontSize: '14px',
-                            outline: 'none',
                             resize: 'vertical',
                             boxSizing: 'border-box',
                         }}
@@ -862,15 +865,15 @@ export default function SettingsPage() {
 
                 {/* Social Media Section */}
                 <div style={{
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #1a1a1a',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--bg-tertiary)',
                     padding: '24px',
                 }}>
                     <h2 style={{
                         fontFamily: 'Montserrat, sans-serif',
                         fontSize: '16px',
                         fontWeight: 700,
-                        color: '#fff',
+                        color: 'var(--text-primary)',
                         marginBottom: '24px',
                     }}>
                         Media Sosial
@@ -881,7 +884,7 @@ export default function SettingsPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                color: '#737373',
+                                color: 'var(--text-muted)',
                                 fontSize: '12px',
                                 fontWeight: 600,
                                 marginBottom: '8px',
@@ -896,11 +899,10 @@ export default function SettingsPage() {
                                 style={{
                                     width: '100%',
                                     padding: '12px 16px',
-                                    backgroundColor: '#111',
-                                    border: '1px solid #262626',
-                                    color: '#fff',
+                                    backgroundColor: 'var(--bg-card)',
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)',
                                     fontSize: '14px',
-                                    outline: 'none',
                                     boxSizing: 'border-box',
                                 }}
                             />
@@ -910,7 +912,7 @@ export default function SettingsPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                color: '#737373',
+                                color: 'var(--text-muted)',
                                 fontSize: '12px',
                                 fontWeight: 600,
                                 marginBottom: '8px',
@@ -925,11 +927,10 @@ export default function SettingsPage() {
                                 style={{
                                     width: '100%',
                                     padding: '12px 16px',
-                                    backgroundColor: '#111',
-                                    border: '1px solid #262626',
-                                    color: '#fff',
+                                    backgroundColor: 'var(--bg-card)',
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)',
                                     fontSize: '14px',
-                                    outline: 'none',
                                     boxSizing: 'border-box',
                                 }}
                             />
@@ -939,7 +940,7 @@ export default function SettingsPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                color: '#737373',
+                                color: 'var(--text-muted)',
                                 fontSize: '12px',
                                 fontWeight: 600,
                                 marginBottom: '8px',
@@ -954,11 +955,10 @@ export default function SettingsPage() {
                                 style={{
                                     width: '100%',
                                     padding: '12px 16px',
-                                    backgroundColor: '#111',
-                                    border: '1px solid #262626',
-                                    color: '#fff',
+                                    backgroundColor: 'var(--bg-card)',
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)',
                                     fontSize: '14px',
-                                    outline: 'none',
                                     boxSizing: 'border-box',
                                 }}
                             />
@@ -968,7 +968,7 @@ export default function SettingsPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                color: '#737373',
+                                color: 'var(--text-muted)',
                                 fontSize: '12px',
                                 fontWeight: 600,
                                 marginBottom: '8px',
@@ -983,11 +983,10 @@ export default function SettingsPage() {
                                 style={{
                                     width: '100%',
                                     padding: '12px 16px',
-                                    backgroundColor: '#111',
-                                    border: '1px solid #262626',
-                                    color: '#fff',
+                                    backgroundColor: 'var(--bg-card)',
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)',
                                     fontSize: '14px',
-                                    outline: 'none',
                                     boxSizing: 'border-box',
                                 }}
                             />
@@ -997,7 +996,7 @@ export default function SettingsPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                color: '#737373',
+                                color: 'var(--text-muted)',
                                 fontSize: '12px',
                                 fontWeight: 600,
                                 marginBottom: '8px',
@@ -1012,11 +1011,10 @@ export default function SettingsPage() {
                                 style={{
                                     width: '100%',
                                     padding: '12px 16px',
-                                    backgroundColor: '#111',
-                                    border: '1px solid #262626',
-                                    color: '#fff',
+                                    backgroundColor: 'var(--bg-card)',
+                                    border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)',
                                     fontSize: '14px',
-                                    outline: 'none',
                                     boxSizing: 'border-box',
                                 }}
                             />

@@ -191,7 +191,6 @@ function ResetPasswordForm() {
                                         borderRadius: "8px",
                                         color: "#fff",
                                         fontSize: "14px",
-                                        outline: "none",
                                     }}
                                     placeholder="Minimal 8 karakter"
                                 />
@@ -219,7 +218,6 @@ function ResetPasswordForm() {
                                         borderRadius: "8px",
                                         color: "#fff",
                                         fontSize: "14px",
-                                        outline: "none",
                                     }}
                                     placeholder="Ulangi password baru"
                                 />

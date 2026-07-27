@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { FiChevronDown, FiCheck, FiGlobe } from 'react-icons/fi';
+import { useToast } from "@/contexts/ToastContext";
 
 interface Site {
     id: string;
@@ -25,6 +26,7 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { showToast } = useToast();
 
     useEffect(() => {
         fetchSites();
@@ -97,7 +99,7 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
         } catch (error) {
             console.error('Failed to set site context:', error);
             // Surface the failure instead of silently reloading with stale context
-            alert('Gagal mengganti site. Coba lagi.');
+            showToast('Gagal mengganti site. Coba lagi.', 'error');
         }
     };
 
@@ -109,7 +111,7 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
                 borderRadius: '8px',
                 marginBottom: '16px',
             }}>
-                <div style={{ color: '#666', fontSize: '12px' }}>Loading sites...</div>
+                <div style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>Loading sites...</div>
             </div>
         );
     }
@@ -142,7 +144,7 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
                         width: '32px',
                         height: '32px',
                         borderRadius: '6px',
-                        backgroundColor: currentSite?.primaryColor || '#ED1C24',
+                        backgroundColor: currentSite?.primaryColor || 'var(--brand-red)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -150,10 +152,10 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
                         <FiGlobe color="#fff" size={16} />
                     </div>
                     <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                             Current Site
                         </div>
-                        <div style={{ fontSize: '14px', color: '#fff', fontWeight: 600 }}>
+                        <div style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 600 }}>
                             {currentSite?.name || 'Select Site'}
                         </div>
                     </div>
@@ -175,7 +177,7 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
                     left: 0,
                     right: 0,
                     marginTop: '8px',
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: 'var(--bg-tertiary)',
                     border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '8px',
                     boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
@@ -215,14 +217,14 @@ export default function SiteSelector({ onSiteChange }: SiteSelectorProps) {
                                     width: '24px',
                                     height: '24px',
                                     borderRadius: '4px',
-                                    backgroundColor: site.primaryColor || '#ED1C24',
+                                    backgroundColor: site.primaryColor || 'var(--brand-red)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                 }}>
                                     <FiGlobe color="#fff" size={12} />
                                 </div>
-                                <span style={{ fontSize: '14px', color: '#fff' }}>
+                                <span style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
                                     {site.name}
                                 </span>
                             </div>

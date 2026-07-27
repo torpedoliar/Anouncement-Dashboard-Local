@@ -31,7 +31,7 @@ export default function SiteHero({ settings, primaryColor, siteName }: SiteHeroP
 
         if (videoId) {
             return (
-                <div style={{ position: "relative", height: "500px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#000" }}>
+                <div style={{ position: "relative", height: "500px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
                     <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
                         <iframe
                             style={{ width: "100%", height: "100%", pointerEvents: "none", transform: "scale(1.5)" }}
@@ -45,7 +45,7 @@ export default function SiteHero({ settings, primaryColor, siteName }: SiteHeroP
 
                     {/* Content */}
                     <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0 24px" }}>
-                        <h1 style={{ fontSize: "48px", fontWeight: 800, marginBottom: "16px", color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                        <h1 style={{ fontSize: "48px", fontWeight: 800, marginBottom: "16px", color: "var(--text-primary)", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
                             {title}
                         </h1>
                         <p style={{ fontSize: "20px", color: "rgba(255,255,255,0.9)", maxWidth: "700px", margin: "0 auto", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
@@ -60,7 +60,7 @@ export default function SiteHero({ settings, primaryColor, siteName }: SiteHeroP
     // 2. Local Video Background
     if (settings?.heroVideoPath) {
         return (
-            <div style={{ position: "relative", height: "500px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#000" }}>
+            <div style={{ position: "relative", height: "500px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
                 <video
                     autoPlay
                     loop
@@ -75,7 +75,7 @@ export default function SiteHero({ settings, primaryColor, siteName }: SiteHeroP
 
                 {/* Content */}
                 <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0 24px" }}>
-                    <h1 style={{ fontSize: "48px", fontWeight: 800, marginBottom: "16px", color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                    <h1 style={{ fontSize: "48px", fontWeight: 800, marginBottom: "16px", color: "var(--text-primary)", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
                         {title}
                     </h1>
                     <p style={{ fontSize: "20px", color: "rgba(255,255,255,0.9)", maxWidth: "700px", margin: "0 auto", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
@@ -105,7 +105,7 @@ export default function SiteHero({ settings, primaryColor, siteName }: SiteHeroP
 
                 {/* Content */}
                 <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0 24px" }}>
-                    <h1 style={{ fontSize: "48px", fontWeight: 800, marginBottom: "16px", color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                    <h1 style={{ fontSize: "48px", fontWeight: 800, marginBottom: "16px", color: "var(--text-primary)", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
                         {title}
                     </h1>
                     <p style={{ fontSize: "20px", color: "rgba(255,255,255,0.9)", maxWidth: "700px", margin: "0 auto", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
@@ -123,7 +123,7 @@ export default function SiteHero({ settings, primaryColor, siteName }: SiteHeroP
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: `linear-gradient(135deg, #1a1a1a 0%, #000 100%)`,
+            background: `linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-primary) 100%)`,
             position: "relative",
             overflow: "hidden"
         }}>
@@ -132,10 +132,10 @@ export default function SiteHero({ settings, primaryColor, siteName }: SiteHeroP
             <div style={{ position: "absolute", bottom: "-50px", right: "-50px", width: "300px", height: "300px", background: primaryColor, filter: "blur(150px)", opacity: 0.2, borderRadius: "50%" }}></div>
 
             <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "0 24px" }}>
-                <h1 style={{ fontSize: "48px", fontWeight: 800, marginBottom: "16px", color: "#fff" }}>
+                <h1 style={{ fontSize: "48px", fontWeight: 800, marginBottom: "16px", color: "var(--text-primary)" }}>
                     {title}
                 </h1>
-                <p style={{ fontSize: "18px", color: "#a3a3a3", maxWidth: "600px", margin: "0 auto" }}>
+                <p style={{ fontSize: "18px", color: "var(--text-secondary)", maxWidth: "600px", margin: "0 auto" }}>
                     {subtitle}
                 </p>
             </div>
