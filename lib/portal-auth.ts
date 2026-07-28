@@ -11,6 +11,7 @@ const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 menit
 export const portalAuthOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
+            id: "portal-credentials",
             name: "portal-credentials",
             credentials: {
                 nik: { label: "NIK HRIS", type: "text" },
