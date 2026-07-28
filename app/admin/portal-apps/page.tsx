@@ -410,6 +410,7 @@ export default function PortalAppsPage() {
                         padding: "24px",
                         maxHeight: "90vh",
                         overflowY: "auto",
+                        boxSizing: "border-box",
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
                             <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
