@@ -102,7 +102,7 @@ export default function PortalAppsPage() {
 
             const body: Record<string, unknown> = {
                 name: formData.name,
-                slug: formData.slug,
+                slug: formData.slug.toLowerCase().replace(/\s+/g, '-'),
                 description: formData.description || null,
                 url: formData.url,
                 loginUrl: formData.loginUrl || null,
@@ -125,7 +125,12 @@ export default function PortalAppsPage() {
             const data = await response.json();
 
             if (!response.ok) {
-                setError(data.error || "Gagal menyimpan data");
+                if (data.details && Array.isArray(data.details)) {
+                    const messages = data.details.map((d: any) => `${d.field}: ${d.message}`).join(', ');
+                    setError(`${data.error}: ${messages}`);
+                } else {
+                    setError(data.error || "Gagal menyimpan data");
+                }
                 return;
             }
 
