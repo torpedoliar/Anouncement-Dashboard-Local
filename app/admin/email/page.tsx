@@ -137,7 +137,7 @@ export default function EmailPage() {
                                 onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
                                 placeholder="localhost"
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px",
                                     backgroundColor: "var(--bg-card)",
                                     border: "1px solid var(--border-strong)",
@@ -187,7 +187,7 @@ export default function EmailPage() {
                                 onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value || null })}
                                 placeholder="user@domain.com"
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px",
                                     backgroundColor: "var(--bg-card)",
                                     border: "1px solid var(--border-strong)",
@@ -207,7 +207,7 @@ export default function EmailPage() {
                                 onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value || null })}
                                 placeholder="••••••••"
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px",
                                     backgroundColor: "var(--bg-card)",
                                     border: "1px solid var(--border-strong)",
@@ -274,7 +274,7 @@ export default function EmailPage() {
                                 onChange={(e) => setSettings({ ...settings, fromName: e.target.value })}
                                 placeholder="Santos Jaya Abadi News"
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px",
                                     backgroundColor: "var(--bg-card)",
                                     border: "1px solid var(--border-strong)",
@@ -294,7 +294,7 @@ export default function EmailPage() {
                                 onChange={(e) => setSettings({ ...settings, fromEmail: e.target.value })}
                                 placeholder="news@company.com"
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px",
                                     backgroundColor: "var(--bg-card)",
                                     border: "1px solid var(--border-strong)",
@@ -314,7 +314,7 @@ export default function EmailPage() {
                                 onChange={(e) => setSettings({ ...settings, replyToEmail: e.target.value || null })}
                                 placeholder="reply@company.com"
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px",
                                     backgroundColor: "var(--bg-card)",
                                     border: "1px solid var(--border-strong)",

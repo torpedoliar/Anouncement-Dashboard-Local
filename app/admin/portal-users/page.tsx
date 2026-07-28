@@ -328,7 +328,7 @@ export default function PortalUsersPage() {
     };
 
     const inputStyle: React.CSSProperties = {
-        width: "100%",
+        width: "100%", boxSizing: "border-box",
         padding: "12px",
         backgroundColor: "#111",
         border: "1px solid #262626",
@@ -404,7 +404,7 @@ export default function PortalUsersPage() {
 
             {/* Table */}
             <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
                     <thead>
                         <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
                             <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
@@ -628,7 +628,7 @@ export default function PortalUsersPage() {
                     <div style={{
                         backgroundColor: "var(--bg-secondary)",
                         border: "1px solid var(--border-color)",
-                        width: "100%",
+                        width: "100%", boxSizing: "border-box",
                         maxWidth: "500px",
                         padding: "24px",
                         maxHeight: "90vh",
@@ -780,7 +780,7 @@ export default function PortalUsersPage() {
                                 type="submit"
                                 disabled={isSaving}
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px",
                                     backgroundColor: "var(--brand-red)",
                                     color: "var(--text-primary)",
@@ -812,7 +812,7 @@ export default function PortalUsersPage() {
                     <div style={{
                         backgroundColor: "var(--bg-secondary)",
                         border: "1px solid var(--border-color)",
-                        width: "100%",
+                        width: "100%", boxSizing: "border-box",
                         maxWidth: "400px",
                         padding: "24px",
                     }}>
@@ -844,7 +844,7 @@ export default function PortalUsersPage() {
                             onClick={handleResetPassword}
                             disabled={isResetting || !newPassword}
                             style={{
-                                width: "100%",
+                                width: "100%", boxSizing: "border-box",
                                 padding: "12px",
                                 backgroundColor: "#fbbf24",
                                 color: "var(--bg-primary)",

@@ -242,7 +242,7 @@ export default function UsersPage() {
 
             {/* Users Table */}
             <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
                     <thead>
                         <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
                             <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>NAMA</th>
@@ -356,7 +356,7 @@ export default function UsersPage() {
                     <div style={{
                         backgroundColor: "var(--bg-secondary)",
                         border: "1px solid var(--border-color)",
-                        width: "100%",
+                        width: "100%", boxSizing: "border-box",
                         maxWidth: "400px",
                         padding: "24px",
                         maxHeight: "90vh",
@@ -386,7 +386,7 @@ export default function UsersPage() {
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     required
                                     style={{
-                                        width: "100%",
+                                        width: "100%", boxSizing: "border-box",
                                         padding: "12px",
                                         backgroundColor: "var(--bg-card)",
                                         border: "1px solid var(--border-color)",
@@ -403,7 +403,7 @@ export default function UsersPage() {
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     required
                                     style={{
-                                        width: "100%",
+                                        width: "100%", boxSizing: "border-box",
                                         padding: "12px",
                                         backgroundColor: "var(--bg-card)",
                                         border: "1px solid var(--border-color)",
@@ -422,7 +422,7 @@ export default function UsersPage() {
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     required={!editingUser}
                                     style={{
-                                        width: "100%",
+                                        width: "100%", boxSizing: "border-box",
                                         padding: "12px",
                                         backgroundColor: "var(--bg-card)",
                                         border: "1px solid var(--border-color)",
@@ -437,7 +437,7 @@ export default function UsersPage() {
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
                                     style={{
-                                        width: "100%",
+                                        width: "100%", boxSizing: "border-box",
                                         padding: "12px",
                                         backgroundColor: "var(--bg-card)",
                                         border: "1px solid var(--border-color)",
@@ -487,7 +487,7 @@ export default function UsersPage() {
                                 type="submit"
                                 disabled={isSaving}
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px",
                                     backgroundColor: "var(--brand-red)",
                                     color: "var(--text-primary)",

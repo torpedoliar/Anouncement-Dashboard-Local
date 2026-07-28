@@ -149,7 +149,7 @@ export default function CreateSitePage() {
                             placeholder="e.g., Factory 1"
                             required
                             style={{
-                                width: "100%",
+                                width: "100%", boxSizing: "border-box",
                                 padding: "12px 16px",
                                 backgroundColor: "rgba(255,255,255,0.05)",
                                 border: "1px solid rgba(255,255,255,0.1)",
@@ -215,7 +215,7 @@ export default function CreateSitePage() {
                             placeholder="Brief description of this site..."
                             rows={3}
                             style={{
-                                width: "100%",
+                                width: "100%", boxSizing: "border-box",
                                 padding: "12px 16px",
                                 backgroundColor: "rgba(255,255,255,0.05)",
                                 border: "1px solid rgba(255,255,255,0.1)",
@@ -354,7 +354,7 @@ export default function CreateSitePage() {
                                 onChange={(e) => setCloneFromSiteId(e.target.value)}
                                 required={cloneMode === "clone"}
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px 16px",
                                     backgroundColor: "rgba(255,255,255,0.05)",
                                     border: "1px solid rgba(255,255,255,0.1)",

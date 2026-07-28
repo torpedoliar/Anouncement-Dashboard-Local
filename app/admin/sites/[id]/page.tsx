@@ -251,7 +251,7 @@ export default function EditSitePage({ params }: PageProps) {
                             onChange={(e) => setName(e.target.value)}
                             required
                             style={{
-                                width: "100%",
+                                width: "100%", boxSizing: "border-box",
                                 padding: "12px 16px",
                                 backgroundColor: "rgba(255,255,255,0.05)",
                                 border: "1px solid rgba(255,255,255,0.1)",
@@ -298,7 +298,7 @@ export default function EditSitePage({ params }: PageProps) {
                             onChange={(e) => setDescription(e.target.value)}
                             rows={3}
                             style={{
-                                width: "100%",
+                                width: "100%", boxSizing: "border-box",
                                 padding: "12px 16px",
                                 backgroundColor: "rgba(255,255,255,0.05)",
                                 border: "1px solid rgba(255,255,255,0.1)",

@@ -264,7 +264,7 @@ export default function MediaGalleryPage() {
                                             src={item.url}
                                             muted
                                             preload="metadata"
-                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                            style={{ width: "100%", boxSizing: "border-box", height: "100%", objectFit: "cover" }}
                                             onLoadedMetadata={(e) => {
                                                 const video = e.currentTarget;
                                                 video.currentTime = 0.5;

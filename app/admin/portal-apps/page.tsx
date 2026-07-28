@@ -196,13 +196,12 @@ export default function PortalAppsPage() {
     };
 
     const inputStyle: React.CSSProperties = {
-        width: "100%",
+        width: "100%", boxSizing: "border-box",
         padding: "12px",
         backgroundColor: "#111",
         border: "1px solid #262626",
         color: "#fff",
         fontSize: "14px",
-        boxSizing: "border-box",
     };
 
     if (isLoading) {
@@ -267,7 +266,7 @@ export default function PortalAppsPage() {
 
             {/* Table */}
             <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
                     <thead>
                         <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
                             <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
@@ -410,12 +409,11 @@ export default function PortalAppsPage() {
                     <div style={{
                         backgroundColor: "var(--bg-secondary)",
                         border: "1px solid var(--border-color)",
-                        width: "100%",
+                        width: "100%", boxSizing: "border-box",
                         maxWidth: "600px",
                         padding: "24px",
                         maxHeight: "90vh",
                         overflowY: "auto",
-                        boxSizing: "border-box",
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
                             <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
@@ -587,7 +585,7 @@ export default function PortalAppsPage() {
                                 type="submit"
                                 disabled={isSaving}
                                 style={{
-                                    width: "100%",
+                                    width: "100%", boxSizing: "border-box",
                                     padding: "12px",
                                     backgroundColor: "var(--brand-red)",
                                     color: "var(--text-primary)",

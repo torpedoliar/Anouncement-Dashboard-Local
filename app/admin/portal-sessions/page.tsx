@@ -221,7 +221,7 @@ export default function PortalSessionsPage() {
 
             {/* Sessions Table */}
             <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
                     <thead>
                         <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
                             <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>PENGGUNA</th>

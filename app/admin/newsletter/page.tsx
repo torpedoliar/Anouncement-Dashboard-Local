@@ -173,7 +173,7 @@ export default function NewsletterPage() {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{
-                            width: "100%",
+                            width: "100%", boxSizing: "border-box",
                             padding: "12px 12px 12px 40px",
                             backgroundColor: "var(--bg-card)",
                             border: "1px solid var(--border-strong)",
@@ -205,7 +205,7 @@ export default function NewsletterPage() {
 
             {/* Subscribers Table */}
             <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
                     <thead>
                         <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
                             <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>EMAIL</th>

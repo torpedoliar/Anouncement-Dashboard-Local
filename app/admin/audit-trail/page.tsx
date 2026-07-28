@@ -244,7 +244,7 @@ export default function AuditTrailPage() {
                 </div>
             ) : (
                 <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
                         <thead>
                             <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
                                 {["WAKTU", "ACTOR", "KATEGORI", "AKSI", "ENTITY", "OUTCOME", "IP", "DETAIL"].map((h) => (
