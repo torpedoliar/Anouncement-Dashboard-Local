@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FiLoader, FiCheckCircle } from "react-icons/fi";
+import { FiCheckCircle } from "react-icons/fi";
 
 interface SSOAutoSubmitProps {
     app: {
