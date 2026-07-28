@@ -37,6 +37,9 @@ yarn-error.log*
 .env.production
 !.env.example
 
+# docker dev override (expose DB ke host untuk npm run dev lokal)
+docker-compose.override.yml
+
 # vercel
 .vercel
 
