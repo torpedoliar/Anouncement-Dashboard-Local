@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import AccessDenied from "@/components/portal/AccessDenied";
 import NoCredential from "@/components/portal/NoCredential";
 import CorruptCredential from "@/components/portal/CorruptCredential";
+import SSOAutoSubmit from "@/components/portal/SSOAutoSubmit";
 
 export const dynamic = "force-dynamic";
 
@@ -110,35 +111,15 @@ export default async function SsoLaunchPage({ params }: PageProps) {
     }
 
     // 9. Render auto-submit form
-    return (
-        <html>
-            <body
-                style={{
-                    backgroundColor: "#0a0a0a",
-                    color: "#a1a1aa",
-                    fontFamily: "system-ui, sans-serif",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minHeight: "100vh",
-                    margin: 0,
-                }}
-            >
-                <p>Mengalihkan ke {app.name}...</p>
-                <form
-                    method={app.httpMethod.toLowerCase() as "post" | "get"}
-                    action={app.loginUrl || app.url}
-                    target="_blank"
-                >
-                    <input type="hidden" name={app.usernameField} value={cred.username} />
-                    <input type="hidden" name={app.passwordField} value={cred.password} />
-                    {extraFields.map((f, i) => (
-                        <input key={i} type="hidden" name={f.name} value={f.value} />
-                    ))}
-                </form>
-                {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-                <script dangerouslySetInnerHTML={{ __html: "document.forms[0].submit();" }} />
-            </body>
-        </html>
-    );
+    return <SSOAutoSubmit 
+        app={{
+            name: app.name,
+            loginUrl: app.loginUrl || app.url,
+            httpMethod: app.httpMethod,
+            usernameField: app.usernameField,
+            passwordField: app.passwordField,
+        }} 
+        cred={cred} 
+        extraFields={extraFields} 
+    />;
 }
