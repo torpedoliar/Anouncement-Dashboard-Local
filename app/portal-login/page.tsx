@@ -17,7 +17,7 @@ export default function PortalLoginPage() {
         setIsLoading(true);
 
         try {
-            const result = await signIn("credentials", {
+            const result = await signIn("portal-credentials", {
                 nik,
                 password,
                 redirect: false,
