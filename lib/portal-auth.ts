@@ -129,8 +129,8 @@ export const portalAuthOptions: NextAuthOptions = {
         },
     },
     callbacks: {
-        async jwt({ token, user, trigger }) {
-            if (trigger === "signIn" && user) {
+        async jwt({ token, user }) {
+            if (user) {
                 token.id = user.id;
                 token.role = (user as { role: string }).role;
 

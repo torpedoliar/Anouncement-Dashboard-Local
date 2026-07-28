@@ -70,9 +70,9 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
-        async jwt({ token, user, trigger }) {
+        async jwt({ token, user }) {
             // Only create session on initial sign-in, not on every token refresh
-            if (trigger === 'signIn' && user) {
+            if (user) {
                 token.id = user.id;
                 token.role = (user as { role: string }).role;
                 token.isSuperAdmin = (user as { isSuperAdmin: boolean }).isSuperAdmin;
