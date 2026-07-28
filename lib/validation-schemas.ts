@@ -179,7 +179,7 @@ export const UserUpdateSchema = UserCreateSchema.partial().omit({ password: true
 // -----------------------------------------
 
 export const PortalUserCreateSchema = z.object({
-    email: z.string().email('Invalid email format').max(255),
+    nik: z.string().min(1, 'NIK HRIS diperlukan').max(50),
     password: z.string()
         .min(8, 'Password must be at least 8 characters')
         .max(100, 'Password too long'),

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         const user = await prisma.portalUser.findUnique({
             where: { id },
             select: {
-                id: true, email: true, name: true, avatar: true,
+                id: true, nik: true, name: true, avatar: true,
                 role: true, isActive: true, failedLoginCount: true, lockedUntil: true,
                 createdAt: true, updatedAt: true,
                 appAccess: {
@@ -64,11 +64,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // Check email uniqueness if changed
-        if (validation.data.email && validation.data.email !== existing.email) {
-            const emailExists = await prisma.portalUser.findUnique({ where: { email: validation.data.email } });
-            if (emailExists) {
-                return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+        // Check NIK uniqueness if changed
+        if (validation.data.nik && validation.data.nik !== existing.nik) {
+            const nikExists = await prisma.portalUser.findUnique({ where: { nik: validation.data.nik } });
+            if (nikExists) {
+                return NextResponse.json({ error: "NIK already registered" }, { status: 409 });
             }
         }
 
@@ -142,7 +142,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             action: "PORTAL_USER_DELETED",
             entityType: "PORTAL_USER",
             entityId: id,
-            changes: { email: existing.email, name: existing.name },
+            changes: { nik: existing.nik, name: existing.name },
             request,
         });
 

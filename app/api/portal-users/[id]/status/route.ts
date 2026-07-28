@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             action: isActive ? "PORTAL_USER_ACTIVATED" : "PORTAL_USER_DEACTIVATED",
             entityType: "PORTAL_USER",
             entityId: id,
-            changes: { email: user.email, isActive },
+            changes: { nik: user.nik, isActive },
             request,
         });
 

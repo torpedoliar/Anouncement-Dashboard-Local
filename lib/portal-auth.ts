@@ -13,16 +13,16 @@ export const portalAuthOptions: NextAuthOptions = {
         CredentialsProvider({
             name: "portal-credentials",
             credentials: {
-                email: { label: "Email", type: "email" },
+                nik: { label: "NIK HRIS", type: "text" },
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    throw new Error("Email dan password diperlukan");
+                if (!credentials?.nik || !credentials?.password) {
+                    throw new Error("NIK dan password diperlukan");
                 }
 
                 const user = await prisma.portalUser.findUnique({
-                    where: { email: credentials.email },
+                    where: { nik: credentials.nik },
                 });
 
                 if (!user) {
@@ -32,9 +32,9 @@ export const portalAuthOptions: NextAuthOptions = {
                         action: "PORTAL_LOGIN_FAILED",
                         entityType: "PORTAL_SESSION",
                         outcome: "FAILURE",
-                        errorMessage: "Email tidak ditemukan",
+                        errorMessage: "NIK tidak ditemukan",
                     }).catch(() => {});
-                    throw new Error("Email tidak ditemukan");
+                    throw new Error("NIK tidak ditemukan");
                 }
 
                 if (!user.isActive) {
@@ -106,7 +106,7 @@ export const portalAuthOptions: NextAuthOptions = {
 
                 return {
                     id: user.id,
-                    email: user.email,
+                    nik: user.nik,
                     name: user.name,
                     role: user.role,
                     isSuperAdmin: false,

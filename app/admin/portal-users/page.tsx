@@ -26,7 +26,7 @@ interface PortalGroupInfo {
 
 interface PortalUser {
     id: string;
-    email: string;
+    nik: string;
     name: string;
     role: string;
     isActive: boolean;
@@ -43,7 +43,7 @@ interface Pagination {
 }
 
 const emptyForm = {
-    email: "",
+    nik: "",
     name: "",
     role: "PORTAL_USER",
     isActive: true,
@@ -127,7 +127,7 @@ export default function PortalUsersPage() {
             const method = editingUser ? "PUT" : "POST";
 
             const body: Record<string, unknown> = {
-                email: formData.email,
+                nik: formData.nik,
                 name: formData.name,
                 role: formData.role,
                 isActive: formData.isActive,
@@ -186,7 +186,7 @@ export default function PortalUsersPage() {
     };
 
     const handleDelete = async (user: PortalUser) => {
-        if (!(await confirm({ title: "Hapus Pengguna", message: `Hapus pengguna "${user.name}" (${user.email})?`, variant: "danger" }))) return;
+        if (!(await confirm({ title: "Hapus Pengguna", message: `Hapus pengguna "${user.name}" (${user.nik})?`, variant: "danger" }))) return;
 
         try {
             const response = await fetch(`/api/portal-users/${user.id}`, { method: "DELETE" });
@@ -276,7 +276,7 @@ export default function PortalUsersPage() {
     const openEditModal = (user: PortalUser) => {
         setEditingUser(user);
         setFormData({
-            email: user.email,
+            nik: user.nik,
             name: user.name,
             role: user.role,
             isActive: user.isActive,
@@ -408,7 +408,7 @@ export default function PortalUsersPage() {
                     <thead>
                         <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
                             <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>EMAIL</th>
+                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NIK HRIS</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>ROLE</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>GRUP</th>
                             <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
@@ -444,7 +444,7 @@ export default function PortalUsersPage() {
                                                 <span style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>{user.name}</span>
                                             </div>
                                         </td>
-                                        <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "14px" }}>{user.email}</td>
+                                        <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "14px" }}>{user.nik}</td>
                                         <td style={{ padding: "20px" }}>
                                             <span style={{
                                                 padding: "4px 12px",
@@ -662,11 +662,11 @@ export default function PortalUsersPage() {
                             </div>
 
                             <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>EMAIL *</label>
+                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NIK HRIS *</label>
                                 <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    type="text"
+                                    value={formData.nik}
+                                    onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
                                     required
                                     style={inputStyle}
                                 />
@@ -826,7 +826,7 @@ export default function PortalUsersPage() {
                         </div>
 
                         <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginBottom: "16px" }}>
-                            Reset password untuk <strong style={{ color: "var(--text-primary)" }}>{resetTarget.name}</strong> ({resetTarget.email})
+                            Reset password untuk <strong style={{ color: "var(--text-primary)" }}>{resetTarget.name}</strong> ({resetTarget.nik})
                         </p>
 
                         <div style={{ marginBottom: "24px" }}>

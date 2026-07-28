@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 },
                 members: {
                     include: {
-                        portalUser: { select: { id: true, name: true, email: true } },
+                        portalUser: { select: { id: true, name: true, nik: true } },
                     },
                 },
             },

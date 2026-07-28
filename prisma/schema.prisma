@@ -570,7 +570,7 @@ model EmailSettings {
 
 model PortalUser {
   id               String     @id @default(cuid())
-  email            String     @unique
+  nik              String     @unique
   passwordHash     String
   name             String
   avatar           String?

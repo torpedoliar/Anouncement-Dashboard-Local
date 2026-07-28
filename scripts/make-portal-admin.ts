@@ -1,6 +1,6 @@
 /**
  * Promote a portal user to PORTAL_ADMIN role.
- * Usage: npx tsx scripts/make-portal-admin.ts <email>
+ * Usage: npx tsx scripts/make-portal-admin.ts <nik>
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -8,15 +8,15 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-    const email = process.argv[2];
-    if (!email) {
-        console.error("Usage: npx tsx scripts/make-portal-admin.ts <email>");
+    const nik = process.argv[2];
+    if (!nik) {
+        console.error("Usage: npx tsx scripts/make-portal-admin.ts <nik>");
         process.exit(1);
     }
 
-    const user = await prisma.portalUser.findUnique({ where: { email } });
+    const user = await prisma.portalUser.findUnique({ where: { nik } });
     if (!user) {
-        console.error(`Portal user ${email} tidak ditemukan.`);
+        console.error(`Portal user ${nik} tidak ditemukan.`);
         process.exit(1);
     }
 
@@ -25,7 +25,7 @@ async function main() {
         data: { role: "PORTAL_ADMIN" },
     });
 
-    console.log(`✓ ${email} sekarang PORTAL_ADMIN`);
+    console.log(`✓ ${nik} sekarang PORTAL_ADMIN`);
 }
 
 main()

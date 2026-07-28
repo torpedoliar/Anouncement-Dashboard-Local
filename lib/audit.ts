@@ -88,9 +88,9 @@ export async function logAudit(params: AuditParams): Promise<void> {
         } else if (params.actorId && params.actorType === "PORTAL_USER") {
             const u = await prisma.portalUser.findUnique({
                 where: { id: params.actorId },
-                select: { email: true, name: true },
+                select: { nik: true, name: true },
             });
-            actorEmail = u?.email ?? null;
+            actorEmail = u?.nik ?? null; // using actorEmail column for NIK to avoid migration
             actorName = u?.name ?? null;
         }
 

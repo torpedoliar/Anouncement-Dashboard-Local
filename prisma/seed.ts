@@ -330,31 +330,31 @@ async function main() {
     // ===== PORTAL SSO SEED =====
     const portalAdminPassword = await hash("portal-admin-123", 10);
     const portalAdmin = await prisma.portalUser.upsert({
-        where: { email: "portal.admin@santosjayaabadi.co.id" },
+        where: { nik: "admin" },
         update: {},
         create: {
-            email: "portal.admin@santosjayaabadi.co.id",
+            nik: "admin",
             passwordHash: portalAdminPassword,
             name: "Portal Admin",
             role: "PORTAL_ADMIN",
             isActive: true,
         },
     });
-    console.log("✅ Created portal admin:", portalAdmin.email);
+    console.log("✅ Created portal admin:", portalAdmin.nik);
 
     const portalUserPassword = await hash("portal-user-123", 10);
     const portalUser = await prisma.portalUser.upsert({
-        where: { email: "portal.user@santosjayaabadi.co.id" },
+        where: { nik: "12345" },
         update: {},
         create: {
-            email: "portal.user@santosjayaabadi.co.id",
+            nik: "12345",
             passwordHash: portalUserPassword,
             name: "Portal User Demo",
             role: "PORTAL_USER",
             isActive: true,
         },
     });
-    console.log("✅ Created portal user:", portalUser.email);
+    console.log("✅ Created portal user:", portalUser.nik);
 
     const sampleApp = await prisma.portalApp.upsert({
         where: { slug: "example-erp" },

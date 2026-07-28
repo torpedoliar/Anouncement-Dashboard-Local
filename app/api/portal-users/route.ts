@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         if (search) {
             where.OR = [
                 { name: { contains: search, mode: "insensitive" } },
-                { email: { contains: search, mode: "insensitive" } },
+                { nik: { contains: search, mode: "insensitive" } },
             ];
         }
 
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
                 skip,
                 take: limit,
                 select: {
-                    id: true, email: true, name: true, avatar: true,
+                    id: true, nik: true, name: true, avatar: true,
                     role: true, isActive: true, createdAt: true, updatedAt: true,
                     appAccess: { select: { appId: true, role: true } },
                     groups: { select: { id: true, groupId: true, group: { select: { id: true, name: true } } } },
@@ -83,19 +83,19 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { email, password, name, role, isActive, appIds } = validation.data;
+        const { nik, password, name, role, isActive, appIds } = validation.data;
 
-        // Check email uniqueness
-        const existing = await prisma.portalUser.findUnique({ where: { email } });
+        // Check NIK uniqueness
+        const existing = await prisma.portalUser.findUnique({ where: { nik } });
         if (existing) {
-            return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+            return NextResponse.json({ error: "NIK already registered" }, { status: 409 });
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
 
         const user = await prisma.$transaction(async (tx) => {
             const newUser = await tx.portalUser.create({
-                data: { email, passwordHash, name, role, isActive },
+                data: { nik, passwordHash, name, role, isActive },
             });
 
             if (appIds && appIds.length > 0) {
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
             action: "PORTAL_USER_CREATED",
             entityType: "PORTAL_USER",
             entityId: user.id,
-            changes: { email, name, role, appIds },
+            changes: { nik, name, role, appIds },
             request,
         });
 
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        return NextResponse.json({ id: user.id, email, name, role, isActive, appIds }, { status: 201 });
+        return NextResponse.json({ id: user.id, nik, name, role, isActive, appIds }, { status: 201 });
     } catch (error) {
         console.error("Error creating portal user:", error);
         return NextResponse.json({ error: "Failed to create portal user" }, { status: 500 });

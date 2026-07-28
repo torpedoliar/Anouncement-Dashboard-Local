@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             action: "ADMIN_RESET_PORTAL_PASSWORD",
             entityType: "PORTAL_USER",
             entityId: id,
-            changes: { targetEmail: user.email },
+            changes: { targetNik: user.nik },
             request,
         });
 

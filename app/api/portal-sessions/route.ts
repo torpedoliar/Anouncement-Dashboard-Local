@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
                 skip,
                 take: limit,
                 include: {
-                    portalUser: { select: { id: true, name: true, email: true } },
+                    portalUser: { select: { id: true, name: true, nik: true } },
                 },
             }),
             prisma.portalSession.count({ where }),

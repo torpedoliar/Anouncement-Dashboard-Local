@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function PortalLoginPage() {
     const router = useRouter();
-    const [email, setEmail] = useState("");
+    const [nik, setNik] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +18,7 @@ export default function PortalLoginPage() {
 
         try {
             const result = await signIn("credentials", {
-                email,
+                nik,
                 password,
                 redirect: false,
                 callbackUrl: "/portal",
@@ -94,11 +94,11 @@ export default function PortalLoginPage() {
                             fontSize: "13px",
                             fontWeight: 500,
                             marginBottom: "6px",
-                        }}>Email</label>
+                        }}>NIK HRIS</label>
                         <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            type="text"
+                            value={nik}
+                            onChange={(e) => setNik(e.target.value)}
                             required
                             style={{
                                 width: "100%",
@@ -109,7 +109,7 @@ export default function PortalLoginPage() {
                                 color: "#fff",
                                 fontSize: "14px",
                             }}
-                            placeholder="email@example.com"
+                            placeholder="Masukkan NIK Anda"
                         />
                     </div>
 
