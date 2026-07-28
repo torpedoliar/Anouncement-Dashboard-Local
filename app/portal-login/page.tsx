@@ -159,11 +159,10 @@ export default function PortalLoginPage() {
                     </button>
 
                     <div style={{ textAlign: "center" }}>
-                        <a href="/portal/forgot-password" style={{
+                        <span style={{
                             color: "#737373",
                             fontSize: "13px",
-                            textDecoration: "none",
-                        }}>Lupa password?</a>
+                        }}>Lupa password? Hubungi Admin HRIS.</span>
                     </div>
                 </form>
             </div>
