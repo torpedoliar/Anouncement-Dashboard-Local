@@ -5,6 +5,8 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import UpdateBanner from "@/components/admin/UpdateBanner";
 import AdminMainContent from "@/components/admin/AdminMainContent";
 
+import NextAuthProvider from "@/components/providers/NextAuthProvider";
+
 export default async function AdminLayout({
     children,
 }: {
@@ -17,23 +19,25 @@ export default async function AdminLayout({
     }
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            backgroundColor: 'var(--bg-primary)',
-            display: 'flex',
-        }}>
-            {/* Sidebar */}
-            <AdminSidebar
-                userName={session.user?.name}
-                userEmail={session.user?.email}
-                isSuperAdmin={session.user?.isSuperAdmin}
-            />
+        <NextAuthProvider basePath="/api/auth">
+            <div style={{
+                minHeight: '100vh',
+                backgroundColor: 'var(--bg-primary)',
+                display: 'flex',
+            }}>
+                {/* Sidebar */}
+                <AdminSidebar
+                    userName={session.user?.name}
+                    userEmail={session.user?.email}
+                    isSuperAdmin={session.user?.isSuperAdmin}
+                />
 
-            {/* Main Content - Uses client component for responsive margin */}
-            <AdminMainContent>
-                <UpdateBanner />
-                {children}
-            </AdminMainContent>
-        </div>
+                {/* Main Content - Uses client component for responsive margin */}
+                <AdminMainContent>
+                    <UpdateBanner />
+                    {children}
+                </AdminMainContent>
+            </div>
+        </NextAuthProvider>
     );
 }
