@@ -54,56 +54,67 @@ export async function POST(request: NextRequest) {
         const loginUrl = app.loginUrl || app.url;
         const origin = new URL(loginUrl).origin;
 
-        // Step 1: GET to get initial session cookies
-        const getRes = await fetch(loginUrl, {
-            method: "GET",
-            headers: { "User-Agent": "Mozilla/5.0" },
-            redirect: "manual"
-        });
-        
-        let cookiePairs: string[] = [];
-        if (typeof getRes.headers.getSetCookie === 'function') {
-            cookiePairs = getRes.headers.getSetCookie().map(c => c.split(';')[0]);
-        } else {
-            const raw = getRes.headers.get('set-cookie');
-            if (raw) {
-                cookiePairs = raw.split(',').map(c => c.split(';')[0]);
-            }
-        }
-        const cookieHeader = cookiePairs.join("; ");
+        // Oracle EBS AppsLocalLogin.jsp login is an XHR-style POST to the SAME url with
+        // a custom header X-Service: AuthenticateUser. Response is a JS object literal (not JSON,
+        // not a redirect). Without X-Service, Oracle just re-serves the login HTML page (200, 3496 bytes)
+        // and the browser-side submitCredentials() in ?login.js is what actually authenticates.
+        // ponytail: X-Service hardcoded to Oracle's AuthenticateUser; generalize to a PortalApp
+        // serviceHeader field if a non-Oracle app ever needs REROUTE.
 
-        // Prepare POST body
+        // Build POST body. Oracle param names are literally "username"/"password" regardless of the
+        // DOM input name= attributes; usernameField/passwordField config must be set to those literals.
         const formBody = new URLSearchParams();
         formBody.append(app.usernameField || "username", cred.username);
         formBody.append(app.passwordField || "password", cred.password);
-        
+
         const extraFields: Record<string, string> = {};
         if (cred.extra) Object.assign(extraFields, cred.extra);
         if (app.extraFields && typeof app.extraFields === "object") {
-            Object.assign(extraFields, app.extraFields);
+            Object.assign(extraFields, app.extraFields as Record<string, string>);
         }
         for (const [k, v] of Object.entries(extraFields)) {
             formBody.append(k, v as string);
         }
 
-        // Step 2: POST to login with spoofed Origin/Referer
+        // POST AuthenticateUser (server-to-server; Origin/Referer spoofed to target domain)
         const postRes = await fetch(loginUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
+                "X-Service": "AuthenticateUser",
                 "Origin": origin,
                 "Referer": loginUrl,
-                "Cookie": cookieHeader,
-                "User-Agent": "Mozilla/5.0"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
             },
             body: formBody.toString(),
             redirect: "manual"
         });
 
-        const locationHeader = postRes.headers.get("location");
+        const setCookiePairs = (res: Response): string[] => {
+            if (typeof res.headers.getSetCookie === "function") {
+                return res.headers.getSetCookie().map(c => c.split(";")[0]);
+            }
+            const raw = res.headers.get("set-cookie");
+            return raw ? raw.split(",").map((c) => c.split(";")[0]) : [];
+        };
 
-        // Check if login failed (Oracle returns 200 OK with login form again when creds fail)
-        if (postRes.status === 200 && !locationHeader) {
+        let finalCookiePairs: string[] = setCookiePairs(postRes);
+        const postBody = await postRes.text();
+
+        // Parse Oracle's JS-object-literal response (keys unquoted, hex-escaped values).
+        // login.js uses eval(); we extract fields with regex to avoid eval.
+        const unescapeOracle = (s: string) =>
+            s.replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+        const fieldRe = (name: string) => {
+            const m = postBody.match(new RegExp(`${name}\\s*:\\s*'(.*?)'`, "m"));
+            return m ? unescapeOracle(m[1]) : "";
+        };
+        const authStatus = fieldRe("status");
+        const authUrl = fieldRe("url");
+
+        // Oracle rejects bad creds with {status:'failed', errorCode:'...'} (still 200, small JSON-ish body)
+        if (authStatus !== "success" || !authUrl) {
+            const errorCode = fieldRe("errorCode") || "unknown";
             await logAudit({
                 actorType: "PORTAL_USER",
                 actorId: portalUserId,
@@ -112,26 +123,15 @@ export async function POST(request: NextRequest) {
                 entityType: "PORTAL_APP",
                 entityId: app.id,
                 outcome: "FAILURE",
-                errorMessage: "Oracle login rejected credentials",
+                errorMessage: `Oracle login rejected credentials (${errorCode})`,
                 metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" }
             }).catch(() => {});
 
             return NextResponse.redirect(new URL(`/portal?error=sso_failed&app=${appSlug}`, baseUrl), 302);
         }
 
-        let finalCookiePairs: string[] = [];
-        if (typeof postRes.headers.getSetCookie === 'function') {
-            finalCookiePairs = postRes.headers.getSetCookie().map(c => c.split(';')[0]);
-        } else {
-            const raw = postRes.headers.get('set-cookie');
-            if (raw) {
-                finalCookiePairs = raw.split(',').map(c => c.split(';')[0]);
-            }
-        }
-        
-        // Combine initial and final cookies (final overwrites initial if duplicate)
         const cookieMap = new Map<string, string>();
-        for (const pair of [...cookiePairs, ...finalCookiePairs]) {
+        for (const pair of finalCookiePairs) {
             if (pair.includes("=")) {
                 const [k, ...v] = pair.split("=");
                 cookieMap.set(k.trim(), v.join("="));
@@ -164,15 +164,9 @@ export async function POST(request: NextRequest) {
             metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" }
         }).catch(() => {});
 
-        // Determine destination URL path from Oracle's Location header or fallback to app.url
-        let destinationPath = "";
-        if (locationHeader) {
-            const resolvedUrl = new URL(locationHeader, loginUrl);
-            destinationPath = `${resolvedUrl.pathname}${resolvedUrl.search}`;
-        } else {
-            const fallbackUrl = new URL(app.url);
-            destinationPath = `${fallbackUrl.pathname}${fallbackUrl.search}`;
-        }
+        // Destination: Oracle's success response carries the absolute landing url (OANEWHOMEPAGE).
+        const resolvedUrl = new URL(authUrl, loginUrl);
+        const destinationPath = `${resolvedUrl.pathname}${resolvedUrl.search}`;
 
         const proxyPath = `/portal/proxy/${appSlug}${destinationPath}`;
         return NextResponse.redirect(new URL(proxyPath, baseUrl), 302);
