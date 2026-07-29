@@ -1,0 +1,147 @@
+JUDUL: Tambah SSO Mode baru "REROUTE" (server-side relay) untuk 
+mengatasi proteksi Origin/Referer pada Oracle EBS Form-based Login
+
+## LATAR BELAKANG / DIAGNOSIS
+
+Aplikasi target (Oracle EBS 12.2.9, mode SSO saat ini: FORM) menolak 
+request auto-login dari portal kita meski field name dan kredensial 
+sudah benar. Hasil investigasi via DevTools Network tab:
+
+- Saat portal mengirim POST langsung dari browser (fetch/XHR) ke 
+  https://appsprod.santos.co.id:4443/OA_HTML/AppsLocalLogin.jsp,
+  header `Origin` yang terkirim otomatis oleh browser adalah alamat 
+  PORTAL kita sendiri (mis. http://192.168.2.3:3100), BUKAN alamat 
+  Oracle. Header Origin/Referer ini dikontrol penuh oleh browser dan 
+  TIDAK BISA dipalsukan oleh JavaScript di sisi client.
+- Oracle EBS tampaknya memvalidasi Origin/Referer di level 
+  aplikasi sebagai proteksi CSRF. Kalau tidak cocok dengan 
+  domainnya sendiri, Oracle diam-diam membalas dengan halaman 
+  login kosong (200 OK, tanpa pesan error) alih-alih menolak 
+  eksplisit atau redirect sukses.
+- Saat login manual langsung di domain Oracle (Origin & Referer 
+  sama dengan domain Oracle), login berhasil sempurna: response 
+  kecil + Set-Cookie session (JSESSIONID, PROD) + redirect ke 
+  OA.jsp?OAFunc=OANEWHOMEPAGE.
+
+KESIMPULAN: Selama request submit dilakukan dari browser pengguna 
+langsung ke domain Oracle (cross-origin), Oracle akan SELALU 
+menolaknya. Field name (username/password), HTTP method, dan extra 
+fields yang sudah dikonfigurasi TIDAK RELEVAN lagi di sini — 
+masalahnya murni di validasi Origin/Referer.
+
+## SOLUSI: MODE BARU "REROUTE"
+
+Tambahkan SSO_MODE baru bernama REROUTE (selain FORM, REDIRECT, 
+PROXY, TOKEN yang sudah ada). Prinsip: proses login dilakukan oleh 
+BACKEND portal (server-to-server), bukan oleh browser pengguna, 
+karena request server-to-server tidak tunduk pada aturan CORS/Origin 
+browser dan header Origin/Referer bisa kita set manual sesuai domain 
+target.
+
+### Alur teknis:
+
+1. **GET awal ke Login URL** (dari backend, bukan browser)
+   - Backend melakukan HTTP GET ke `login_url` aplikasi (mis. 
+     https://appsprod.santos.co.id:4443/OA_HTML/AppsLocalLogin.jsp)
+   - Simpan cookie yang dikembalikan (terutama JSESSIONID) dari 
+     header Set-Cookie response ini.
+
+2. **POST kredensial** (dari backend)
+   - Backend POST ke URL yang sama (atau `url` field jika beda), 
+     dengan:
+     - Body: form-urlencoded berisi field sesuai konfigurasi 
+       (username_field, password_field) + isi dari extra_fields JSON
+     - Header `Cookie`: kirim balik JSESSIONID yang didapat dari 
+       langkah 1
+     - Header `Origin` dan `Referer`: SET MANUAL ke domain target 
+       (parsing dari `login_url`), agar sama persis dengan domain 
+       Oracle sendiri — ini kunci utama fix-nya, dan hanya bisa 
+       dilakukan dari backend, tidak bisa dari browser.
+     - Header `Content-Type: application/x-www-form-urlencoded`
+
+3. **Validasi hasil login**
+   - Cek response: jika Content-Length kecil dan ada Set-Cookie 
+     sesi baru (mis. cookie bernama sesuai konfigurasi/observasi, 
+     contoh: PROD) → login berhasil.
+   - Jika response balik ke halaman login penuh (HTML form login 
+     lagi) → login gagal (kredensial salah / field mapping salah), 
+     tampilkan error ke user.
+
+4. **Bridging cookie ke browser pengguna (PENTING)**
+   Karena cookie session (JSESSIONID, PROD) di-scope ke domain 
+   Oracle (appsprod.santos.co.id / .santos.co.id), backend TIDAK 
+   BISA menyetel cookie ini langsung ke browser pengguna dari 
+   respons portal (beda domain). Perlu salah satu pendekatan berikut 
+   — pilih sesuai arsitektur portal saat ini:
+   
+   a) **Reverse proxy penuh** (direkomendasikan, paling robust):
+      Semua traffic ke aplikasi Oracle dari browser pengguna 
+      melewati domain portal sendiri (mis. 
+      https://portal.santos.co.id/proxy/oracle-prod/...). Backend 
+      men-transparent-proxy setiap request/response ke Oracle asli, 
+      menyimpan cookie sesi Oracle di server (mapped ke session 
+      user portal), dan menempelkannya otomatis di setiap request 
+      yang diteruskan ke Oracle. Browser user tidak pernah 
+      berinteraksi langsung dengan domain Oracle.
+   
+   b) **Redirect dengan token/ticket** (jika Oracle EBS instance ini 
+      mendukung mekanisme SSO ticket bawaan, mis. icx_ticket / 
+      Oracle AS SSO): setelah backend berhasil login, minta backend 
+      generate ticket/token dari Oracle, lalu redirect browser 
+      pengguna ke URL Oracle dengan ticket tsb sebagai parameter 
+      sehingga Oracle sendiri yang men-set cookie session ke browser 
+      user secara native. (Ini kemungkinan yang coba dijembatani 
+      oleh mode "TOKEN" yang sudah ada — cek dulu apakah instance 
+      Oracle SJA ini mendukungnya sebelum membangun proxy penuh di 
+      atas.)
+
+   Catatan: opsi (a) lebih universal dan tidak bergantung fitur 
+   khusus Oracle, tapi butuh effort lebih untuk rewrite URL/asset 
+   di HTML yang diproxy. Opsi (b) lebih ringan tapi hanya jalan 
+   kalau Oracle instance mendukung SSO ticket.
+
+## PERUBAHAN DI FORM "EDIT APLIKASI"
+
+- Tambahkan "REROUTE" sebagai opsi baru di dropdown SSO MODE.
+- Saat SSO MODE = REROUTE, field yang tetap dipakai: URL, LOGIN URL, 
+  USERNAME FIELD, PASSWORD FIELD, HTTP METHOD, EXTRA FIELDS (JSON) 
+  — sama seperti FORM, karena field-field ini masih valid dan 
+  dibutuhkan backend untuk membentuk request.
+- Tidak perlu field UI tambahan untuk MVP; Origin/Referer di-derive 
+  otomatis dari domain LOGIN URL oleh backend, tidak perlu diinput 
+  manual oleh admin.
+
+## KONFIGURASI UNTUK APLIKASI "Oracle" INI SEBAGAI CONTOH/TEST CASE
+
+- URL / Login URL: https://appsprod.santos.co.id:4443/OA_HTML/AppsLocalLogin.jsp
+- SSO Mode: REROUTE
+- HTTP Method: POST
+- Username Field: username
+- Password Field: password
+- Extra Fields (JSON):
+  {
+    "_lAccessibility": "N",
+    "displayLangCode": "US"
+  }
+
+## KEAMANAN
+
+- Kredensial tidak boleh melewati/terekspos ke browser pengguna 
+  dalam proses relay ini — seluruh proses (GET, POST, cookie 
+  handling) terjadi di backend.
+- Simpan cookie sesi Oracle per-user dengan aman di server 
+  (mis. server-side session store), jangan expose raw cookie Oracle 
+  ke client kecuali lewat mekanisme reverse-proxy yang sudah 
+  terisolasi.
+
+## TESTING CHECKLIST
+
+1. Test REROUTE mode untuk aplikasi Oracle ini end-to-end: 
+   login berhasil sampai landing di halaman utama Oracle 
+   (OANEWHOMEPAGE), bukan balik ke form login.
+2. Test kredensial salah → pastikan error ditangani dengan baik 
+   (bukan silent fail).
+3. Test session Oracle konsisten selama sesi user aktif di portal 
+   (cookie tidak expired prematur / tidak conflict antar user).
+4. Regression test: pastikan mode FORM/REDIRECT/PROXY/TOKEN yang 
+   sudah ada untuk aplikasi lain tidak terganggu oleh perubahan ini.

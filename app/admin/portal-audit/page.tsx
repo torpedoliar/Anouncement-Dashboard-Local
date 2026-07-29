@@ -30,9 +30,10 @@ export default function PortalAuditPage() {
         const table = document.getElementById(tableId) as HTMLTableElement;
         if (!table) return;
 
-        let csv = [];
+        const csv = [];
         for (let i = 0; i < table.rows.length; i++) {
-            let row = [], cols = table.rows[i].querySelectorAll("td, th");
+            const row = [];
+            const cols = table.rows[i].querySelectorAll("td, th");
             for (let j = 0; j < cols.length; j++) {
                 row.push('"' + (cols[j] as HTMLElement).innerText.replace(/"/g, '""') + '"');
             }

@@ -368,6 +368,7 @@ enum PortalSsoMode {
   REDIRECT  // (future) redirect SSO
   PROXY     // (future) reverse proxy + header injection
   TOKEN     // (future) OIDC/OAuth2 token
+  REROUTE   // Server-to-server login + full reverse proxy
 }
 
 // ============================================

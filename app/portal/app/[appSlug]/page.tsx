@@ -9,6 +9,7 @@ import AccessDenied from "@/components/portal/AccessDenied";
 import NoCredential from "@/components/portal/NoCredential";
 import CorruptCredential from "@/components/portal/CorruptCredential";
 import SSOAutoSubmit from "@/components/portal/SSOAutoSubmit";
+import SSORerouteSubmit from "@/components/portal/SSORerouteSubmit";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,8 @@ export default async function SsoLaunchPage({ params }: PageProps) {
             passwordField: true,
             extraFields: true,
             isActive: true,
+            ssoMode: true,
+            logoPath: true,
         },
     });
 
@@ -111,6 +114,17 @@ export default async function SsoLaunchPage({ params }: PageProps) {
     }
 
     // 9. Render auto-submit form
+    if (app.ssoMode === "REROUTE") {
+        return <SSORerouteSubmit
+            app={{
+                name: app.name,
+                logoPath: app.logoPath,
+                slug: app.slug,
+            }}
+            cred={{ username: cred.username }}
+        />;
+    }
+
     return <SSOAutoSubmit 
         app={{
             name: app.name,
