@@ -89,7 +89,7 @@ export default async function SsoLaunchPage({ params }: PageProps) {
         entityType: "PORTAL_APP",
         entityId: app.id,
         outcome: "SUCCESS",
-        metadata: { appSlug: app.slug, appName: app.name },
+        metadata: { appSlug: app.slug, appName: app.name, targetUsername: cred.username },
     }).catch(() => {});
 
     // 8. Parse extra fields

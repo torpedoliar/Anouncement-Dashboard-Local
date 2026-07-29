@@ -77,6 +77,8 @@ export default function AppCard({ name, slug, description, logoPath, category, h
             {hasCredential ? (
                 <Link
                     href={`/portal/app/${slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                         display: "block",
                         textAlign: "center",

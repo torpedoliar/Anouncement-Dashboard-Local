@@ -24,7 +24,8 @@ import {
     FiGlobe,
     FiPieChart,
     FiGrid,
-    FiUserPlus
+    FiUserPlus,
+    FiShield
 } from "react-icons/fi";
 import SiteSelector from "./SiteSelector";
 
@@ -84,6 +85,7 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
             { href: "/admin/portal-groups", icon: FiUsers, label: "PORTAL GROUPS" },
             { href: "/admin/portal-users", icon: FiUserPlus, label: "PORTAL USERS" },
             { href: "/admin/portal-sessions", icon: FiMonitor, label: "PORTAL SESI" },
+            { href: "/admin/portal-audit", icon: FiShield, label: "PORTAL AUDIT" },
             { href: "/admin/global-analytics", icon: FiPieChart, label: "GLOBAL ANALYTICS" },
             { href: "/admin/audit-trail", icon: FiActivity, label: "AUDIT TRAIL" },
         ] : []),

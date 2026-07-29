@@ -645,6 +645,7 @@ model PortalUserAppCredential {
   portalUserId    String
   appId           String
   credentialBlob  String   // AES-256-GCM: base64(iv + tag + ciphertext)
+  appUsername     String?  // Plaintext username for ISO27001 audit tracking (account sharing detection)
   lastUsedAt      DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

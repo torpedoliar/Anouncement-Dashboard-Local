@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
 
         await prisma.portalUserAppCredential.upsert({
             where: { portalUserId_appId: { portalUserId: userId, appId } },
-            update: { credentialBlob },
-            create: { portalUserId: userId, appId, credentialBlob },
+            update: { credentialBlob, appUsername: username },
+            create: { portalUserId: userId, appId, credentialBlob, appUsername: username },
         });
 
         await logAudit({
