@@ -6,6 +6,9 @@ import prisma from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 async function proxy(request: NextRequest, { params }: { params: Promise<{ appSlug: string; path?: string[] }> }) {
+    // ponytail: Oracle uses self-signed certs, ignore TLS errors in proxy
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
     const { appSlug } = await params;
     
     try {
@@ -48,15 +51,15 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ appSl
 
         const headers = new Headers();
         
-        // Copy original headers but skip host, origin, referer, cookie
+        // Copy original headers but skip problematic ones
         request.headers.forEach((val, key) => {
             const k = key.toLowerCase();
-            if (!["host", "origin", "referer", "cookie", "accept-encoding"].includes(k)) {
+            if (!["host", "connection", "origin", "referer", "cookie", "accept-encoding", "content-length"].includes(k)) {
                 headers.set(key, val);
             }
         });
 
-        headers.set("Host", targetUrl.host);
+        // ponytail: Do not manually set "Host", Node fetch/undici handles it and setting it manually can hang.
         headers.set("Origin", targetOrigin);
         headers.set("Referer", targetUrl.href);
         headers.set("Cookie", targetCookies);
