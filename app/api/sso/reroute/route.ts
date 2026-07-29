@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
             return raw ? raw.split(",").map((c) => c.split(";")[0]) : [];
         };
 
-        let finalCookiePairs: string[] = setCookiePairs(postRes);
+        const finalCookiePairs: string[] = setCookiePairs(postRes);
         const postBody = await postRes.text();
 
         // Parse Oracle's JS-object-literal response (keys unquoted, hex-escaped values).
