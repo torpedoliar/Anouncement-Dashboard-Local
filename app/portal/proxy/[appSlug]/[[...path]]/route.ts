@@ -87,16 +87,48 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ appSl
         let body: ArrayBuffer | string = await fetchRes.arrayBuffer();
         const contentType = fetchRes.headers.get("content-type") || "";
 
-        // Rewrite absolute & root-relative URLs in HTML
-        if (contentType.includes("text/html")) {
+        // Rewrite absolute & root-relative URLs in text responses
+        if (contentType.includes("text/") || contentType.includes("application/javascript") || contentType.includes("application/json") || contentType.includes("application/xml")) {
             let text = new TextDecoder("utf-8").decode(body);
             const proxyOrigin = `${baseUrl}/portal/proxy/${appSlug}`;
             
-            // 1. Rewrite absolute origin URLs
+            // 1. Rewrite absolute origin URLs anywhere in the text
             text = text.replaceAll(targetOrigin, proxyOrigin);
 
-            // 2. Rewrite root-relative URLs (href="/...", src="/...", action="/...") that don't start with /portal
-            text = text.replace(/(href|src|action|data-url)=(["'])\/(?!\/|portal\/)/gi, `$1=$2/portal/proxy/${appSlug}/`);
+            // 2. HTML specific rewrites
+            if (contentType.includes("text/html")) {
+                // Rewrite root-relative URLs in standard HTML attributes
+                text = text.replace(/(href|src|action|data-url)=(["'])\/(?!\/|portal\/)/gi, `$1=$2/portal/proxy/${appSlug}/`);
+                
+                // Inject AJAX Interceptor (XMLHttpRequest & fetch) to catch relative API calls
+                const interceptorScript = `
+<script>
+(function() {
+    var proxyPath = "/portal/proxy/${appSlug}";
+    var open = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+        if (typeof url === 'string' && url.indexOf('/') === 0 && url.indexOf(proxyPath) !== 0) {
+            url = proxyPath + url;
+        }
+        return open.apply(this, arguments);
+    };
+    var origFetch = window.fetch;
+    window.fetch = function(input, init) {
+        if (typeof input === 'string' && input.indexOf('/') === 0 && input.indexOf(proxyPath) !== 0) {
+            input = proxyPath + input;
+        }
+        return origFetch(input, init);
+    };
+})();
+</script>
+`;
+                // Inject right after <head> or at the beginning of HTML if <head> is missing
+                if (text.toLowerCase().includes("<head>")) {
+                    text = text.replace(/<head>/i, `<head>${interceptorScript}`);
+                } else {
+                    text = interceptorScript + text;
+                }
+            }
 
             body = text;
             responseHeaders.set("content-length", new TextEncoder().encode(text).length.toString());
