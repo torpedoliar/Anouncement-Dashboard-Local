@@ -16,7 +16,7 @@ interface PortalApp {
     httpMethod: string;
     usernameField: string | null;
     passwordField: string | null;
-    extraFields: string | null;
+    extraFields: any;
     category: string | null;
     isActive: boolean;
     displayOrder: number;
@@ -168,6 +168,19 @@ export default function PortalAppsPage() {
     };
 
     const openEditModal = (app: PortalApp) => {
+        let extraFieldsFormatted = "";
+        if (app.extraFields) {
+            if (typeof app.extraFields === "object") {
+                extraFieldsFormatted = JSON.stringify(app.extraFields, null, 2);
+            } else if (typeof app.extraFields === "string") {
+                try {
+                    extraFieldsFormatted = JSON.stringify(JSON.parse(app.extraFields), null, 2);
+                } catch {
+                    extraFieldsFormatted = app.extraFields;
+                }
+            }
+        }
+
         setEditingApp(app);
         setFormData({
             name: app.name,
@@ -179,7 +192,7 @@ export default function PortalAppsPage() {
             httpMethod: app.httpMethod,
             usernameField: app.usernameField || "",
             passwordField: app.passwordField || "",
-            extraFields: app.extraFields || "",
+            extraFields: extraFieldsFormatted,
             category: app.category || "",
             isActive: app.isActive,
             displayOrder: app.displayOrder,
