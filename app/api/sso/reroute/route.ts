@@ -145,10 +145,15 @@ export async function POST(request: NextRequest) {
         
         // We use the Next.js cookies API to set it
         const cookieStore = await cookies();
-        cookieStore.set(`portal_proxy_${appSlug}`, encryptedCookies, { 
-            httpOnly: true, 
-            secure: process.env.NODE_ENV === "production", 
-            path: `/portal/proxy/${appSlug}`, // Only send to proxy route
+        // secure harus ikut scheme request aktual, bukan NODE_ENV: deployment prod di
+        // HTTP internal (http://192.168.2.3:3100) dengan secure=true bikin browser drop cookie
+        // → proxy baca undefined → "Unauthorized or Session Expired". ponytail: balik ke
+        // env flag eksplisit (PORTAL_PROXY_COOKIE_SECURE) saat deploy di balik TLS terminator.
+        cookieStore.set(`portal_proxy_${appSlug}`, encryptedCookies, {
+            httpOnly: true,
+            secure: reqProto === "https",
+            sameSite: "lax",
+            path: `/portal/proxy/${appSlug}`,
             maxAge: 60 * 60 * 8 // 8 hours
         });
 
