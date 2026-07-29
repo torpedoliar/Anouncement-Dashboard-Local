@@ -64,25 +64,25 @@ async function main() {
     console.log("body (first 2000):", text.slice(0, 2000));
     console.log("body length:", text.length);
 
-    // Parse JSON like login.js does
-    let parsed: any = null;
-    try {
-        const cleaned = text.replace(/[\n\r\t\s]/g, "").replace(/,}/g, "}");
-        parsed = JSON.parse(cleaned);
-    } catch (e) {
-        console.log("\nJSON parse failed:", (e as Error).message);
-    }
+    // Parse Oracle's JS-object-literal response (keys unquoted, hex-escaped values).
+    // login.js uses eval(); we extract fields with regex to avoid eval.
+    const unescapeOracle = (s: string) =>
+        s.replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+    const fieldRe = (name: string) => {
+        const m = text.match(new RegExp(`${name}\\s*:\\s*'(.*?)'`, "m"));
+        return m ? unescapeOracle(m[1]) : "";
+    };
+    const status = fieldRe("status");
+    const url = fieldRe("url");
 
     console.log("\n=== VERDICT ===");
-    if (parsed) {
-        console.log("parsed:", JSON.stringify(parsed, null, 2));
-        if (parsed.status === "failed") {
-            console.log("FAIL: Oracle rejected creds. errorCode:", parsed.errorCode, "popup:", parsed.popup);
-        } else {
-            console.log("SUCCESS: authenticated. redirect url:", parsed.url);
-        }
+    if (status === "success" && url) {
+        console.log("SUCCESS: authenticated. redirect url:", url);
+        console.log("xsid:", fieldRe("xsid"));
+    } else if (status === "failed") {
+        console.log("FAIL: Oracle rejected creds. errorCode:", fieldRe("errorCode") || "unknown");
     } else {
-        console.log("No JSON => not AuthenticateUser response. Check headers/endpoint.");
+        console.log("UNKNOWN response. status field:", status || "(none)");
     }
 }
 
