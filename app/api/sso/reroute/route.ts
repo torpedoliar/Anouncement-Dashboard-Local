@@ -12,6 +12,10 @@ export async function POST(request: NextRequest) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     
     try {
+        const reqHost = request.headers.get("x-forwarded-host") || request.headers.get("host");
+        const reqProto = request.headers.get("x-forwarded-proto") || (request.url.startsWith("https") ? "https" : "http");
+        const baseUrl = reqHost ? `${reqProto}://${reqHost}` : new URL(request.url).origin;
+
         const formData = await request.formData();
         const appSlug = formData.get("appSlug") as string;
 
@@ -112,7 +116,7 @@ export async function POST(request: NextRequest) {
                 metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" }
             }).catch(() => {});
 
-            return NextResponse.redirect(new URL(`/portal?error=sso_failed&app=${appSlug}`, request.url), 302);
+            return NextResponse.redirect(new URL(`/portal?error=sso_failed&app=${appSlug}`, baseUrl), 302);
         }
 
         let finalCookiePairs: string[] = [];
@@ -171,7 +175,7 @@ export async function POST(request: NextRequest) {
         }
 
         const proxyPath = `/portal/proxy/${appSlug}${destinationPath}`;
-        return NextResponse.redirect(new URL(proxyPath, request.url), 302);
+        return NextResponse.redirect(new URL(proxyPath, baseUrl), 302);
     } catch (err) {
         console.error("REROUTE SSO Error:", err);
         return NextResponse.json({ error: "Internal Server Error", details: err instanceof Error ? err.message : String(err) }, { status: 500 });

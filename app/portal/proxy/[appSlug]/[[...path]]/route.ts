@@ -28,6 +28,10 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ appSl
         }
 
         const targetOrigin = new URL(app.url).origin;
+
+        const reqHost = request.headers.get("x-forwarded-host") || request.headers.get("host");
+        const reqProto = request.headers.get("x-forwarded-proto") || (request.url.startsWith("https") ? "https" : "http");
+        const baseUrl = reqHost ? `${reqProto}://${reqHost}` : new URL(request.url).origin;
         
         // request.nextUrl.pathname will be /portal/proxy/appSlug or /portal/proxy/appSlug/OA_HTML/...
         const basePath = `/portal/proxy/${appSlug}`;
@@ -83,7 +87,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ appSl
         // Rewrite absolute & root-relative URLs in HTML
         if (contentType.includes("text/html")) {
             let text = new TextDecoder("utf-8").decode(body);
-            const proxyOrigin = `${new URL(request.url).origin}/portal/proxy/${appSlug}`;
+            const proxyOrigin = `${baseUrl}/portal/proxy/${appSlug}`;
             
             // 1. Rewrite absolute origin URLs
             text = text.replaceAll(targetOrigin, proxyOrigin);
@@ -100,7 +104,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ appSl
             const location = fetchRes.headers.get("location");
             if (location) {
                 if (location.startsWith(targetOrigin)) {
-                    const rewrittenLoc = location.replace(targetOrigin, `${new URL(request.url).origin}/portal/proxy/${appSlug}`);
+                    const rewrittenLoc = location.replace(targetOrigin, `${baseUrl}/portal/proxy/${appSlug}`);
                     responseHeaders.set("location", rewrittenLoc);
                 } else if (location.startsWith("/")) {
                     responseHeaders.set("location", `/portal/proxy/${appSlug}${location}`);
