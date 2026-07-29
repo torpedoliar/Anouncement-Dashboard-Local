@@ -8,6 +8,9 @@ import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
+    // Ignore self-signed certs for internal Oracle EBS
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    
     try {
         const formData = await request.formData();
         const appSlug = formData.get("appSlug") as string;
@@ -54,8 +57,15 @@ export async function POST(request: NextRequest) {
             redirect: "manual"
         });
         
-        const initialSetCookies = getRes.headers.getSetCookie();
-        const cookiePairs = initialSetCookies.map(c => c.split(";")[0]);
+        let cookiePairs: string[] = [];
+        if (typeof getRes.headers.getSetCookie === 'function') {
+            cookiePairs = getRes.headers.getSetCookie().map(c => c.split(';')[0]);
+        } else {
+            const raw = getRes.headers.get('set-cookie');
+            if (raw) {
+                cookiePairs = raw.split(',').map(c => c.split(';')[0]);
+            }
+        }
         const cookieHeader = cookiePairs.join("; ");
 
         // Prepare POST body
@@ -105,8 +115,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.redirect(new URL(`/portal?error=sso_failed&app=${appSlug}`, request.url), 302);
         }
 
-        const finalSetCookies = postRes.headers.getSetCookie();
-        const finalCookiePairs = finalSetCookies.map(c => c.split(";")[0]);
+        let finalCookiePairs: string[] = [];
+        if (typeof postRes.headers.getSetCookie === 'function') {
+            finalCookiePairs = postRes.headers.getSetCookie().map(c => c.split(';')[0]);
+        } else {
+            const raw = postRes.headers.get('set-cookie');
+            if (raw) {
+                finalCookiePairs = raw.split(',').map(c => c.split(';')[0]);
+            }
+        }
         
         // Combine initial and final cookies (final overwrites initial if duplicate)
         const cookieMap = new Map<string, string>();
@@ -157,6 +174,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.redirect(new URL(proxyPath, request.url), 302);
     } catch (err) {
         console.error("REROUTE SSO Error:", err);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ error: "Internal Server Error", details: err instanceof Error ? err.message : String(err) }, { status: 500 });
     }
 }
