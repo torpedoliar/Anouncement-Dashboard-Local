@@ -10,6 +10,7 @@ import NoCredential from "@/components/portal/NoCredential";
 import CorruptCredential from "@/components/portal/CorruptCredential";
 import SSOAutoSubmit from "@/components/portal/SSOAutoSubmit";
 import SSORerouteSubmit from "@/components/portal/SSORerouteSubmit";
+import SSOCredentialVault from "@/components/portal/SSOCredentialVault";
 
 export const dynamic = "force-dynamic";
 
@@ -113,7 +114,7 @@ export default async function SsoLaunchPage({ params }: PageProps) {
         }
     }
 
-    // 9. Render auto-submit form
+    // 9. Render SSO method per app.ssoMode
     if (app.ssoMode === "REROUTE") {
         return <SSORerouteSubmit
             app={{
@@ -125,7 +126,18 @@ export default async function SsoLaunchPage({ params }: PageProps) {
         />;
     }
 
-    return <SSOAutoSubmit 
+    if (app.ssoMode === "VAULT") {
+        return <SSOCredentialVault
+            app={{
+                name: app.name,
+                url: app.url,
+                logoPath: app.logoPath,
+            }}
+            cred={cred}
+        />;
+    }
+
+    return <SSOAutoSubmit
         app={{
             name: app.name,
             loginUrl: app.loginUrl || app.url,

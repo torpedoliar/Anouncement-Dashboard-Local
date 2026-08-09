@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  npm:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      # Expose HTTP traffic (0.0.0.0:80)
+      - '0.0.0.0:80:80'
+      # Expose HTTPS traffic (0.0.0.0:443)
+      - '0.0.0.0:443:443'
+      # Expose NPM Web Admin Dashboard (0.0.0.0:81)
+      - '0.0.0.0:81:81'
+    volumes:
+      - ./npm_data/data:/data
+      - ./npm_data/letsencrypt:/etc/letsencrypt
+    networks:
+      - announcement-dashboard_internal
+
+networks:
+  announcement-dashboard_internal:
+    external: true

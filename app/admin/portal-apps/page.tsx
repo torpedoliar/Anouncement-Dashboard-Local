@@ -514,6 +514,7 @@ export default function PortalAppsPage() {
                                         <option value="PROXY">PROXY</option>
                                         <option value="TOKEN">TOKEN</option>
                                         <option value="REROUTE">REROUTE</option>
+                                        <option value="VAULT">VAULT</option>
                                     </select>
                                 </div>
                                 <div style={{ marginBottom: "16px" }}>
