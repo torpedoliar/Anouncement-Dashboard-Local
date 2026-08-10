@@ -15,6 +15,9 @@ services:
     volumes:
       - ./npm_data/data:/data
       - ./npm_data/letsencrypt:/etc/letsencrypt
+    extra_hosts:
+      # Akses container web via hostname 'web' dari service lain di jaringan eksternal
+      - "web:host-gateway"
     networks:
       - announcement-dashboard_internal
 

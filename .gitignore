@@ -33,9 +33,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env
-.env.local
-.env.production
+.env.*
 !.env.example
+!.env.production
+# template secret (CHANGE_ME) — aman di-commit
+!.env.server.example
 
 # docker dev override (expose DB ke host untuk npm run dev lokal)
 docker-compose.override.yml
@@ -49,5 +51,6 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# Docker (local config with secrets)
-docker-compose.yml
+# Docker compose is now tracked (secrets moved to server-side .env via env_file).
+# Keep docker-compose.override.yml ignored (dev-only, may contain local secrets).
+

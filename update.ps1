@@ -53,6 +53,58 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "OK - Code updated" -ForegroundColor Green
 
+# Step 2.5: Karena docker-compose.yml kini ter-commit (tanpa secret), pastikan
+# secret produksi tersedia via .env / .env.server di server. Fail-fast bila kosong
+# supaya tidak deploy dengan PORTAL_CREDENTIAL_KEY blank (data kredensial tak terbaca).
+Write-Host ""
+Write-Host "[2.5/6] Checking production secrets..." -ForegroundColor Yellow
+
+# File env sumber: prioritaskan .env.server, fallback .env
+if (Test-Path ".env.server") { $envSource = ".env.server" } else { $envSource = ".env" }
+
+# Ambil nilai secret dari $envSource (dengan [Environment]::SetEnvironmentVariable agar
+# berlaku utk seluruh proses saat ini juga)
+function Get-SecFromEnv($Name, $Source) {
+    $raw = (Get-Content -Path $Source -ErrorAction SilentlyContinue | Where-Object { $_ -match "^$Name=" }) -join "`n"
+    if ($raw) {
+        $val = $raw.Substring($raw.IndexOf("=") + 1).Trim().Trim('"')
+        [Environment]::SetEnvironmentVariable($Name, $val)
+        return $val
+    }
+    return ""
+}
+
+# Blokir bila PORTAL_CREDENTIAL_KEY (critical) tidak terisi
+$portalKey = Get-SecFromEnv "PORTAL_CREDENTIAL_KEY" $envSource
+if ([string]::IsNullOrWhiteSpace($portalKey) -or $portalKey -eq "CHANGE_ME") {
+    Write-Host "ERROR: PORTAL_CREDENTIAL_KEY tidak ada di '$envSource' atau masih placeholder!" -ForegroundColor Red
+    Write-Host "Isi dulu (contoh di .env.server.example), lalu jalankan ulang." -ForegroundColor Red
+    Write-Host "PERINGATAN: ganti key ini = data kredensial portal terenkripsi LAMA tidak terbaca." -ForegroundColor Yellow
+    exit 1
+}
+
+# NEXTAUTH_SECRET juga wajib
+$naSecret = Get-SecFromEnv "NEXTAUTH_SECRET" $envSource
+if ([string]::IsNullOrWhiteSpace($naSecret) -or $naSecret -eq "super-secret-key-for-development" -or $naSecret -eq "CHANGE_ME") {
+    Write-Host "ERROR: NEXTAUTH_SECRET tidak valid di '$envSource'!" -ForegroundColor Red
+    exit 1
+}
+
+# Ambil juga secret lain (biar compose ${...} terisi)
+Get-SecFromEnv "CRON_SECRET" $envSource | Out-Null
+Get-SecFromEnv "PEXELS_API_KEY" $envSource | Out-Null
+
+# Pastikan AUTH_TRUST_HOST (dari .env.production ter-commit) ikut env proses,
+# supaya docker compose interpolasi + runtime dapat nilai yang benar.
+if (-not [Environment]::GetEnvironmentVariable("AUTH_TRUST_HOST")) {
+    $authTrust = (Get-Content -Path ".env.production" -ErrorAction SilentlyContinue | Where-Object { $_ -match "^AUTH_TRUST_HOST=" }) -join ""
+    if ($authTrust) {
+        [Environment]::SetEnvironmentVariable("AUTH_TRUST_HOST", $authTrust.Substring($authTrust.IndexOf("=") + 1).Trim())
+    }
+}
+
+Write-Host "OK - Secret tersedia (PORTAL_CREDENTIAL_KEY, NEXTAUTH_SECRET, CRON_SECRET)" -ForegroundColor Green
+
 # Step 3: Check for schema changes
 Write-Host ""
 Write-Host "[3/6] Checking for database schema changes..." -ForegroundColor Yellow
