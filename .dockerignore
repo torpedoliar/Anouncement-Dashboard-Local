@@ -7,7 +7,11 @@ npm-debug.log
 out
 
 # Environment files
-.env*.local
+# .env.production berisi NEXTAUTH_URL kosong + AUTH_TRUST_HOST — TIDAK boleh masuk
+# build context: Next.js auto-load saat NODE_ENV=production → NEXTAUTH_URL="" →
+# next-auth detectOrigin return "" → new URL("") Invalid URL saat prerender.
+.env*
+!.env.example
 
 # IDE
 .idea

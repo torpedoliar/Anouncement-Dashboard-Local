@@ -18,6 +18,11 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# next-auth detect-origin membutuhkan NEXTAUTH_URL valid pada build time (
+# saat prerender /portal-login). Nilai dummy ini hanya utk build; runtime memakai
+# AUTH_TRUST_HOST=true (dari compose env_file) untuk detect origin per-request.
+ENV NEXTAUTH_URL="http://localhost:3000"
+
 # Build the app
 RUN npm run build
 
