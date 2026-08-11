@@ -69,61 +69,46 @@ export async function canAccessPortalAppBySlug(
 }
 
 /**
- * Daftar app yang bisa diakses user (untuk grid /portal).
- * PORTAL_ADMIN: semua app aktif.
- * PORTAL_USER: union + dedup (by app.id) dari:
- *   1. App via PortalUserGroup → PortalGroup(isActive) → PortalGroupApp → PortalApp(isActive)
- *   2. App via PortalUserAppAccess → PortalApp(isActive) (direct override)
+ * Daftar app yang tampil di grid /portal untuk user.
+ * Semua app aktif tersedia untuk semua user (tidak lagi dibatasi group/direct membership).
+ * Filter: user menyembunyikan app/grup via PortalUserAppVisibility.
+ * - app override visible=false  → hidden
+ * - grup override visible=false → seluruh app di grup hidden (kecuali ada app override visible=true)
  * Sort: displayOrder asc, lalu name asc.
  */
 export async function getAccessiblePortalApps(portalUserId: string) {
-    const user = await prisma.portalUser.findUnique({
-        where: { id: portalUserId },
-        select: { role: true },
+    // Semua app aktif tersedia untuk semua user (tidak lagi filter group/direct).
+    const allApps = await prisma.portalApp.findMany({
+        where: { isActive: true },
+        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+        select: APP_SELECT,
     });
-    if (!user) return [];
 
-    // PORTAL_ADMIN: semua app aktif
-    if (user.role === "PORTAL_ADMIN") {
-        return prisma.portalApp.findMany({
-            where: { isActive: true },
-            orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+    const { groupOverrides, appOverrides } = await getVisibilityProfile(portalUserId);
+
+    // App yang di-hide via override app=false
+    const hiddenAppIds = new Set<string>();
+    for (const [appId, v] of appOverrides) if (v === false) hiddenAppIds.add(appId);
+
+    // Grup-hidden
+    const hiddenGroupIds = new Set<string>();
+    for (const [gid, v] of groupOverrides) if (v === false) hiddenGroupIds.add(gid);
+
+    // App yang termasuk grup hidden (untuk exclude; kecuali override app=true menang)
+    const appsInHiddenGroups = new Set<string>();
+    if (hiddenGroupIds.size > 0) {
+        const groupLinks = await prisma.portalGroupApp.findMany({
+            where: { groupId: { in: [...hiddenGroupIds] } },
+            select: { appId: true },
         });
+        for (const l of groupLinks) appsInHiddenGroups.add(l.appId);
     }
 
-    // Query 1: apps via groups
-    const groupApps = await prisma.portalGroupApp.findMany({
-        where: {
-            group: {
-                isActive: true,
-                members: { some: { portalUserId } },
-            },
-            app: { isActive: true },
-        },
-        select: { app: { select: APP_SELECT } },
+    return allApps.filter((app) => {
+        if (hiddenAppIds.has(app.id)) return false;
+        if (appsInHiddenGroups.has(app.id) && appOverrides.get(app.id) !== true) return false;
+        return true;
     });
-
-    // Query 2: apps via direct access
-    const directApps = await prisma.portalUserAppAccess.findMany({
-        where: {
-            portalUserId,
-            app: { isActive: true },
-        },
-        select: { app: { select: APP_SELECT } },
-    });
-
-    // Union + dedup by app.id
-    const seen = new Set<string>();
-    const result: typeof groupApps[number]["app"][] = [];
-    for (const row of [...groupApps, ...directApps]) {
-        if (!seen.has(row.app.id)) {
-            seen.add(row.app.id);
-            result.push(row.app);
-        }
-    }
-
-    // Sort: displayOrder asc, name asc
-    return result.sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name));
 }
 
 /**

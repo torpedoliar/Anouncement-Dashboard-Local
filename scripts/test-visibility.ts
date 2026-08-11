@@ -79,13 +79,43 @@ async function main() {
         profile = await getVisibilityProfile(uid);
         assertEq(profile.appOverrides.has(appA.id), false, "partial show removes row");
 
+        // 9. Grid: user menyembunyikan grup (appB override on) → grid hanya appB
+        const { getAccessiblePortalApps } = await import("../lib/portal-access");
+        await saveVisibility(uid, { groupIdsOff: [group.id], appIdsOff: [], appIdsOn: [appB.id], skip: false });
+        let grid = await getAccessiblePortalApps(uid);
+        const gridIds = grid.map((a) => a.slug);
+        assertEq(gridIds.includes("test-vis-a"), false, "appA hidden (via group)");
+        assertEq(gridIds.includes("test-vis-b"), true, "appB shown (app override on)");
+
+        // 10. App baru di grup hidden → tetap tersembunyi (konsisten grup override)
+        const appC = await prisma.portalApp.create({
+            data: { slug: "test-vis-c", name: "Test Vis C", url: "https://c.test", isActive: true },
+        });
+        await prisma.portalGroupApp.create({ data: { groupId: group.id, appId: appC.id } });
+        grid = await getAccessiblePortalApps(uid);
+        assertEq(grid.map((a) => a.slug).includes("test-vis-c"), false, "appC in hidden group stays hidden");
+
+        // 11. App baru di grup NON-hidden → tampil default
+        const group2 = await prisma.portalGroup.create({ data: { name: "Test-Grup-Vis2", description: "temp" } });
+        const appD = await prisma.portalApp.create({
+            data: { slug: "test-vis-d", name: "Test Vis D", url: "https://d.test", isActive: true },
+        });
+        await prisma.portalGroupApp.create({ data: { groupId: group2.id, appId: appD.id } });
+        grid = await getAccessiblePortalApps(uid);
+        assertEq(grid.map((a) => a.slug).includes("test-vis-d"), true, "appD in visible group shows");
+
+        // 12. Grid: semua on (reset) → semua app test tampil
+        await saveVisibility(uid, { groupIdsOff: [], appIdsOff: [], appIdsOn: [], skip: false });
+        grid = await getAccessiblePortalApps(uid);
+        assertEq(grid.map((a) => a.slug).includes("test-vis-a"), true, "all on → appA shows");
+        assertEq(grid.map((a) => a.slug).includes("test-vis-d"), true, "all on → appD shows");
+
         console.log("\n=== ALL PASS ===");
     } finally {
         // Cleanup — jangan menyisakan data test
         await prisma.portalUserAppVisibility.deleteMany({ where: { portalUserId: uid } }).catch(() => {});
         await prisma.portalUser.delete({ where: { id: uid } }).catch(() => {});
-        await prisma.portalGroupApp.deleteMany({ where: { groupId: group.id } }).catch(() => {});
-        // Hapus grup & app test hanya bila memang milik test (nama/slug prefix)
+        // Hapus group2 & link-nya (appC tidak dilink ke group2)
         await prisma.portalGroup.deleteMany({ where: { name: { startsWith: "Test-Grup-Vis" } } }).catch(() => {});
         await prisma.portalApp.deleteMany({ where: { slug: { startsWith: "test-vis-" } } }).catch(() => {});
     }
