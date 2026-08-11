@@ -583,6 +583,9 @@ model PortalUser {
   failedLoginCount Int        @default(0)
   lockedUntil      DateTime?
 
+  // Onboarding wizard per-user app visibility
+  onboardingDone Boolean @default(false)
+
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
@@ -591,6 +594,7 @@ model PortalUser {
   sessions      PortalSession[]
   auditLogs     AuditLog[]
   groups        PortalUserGroup[]
+  visibility    PortalUserAppVisibility[]
 
   @@index([isActive])
   @@index([role])
@@ -620,6 +624,7 @@ model PortalApp {
   userAccess    PortalUserAppAccess[]
   credentials   PortalUserAppCredential[]
   groupApps     PortalGroupApp[]
+  visibility    PortalUserAppVisibility[]
 
   @@index([isActive])
   @@index([category])
@@ -689,11 +694,31 @@ model PortalGroup {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  apps    PortalGroupApp[]
-  members PortalUserGroup[]
+  apps       PortalGroupApp[]
+  members    PortalUserGroup[]
+  visibility PortalUserAppVisibility[]
 
   @@index([isActive])
   @@map("portal_groups")
+}
+
+model PortalUserAppVisibility {
+  id            String        @id @default(cuid())
+  portalUserId  String
+  groupId       String?
+  appId         String?
+  visible       Boolean
+
+  portalUser    PortalUser    @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+  group         PortalGroup?  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  app           PortalApp?    @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([portalUserId, groupId])
+  @@unique([portalUserId, appId])
+  @@index([portalUserId])
+  @@index([groupId])
+  @@index([appId])
+  @@map("portal_user_app_visibility")
 }
 
 model PortalGroupApp {
