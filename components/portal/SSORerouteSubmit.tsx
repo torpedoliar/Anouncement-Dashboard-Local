@@ -97,7 +97,7 @@ export default function SSORerouteSubmit({ app, cred }: SSORerouteSubmitProps) {
                         </span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: "12px", color: "var(--text-tertiary)", fontWeight: 600 }}>Status Proxy</span>
+                        <span style={{ fontSize: "12px", color: "var(--text-tertiary)", fontWeight: 600 }}>Koneksi Sesi</span>
                         <span style={{ fontSize: "13px", color: "var(--color-success)", fontWeight: 500 }}>
                             Connecting
                         </span>
