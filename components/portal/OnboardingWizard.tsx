@@ -33,15 +33,21 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
     const [saving, setSaving] = useState(false);
 
     const toggleGroup = (gid: string) => {
-        const next = new Set(hiddenGroups);
-        next.has(gid) ? next.delete(gid) : next.add(gid);
-        setHiddenGroups(next);
+        setHiddenGroups((prev) => {
+            const next = new Set(prev);
+            if (next.has(gid)) next.delete(gid);
+            else next.add(gid);
+            return next;
+        });
     };
     const toggleApp = (aid: string) => {
-        const next = new Set(hiddenApps);
-        next.has(aid) ? next.delete(aid) : next.add(aid);
-        setHiddenApps(next);
-    };
+        setHiddenApps((prev) => {
+            const next = new Set(prev);
+            if (next.has(aid)) next.delete(aid);
+            else next.add(aid);
+            return next;
+        });
+    }; // ponytail: two toggles are intentionally separate — group off ≠ app off semantics (PATCH body differs)
 
     const submit = async (skip: boolean) => {
         setSaving(true);
@@ -59,10 +65,10 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
             if (res.ok) {
                 window.location.href = "/portal";
             } else {
-                alert("Gagal menyimpan pengaturan. Coba lagi.");
+                console.error("POST visibility failed", res.status);
             }
-        } catch {
-            alert("Terjadi kesalahan saat menyimpan.");
+        } catch (e) {
+            console.error("POST visibility error", e);
         } finally {
             setSaving(false);
         }
@@ -75,22 +81,38 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
-            if (!res.ok) alert("Gagal memperbarui pengaturan.");
-        } catch {
-            alert("Terjadi kesalahan.");
+            if (!res.ok) console.error("PATCH visibility failed", res.status);
+        } catch (e) {
+            console.error("PATCH visibility error", e);
         }
     };
 
-    // settings mode: toggle langsung PATCH
+    // settings mode: toggle langsung PATCH — target nilai dihitung dari state BARU (functional update)
     const handleGroupChange = (gid: string) => {
-        const willHide = !hiddenGroups.has(gid);
-        toggleGroup(gid);
-        if (mode === "settings") patch({ groupId: gid, visible: !willHide });
+        if (mode === "settings") {
+            setHiddenGroups((prev) => {
+                const next = new Set(prev);
+                if (next.has(gid)) next.delete(gid);
+                else next.add(gid);
+                patch({ groupId: gid, visible: !next.has(gid) }); // next = toggled
+                return next;
+            });
+        } else {
+            toggleGroup(gid);
+        }
     };
     const handleAppChange = (aid: string) => {
-        const willHide = !hiddenApps.has(aid);
-        toggleApp(aid);
-        if (mode === "settings") patch({ appId: aid, visible: !willHide });
+        if (mode === "settings") {
+            setHiddenApps((prev) => {
+                const next = new Set(prev);
+                if (next.has(aid)) next.delete(aid);
+                else next.add(aid);
+                patch({ appId: aid, visible: !next.has(aid) }); // next = toggled
+                return next;
+            });
+        } else {
+            toggleApp(aid);
+        }
     };
 
     return (

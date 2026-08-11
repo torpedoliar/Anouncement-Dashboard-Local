@@ -1,11 +1,10 @@
 import { getServerSession } from "next-auth";
 import { portalAuthOptions } from "@/lib/portal-auth";
 import { getPortalLayout } from "@/lib/portal-layout";
-import { getVisibilityProfile } from "@/lib/portal-access";
+import { getAccessiblePortalApps } from "@/lib/portal-access";
 import prisma from "@/lib/prisma";
 import OnboardingWizard from "@/components/portal/OnboardingWizard";
 import GroupedAppGrid, { GridGroup } from "@/components/portal/GroupedAppGrid";
-import AppCard from "@/components/portal/AppCard";
 import { FiGrid } from "react-icons/fi";
 
 export const dynamic = "force-dynamic";
@@ -20,45 +19,30 @@ export default async function PortalPage() {
         return <OnboardingWizard groups={groups} mode="onboarding" />;
     }
 
-    // Semua app aktif (batch query credential untuk hindari N+1)
-    const allAppIds = groups.flatMap((g) => g.apps.map((a) => a.id));
-    const credRows = allAppIds.length
+    // App yang benar-benar tampil = hasil filter visibility (getAccessiblePortalApps).
+    const visibleApps = await getAccessiblePortalApps(userId);
+
+    // Batch query credential untuk hindari N+1
+    const visibleIds = visibleApps.map((a) => a.id);
+    const credRows = visibleIds.length
         ? await prisma.portalUserAppCredential.findMany({
-              where: { portalUserId: userId, appId: { in: allAppIds } },
+              where: { portalUserId: userId, appId: { in: visibleIds } },
               select: { appId: true },
           })
         : [];
     const credSet = new Set(credRows.map((c) => c.appId));
 
-    // Grid hanya menampilkan app yang tidak user sembunyikan
-    const { groupOverrides, appOverrides } = await getVisibilityProfile(userId);
-    const isHidden = (app: { id: string }, groupId: string): boolean => {
-        if (appOverrides.get(app.id) === false) return true;
-        if (groupOverrides.get(groupId) === false && appOverrides.get(app.id) !== true) return true;
-        return false;
-    };
+    // Kelompokkan per-grup: app yang tampil disebar sesuai kelompoknya.
+    const appById = new Map(visibleApps.map((a) => [a.id, a]));
     const gridGroups: GridGroup[] = groups
         .map((g) => ({
             id: g.id,
             name: g.name,
             apps: g.apps
-                .filter((a) => !isHidden(a, g.id))
+                .filter((a) => appById.has(a.id))
                 .map((a) => ({ ...a, hasCredential: credSet.has(a.id) })),
         }))
         .filter((g) => g.apps.length > 0);
-
-    // App aktif tanpa grup → seksi "Lainnya"
-    const groupedIds = new Set(groups.flatMap((g) => g.apps.map((a) => a.id)));
-    const ungrouped = await prisma.portalApp.findMany({
-        where: { isActive: true },
-        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-        select: {
-            id: true, name: true, slug: true, description: true, logoPath: true, category: true,
-        },
-    });
-    const extraApps = ungrouped
-        .filter((a) => !groupedIds.has(a.id) && !isHidden(a, ""))
-        .map((a) => ({ ...a, hasCredential: credSet.has(a.id) }));
 
     return (
         <div style={{ padding: "32px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -67,7 +51,7 @@ export default async function PortalPage() {
                 <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff", margin: 0 }}>Aplikasi Saya</h1>
             </div>
 
-            {gridGroups.length === 0 && extraApps.length === 0 ? (
+            {gridGroups.length === 0 ? (
                 <div style={{ padding: "64px", textAlign: "center", backgroundColor: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: "12px" }}>
                     <FiGrid size={48} color="#262626" style={{ marginBottom: "16px" }} />
                     <p style={{ color: "var(--text-muted)", fontSize: "15px" }}>
@@ -75,19 +59,7 @@ export default async function PortalPage() {
                     </p>
                 </div>
             ) : (
-                <>
-                    {gridGroups.length > 0 && <GroupedAppGrid groups={gridGroups} />}
-                    {extraApps.length > 0 && (
-                        <section style={{ marginTop: "32px" }}>
-                            <h2 style={{ color: "var(--text-secondary)", fontSize: "16px", fontWeight: 600, marginBottom: "12px" }}>Lainnya</h2>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
-                                {extraApps.map((app) => (
-                                    <AppCard key={app.id} {...app} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-                </>
+                <GroupedAppGrid groups={gridGroups} />
             )}
         </div>
     );
