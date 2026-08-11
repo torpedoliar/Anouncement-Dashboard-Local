@@ -39,6 +39,8 @@ model PortalUserAppVisibility {
 
 Relasi back: `PortalUser.visibility PortalUserAppVisibility[]`, `PortalGroup.visibility ...`, `PortalApp.visibility ...`.
 
+Tambahan kolom di `PortalUser`: `onboardingDone Boolean @default(false)` — flag eksplisit bahwa user sudah melewati wizard. Tidak boleh bergantung pada "tidak ada row visibility" untuk mendeteksi onboarding, karena tombol "Lewati" menghasilkan nol row (lihat Bug jarak di bawah).
+
 **Semantik default-visible:**
 - Tidak ada row = app tampil.
 - Row `(user, groupId, visible=false)` = seluruh app di grup itu disembunyikan.
@@ -49,14 +51,14 @@ Karena kolom ini immutable-per-user dan jumlah opini user terbatas, **tidak perl
 
 ### Alur login pertama (onboarding wizard)
 
-Deteleksi "belum pernah memilih": user dengan **tidak ada row visibility sama sekali** → status `NEEDS_ONBOARDING`.
+Deteleksi "belum pernah memilih": `PortalUser.onboardingDone == false` → status `NEEDS_ONBOARDING`. (Bukan dengan mengecek jumlah row visibility — tombol "Lewati" menghasilkan nol row, yang sama dengan user yang belum pernah membuka wizard. Gunakan flag eksplisit.)
 
-- Saat `/portal` dimuat dan `getVisibilityProfile(userId)` mengembalikan `needsOnboarding = true`, render **wizard** (modal penuh atau langkah) sebagai overlay:
+- Saat `/portal` dimuat dan `getVisibilityProfile(userId)` mengembalikan `needsOnboarding = true` (onboardingDone == false), render **wizard** (modal penuh atau langkah) sebagai overlay:
   - Daftar semua grup aktif dengan checkbox (toggle grup → semua app on/off).
   - Setiap grup expandable menampilkan appnya dengan checkbox individu.
   - Mode default awal: **semua on**. User hanya mematikan yang tidak mau → simpan hanya override (yang off / grup toggled).
-  - Tombol "Simpan" → `POST /api/portal/visibility` (body: `{ groupIdsOff: [...], appIdsOff: [...], appIdsOn: [...] }`) → tulis rows override → reload grid.
-  - Tombol "Lewati" → simpan `{ groupIdsOff: [], appIdsOff: [], appIdsOn: [] }` → seluruh app tampil (semua on).
+  - Tombol "Simpan" → `POST /api/portal/visibility` (body: `{ groupIdsOff: [...], appIdsOff: [...], appIdsOn: [...] }`) → tulis rows override + **set `onboardingDone = true`** → reload grid.
+  - Tombol "Lewati" → `POST /api/portal/visibility` (body: `{ groupIdsOff: [], appIdsOff: [], appIdsOn: [] }`, flag `skip: true`) → delete semua rows user + **set `onboardingDone = true`** → seluruh app tampil (semua on). Wizard tidak muncul lagi di login berikutnya.
 
 ### Pengaturan pasca-login
 
@@ -66,6 +68,8 @@ Halaman `/portal/settings` (gear icon di header `/portal`):
 - Pengaturan mencerminkan status nyata: app dengan override `visible=false` muncul sebagai off; grup hidden + app override on → grup toggle on, app on.
 
 Halaman grid `/portal` sendiri **hanya** menampilkan app yang tampil (tidak ada mekanisme reveal di sana — akses reveal lewat `/portal/settings`).
+
+**App baru vs grup yang disembunyikan:** kalau admin menambahkan app baru ke grup yang sudah user sembunyikan (`visible=false`), app baru itu **tetap tersembunyi** bagi user tersebut (konsisten dengan aturan grup override). User bisa memunculkannya lewat `/portal/settings`.
 
 ### Query grid `/portal`
 
@@ -85,9 +89,9 @@ Halaman grid `/portal` sendiri **hanya** menampilkan app yang tampil (tidak ada 
 
 | File | Perubahan |
 |---|---|
-| `prisma/schema.prisma` | Tambah model `PortalUserAppVisibility` + relasi back di `PortalUser`/`PortalGroup`/`PortalApp` |
+| `prisma/schema.prisma` | Tambah model `PortalUserAppVisibility` + kolom `onboardingDone` di `PortalUser` + relasi back di `PortalUser`/`PortalGroup`/`PortalApp` |
 | `lib/portal-access.ts` | Ubah `getAccessiblePortalApps` (query visibility), tambah `getVisibilityProfile` + `saveVisibility` |
-| `app/api/portal/visibility/route.ts` (baru) | POST simpan penuh (onboarding), PATCH partial (settings) |
+| `app/api/portal/visibility/route.ts` (baru) | POST simpan penuh (onboarding, set `onboardingDone`), PATCH partial (settings) |
 | `app/portal/page.tsx` | Render wizard overlay saat `needsOnboarding`; passing user/pass profile |
 | `components/portal/OnboardingWizard.tsx` (baru) | Wizard pertama-login |
 | `components/portal/VisibilitySettings.tsx` (baru) | Halaman/panel pengaturan pasca-login |
@@ -97,7 +101,7 @@ Halaman grid `/portal` sendiri **hanya** menampilkan app yang tampil (tidak ada 
 
 ### API
 
-- `POST /api/portal/visibility` — onboarding: `{ groupIdsOff: string[], appIdsOff: string[], appIdsOn: string[] }` → replace semua rows user (transactional delete+create). Guard: hanya user sendiri (session).
+- `POST /api/portal/visibility` — onboarding: `{ groupIdsOff: string[], appIdsOff: string[], appIdsOn: string[], skip?: boolean }` → replace semua rows user (transactional delete+create) + **set `onboardingDone = true`** (skip=true → delete all rows, without creating). Guard: hanya user sendiri (session).
 - `PATCH /api/portal/visibility` — settings: partial `{ groupId?: string, visible?: boolean }` / `{ appId?: string, visible?: boolean }` → create/update/delete satu row. Guard: hanya user sendiri.
 
 Tidak ada peran admin baru. Admin tetap kelola `PortalGroup`/`PortalApp` via halaman yang ada.
@@ -111,13 +115,14 @@ Tidak ada peran admin baru. Admin tetap kelola `PortalGroup`/`PortalApp` via hal
 
 ### Testing
 
-- Sebelum implementasi: tulis test kecil (satu script di `scripts/` atau `__tests__`) yang menguji `getVisibilityProfile` + `saveVisibility` untuk skenario: tanpa rows (onboarding), sembunyikan grup, sembunyikan app, override app-on di grup-hidden, app baru setelah simpan.
+- Sebelum implementasi: tulis test kecil (satu script di `scripts/` atau `__tests__`) yang menguji `getVisibilityProfile` + `saveVisibility` untuk skenario: `onboardingDone=false` (wizard muncul), `onboardingDone=true` tanpa rows (wizard tidak muncul — hasil "Lewati"), sembunyikan grup, sembunyikan app, override app-on di grup-hidden, app baru setelah simpan.
 - Verify manual di browser: login pertama → wizard → save → grid sesuai; toggle di settings → grid berubah seketika; app baru ditambah admin → tampil untuk user yang sudah onboarding.
 
 ## Batasan & Keputusan YAGNI
 
 - **Tidak** ada audit "siapa menyembunyikan apa" (tidak diminta).
 - **Tidak** ada animasi/tour bertahap — wizard satu langkah sederhana.
+- **Tidak** ada mekanisme admin untuk mengatur visibility user (user mengatur sendiri).
 - **Tidak** ada urutan grup kustom per-user (urutan pakai name asc).
 - **Tidak** ada fitur "pin" app.
 - `PortalUserGroup` / `PortalUserAppAccess` **tetap ada di schema** (tidak dihapus) — kompatibilitas dengan data lama & kredensial; hanya saja `getAccessiblePortalApps` tidak memfilter berdasarkan itu lagi. (Opsional migrasi cleanup di plan terpisah.)
