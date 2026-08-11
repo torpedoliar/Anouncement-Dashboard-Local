@@ -4,7 +4,7 @@ import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { FiGrid, FiKey, FiLogOut, FiMenu, FiX } from "react-icons/fi";
+import { FiGrid, FiKey, FiLogOut, FiMenu, FiSettings, FiX } from "react-icons/fi";
 
 interface PortalHeaderProps {
     userName?: string | null;
@@ -17,6 +17,7 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
     const navItems = [
         { href: "/portal", icon: FiGrid, label: "Aplikasi" },
         { href: "/portal/credentials", icon: FiKey, label: "Kredensial" },
+        { href: "/portal/settings", icon: FiSettings, label: "Pengaturan" },
     ];
 
     const isActive = (href: string) => pathname === href;

@@ -17,6 +17,9 @@ export interface WizardGroup {
 interface OnboardingWizardProps {
     groups: WizardGroup[];
     mode?: "onboarding" | "settings";
+    /** State awal (dipakai settings: grup/app yang pernah user matikan harus tampil unchecked) */
+    initialHiddenGroups?: string[];
+    initialHiddenApps?: string[];
 }
 
 /**
@@ -24,9 +27,9 @@ interface OnboardingWizardProps {
  * - onboarding: semua on default; user hanya mematikan; tombol Simpan/Lewati → POST replace.
  * - settings:   setiap toggle langsung PATCH; tanpa tombol Lewati.
  */
-export default function OnboardingWizard({ groups, mode = "onboarding" }: OnboardingWizardProps) {
-    const [hiddenGroups, setHiddenGroups] = useState<Set<string>>(new Set());
-    const [hiddenApps, setHiddenApps] = useState<Set<string>>(new Set());
+export default function OnboardingWizard({ groups, mode = "onboarding", initialHiddenGroups = [], initialHiddenApps = [] }: OnboardingWizardProps) {
+    const [hiddenGroups, setHiddenGroups] = useState<Set<string>>(() => new Set(initialHiddenGroups));
+    const [hiddenApps, setHiddenApps] = useState<Set<string>>(() => new Set(initialHiddenApps));
     const [saving, setSaving] = useState(false);
 
     const toggleGroup = (gid: string) => {
