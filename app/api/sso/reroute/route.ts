@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { portalAuthOptions } from "@/lib/portal-auth";
 import { canAccessPortalAppBySlug } from "@/lib/portal-access";
-import { decryptCredential, encrypt } from "@/lib/portal-crypto";
+import { decryptCredential } from "@/lib/portal-crypto";
 import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
-import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
     // Ignore self-signed certs for internal Oracle EBS
@@ -138,26 +137,35 @@ export async function POST(request: NextRequest) {
             }
         }
         
-        const allTargetCookies = Array.from(cookieMap.entries()).map(([k, v]) => `${k}=${v}`).join("; ");
+        // Direct-redirect mode (Laporan Investigasi SSO Oracle):
+        // Re-issue Oracle's session cookies to the browser with Domain=.santos.co.id, then
+        // redirect to Oracle's REAL landing URL. No reverse proxy → no 502 (proxy route's
+        // OOM crash gone), no OAF MAC breakage (URLs not rewritten).
+        // ponytail: cookie domain hardcoded to .santos.co.id; generalize to a PortalApp
+        // cookieDomain field if a non-santos app ever needs REROUTE.
+        const cookieDomain = ".santos.co.id";
+        const isHttps = reqProto === "https";
 
-        // Encrypt target cookies to store in user's browser securely
-        const encryptedCookies = encrypt(allTargetCookies);
-        
-        // We use the Next.js cookies API to set it
-        const cookieStore = await cookies();
-        // secure harus ikut scheme request aktual, bukan NODE_ENV: deployment prod di
-        // HTTP internal (http://192.168.2.3:3100) dengan secure=true bikin browser drop cookie
-        // → proxy baca undefined → "Unauthorized or Session Expired". ponytail: balik ke
-        // env flag eksplisit (PORTAL_PROXY_COOKIE_SECURE) saat deploy di balik TLS terminator.
-        cookieStore.set(`portal_proxy_${appSlug}`, encryptedCookies, {
-            httpOnly: true,
-            secure: reqProto === "https",
-            sameSite: "lax",
-            path: `/portal/proxy/${appSlug}`,
-            maxAge: 60 * 60 * 8 // 8 hours
+        // Destination: Oracle's success response carries the absolute landing url (OANEWHOMEPAGE).
+        const resolvedUrl = new URL(authUrl, loginUrl);
+        const destinationUrl = resolvedUrl.href;
+
+        // Build one Set-Cookie header per Oracle cookie, scoped to the shared TLD so the
+        // browser sends them to appsprod.santos.co.id (Oracle) directly.
+        const setCookieHeaders = Array.from(cookieMap.entries()).map(([k, v]) => {
+            const parts = [
+                `${k}=${v}`,
+                `Path=/`,
+                `Domain=${cookieDomain}`,
+                `HttpOnly`,
+                `SameSite=Lax`,
+            ];
+            if (isHttps) parts.push("Secure");
+            parts.push("Max-Age=28800"); // 8 hours, matches Oracle session lifetime
+            return parts.join("; ");
         });
 
-        // Audit log
+        // Audit log (non-blocking) before redirect
         await logAudit({
             actorType: "PORTAL_USER",
             actorId: portalUserId,
@@ -169,12 +177,11 @@ export async function POST(request: NextRequest) {
             metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" }
         }).catch(() => {});
 
-        // Destination: Oracle's success response carries the absolute landing url (OANEWHOMEPAGE).
-        const resolvedUrl = new URL(authUrl, loginUrl);
-        const destinationPath = `${resolvedUrl.pathname}${resolvedUrl.search}`;
-
-        const proxyPath = `/portal/proxy/${appSlug}${destinationPath}`;
-        return NextResponse.redirect(new URL(proxyPath, baseUrl), 302);
+        const res = NextResponse.redirect(new URL(destinationUrl, baseUrl), 302);
+        for (const sc of setCookieHeaders) {
+            res.headers.append("Set-Cookie", sc);
+        }
+        return res;
     } catch (err) {
         console.error("REROUTE SSO Error:", err);
         return NextResponse.json({ error: "Internal Server Error", details: err instanceof Error ? err.message : String(err) }, { status: 500 });
