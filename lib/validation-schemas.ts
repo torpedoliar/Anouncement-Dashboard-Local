@@ -251,6 +251,20 @@ export const PortalCredentialSchema = z.object({
     extra: z.record(z.string(), z.string()).optional(),
 });
 
+// Portal user app visibility (per-user tampil/sembunyi app & grup)
+export const SaveVisibilitySchema = z.object({
+    groupIdsOff: z.array(z.string().cuid()).default([]),
+    appIdsOff: z.array(z.string().cuid()).default([]),
+    appIdsOn: z.array(z.string().cuid()).default([]),
+    skip: z.boolean().optional().default(false),
+});
+
+export const PatchVisibilitySchema = z.object({
+    groupId: z.string().cuid().optional(),
+    appId: z.string().cuid().optional(),
+    visible: z.boolean(),
+});
+
 // -----------------------------------------
 // Newsletter Schemas
 // -----------------------------------------
