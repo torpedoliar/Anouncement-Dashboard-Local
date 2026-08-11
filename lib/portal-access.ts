@@ -139,3 +139,129 @@ export async function hasCredential(
     });
     return !!cred;
 }
+
+// ================= Per-User App Visibility =================
+
+export interface VisibilityProfile {
+    needsOnboarding: boolean;
+    groupOverrides: Map<string, boolean>;
+    appOverrides: Map<string, boolean>;
+}
+
+/**
+ * Profil visibility per user.
+ * needsOnboarding = !PortalUser.onboardingDone (flag eksplisit, BUKAN jumlah row —
+ * tombol "Lewati" menghasilkan nol row tapi tetap harus dianggap sudah onboarding).
+ */
+export async function getVisibilityProfile(portalUserId: string): Promise<VisibilityProfile> {
+    const user = await prisma.portalUser.findUnique({
+        where: { id: portalUserId },
+        select: { onboardingDone: true },
+    });
+    if (!user) {
+        return { needsOnboarding: true, groupOverrides: new Map(), appOverrides: new Map() };
+    }
+
+    const rows = await prisma.portalUserAppVisibility.findMany({
+        where: { portalUserId },
+        select: { groupId: true, appId: true, visible: true },
+    });
+
+    const groupOverrides = new Map<string, boolean>();
+    const appOverrides = new Map<string, boolean>();
+    for (const r of rows) {
+        if (r.groupId) groupOverrides.set(r.groupId, r.visible);
+        if (r.appId) appOverrides.set(r.appId, r.visible);
+    }
+
+    return { needsOnboarding: !user.onboardingDone, groupOverrides, appOverrides };
+}
+
+export interface SaveVisibilityInput {
+    groupIdsOff: string[];
+    appIdsOff: string[];
+    appIdsOn: string[];
+    skip?: boolean;
+}
+
+/**
+ * Replace seluruh preferensi visibility user + tandai onboardingDone.
+ * Transactional: hapus semua rows → buat ulang (atau skip=true → tidak buat row apa pun).
+ *
+ * Semantik input:
+ * - groupIdsOff  → row (user, groupId, visible=false) — seluruh app grup disembunyikan
+ * - appIdsOff    → row (user, appId, visible=false)   — app disembunyikan
+ * - appIdsOn     → row (user, appId, visible=true)    — override, app tampil meski grup hidden
+ * Semua yang tidak tercantum = visible (default-on).
+ */
+export async function saveVisibility(portalUserId: string, input: SaveVisibilityInput): Promise<void> {
+    const { groupIdsOff, appIdsOff, appIdsOn, skip } = input;
+
+    await prisma.$transaction(async (tx) => {
+        await tx.portalUserAppVisibility.deleteMany({ where: { portalUserId } });
+
+        if (!skip) {
+            const groupRows = groupIdsOff.map((groupId) => ({
+                portalUserId,
+                groupId,
+                appId: null,
+                visible: false,
+            }));
+
+            const appRows = [
+                ...appIdsOn.map((appId) => ({ portalUserId, groupId: null, appId, visible: true })),
+                ...appIdsOff.map((appId) => ({ portalUserId, groupId: null, appId, visible: false })),
+            ];
+
+            if (groupRows.length > 0) {
+                await tx.portalUserAppVisibility.createMany({ data: groupRows });
+            }
+            if (appRows.length > 0) {
+                await tx.portalUserAppVisibility.createMany({ data: appRows });
+            }
+        }
+
+        await tx.portalUser.update({
+            where: { id: portalUserId },
+            data: { onboardingDone: true },
+        });
+    });
+}
+
+/**
+ * Ubah visibility satu entitas (groupId ATAU appId).
+ * visible=true  → hapus row (default show kembali)
+ * visible=false → upsert row visible=false (hidden)
+ */
+export async function saveVisibilityPartial(
+    portalUserId: string,
+    input: { groupId?: string; appId?: string; visible: boolean }
+): Promise<void> {
+    const { groupId, appId, visible } = input;
+    if ((groupId ? 1 : 0) + (appId ? 1 : 0) !== 1) {
+        throw new Error("saveVisibilityPartial: exactly one of groupId/appId required");
+    }
+
+    if (visible) {
+        // Default show → hapus override row
+        await prisma.portalUserAppVisibility.deleteMany({
+            where: {
+                portalUserId,
+                ...(groupId ? { groupId } : { appId }),
+            },
+        });
+    } else {
+        await prisma.portalUserAppVisibility.upsert({
+            where: groupId
+                ? { portalUserId_groupId: { portalUserId, groupId } }
+                : { portalUserId_appId: { portalUserId, appId: appId! } },
+            update: { visible: false },
+            create: {
+                portalUserId,
+                groupId: groupId ?? null,
+                appId: appId ?? null,
+                visible: false,
+            },
+        });
+    }
+}
