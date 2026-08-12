@@ -7,7 +7,7 @@ export interface GridApp {
     description?: string | null;
     logoPath?: string | null;
     category?: string | null;
-    hasCredential: boolean;
+    credentialCount: number;
 }
 
 export interface GridGroup {

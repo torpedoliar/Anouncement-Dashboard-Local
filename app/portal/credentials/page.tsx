@@ -1,17 +1,25 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import type { CSSProperties } from "react";
 import { useSearchParams } from "next/navigation";
-import { FiKey, FiSave, FiTrash2 } from "react-icons/fi";
+import { FiKey, FiSave, FiTrash2, FiPlus, FiChevronDown } from "react-icons/fi";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/contexts/ToastContext";
+
+interface AccountInfo {
+    id: string;
+    label: string;
+    lastUsedAt: string | null;
+}
 
 interface CredentialStatus {
     appId: string;
     appName: string;
     appSlug: string;
-    hasCredential: boolean;
+    credentialCount: number;
     lastUsedAt: string | null;
+    accounts: AccountInfo[];
 }
 
 export default function CredentialsPage() {
@@ -21,9 +29,10 @@ export default function CredentialsPage() {
     const [apps, setApps] = useState<CredentialStatus[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [expandedApp, setExpandedApp] = useState<string | null>(highlightApp);
-    const [formData, setFormData] = useState<Record<string, { username: string; password: string }>>({});
+    // Form per app: label + username + password (klik "Tambah Akun")
+    const [formData, setFormData] = useState<Record<string, { label: string; username: string; password: string }>>({});
     const [saving, setSaving] = useState<string | null>(null);
-    const [appToDelete, setAppToDelete] = useState<string | null>(null);
+    const [credToDelete, setCredToDelete] = useState<AccountInfo | null>(null);
     const { showToast } = useToast();
 
     const fetchCredentials = useCallback(async () => {
@@ -32,10 +41,9 @@ export default function CredentialsPage() {
             if (res.ok) {
                 const data = await res.json();
                 setApps(data);
-                // Initialize form data
-                const initial: Record<string, { username: string; password: string }> = {};
+                const initial: Record<string, { label: string; username: string; password: string }> = {};
                 data.forEach((app: CredentialStatus) => {
-                    initial[app.appId] = { username: "", password: "" };
+                    initial[app.appId] = { label: "", username: "", password: "" };
                 });
                 setFormData(initial);
             }
@@ -58,8 +66,8 @@ export default function CredentialsPage() {
 
     const handleSave = async (appId: string) => {
         const data = formData[appId];
-        if (!data?.username || !data?.password) {
-            showToast("Username dan password harus diisi", "error");
+        if (!data?.label || !data?.username || !data?.password) {
+            showToast("Label, username, dan password harus diisi", "error");
             return;
         }
 
@@ -70,6 +78,7 @@ export default function CredentialsPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     appId,
+                    label: data.label,
                     username: data.username,
                     password: data.password,
                 }),
@@ -78,14 +87,13 @@ export default function CredentialsPage() {
             if (res.ok) {
                 setFormData((prev) => ({
                     ...prev,
-                    [appId]: { username: "", password: "" },
+                    [appId]: { label: "", username: "", password: "" },
                 }));
                 await fetchCredentials();
-                setExpandedApp(null);
-                showToast("Kredensial berhasil disimpan", "success");
+                showToast("Akun berhasil disimpan", "success");
             } else {
                 const err = await res.json();
-                showToast(err.error || "Gagal menyimpan kredensial", "error");
+                showToast(err.error || "Gagal menyimpan akun", "error");
             }
         } catch {
             showToast("Terjadi kesalahan", "error");
@@ -94,19 +102,19 @@ export default function CredentialsPage() {
         }
     };
 
-    const executeDelete = async (appId: string) => {
+    const executeDelete = async (cred: AccountInfo) => {
         try {
-            const res = await fetch(`/api/portal/credentials?appId=${appId}`, {
+            const res = await fetch(`/api/portal/credentials?credentialId=${cred.id}`, {
                 method: "DELETE",
             });
             if (res.ok) {
                 await fetchCredentials();
-                showToast("Kredensial berhasil dihapus", "success");
+                showToast("Akun berhasil dihapus", "success");
             } else {
-                showToast("Gagal menghapus kredensial", "error");
+                showToast("Gagal menghapus akun", "error");
             }
         } catch {
-            showToast("Gagal menghapus kredensial", "error");
+            showToast("Gagal menghapus akun", "error");
         }
     };
 
@@ -120,7 +128,7 @@ export default function CredentialsPage() {
                     Kelola Kredensial
                 </h1>
                 <p style={{ color: "var(--text-muted)", fontSize: "14px", marginTop: "8px" }}>
-                    Simpan username dan password untuk setiap aplikasi. Kredensial disimpan terenkripsi.
+                    Simpan satu atau beberapa akun untuk setiap aplikasi. Kredensial disimpan terenkripsi.
                 </p>
             </div>
 
@@ -135,7 +143,7 @@ export default function CredentialsPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     {apps.map((app) => {
                         const isExpanded = expandedApp === app.appId;
-                        const data = formData[app.appId] || { username: "", password: "" };
+                        const data = formData[app.appId] || { label: "", username: "", password: "" };
 
                         return (
                             <div key={app.appId} style={{
@@ -174,40 +182,89 @@ export default function CredentialsPage() {
                                             <div style={{ color: "#fff", fontSize: "14px", fontWeight: 500 }}>{app.appName}</div>
                                             <div style={{
                                                 fontSize: "12px",
-                                                color: app.hasCredential ? "#22c55e" : "#eab308",
+                                                color: app.credentialCount > 0 ? "#22c55e" : "#eab308",
                                                 marginTop: "2px",
                                             }}>
-                                                {app.hasCredential ? "✓ Kredensial tersimpan" : "⚠ Belum ada kredensial"}
+                                                {app.credentialCount > 0
+                                                    ? (app.credentialCount === 1 ? "✓ 1 akun tersimpan" : `✓ ${app.credentialCount} akun tersimpan`)
+                                                    : "⚠ Belum ada akun"}
                                             </div>
                                         </div>
                                     </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                        {app.hasCredential && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setAppToDelete(app.appId); }}
-                                                style={{
-                                                    padding: "6px 12px",
-                                                    backgroundColor: "transparent",
-                                                    border: "1px solid #262626",
-                                                    borderRadius: "6px",
-                                                    color: "#dc2626",
-                                                    fontSize: "12px",
-                                                    cursor: "pointer",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: "4px",
-                                                }}
-                                            >
-                                                <FiTrash2 size={12} /> Hapus
-                                            </button>
-                                        )}
+                                    <div style={{
+                                        fontSize: "12px",
+                                        color: "var(--text-muted)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                    }}>
+                                        <FiChevronDown style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
                                     </div>
                                 </div>
 
-                                {/* Expanded form */}
+                                {/* Expanded: daftar akun + form tambah */}
                                 {isExpanded && (
                                     <div style={{ padding: "0 20px 20px", borderTop: "1px solid #262626" }}>
+                                        {/* Daftar akun */}
+                                        {app.accounts.length > 0 && (
+                                            <div style={{ paddingTop: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                                                {app.accounts.map((acc) => (
+                                                    <div key={acc.id} style={{
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "center",
+                                                        padding: "10px 14px",
+                                                        backgroundColor: "#0a0a0a",
+                                                        border: "1px solid #262626",
+                                                        borderRadius: "8px",
+                                                    }}>
+                                                        <div>
+                                                            <div style={{ color: "#fff", fontSize: "13px", fontWeight: 600 }}>{acc.label}</div>
+                                                            <div style={{ color: "var(--text-muted)", fontSize: "11px" }}>
+                                                                {acc.lastUsedAt ? `Terakhir dipakai ${new Date(acc.lastUsedAt).toLocaleDateString()}` : "Belum pernah dipakai"}
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setCredToDelete(acc); }}
+                                                            style={{
+                                                                padding: "6px 10px",
+                                                                backgroundColor: "transparent",
+                                                                border: "1px solid #262626",
+                                                                borderRadius: "6px",
+                                                                color: "#dc2626",
+                                                                fontSize: "12px",
+                                                                cursor: "pointer",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                gap: "4px",
+                                                            }}
+                                                        >
+                                                            <FiTrash2 size={12} /> Hapus
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Form tambah akun */}
                                         <div style={{ paddingTop: "16px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
+                                                <FiPlus size={14} color="var(--text-muted)" />
+                                                <span style={{ color: "var(--text-secondary)", fontSize: "13px", fontWeight: 600 }}>Tambah Akun</span>
+                                            </div>
+                                            <div style={{ marginBottom: "12px" }}>
+                                                <label style={{ display: "block", color: "#a1a1aa", fontSize: "13px", marginBottom: "6px" }}>Label Akun</label>
+                                                <input
+                                                    type="text"
+                                                    value={data.label}
+                                                    onChange={(e) => setFormData((prev) => ({
+                                                        ...prev,
+                                                        [app.appId]: { ...prev[app.appId], label: e.target.value },
+                                                    }))}
+                                                    style={{ ...inputStyle }}
+                                                    placeholder="Mis. Akun Pusat / Akun Cabang"
+                                                />
+                                            </div>
                                             <div style={{ marginBottom: "12px" }}>
                                                 <label style={{ display: "block", color: "#a1a1aa", fontSize: "13px", marginBottom: "6px" }}>Username</label>
                                                 <input
@@ -217,15 +274,7 @@ export default function CredentialsPage() {
                                                         ...prev,
                                                         [app.appId]: { ...prev[app.appId], username: e.target.value },
                                                     }))}
-                                                    style={{
-                                                        width: "100%",
-                                                        padding: "10px 14px",
-                                                        backgroundColor: "#0a0a0a",
-                                                        border: "1px solid #262626",
-                                                        borderRadius: "8px",
-                                                        color: "#fff",
-                                                        fontSize: "14px",
-                                                    }}
+                                                    style={{ ...inputStyle }}
                                                     placeholder="Username aplikasi"
                                                 />
                                             </div>
@@ -238,15 +287,7 @@ export default function CredentialsPage() {
                                                         ...prev,
                                                         [app.appId]: { ...prev[app.appId], password: e.target.value },
                                                     }))}
-                                                    style={{
-                                                        width: "100%",
-                                                        padding: "10px 14px",
-                                                        backgroundColor: "#0a0a0a",
-                                                        border: "1px solid #262626",
-                                                        borderRadius: "8px",
-                                                        color: "#fff",
-                                                        fontSize: "14px",
-                                                    }}
+                                                    style={{ ...inputStyle }}
                                                     placeholder="Password aplikasi"
                                                 />
                                             </div>
@@ -268,7 +309,7 @@ export default function CredentialsPage() {
                                                 }}
                                             >
                                                 <FiSave size={14} />
-                                                {saving === app.appId ? "Menyimpan..." : "Simpan Kredensial"}
+                                                {saving === app.appId ? "Menyimpan..." : "Tambah Akun"}
                                             </button>
                                         </div>
                                     </div>
@@ -280,18 +321,28 @@ export default function CredentialsPage() {
             )}
 
             <ConfirmDialog
-                open={!!appToDelete}
-                title="Hapus Kredensial"
-                message="Yakin hapus kredensial untuk aplikasi ini?"
+                open={!!credToDelete}
+                title="Hapus Akun"
+                message={credToDelete ? `Hapus akun "${credToDelete.label}" untuk aplikasi ini?` : ""}
                 confirmLabel="Hapus"
                 cancelLabel="Batal"
                 variant="danger"
                 onConfirm={() => {
-                    if (appToDelete) executeDelete(appToDelete);
-                    setAppToDelete(null);
+                    if (credToDelete) executeDelete(credToDelete);
+                    setCredToDelete(null);
                 }}
-                onCancel={() => setAppToDelete(null)}
+                onCancel={() => setCredToDelete(null)}
             />
         </div>
     );
 }
+
+const inputStyle: CSSProperties = {
+    width: "100%",
+    padding: "10px 14px",
+    backgroundColor: "#0a0a0a",
+    border: "1px solid #262626",
+    borderRadius: "8px",
+    color: "#fff",
+    fontSize: "14px",
+};

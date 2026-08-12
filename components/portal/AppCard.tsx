@@ -9,10 +9,10 @@ interface AppCardProps {
     description?: string | null;
     logoPath?: string | null;
     category?: string | null;
-    hasCredential: boolean;
+    credentialCount: number;
 }
 
-export default function AppCard({ name, slug, description, logoPath, category, hasCredential }: AppCardProps) {
+export default function AppCard({ name, slug, description, logoPath, category, credentialCount }: AppCardProps) {
     return (
         <div style={{
             backgroundColor: "var(--bg-card)",
@@ -68,13 +68,15 @@ export default function AppCard({ name, slug, description, logoPath, category, h
                 alignItems: "center",
                 gap: "6px",
                 fontSize: "12px",
-                color: hasCredential ? "var(--color-success)" : "var(--color-warning)",
+                color: credentialCount > 0 ? "var(--color-success)" : "var(--color-warning)",
             }}>
-                {hasCredential ? "✓ Kredensial tersimpan" : "⚠ Belum ada kredensial"}
+                {credentialCount > 0
+                    ? (credentialCount === 1 ? "✓ 1 akun tersimpan" : `✓ ${credentialCount} akun tersimpan`)
+                    : "⚠ Belum ada akun"}
             </div>
 
             {/* Action */}
-            {hasCredential ? (
+            {credentialCount > 0 ? (
                 <Link
                     href={`/portal/app/${slug}`}
                     target="_blank"

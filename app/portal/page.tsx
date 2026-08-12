@@ -25,12 +25,13 @@ export default async function PortalPage() {
     // Batch query credential untuk hindari N+1
     const visibleIds = visibleApps.map((a) => a.id);
     const credRows = visibleIds.length
-        ? await prisma.portalUserAppCredential.findMany({
+        ? await prisma.portalUserAppCredential.groupBy({
+              by: ['appId'],
               where: { portalUserId: userId, appId: { in: visibleIds } },
-              select: { appId: true },
+              _count: { _all: true },
           })
         : [];
-    const credSet = new Set(credRows.map((c) => c.appId));
+    const credCountMap = new Map(credRows.map((r) => [r.appId, r._count._all]));
 
     // Kelompokkan per-grup: app yang tampil disebar sesuai kelompoknya.
     const appById = new Map(visibleApps.map((a) => [a.id, a]));
@@ -40,7 +41,7 @@ export default async function PortalPage() {
             name: g.name,
             apps: g.apps
                 .filter((a) => appById.has(a.id))
-                .map((a) => ({ ...a, hasCredential: credSet.has(a.id) })),
+                .map((a) => ({ ...a, credentialCount: credCountMap.get(a.id) ?? 0 })),
         }))
         .filter((g) => g.apps.length > 0);
 

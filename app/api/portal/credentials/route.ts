@@ -20,27 +20,32 @@ export async function GET() {
         // Get accessible apps via group + direct access resolution
         const accessibleApps = await getAccessiblePortalApps(userId);
 
-        // Get credential status (jumlah akun + last used per app)
-        const credGroups = await prisma.portalUserAppCredential.groupBy({
-            by: ['appId'],
+        // Get credential status (jumlah akun + daftar akun + last used per app)
+        const creds = await prisma.portalUserAppCredential.findMany({
             where: { portalUserId: userId },
-            _count: { _all: true },
-            _max: { lastUsedAt: true },
+            select: { id: true, appId: true, label: true, lastUsedAt: true },
+            orderBy: { createdAt: "asc" },
         });
-        const credMap = new Map(credGroups.map((c) => [c.appId, {
-            credentialCount: c._count._all,
-            lastUsedAt: c._max.lastUsedAt,
-        }]));
+        const credByApp = new Map<string, Array<{ id: string; label: string; lastUsedAt: Date | null }>>();
+        for (const c of creds) {
+            const arr = credByApp.get(c.appId) ?? [];
+            arr.push({ id: c.id, label: c.label, lastUsedAt: c.lastUsedAt });
+            credByApp.set(c.appId, arr);
+        }
 
         const apps = accessibleApps;
 
-        const result = apps.map((app) => ({
-            appId: app.id,
-            appName: app.name,
-            appSlug: app.slug,
-            credentialCount: credMap.get(app.id)?.credentialCount ?? 0,
-            lastUsedAt: credMap.get(app.id)?.lastUsedAt ?? null,
-        }));
+        const result = apps.map((app) => {
+            const accounts = credByApp.get(app.id) ?? [];
+            return {
+                appId: app.id,
+                appName: app.name,
+                appSlug: app.slug,
+                credentialCount: accounts.length,
+                lastUsedAt: accounts.reduce((acc, a) => (a.lastUsedAt && (!acc || a.lastUsedAt > acc) ? a.lastUsedAt : acc), null as Date | null),
+                accounts: accounts.map((a) => ({ id: a.id, label: a.label, lastUsedAt: a.lastUsedAt })),
+            };
+        });
 
         return NextResponse.json(result);
     } catch (error) {
