@@ -42,22 +42,12 @@ else {
     Write-Host "SKIP - Database container not running (first install?)" -ForegroundColor Yellow
 }
 
-# Step 2: Pull latest code
+# Step 2: Cek secret produksi SEBELUM stop/pull (fail-fast: jangan matikan container dulu
+# baru ketahuan secret kosong). Karena docker-compose.yml kini ter-commit (tanpa secret),
+# pastikan secret tersedia via .env / .env.server. Supaya tidak deploy dengan
+# PORTAL_CREDENTIAL_KEY blank (data kredensial tak terbaca).
 Write-Host ""
-Write-Host "[2/6] Pulling latest code from GitHub..." -ForegroundColor Yellow
-git pull origin main
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERROR: Git pull failed!" -ForegroundColor Red
-    Write-Host "Try: git stash && git pull origin main && git stash pop" -ForegroundColor Yellow
-    exit 1
-}
-Write-Host "OK - Code updated" -ForegroundColor Green
-
-# Step 2.5: Karena docker-compose.yml kini ter-commit (tanpa secret), pastikan
-# secret produksi tersedia via .env / .env.server di server. Fail-fast bila kosong
-# supaya tidak deploy dengan PORTAL_CREDENTIAL_KEY blank (data kredensial tak terbaca).
-Write-Host ""
-Write-Host "[2.5/6] Checking production secrets..." -ForegroundColor Yellow
+Write-Host "[2/6] Checking production secrets..." -ForegroundColor Yellow
 
 # File env sumber: prioritaskan .env.server, fallback .env
 if (Test-Path ".env.server") { $envSource = ".env.server" } else { $envSource = ".env" }
@@ -105,9 +95,30 @@ if (-not [Environment]::GetEnvironmentVariable("AUTH_TRUST_HOST")) {
 
 Write-Host "OK - Secret tersedia (PORTAL_CREDENTIAL_KEY, NEXTAUTH_SECRET, CRON_SECRET)" -ForegroundColor Green
 
-# Step 3: Check for schema changes
+# Step 3: Stop containers SEBELUM git pull.
+# Di Windows, proses yang masih memegang handle file .git (pack/.idx) membuat `git pull`
+# bertanya "Unlink of file ... failed. Should I try again? (y/n)" berulang tanpa henti.
+# Urutan benar: backup -> secret check -> stop -> pull. Ini menghilangkan lock tsb.
 Write-Host ""
-Write-Host "[3/6] Checking for database schema changes..." -ForegroundColor Yellow
+Write-Host "[3/6] Stopping containers..." -ForegroundColor Yellow
+docker-compose down 2>&1 | Out-Null
+Write-Host "OK - Containers stopped" -ForegroundColor Green
+
+# Step 3.5: Pull latest code
+Write-Host ""
+Write-Host "[3.5/6] Pulling latest code from GitHub..." -ForegroundColor Yellow
+git pull origin main
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Git pull failed!" -ForegroundColor Red
+    Write-Host "Pastikan tidak ada proses yang masih mengunci file .git (Windows Defender / antivirus)." -ForegroundColor Yellow
+    Write-Host "Coba lagi, atau nonaktifkan antivirus utk folder proyek ini, lalu ulangi." -ForegroundColor Yellow
+    exit 1
+}
+Write-Host "OK - Code updated" -ForegroundColor Green
+
+# Step 4: Check for schema changes
+Write-Host ""
+Write-Host "[4/6] Checking for database schema changes..." -ForegroundColor Yellow
 $schemaChanged = git diff HEAD~1 --name-only 2>$null | Select-String "prisma/schema.prisma"
 if ($schemaChanged) {
     Write-Host "Schema changes detected - will sync after rebuild" -ForegroundColor Cyan
@@ -115,12 +126,6 @@ if ($schemaChanged) {
 else {
     Write-Host "No schema changes detected" -ForegroundColor Green
 }
-
-# Step 4: Stop containers
-Write-Host ""
-Write-Host "[4/6] Stopping containers..." -ForegroundColor Yellow
-docker-compose down 2>&1 | Out-Null
-Write-Host "OK - Containers stopped" -ForegroundColor Green
 
 # Step 5: Rebuild
 Write-Host ""
@@ -143,6 +148,9 @@ docker-compose up -d
 Start-Sleep -Seconds 8
 
 # Sync database schema (use migrations for safety)
+# NOTE: prisma migrate deploy gagal (exit != 0) JIKA ada migrasi failed (P3009) — jangan
+# diteruskan sebagai warning, langsung stop. Kalau ini memang deploy pertama / fresh,
+# jalankan baseline dulu. Restore backup jika perlu.
 Write-Host ""
 Write-Host "Syncing database schema..." -ForegroundColor Yellow
 $migrateResult = docker-compose exec -T web npx prisma migrate deploy 2>&1
@@ -150,8 +158,15 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "OK - Database migrations applied" -ForegroundColor Green
 }
 else {
-    Write-Host "WARN - Migration deployment had warnings (check logs)" -ForegroundColor Yellow
-    Write-Host "If this is a new deployment, run baseline setup first" -ForegroundColor Yellow
+    Write-Host "ERROR - Database migration application FAILED:" -ForegroundColor Red
+    Write-Host $migrateResult -ForegroundColor Red
+    if ($migrateResult -match "P3009") {
+        Write-Host ""
+        Write-Host "P3009 berarti ada migrasi yang pernah FAILED di DB. Perbaiki manual lalu jalankan:" -ForegroundColor Yellow
+        Write-Host "  docker-compose exec -T web npx prisma migrate resolve --applied <NAMA_MIGRASI>" -ForegroundColor Cyan
+        Write-Host "Restore dari backup bila perlu:  .\restore.ps1" -ForegroundColor Yellow
+    }
+    exit 1
 }
 
 # Generate Prisma client
