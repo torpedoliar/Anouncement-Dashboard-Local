@@ -113,18 +113,27 @@ Both themes from the same token set, contrast-tested independently (AA: body ≥
 
 ## 5. Content & Editing Workflow
 
+### 5.0 Admin dashboard (the "front page")
+
+The `/admin` landing page (`app/admin/page.tsx`) — the newsroom front page. Currently flat stat cards (Total/Published/Draft/Views, each with a hardcoded accent color) + a recent-announcements list. Restyle to the kit:
+- Stat cards → **headline stat tiles** (Section 6.2): big mono number, delta, icon; the accent follows the active masthead instead of four hardcoded colors.
+- Recent announcements → the news-desk ledger rows (status pill + title + category + time).
+- Site-health card + update banner (`SiteHealthCard`, `UpdateBanner`) restyled to the kit.
+
 ### 5.1 Announcement list (the "news desk")
 
 - **Ledger list** (not a card wall): rows with status pill, title, category, primary site, author, word count, updated time.
-- **Status pills as a publishing language** (color + icon, never color alone):
+- **Status pills as a publishing language** (color + icon, never color alone). **State is derived, not stored** — the `Announcement` model has `isPublished` boolean + `scheduledAt`/`takedownAt` (no status enum). Derive the pill from the same logic the list/scheduler already use:
 
-| State | Color | Icon |
-|---|---|---|
-| Draf | neutral | ✎ |
-| Terjadwal | amber | clock |
-| Terbit | success | broadcast |
-| Diturunkan | neutral/subtle | square |
-| Perlu Persetujuan | blue | flag |
+| Derived state | Derivation | Color | Icon |
+|---|---|---|---|
+| Draf | `!isPublished && !scheduledAt` | neutral | ✎ |
+| Terjadwal | `scheduledAt` in future | amber | clock |
+| Terbit | `isPublished` | success | broadcast |
+| Diturunkan | `takedownAt` passed | neutral/subtle | square |
+| Perlu Persetujuan | pending `ApprovalRequest` | blue | flag |
+
+A shared `deriveAnnouncementStatus()` helper (reused by list + editor + scheduler surfaces) keeps the pill and the actual state honest.
 
 - **Filter bar:** status, category, site, author + keyword search + result counts.
 - **Bulk actions:** select → batch publish/schedule/delete (with confirm). Restyled `BulkActionBar`.
@@ -215,18 +224,29 @@ Both themes from the same token set, contrast-tested independently (AA: body ≥
 - Restyled to the kit, paper/night aware, hover raise, keyboard-navigable, focus states. SSO launch uses existing form-forwarding (no behavior change).
 - Grid density responsive: 2/3/4 columns by breakpoint.
 
-### 7.3 Portal sessions & audit
+### 7.3 Portal secondary surfaces (also in scope)
+
+The portal has more than the grid. All restyled to the kit, no behavior change:
+- **Portal settings** (`app/portal/settings/`) — account/preference settings
+- **Credential vault** (`components/portal/SSOCredentialVault.tsx`, `CorruptCredential`, `NoCredential`) — per-app stored credential states, restyled as clear empty/error states
+- **Onboarding wizard** (`OnboardingWizard.tsx`) — multi-step first-run flow, restyled with the multi-step progress patterns
+- **Account selector** (`AccountSelector.tsx`) — encrypted multi-account switching
+- **Access denied** (`AccessDenied.tsx`) — RBAC gate screen
+- **Portal header** (`PortalHeader.tsx`) — the portal's own topbar, matches the newsroom shell
+
+### 7.4 Portal sessions & audit
 
 - Sessions ledger (table kit), audit timeline (same family as admin audit trail).
 
-### 7.4 Portal users & groups
+### 7.5 Portal users & groups
 
 - Ledger tables. Permission/RBAC display as readable badges, not raw strings.
 
-### 7.5 Deliverable
+### 7.6 Deliverable
 
 - Auth frame (admin-login, portal-login)
 - Portal app grid launch cards
+- Portal secondary surfaces (settings, credential vault, onboarding wizard, account selector, access denied, header)
 - Portal sessions/audit/users/groups ledgers
 
 ## 8. Sequence (Approach A)
