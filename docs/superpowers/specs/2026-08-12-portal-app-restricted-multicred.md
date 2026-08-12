@@ -179,7 +179,7 @@ Catatan implementasi:
 - `lib/portal-layout.ts` — **filter restricted** di `getPortalLayout` (wizard + `/portal/settings`).
 - `lib/validation-schemas.ts` — `PortalCredentialSchema` + `label`.
 - `app/api/portal/visibility/route.ts` — guard restricted (POST & PATCH).
-- `prisma/seed.ts` — pakai unique lama (label default).
+- (Tidak diubah) `prisma/seed.ts` — upsert di `PortalUserAppAccess` (unique tetap valid).
 - `app/api/portal/credentials/route.ts` — GET count/list, POST create, DELETE by id.
 - `app/admin/portal-apps/page.tsx` — toggle Publik/Restricted.
 - `app/portal/credentials/page.tsx` — daftar akun per app, tambah/hapus, label.
