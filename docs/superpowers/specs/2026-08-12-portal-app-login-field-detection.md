@@ -36,12 +36,14 @@ aplikasi (server-side), mem-parse HTML-nya, lalu **mengisi otomatis** `usernameF
 3. Client POST ke API baru `POST /api/portal-apps/detect-fields` dengan body `{ url }`.
 4. API (server) fetch halaman `url`, parse HTML, temukan form login, kembalikan:
    ```json
-   { "usernameField": "user_id", "passwordField": "pwd", "extraFields": [{ "name": "csrf", "value": "..." }] }
+   { "usernameField": "user_id", "passwordField": "pwd", "extraFields": { "csrf": "..." } }
    ```
    - `usernameField` & `passwordField` adalah **nilai `name`** (fallback `id`) dari input.
-   - `extraFields` hanya **hidden input statis** yang punya `name` dan `value` non-kosong.
+   - `extraFields` hanya **hidden input statis** yang punya `name` dan `value` non-kosong,
+     disusun sebagai **object `Record<string,string>`** (`{ name: value }`) — konsisten dgn
+     format `PortalApp.extraFields` di DB & `CredentialData.extra`. JANGAN array.
 5. Client isi otomatis `formData.usernameField`, `formData.passwordField`, dan menulis
-   `extraFields` ke textarea `EXTRA FIELDS` (JSON array dari `{name,value}` yang bisa admin edit).
+   `extraFields` ke textarea `EXTRA FIELDS` sebagai **JSON object** (yang bisa admin edit).
 6. Admin review, lalu simpan seperti biasa.
 
 ### Deteksi Username
@@ -60,6 +62,7 @@ Dalam `<form>` yang sama, ambil input `type="password"`:
 Semua `<input type="hidden">` dalam form yang sama dengan `name` dan `value` non-kosong,
 ditambah `<input>` tanpa type (default hidden) yang punya `name` + `value`.
 `csrf_token`/`_token`/`authenticity_token` ikut terdeteksi (nilainya per-session; admin bisa hapus).
+Hasil dikumpulkan sebagai object `Record<string,string>`.
 
 ## Batasan (Kerja Nyata)
 
@@ -85,7 +88,8 @@ ditambah `<input>` tanpa type (default hidden) yang punya `name` + `value`.
 
 **Create:**
 - `app/api/portal-apps/detect-fields/route.ts` — API POST `{ url }` → `{ usernameField, passwordField, extraFields }`.
-- `lib/portal-login-detect.ts` — pure function `detectLoginFields(html: string): { usernameField, passwordField, extraFields }`.
+- `lib/portal-login-detect.ts` — pure function
+  `detectLoginFields(html: string): { usernameField: string | null; passwordField: string | null; extraFields: Record<string, string> }`.
 - `scripts/test-login-detect.ts` — self-check untuk parser (unit test tanpa DB).
 - **Unit test regex/parser:** banyak variasi HTML (dengan/autocomplete, email vs text, hidden csrf, tanpa form, multipel form) — `npx tsx scripts/test-login-detect.ts`.
 
