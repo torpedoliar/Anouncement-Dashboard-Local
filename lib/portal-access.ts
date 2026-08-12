@@ -14,7 +14,8 @@ const APP_SELECT = {
 /**
  * Cek apakah portal user bisa akses app tertentu.
  * PORTAL_ADMIN bypass access check (semua app aktif).
- * PORTAL_USER: true jika ada direct access ATAU membership di grup aktif yang memuat app.
+ * PORTAL_USER: publik → akses (selama isActive);
+ * restricted (isPublic=false) → akses hanya jika ada direct access ATAU membership di grup aktif yang memuat app.
  */
 export async function canAccessPortalApp(
     portalUserId: string,
@@ -30,16 +31,18 @@ export async function canAccessPortalApp(
     if (!user || !user.isActive) return false;
     if (user.role === "PORTAL_ADMIN") return true;
 
-    // Direct access check — app must be active (consistent with getAccessiblePortalApps).
-    // Inactive apps are inaccessible regardless of access method.
-    const count = await prisma.portalUserAppAccess.count({
-        where: {
-            portalUserId,
-            appId,
-            app: { isActive: true },
-        },
+    const app = await prisma.portalApp.findUnique({
+        where: { id: appId },
+        select: { isActive: true, isPublic: true },
     });
-    if (count > 0) return true;
+    if (!app || !app.isActive) return false;
+    if (app.isPublic) return true;
+
+    // restricted: direct access
+    const direct = await prisma.portalUserAppAccess.count({
+        where: { portalUserId, appId },
+    });
+    if (direct > 0) return true;
 
     const groupCount = await prisma.portalUserGroup.count({
         where: {
@@ -70,19 +73,52 @@ export async function canAccessPortalAppBySlug(
 
 /**
  * Daftar app yang tampil di grid /portal untuk user.
- * Semua app aktif tersedia untuk semua user (tidak lagi dibatasi group/direct membership).
- * Filter: user menyembunyikan app/grup via PortalUserAppVisibility.
- * - app override visible=false  → hidden
- * - grup override visible=false → seluruh app di grup hidden (kecuali ada app override visible=true)
+ * Base = app yang BERHAK diakses:
+ * - PORTAL_ADMIN → semua app aktif.
+ * - PORTAL_USER  → app publik (isPublic=true) + app restricted (isPublic=false) yang punya
+ *                  direct access ATAU membership grup aktif yang memuatnya.
+ * Setelah base, filter visibility user (PortalUserAppVisibility) diterapkan.
  * Sort: displayOrder asc, lalu name asc.
  */
 export async function getAccessiblePortalApps(portalUserId: string) {
-    // Semua app aktif tersedia untuk semua user (tidak lagi filter group/direct).
+    const user = await prisma.portalUser.findUnique({
+        where: { id: portalUserId },
+        select: { role: true },
+    });
+    const isAdmin = user?.role === "PORTAL_ADMIN";
+
     const allApps = await prisma.portalApp.findMany({
         where: { isActive: true },
         orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-        select: APP_SELECT,
+        select: { ...APP_SELECT, isPublic: true },
     });
+
+    // App restricted yang user berhak akses (via direct ATAU grup aktif).
+    let accessibleRestrictedIds = new Set<string>();
+    if (!isAdmin) {
+        const restrictedIds = allApps.filter((a) => a.isPublic === false).map((a) => a.id);
+        if (restrictedIds.length > 0) {
+            const directRows = await prisma.portalUserAppAccess.findMany({
+                where: { portalUserId, appId: { in: restrictedIds } },
+                select: { appId: true },
+            });
+            const groupRows = await prisma.portalUserGroup.findMany({
+                where: {
+                    portalUserId,
+                    group: { isActive: true, apps: { some: { appId: { in: restrictedIds } } } },
+                },
+                select: { group: { select: { apps: { select: { appId: true } } } } },
+            });
+            accessibleRestrictedIds = new Set([
+                ...directRows.map((r) => r.appId),
+                ...groupRows.flatMap((g) => g.group.apps.map((a) => a.appId)),
+            ]);
+        }
+    }
+
+    const baseApps = allApps.filter(
+        (app) => app.isPublic || isAdmin || accessibleRestrictedIds.has(app.id)
+    );
 
     const { groupOverrides, appOverrides } = await getVisibilityProfile(portalUserId);
 
@@ -104,11 +140,51 @@ export async function getAccessiblePortalApps(portalUserId: string) {
         for (const l of groupLinks) appsInHiddenGroups.add(l.appId);
     }
 
-    return allApps.filter((app) => {
+    return baseApps.filter((app) => {
         if (hiddenAppIds.has(app.id)) return false;
         if (appsInHiddenGroups.has(app.id) && appOverrides.get(app.id) !== true) return false;
         return true;
     });
+}
+
+/**
+ * Kembalikan Set appId yang user mampu akses DIANTARA appIds yang diberikan.
+ * PORTAL_ADMIN → semua appIds. Dipakai guard visibility (Task 3).
+ */
+export async function filterAccessibleAppIds(
+    portalUserId: string,
+    appIds: string[]
+): Promise<Set<string>> {
+    if (appIds.length === 0) return new Set();
+    const user = await prisma.portalUser.findUnique({
+        where: { id: portalUserId },
+        select: { role: true },
+    });
+    if (user?.role === "PORTAL_ADMIN") return new Set(appIds);
+
+    const apps = await prisma.portalApp.findMany({
+        where: { id: { in: appIds } },
+        select: { id: true, isPublic: true },
+    });
+
+    const restrictedIds = apps.filter((a) => !a.isPublic).map((a) => a.id);
+    let allowedRestricted = new Set<string>();
+    if (restrictedIds.length > 0) {
+        const direct = (await prisma.portalUserAppAccess.findMany({
+            where: { portalUserId, appId: { in: restrictedIds } },
+            select: { appId: true },
+        })).map((r) => r.appId);
+        const group = (await prisma.portalUserGroup.findMany({
+            where: {
+                portalUserId,
+                group: { isActive: true, apps: { some: { appId: { in: restrictedIds } } } },
+            },
+            select: { group: { select: { apps: { select: { appId: true } } } } },
+        })).flatMap((g) => g.group.apps.map((a) => a.appId));
+        allowedRestricted = new Set([...direct, ...group]);
+    }
+
+    return new Set(apps.filter((a) => a.isPublic || allowedRestricted.has(a.id)).map((a) => a.id));
 }
 
 /**
@@ -118,8 +194,8 @@ export async function hasCredential(
     portalUserId: string,
     appId: string
 ): Promise<boolean> {
-    const cred = await prisma.portalUserAppCredential.findUnique({
-        where: { portalUserId_appId: { portalUserId, appId } },
+    const cred = await prisma.portalUserAppCredential.findFirst({
+        where: { portalUserId, appId },
         select: { id: true },
     });
     return !!cred;
