@@ -617,6 +617,7 @@ model PortalApp {
   category      String?       // grup di grid portal
   isActive      Boolean       @default(true)
   displayOrder  Int           @default(0)
+  isPublic      Boolean       @default(true) // true=berlaku semua user; false=hanya berhak akses
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -651,6 +652,7 @@ model PortalUserAppCredential {
   id              String   @id @default(cuid())
   portalUserId    String
   appId           String
+  label           String   @default("default") // WAJIB pasca-migrasi; nama akun unik per (user, app)
   credentialBlob  String   // AES-256-GCM: base64(iv + tag + ciphertext)
   appUsername     String?  // Plaintext username for ISO27001 audit tracking (account sharing detection)
   lastUsedAt      DateTime?
@@ -660,7 +662,7 @@ model PortalUserAppCredential {
   portalUser      PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
   app             PortalApp  @relation(fields: [appId], references: [id], onDelete: Cascade)
 
-  @@unique([portalUserId, appId])
+  @@unique([portalUserId, appId, label])
   @@index([portalUserId])
   @@index([appId])
   @@map("portal_user_app_credentials")
