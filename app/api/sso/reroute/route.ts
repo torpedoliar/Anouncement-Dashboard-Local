@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
 
         const formData = await request.formData();
         const appSlug = formData.get("appSlug") as string;
+        const credentialId = formData.get("credentialId") as string | null;
 
         if (!appSlug) {
             return NextResponse.json({ error: "App slug required" }, { status: 400 });
@@ -41,9 +42,18 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
-        const credential = await prisma.portalUserAppCredential.findUnique({
-            where: { portalUserId_appId: { portalUserId, appId: app.id } },
-        });
+        let credential;
+        if (credentialId) {
+            credential = await prisma.portalUserAppCredential.findFirst({
+                where: { id: credentialId, portalUserId },
+            });
+        } else {
+            // fallback: akun pertama (kompatibilitas pemanggil lama tanpa credentialId)
+            credential = await prisma.portalUserAppCredential.findFirst({
+                where: { portalUserId, appId: app.id },
+                orderBy: { createdAt: "asc" },
+            });
+        }
 
         if (!credential) {
             return NextResponse.json({ error: "No credential" }, { status: 400 });

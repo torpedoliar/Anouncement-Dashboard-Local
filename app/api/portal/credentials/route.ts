@@ -20,12 +20,17 @@ export async function GET() {
         // Get accessible apps via group + direct access resolution
         const accessibleApps = await getAccessiblePortalApps(userId);
 
-        // Get credential status
-        const credentials = await prisma.portalUserAppCredential.findMany({
+        // Get credential status (jumlah akun + last used per app)
+        const credGroups = await prisma.portalUserAppCredential.groupBy({
+            by: ['appId'],
             where: { portalUserId: userId },
-            select: { appId: true, lastUsedAt: true },
+            _count: { _all: true },
+            _max: { lastUsedAt: true },
         });
-        const credMap = new Map(credentials.map((c) => [c.appId, c.lastUsedAt]));
+        const credMap = new Map(credGroups.map((c) => [c.appId, {
+            credentialCount: c._count._all,
+            lastUsedAt: c._max.lastUsedAt,
+        }]));
 
         const apps = accessibleApps;
 
@@ -33,8 +38,8 @@ export async function GET() {
             appId: app.id,
             appName: app.name,
             appSlug: app.slug,
-            hasCredential: credMap.has(app.id),
-            lastUsedAt: credMap.get(app.id) || null,
+            credentialCount: credMap.get(app.id)?.credentialCount ?? 0,
+            lastUsedAt: credMap.get(app.id)?.lastUsedAt ?? null,
         }));
 
         return NextResponse.json(result);
@@ -62,7 +67,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { appId, username, password, extra } = validation.data;
+        const { appId, label, username, password, extra } = validation.data;
 
         // Verify access
         const hasAccess = await canAccessPortalApp(userId, appId);
@@ -70,12 +75,19 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "No access to this app" }, { status: 403 });
         }
 
+        // Duplikat label per (user, app) → 409 (unique constraint juga menolak, tapi dengan pesan jelas)
+        const existing = await prisma.portalUserAppCredential.findFirst({
+            where: { portalUserId: userId, appId, label },
+            select: { id: true },
+        });
+        if (existing) {
+            return NextResponse.json({ error: "Label akun sudah dipakai untuk aplikasi ini" }, { status: 409 });
+        }
+
         const credentialBlob = encryptCredential({ username, password, extra });
 
-        await prisma.portalUserAppCredential.upsert({
-            where: { portalUserId_appId: { portalUserId: userId, appId } },
-            update: { credentialBlob, appUsername: username },
-            create: { portalUserId: userId, appId, credentialBlob, appUsername: username },
+        const created = await prisma.portalUserAppCredential.create({
+            data: { portalUserId: userId, appId, label, credentialBlob, appUsername: username },
         });
 
         await logAudit({
@@ -84,8 +96,8 @@ export async function POST(request: NextRequest) {
             category: "SECURITY",
             action: "CREDENTIAL_SAVED",
             entityType: "PORTAL_CREDENTIAL",
-            entityId: `${userId}:${appId}`,
-            changes: { appId },
+            entityId: created.id,
+            changes: { appId, label },
             request,
         });
 
@@ -96,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// DELETE /api/portal/credentials?appId=[cuid] - Delete credential
+// DELETE /api/portal/credentials?credentialId=[cuid] - Delete specific account
 export async function DELETE(request: NextRequest) {
     try {
         const session = await getServerSession(portalAuthOptions);
@@ -106,22 +118,20 @@ export async function DELETE(request: NextRequest) {
 
         const userId = session.user.id;
         const { searchParams } = new URL(request.url);
-        const appId = searchParams.get("appId");
+        const credentialId = searchParams.get("credentialId");
 
-        if (!appId) {
-            return NextResponse.json({ error: "appId is required" }, { status: 400 });
+        if (!credentialId) {
+            return NextResponse.json({ error: "credentialId is required" }, { status: 400 });
         }
 
-        const existing = await prisma.portalUserAppCredential.findUnique({
-            where: { portalUserId_appId: { portalUserId: userId, appId } },
+        const existing = await prisma.portalUserAppCredential.findFirst({
+            where: { id: credentialId, portalUserId: userId },
         });
         if (!existing) {
             return NextResponse.json({ error: "Credential not found" }, { status: 404 });
         }
 
-        await prisma.portalUserAppCredential.delete({
-            where: { portalUserId_appId: { portalUserId: userId, appId } },
-        });
+        await prisma.portalUserAppCredential.delete({ where: { id: existing.id } });
 
         await logAudit({
             actorType: "PORTAL_USER",
@@ -129,8 +139,8 @@ export async function DELETE(request: NextRequest) {
             category: "SECURITY",
             action: "CREDENTIAL_DELETED",
             entityType: "PORTAL_CREDENTIAL",
-            entityId: `${userId}:${appId}`,
-            changes: { appId },
+            entityId: existing.id,
+            changes: { appId: existing.appId, label: existing.label },
             request,
         });
 

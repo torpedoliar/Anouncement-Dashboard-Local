@@ -246,10 +246,12 @@ export const PortalUserGroupIdsSchema = z.object({
 
 export const PortalCredentialSchema = z.object({
     appId: z.string().cuid('Invalid app ID'),
+    label: z.string().min(1, 'Label wajib diisi').max(100),
     username: z.string().min(1, 'Username required').max(255),
     password: z.string().min(1, 'Password required').max(500),
     extra: z.record(z.string(), z.string()).optional(),
 });
+
 
 // Portal user app visibility (per-user tampil/sembunyi app & grup)
 export const SaveVisibilitySchema = z.object({
