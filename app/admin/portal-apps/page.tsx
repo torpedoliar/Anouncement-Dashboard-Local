@@ -19,6 +19,7 @@ interface PortalApp {
     extraFields: any;
     category: string | null;
     isActive: boolean;
+    isPublic: boolean;
     displayOrder: number;
     createdAt: string;
     updatedAt: string;
@@ -44,6 +45,7 @@ const emptyForm = {
     extraFields: "",
     category: "",
     isActive: true,
+    isPublic: true,
     displayOrder: 0,
 };
 
@@ -115,6 +117,7 @@ export default function PortalAppsPage() {
                 extraFields: extraFieldsParsed,
                 category: formData.category || null,
                 isActive: formData.isActive,
+                isPublic: formData.isPublic,
                 displayOrder: Number(formData.displayOrder),
             };
 
@@ -232,6 +235,7 @@ export default function PortalAppsPage() {
             extraFields: extraFieldsFormatted,
             category: app.category || "",
             isActive: app.isActive,
+            isPublic: app.isPublic ?? true,
             displayOrder: app.displayOrder,
         });
         setError("");
@@ -651,8 +655,8 @@ export default function PortalAppsPage() {
                                         style={inputStyle}
                                     />
                                 </div>
-                                <div style={{ marginBottom: "16px", display: "flex", alignItems: "flex-end" }}>
-                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--text-secondary)", fontSize: "14px", paddingBottom: "12px" }}>
+                                <div style={{ marginBottom: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--text-secondary)", fontSize: "14px" }}>
                                         <input
                                             type="checkbox"
                                             checked={formData.isActive}
@@ -660,6 +664,18 @@ export default function PortalAppsPage() {
                                             style={{ accentColor: "var(--brand-red)", width: "18px", height: "18px" }}
                                         />
                                         Aktif
+                                    </label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--text-secondary)", fontSize: "14px" }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.isPublic}
+                                            onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
+                                            style={{ accentColor: "var(--brand-red)", width: "18px", height: "18px" }}
+                                        />
+                                        Publik (berlaku untuk semua pengguna){" "}
+                                        <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>
+                                            — kosongkan untuk restricted (hanya user/grup berhak akses)
+                                        </span>
                                     </label>
                                 </div>
                             </div>

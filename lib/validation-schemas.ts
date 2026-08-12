@@ -219,6 +219,7 @@ export const PortalAppCreateSchema = z.object({
     category: z.string().max(100).transform(sanitizeText).nullable().optional(),
     isActive: z.boolean().default(true),
     displayOrder: z.number().int().default(0),
+    isPublic: z.boolean().default(true), // true=publik; false=restricted
 });
 
 export const PortalAppUpdateSchema = PortalAppCreateSchema.partial();
