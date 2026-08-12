@@ -42,7 +42,8 @@ model PortalApp {
 ### Aturan akses — sumber tunggal
 
 Aturan ini dipakai **konsisten** di:
-- `getAccessiblePortalApps(portalUserId)` — daftar app di grid & wizard.
+- `getAccessiblePortalApps(portalUserId)` — daftar app di grid.
+- `getPortalLayout(portalUserId)` — grup → apps untuk **wizard onboarding & `/portal/settings`** (agar app restricted yang tidak berhak TIDAK bocor ke wizard/settings).
 - `canAccessPortalApp(portalUserId, appId)` — guard route & cek hak simpan kredensial.
 
 ```
@@ -55,13 +56,20 @@ else // restricted
     selain itu → TIDAK akses
 ```
 
-Konsekuensi penting: **grid, wizard onboarding, daftar kredensial, dan route `/portal/app/[slug]` sama-sama berhenti di app restricted yang tidak user akses.** Tidak ada kebocoran nama app (bahkan di kartu/URL).
+Konsekuensi penting: **grid, wizard onboarding, `/portal/settings`, daftar kredensial, dan route `/portal/app/[slug]` sama-sama berhenti di app restricted yang tidak user akses.** Tidak ada kebocoran nama app (bahkan di kartu/URL).
 
 ### Perilaku user
 
 - App publik: seperti sekarang (default tampil, bisa di-hide via visibility).
 - App restricted yang user punya akses: tampil seperti biasa.
 - App restricted yang user tidak punya akses: **tidak muncul di mana pun** — tidak bisa dipaksa buka via URL (guard route).
+
+### Guard server terhadap restricted (visibility recompute)
+
+Karena app restricted yang tidak berhak tidak muncul di `getAccessiblePortalApps`, preferensi visibility yang referensikan app restricted tersebut juga harus dijaga:
+
+- `app/api/portal/visibility` (POST & PATCH) — sebelum `saveVisibility`, pastikan **setiap `appId`** dalam `appIdsOff`/`appIdsOn` adalah app yang **mampu diakses** user (`canAccessPortalApp`). App yang tidak berhak → `403`. Grup beserta semua app-nya mengikuti (app yang tak berhak dalam grup tidak bisa di-hide/di-show user).
+- Ini mencegah user "membuka" app restricted via visibility override (kedua jalur render memakai akses server-side, tapi tetap baik untuk konsistensi & audit).
 
 ### Admin UI (`/admin/portal-apps`)
 
@@ -97,6 +105,11 @@ model PortalUserAppCredential {
 - `appUsername` tetap tersimpan untuk audit account sharing.
 
 ---
+
+### File yang TIDAK diubah (unique tetap valid)
+
+- `app/api/portal-users/[id]/access/route.ts` — memakai `portalUserId_appId` di tabel **`PortalUserAppAccess`** (model berbeda, unique `@@unique([portalUserId, appId])` tetap). File ini tidak berubah untuk feature; hanya perlu memastikan app restricted yang di-assign memang diizinkan (tetap konsisten dengan aturan akses).
+- `lib/portal-access.ts` `saveVisibilityPartial` — memakai `portalUserId_appId` di tabel **visibility** (`PortalUserAppVisibility`), unique tetap valid; tidak berubah.
 
 ## Bagian C — Dampak menyebar & alur
 
@@ -152,18 +165,21 @@ Catatan implementasi:
 
 ## Pengujian
 
-- **Self-check parser/logika akses** (script `scripts/` via `npx tsx`) untuk aturan restricted:
+- **Self-check logika akses** (script `scripts/` via `npx tsx`) untuk aturan restricted:
   - publik + admin → akses; publik + user → akses.
   - restricted + no access → tolak; restricted + direct access → akses; restricted + grup aktif → akses; restricted + grup non-aktif → tolak.
+  - `getPortalLayout` filter restricted (wizard/settings tidak bocor).
 - **Type check** (`npx tsc --noEmit`).
 - Manual (di server): tambah app restricted, cek user tanpa akses tidak melihat; tambah 2 akun, cek pemilih muncul; SSO dengan akun terpilih.
 
 ## File yang berubah (perkiraan)
 
 - `prisma/schema.prisma` — `PortalApp.isPublic`, `PortalUserAppCredential.label` + unique baru.
-- `lib/portal-access.ts` — aturan restricted di `getAccessiblePortalApps` & `canAccessPortalApp` (+ `BySlug`).
-- `lib/portal-layout.ts` — pastikan wizard/grid pakai hasil yang sudah ter-filter.
-- `lib/validation-schemas.ts` — schema kredensial + label.
+- `lib/portal-access.ts` — aturan restricted di `getAccessiblePortalApps` & `canAccessPortalApp` (+ `BySlug`); guard visibility (opsional di sini / route).
+- `lib/portal-layout.ts` — **filter restricted** di `getPortalLayout` (wizard + `/portal/settings`).
+- `lib/validation-schemas.ts` — `PortalCredentialSchema` + `label`.
+- `app/api/portal/visibility/route.ts` — guard restricted (POST & PATCH).
+- `prisma/seed.ts` — pakai unique lama (label default).
 - `app/api/portal/credentials/route.ts` — GET count/list, POST create, DELETE by id.
 - `app/admin/portal-apps/page.tsx` — toggle Publik/Restricted.
 - `app/portal/credentials/page.tsx` — daftar akun per app, tambah/hapus, label.
