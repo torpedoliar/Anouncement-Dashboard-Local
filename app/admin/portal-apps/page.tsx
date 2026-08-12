@@ -57,6 +57,8 @@ export default function PortalAppsPage() {
     const [formData, setFormData] = useState(emptyForm);
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [detecting, setDetecting] = useState(false);
+    const [detectMsg, setDetectMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
 
@@ -140,6 +142,41 @@ export default function PortalAppsPage() {
             setError("Terjadi kesalahan");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDetect = async () => {
+        const target = (formData.loginUrl || "").trim();
+        if (!target) {
+            setDetectMsg({ type: "err", text: "Isi LOGIN URL terlebih dahulu." });
+            return;
+        }
+        setDetecting(true);
+        setDetectMsg(null);
+        try {
+            const res = await fetch("/api/portal-apps/detect-fields", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: target }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setDetectMsg({ type: "err", text: data.error || "Deteksi gagal" });
+                return;
+            }
+            setFormData((prev) => ({
+                ...prev,
+                usernameField: data.usernameField ?? prev.usernameField,
+                passwordField: data.passwordField ?? prev.passwordField,
+                extraFields: Object.keys(data.extraFields || {}).length
+                    ? JSON.stringify(data.extraFields, null, 2)
+                    : prev.extraFields,
+            }));
+            setDetectMsg({ type: "ok", text: "Field terdeteksi. Review sebelum simpan." });
+        } catch {
+            setDetectMsg({ type: "err", text: "Terjadi kesalahan saat deteksi." });
+        } finally {
+            setDetecting(false);
         }
     };
 
@@ -490,7 +527,29 @@ export default function PortalAppsPage() {
                                     />
                                 </div>
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>LOGIN URL</label>
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                                        <label style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: 600 }}>LOGIN URL</label>
+                                        <button
+                                            type="button"
+                                            onClick={handleDetect}
+                                            disabled={detecting}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "6px",
+                                                padding: "6px 12px",
+                                                backgroundColor: detecting ? "var(--border-color)" : "rgba(59, 130, 246, 0.2)",
+                                                color: detecting ? "var(--text-muted)" : "var(--color-info)",
+                                                border: "1px solid var(--border-color)",
+                                                borderRadius: "6px",
+                                                fontSize: "12px",
+                                                fontWeight: 600,
+                                                cursor: detecting ? "not-allowed" : "pointer",
+                                            }}
+                                        >
+                                            {detecting ? <span>Mendeteksi...</span> : <span>Deteksi Otomatis</span>}
+                                        </button>
+                                    </div>
                                     <input
                                         type="text"
                                         value={formData.loginUrl}
@@ -498,6 +557,15 @@ export default function PortalAppsPage() {
                                         placeholder="https://app.example.com/login"
                                         style={inputStyle}
                                     />
+                                    {detectMsg && (
+                                        <p style={{
+                                            marginTop: "8px",
+                                            fontSize: "12px",
+                                            color: detectMsg.type === "ok" ? "var(--color-success)" : "var(--color-error)",
+                                        }}>
+                                            {detectMsg.text}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
