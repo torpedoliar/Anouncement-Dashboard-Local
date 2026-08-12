@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { getVisibilityProfile } from "@/lib/portal-access";
+import { getVisibilityProfile, getAccessiblePortalApps } from "@/lib/portal-access";
 
 export interface PortalLayoutGroup {
     id: string;
@@ -19,12 +19,16 @@ export interface PortalLayoutGroup {
 /**
  * Bangun struktur "grup → apps" untuk wizard & pengaturan.
  * - needsOnboarding = !onboardingDone (flag eksplisit)
- * - groups = semua grup aktif dengan SEMUA app aktifnya (termasuk yang hidden,
- *   agar /portal/settings bisa reveal kembali)
+ * - groups = grup aktif dengan app aktif yang user BERHAK akses (publik + restricted berhak);
+ *   app yang hidden visibilitas tetap disertakan agar /portal/settings bisa reveal kembali.
  * - hasCredential placeholder false; diisi konsumen via query credential
  */
 export async function getPortalLayout(portalUserId: string) {
     const { needsOnboarding } = await getVisibilityProfile(portalUserId);
+
+    // App yang berhak diakses user (publik + restricted yang punya akses) — sumber tunggal.
+    const accessible = await getAccessiblePortalApps(portalUserId);
+    const accessibleIds = new Set(accessible.map((a) => a.id));
 
     const groupsRaw = await prisma.portalGroup.findMany({
         where: { isActive: true },
@@ -52,11 +56,15 @@ export async function getPortalLayout(portalUserId: string) {
         orderBy: { name: "asc" },
     });
 
-    const groups: PortalLayoutGroup[] = groupsRaw.map((g) => ({
-        id: g.id,
-        name: g.name,
-        apps: g.apps.map(({ app }) => ({ ...app, hasCredential: false })),
-    }));
+    const groups: PortalLayoutGroup[] = groupsRaw
+        .map((g) => ({
+            id: g.id,
+            name: g.name,
+            apps: g.apps
+                .map(({ app }) => ({ ...app, hasCredential: false }))
+                .filter((a) => accessibleIds.has(a.id)),
+        }))
+        .filter((g) => g.apps.length > 0);
 
     return { needsOnboarding, groups };
 }

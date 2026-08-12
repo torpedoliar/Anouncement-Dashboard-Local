@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { portalAuthOptions } from "@/lib/portal-auth";
-import { saveVisibility, saveVisibilityPartial } from "@/lib/portal-access";
+import { saveVisibility, saveVisibilityPartial, filterAccessibleAppIds } from "@/lib/portal-access";
 import { SaveVisibilitySchema, PatchVisibilitySchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
 
@@ -23,6 +23,17 @@ export async function POST(request: NextRequest) {
         }
 
         const { groupIdsOff, appIdsOff, appIdsOn, skip } = validation.data;
+
+        // Guard restricted: appId yang di-hide/show harus app yang user berhak akses.
+        const candidateAppIds = [...appIdsOff, ...appIdsOn];
+        if (candidateAppIds.length > 0) {
+            const allowed = await filterAccessibleAppIds(userId, candidateAppIds);
+            const denied = candidateAppIds.filter((id) => !allowed.has(id));
+            if (denied.length > 0) {
+                return NextResponse.json({ error: "App tidak dapat diakses" }, { status: 403 });
+            }
+        }
+
         await saveVisibility(userId, { groupIdsOff, appIdsOff, appIdsOn, skip });
 
         await logAudit({
@@ -60,6 +71,15 @@ export async function PATCH(request: NextRequest) {
         }
 
         const { groupId, appId, visible } = validation.data;
+
+        // Guard restricted: menyetel appId yang user tak berhak harus ditolak.
+        if (appId) {
+            const allowed = await filterAccessibleAppIds(userId, [appId]);
+            if (!allowed.has(appId)) {
+                return NextResponse.json({ error: "App tidak dapat diakses" }, { status: 403 });
+            }
+        }
+
         await saveVisibilityPartial(userId, { groupId, appId, visible });
 
         await logAudit({
