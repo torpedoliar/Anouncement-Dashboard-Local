@@ -11,15 +11,18 @@ import CorruptCredential from "@/components/portal/CorruptCredential";
 import SSOAutoSubmit from "@/components/portal/SSOAutoSubmit";
 import SSORerouteSubmit from "@/components/portal/SSORerouteSubmit";
 import SSOCredentialVault from "@/components/portal/SSOCredentialVault";
+import AccountSelector from "@/components/portal/AccountSelector";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
     params: Promise<{ appSlug: string }>;
+    searchParams: Promise<{ credentialId?: string }>;
 }
 
-export default async function SsoLaunchPage({ params }: PageProps) {
+export default async function SsoLaunchPage({ params, searchParams }: PageProps) {
     const { appSlug } = await params;
+    const { credentialId } = await searchParams;
 
     // 1. Check login
     const session = await getServerSession(portalAuthOptions);
@@ -58,13 +61,33 @@ export default async function SsoLaunchPage({ params }: PageProps) {
         return <AccessDenied appName={app.name} />;
     }
 
-    // 4. Find credential
-    const credential = await prisma.portalUserAppCredential.findUnique({
-        where: {
-            portalUserId_appId: { portalUserId, appId: app.id },
-        },
-        select: { id: true, credentialBlob: true },
+    // 4. Find credentials — list (multi-akun)
+    const credentials = await prisma.portalUserAppCredential.findMany({
+        where: { portalUserId, appId: app.id },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, label: true, credentialBlob: true },
     });
+
+    if (credentials.length === 0) {
+        return <NoCredential appName={app.name} appSlug={app.slug} />;
+    }
+
+    // >1 akun & user belum memilih → tampilkan pemilih akun
+    if (credentials.length > 1 && !credentialId) {
+        return (
+            <AccountSelector
+                appName={app.name}
+                baseHref={`/portal/app/${app.slug}`}
+                accounts={credentials.map((c) => ({ id: c.id, label: c.label }))}
+            />
+        );
+    }
+
+    // Pilih akun: eksplisit via credentialId (validasi milik user) atau satu-satunya
+    const credential =
+        credentials.length === 1
+            ? credentials[0]
+            : credentials.find((c) => c.id === credentialId);
 
     if (!credential) {
         return <NoCredential appName={app.name} appSlug={app.slug} />;
@@ -123,6 +146,7 @@ export default async function SsoLaunchPage({ params }: PageProps) {
                 slug: app.slug,
             }}
             cred={{ username: cred.username }}
+            credentialId={credential.id}
         />;
     }
 

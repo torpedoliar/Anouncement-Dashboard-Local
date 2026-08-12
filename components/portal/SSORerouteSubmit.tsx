@@ -12,9 +12,10 @@ interface SSORerouteSubmitProps {
     cred: {
         username: string;
     };
+    credentialId?: string;
 }
 
-export default function SSORerouteSubmit({ app, cred }: SSORerouteSubmitProps) {
+export default function SSORerouteSubmit({ app, cred, credentialId }: SSORerouteSubmitProps) {
     const formRef = useRef<HTMLFormElement>(null);
     const [status, setStatus] = useState<"preparing" | "submitting">("preparing");
 
@@ -137,6 +138,7 @@ export default function SSORerouteSubmit({ app, cred }: SSORerouteSubmitProps) {
                 style={{ display: "none" }}
             >
                 <input type="hidden" name="appSlug" value={app.slug} />
+                {credentialId && <input type="hidden" name="credentialId" value={credentialId} />}
             </form>
         </div>
     );
