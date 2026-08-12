@@ -25,7 +25,7 @@ interface OnboardingWizardProps {
 /**
  * Wizard login pertama (mode=onboarding) atau pengaturan pasca-login (mode=settings).
  * - onboarding: semua on default; user hanya mematikan; tombol Simpan/Lewati → POST replace.
- * - settings:   setiap toggle langsung PATCH; tanpa tombol Lewati.
+ * - settings:   state awal dari preferensi tersimpan; tombol Simpan → POST replace; tanpa Lewati.
  */
 export default function OnboardingWizard({ groups, mode = "onboarding", initialHiddenGroups = [], initialHiddenApps = [] }: OnboardingWizardProps) {
     const [hiddenGroups, setHiddenGroups] = useState<Set<string>>(() => new Set(initialHiddenGroups));
@@ -50,15 +50,23 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
     }; // ponytail: two toggles are intentionally separate — group off ≠ app off semantics (PATCH body differs)
 
     const submit = async (skip: boolean) => {
+        // Settings: inisial hidden di-merge agar Simpan tanpa perubahan TIDAK menimpa preferensi
+        // tersimpan; app yang di-untick (menampilkan kembali) masuk appIdsOn. skip=true → server
+        // hapus semua row (murni default) — hanya dipakai onboarding (Lewati).
+        const groupIdsOff = mode === "settings" ? [...new Set([...initialHiddenGroups, ...hiddenGroups])] : [...hiddenGroups];
+        const appIdsOff = mode === "settings" ? [...new Set([...initialHiddenApps, ...hiddenApps])] : [...hiddenApps];
+        const appIdsOn = mode === "settings"
+            ? initialHiddenApps.filter((id) => !hiddenApps.has(id))
+            : [];
         setSaving(true);
         try {
             const res = await fetch("/api/portal/visibility", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    groupIdsOff: [...hiddenGroups],
-                    appIdsOff: [...hiddenApps],
-                    appIdsOn: [],
+                    groupIdsOff,
+                    appIdsOff,
+                    appIdsOn,
                     skip,
                 }),
             });
@@ -74,47 +82,6 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
         }
     };
 
-    const patch = async (body: { groupId?: string; appId?: string; visible: boolean }) => {
-        try {
-            const res = await fetch("/api/portal/visibility", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
-            });
-            if (!res.ok) console.error("PATCH visibility failed", res.status);
-        } catch (e) {
-            console.error("PATCH visibility error", e);
-        }
-    };
-
-    // settings mode: toggle langsung PATCH — target nilai dihitung dari state BARU (functional update)
-    const handleGroupChange = (gid: string) => {
-        if (mode === "settings") {
-            setHiddenGroups((prev) => {
-                const next = new Set(prev);
-                if (next.has(gid)) next.delete(gid);
-                else next.add(gid);
-                patch({ groupId: gid, visible: !next.has(gid) }); // next = toggled
-                return next;
-            });
-        } else {
-            toggleGroup(gid);
-        }
-    };
-    const handleAppChange = (aid: string) => {
-        if (mode === "settings") {
-            setHiddenApps((prev) => {
-                const next = new Set(prev);
-                if (next.has(aid)) next.delete(aid);
-                else next.add(aid);
-                patch({ appId: aid, visible: !next.has(aid) }); // next = toggled
-                return next;
-            });
-        } else {
-            toggleApp(aid);
-        }
-    };
-
     return (
         <div style={{ padding: "32px", maxWidth: "900px", margin: "0 auto" }}>
             <h1 style={{ fontFamily: "Montserrat, sans-serif", color: "#fff", marginBottom: "8px" }}>
@@ -123,7 +90,7 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
             <p style={{ color: "var(--text-muted)", marginBottom: "24px" }}>
                 {mode === "onboarding"
                     ? "Tentukan aplikasi yang ingin ditampilkan di beranda. Semua aktif secara default."
-                    : "Pilih aplikasi yang tampil di beranda Anda. Perubahan langsung tersimpan."}
+                    : "Pilih aplikasi yang tampil di beranda Anda, lalu klik Simpan untuk menyimpan."}
             </p>
 
             {groups.map((g) => (
@@ -132,7 +99,7 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
                         <input
                             type="checkbox"
                             checked={!hiddenGroups.has(g.id)}
-                            onChange={() => handleGroupChange(g.id)}
+                            onChange={() => toggleGroup(g.id)}
                         />
                         {g.name}
                     </label>
@@ -145,7 +112,7 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
                                     <input
                                         type="checkbox"
                                         checked={!hiddenApps.has(a.id)}
-                                        onChange={() => handleAppChange(a.id)}
+                                        onChange={() => toggleApp(a.id)}
                                     />
                                     {a.name}
                                 </label>
@@ -155,24 +122,36 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
                 </div>
             ))}
 
-            {mode === "onboarding" && (
-                <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
-                    <button
-                        onClick={() => submit(false)}
-                        disabled={saving}
-                        style={{ padding: "10px 20px", backgroundColor: "var(--brand-red)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer" }}
-                    >
-                        {saving ? "Menyimpan..." : "Simpan"}
-                    </button>
-                    <button
-                        onClick={() => submit(true)}
-                        disabled={saving}
-                        style={{ padding: "10px 20px", backgroundColor: "var(--border-color)", color: "var(--text-secondary)", border: "none", borderRadius: "8px", cursor: saving ? "not-allowed" : "pointer" }}
-                    >
-                        Lewati
-                    </button>
-                </div>
-            )}
+            {mode === "onboarding"
+                ? (
+                    <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+                        <button
+                            onClick={() => submit(false)}
+                            disabled={saving}
+                            style={{ padding: "10px 20px", backgroundColor: "var(--brand-red)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer" }}
+                        >
+                            {saving ? "Menyimpan..." : "Simpan"}
+                        </button>
+                        <button
+                            onClick={() => submit(true)}
+                            disabled={saving}
+                            style={{ padding: "10px 20px", backgroundColor: "var(--border-color)", color: "var(--text-secondary)", border: "none", borderRadius: "8px", cursor: saving ? "not-allowed" : "pointer" }}
+                        >
+                            Lewati
+                        </button>
+                    </div>
+                )
+                : (
+                    <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+                        <button
+                            onClick={() => submit(false)}
+                            disabled={saving}
+                            style={{ padding: "10px 20px", backgroundColor: "var(--brand-red)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer" }}
+                        >
+                            {saving ? "Menyimpan..." : "Simpan"}
+                        </button>
+                    </div>
+                )}
         </div>
     );
 }

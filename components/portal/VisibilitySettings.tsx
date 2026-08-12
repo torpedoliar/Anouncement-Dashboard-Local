@@ -8,7 +8,7 @@ interface VisibilitySettingsProps {
     initialHiddenApps?: string[];
 }
 
-/** Pengaturan pasca-login: render wizard dalam mode settings (PATCH per toggle, tanpa Lewati). */
+/** Pengaturan pasca-login: render wizard dalam mode settings (tanpa tombol Lewati). */
 export default function VisibilitySettings({ groups, initialHiddenGroups, initialHiddenApps }: VisibilitySettingsProps) {
     return (
         <OnboardingWizard
