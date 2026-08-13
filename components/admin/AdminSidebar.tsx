@@ -197,8 +197,8 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                                                         title={rail ? item.label : undefined}
                                                     >
                                                         <Icon
-                                                            size={rail ? 18 : 18}
-                                                            className={active ? "text-accent" : "text-text-3 group-hover:text-text-1"}
+                                                            size={rail ? 16 : 18}
+                                                            className={`shrink-0 ${active ? "text-accent" : "text-text-3"}`}
                                                             aria-hidden="true"
                                                         />
                                                         {!rail && <span>{item.label}</span>}
