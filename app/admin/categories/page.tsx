@@ -1,8 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheck, FiFolder } from "react-icons/fi";
+import {
+    PencilSimple,
+    Trash,
+    Check,
+    X,
+    Folder,
+    MagnifyingGlass,
+} from "@phosphor-icons/react";
 import { useConfirm } from "@/hooks/useConfirm";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
 
 interface Category {
     id: string;
@@ -23,8 +32,8 @@ export default function CategoriesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [error, setError] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
     const { confirm, ConfirmDialog } = useConfirm();
 
     // Form states
@@ -106,7 +115,6 @@ export default function CategoriesPage() {
     };
 
     const handleDelete = async (id: string) => {
-        setDeletingId(id);
         try {
             const response = await fetch(`/api/categories/${id}`, {
                 method: "DELETE",
@@ -120,8 +128,6 @@ export default function CategoriesPage() {
             }
         } catch {
             setError("Terjadi kesalahan");
-        } finally {
-            setDeletingId(null);
         }
     };
 
@@ -130,35 +136,6 @@ export default function CategoriesPage() {
         setEditName(category.name);
         setEditColor(category.color);
         setError("");
-    };
-
-    const cardStyle = {
-        backgroundColor: '#0a0a0a',
-        border: '2px solid #333',
-        borderRadius: '8px',
-        padding: '16px',
-    };
-
-    const inputStyle = {
-        width: '100%',
-        padding: '10px 14px',
-        backgroundColor: '#0a0a0a',
-        border: '1px solid #262626',
-        color: '#fff',
-        fontSize: '14px',
-    };
-
-    const buttonPrimaryStyle = {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '10px 20px',
-        backgroundColor: '#dc2626',
-        color: '#fff',
-        border: 'none',
-        fontWeight: 600,
-        cursor: 'pointer',
-        fontSize: '14px',
     };
 
     // Group categories by site
@@ -174,81 +151,82 @@ export default function CategoriesPage() {
         return acc;
     }, {} as Record<string, { siteName: string; categories: Category[] }>);
 
+    // Filter categories by search query (client-side)
+    const matchesSearch = (name: string, slug: string) => {
+        const q = searchQuery.toLowerCase();
+        return !q || name.toLowerCase().includes(q) || slug.toLowerCase().includes(q);
+    };
+
     return (
-        <div style={{ padding: '32px', backgroundColor: 'var(--bg-primary)', minHeight: '100vh' }}>
+        <div className="p-6">
             {/* Header */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '32px',
-            }}>
+            <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
                 <div>
-                    <p style={{
-                        color: 'var(--brand-red)',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        letterSpacing: '0.1em',
-                        marginBottom: '8px',
-                    }}>
+                    <p className="text-accent text-xs font-semibold tracking-widest mb-1">
                         KATEGORI
                     </p>
-                    <h1 style={{
-                        fontFamily: 'Montserrat, sans-serif',
-                        fontSize: '28px',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                    }}>
+                    <h1 className="text-2xl font-bold text-text-1">
                         Manajemen Kategori
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
+                    <p className="text-text-3 mt-1">
                         Kelola kategori pengumuman ({categories.length} kategori)
                     </p>
                 </div>
-                <button
+                <Button
+                    variant="primary"
+                    size="md"
+                    iconLeft={<PencilSimple size={16} weight="bold" />}
                     onClick={() => {
                         setShowAddForm(true);
                         setError("");
                     }}
-                    style={{ ...buttonPrimaryStyle, borderRadius: '6px' }}
                 >
-                    <FiPlus size={18} />
                     Tambah Kategori
-                </button>
+                </Button>
+            </div>
+
+            {/* Search */}
+            <div className="relative mb-6">
+                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                    <MagnifyingGlass size={16} className="text-text-3" />
+                </div>
+                <input
+                    type="text"
+                    placeholder="Cari nama atau slug kategori..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Cari kategori"
+                    className="h-10 w-full rounded-control border border-border bg-surface-1 pl-10 pr-3 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                />
             </div>
 
             {/* Error Message */}
             {error && (
-                <div style={{
-                    padding: '12px 16px',
-                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                    border: '1px solid var(--brand-red)',
-                    color: 'var(--brand-red)',
-                    marginBottom: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderRadius: '6px',
-                }}>
-                    {error}
+                <div
+                    className="mb-6 flex items-center justify-between gap-3 rounded-control border border-danger bg-danger-subtle px-4 py-3 text-danger"
+                    role="alert"
+                >
+                    <span className="text-sm">{error}</span>
                     <button
+                        type="button"
                         onClick={() => setError("")}
-                        style={{ background: 'none', border: 'none', color: 'var(--brand-red)', cursor: 'pointer' }}
+                        aria-label="Tutup pesan error"
+                        className="shrink-0"
                     >
-                        <FiX size={16} />
+                        <X size={16} />
                     </button>
                 </div>
             )}
 
             {/* Add Form */}
             {showAddForm && (
-                <div style={{ ...cardStyle, marginBottom: '32px' }}>
-                    <h3 style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
+                <div className="mb-8 rounded-card border border-border bg-surface-1 p-5">
+                    <h3 className="mb-4 text-sm font-semibold text-text-1">
                         Tambah Kategori Baru
                     </h3>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end' }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '8px' }}>
+                    <div className="flex flex-wrap items-end gap-4">
+                        <div className="flex-1 min-w-[200px]">
+                            <label className="mb-2 block text-sm font-medium text-text-2">
                                 Nama Kategori
                             </label>
                             <input
@@ -256,246 +234,221 @@ export default function CategoriesPage() {
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
                                 placeholder="Contoh: Promo"
-                                style={{ ...inputStyle, borderRadius: '6px' }}
+                                aria-label="Nama kategori baru"
+                                className="h-10 w-full rounded-control border border-border bg-surface-1 px-3 text-sm text-text-1 placeholder:text-text-3"
                             />
                         </div>
-                        <div style={{ width: '120px' }}>
-                            <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '8px' }}>
+                        <div className="w-28">
+                            <label className="mb-2 block text-sm font-medium text-text-2">
                                 Warna
                             </label>
                             <input
                                 type="color"
                                 value={newColor}
                                 onChange={(e) => setNewColor(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    height: '42px',
-                                    backgroundColor: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-color)',
-                                    cursor: 'pointer',
-                                    borderRadius: '6px',
-                                }}
+                                aria-label="Warna kategori baru"
+                                className="h-10 w-full rounded-control border border-border cursor-pointer bg-surface-2"
                             />
                         </div>
-                        <button
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            iconLeft={<Check size={16} weight="bold" />}
                             onClick={handleAdd}
-                            style={{ ...buttonPrimaryStyle, padding: '10px 16px', borderRadius: '6px' }}
                         >
-                            <FiCheck size={18} />
-                        </button>
-                        <button
+                            Simpan
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            iconLeft={<X size={16} />}
                             onClick={() => {
                                 setShowAddForm(false);
                                 setNewName("");
                                 setNewColor("#dc2626");
                                 setError("");
                             }}
-                            style={{
-                                padding: '10px 16px',
-                                backgroundColor: 'var(--border-color)',
-                                color: 'var(--text-primary)',
-                                border: 'none',
-                                cursor: 'pointer',
-                                borderRadius: '6px',
-                            }}
                         >
-                            <FiX size={18} />
-                        </button>
+                            Batal
+                        </Button>
                     </div>
                 </div>
             )}
 
             {/* Categories List grouped by Site */}
             {isLoading ? (
-                <div style={cardStyle}>
-                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '32px' }}>Memuat...</p>
+                <div className="rounded-card border border-border bg-surface-1 p-8 text-center">
+                    <p className="text-text-3">Memuat...</p>
                 </div>
             ) : categories.length === 0 ? (
-                <div style={cardStyle}>
-                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '32px' }}>Belum ada kategori</p>
+                <div className="rounded-card border border-border bg-surface-1 p-8 text-center">
+                    <p className="text-text-3">Belum ada kategori</p>
                 </div>
             ) : (
-                Object.entries(groupedCategories).map(([siteId, group]) => (
-                    <div key={siteId} style={{ ...cardStyle, marginBottom: '24px', padding: 0, overflow: 'hidden' }}>
-                        <div style={{
-                            backgroundColor: 'var(--bg-card)',
-                            padding: '16px 20px',
-                            borderBottom: '2px solid var(--border-strong)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px'
-                        }}>
-                            <FiFolder color="#a1a1aa" size={18} />
-                            <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
-                                SITUS: {group.siteName.toUpperCase()}
-                            </h2>
-                            <span style={{ backgroundColor: 'var(--border-color)', color: 'var(--text-secondary)', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
-                                {group.categories.length}
-                            </span>
+                Object.entries(groupedCategories)
+                    .filter(([siteId]) => {
+                        const group = groupedCategories[siteId];
+                        return group.categories.some(
+                            (c) =>
+                                matchesSearch(c.name, c.slug) ||
+                                group.siteName.toLowerCase().includes(searchQuery.toLowerCase())
+                        );
+                    })
+                    .map(([siteId, group]) => (
+                        <div key={siteId} className="mb-6 overflow-hidden rounded-card border border-border bg-surface-1">
+                            {/* Site header */}
+                            <div className="flex items-center gap-3 border-b border-border bg-surface-2 px-5 py-3">
+                                <Folder size={18} className="text-text-2" weight="duotone" />
+                                <h2 className="text-sm font-bold tracking-wide text-text-1">
+                                    {group.siteName}
+                                </h2>
+                                <Badge tone="neutral">{group.categories.length}</Badge>
+                            </div>
+
+                            {/* Table */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm" aria-label={`Kategori situs ${group.siteName}`}>
+                                    <thead>
+                                        <tr className="border-b border-border">
+                                            <th className="w-[80px] px-4 py-3 text-left text-xs font-medium text-text-3">
+                                                Warna
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-text-3">
+                                                Nama
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-text-3">
+                                                Slug
+                                            </th>
+                                            <th className="px-4 py-3 text-center text-xs font-medium text-text-3">
+                                                Pengumuman
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs font-medium text-text-3">
+                                                Aksi
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {group.categories
+                                            .filter((c) => matchesSearch(c.name, c.slug))
+                                            .map((category) => (
+                                                <tr
+                                                    key={category.id}
+                                                    className="border-b border-border last:border-0 hover:bg-surface-2/60"
+                                                >
+                                                    {editingId === category.id ? (
+                                                        <>
+                                                            <td className="px-4 py-3">
+                                                                <input
+                                                                    type="color"
+                                                                    value={editColor}
+                                                                    onChange={(e) => setEditColor(e.target.value)}
+                                                                    aria-label="Warna kategori"
+                                                                    className="h-8 w-10 rounded border border-border cursor-pointer bg-surface-2"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <input
+                                                                    type="text"
+                                                                    value={editName}
+                                                                    onChange={(e) => setEditName(e.target.value)}
+                                                                    aria-label="Nama kategori"
+                                                                    className="h-9 w-full rounded-control border border-border bg-surface-1 px-3 text-sm text-text-1"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-3 font-mono text-text-3">
+                                                                {category.slug}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center text-text-2">
+                                                                {category._count?.announcements || 0}
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <div className="flex justify-end gap-2">
+                                                                    <Button
+                                                                        variant="primary"
+                                                                        size="sm"
+                                                                        iconLeft={<Check size={14} weight="bold" />}
+                                                                        onClick={() => handleEdit(category.id)}
+                                                                        aria-label="Simpan perubahan"
+                                                                    >
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        iconLeft={<X size={14} />}
+                                                                        onClick={() => {
+                                                                            setEditingId(null);
+                                                                            setError("");
+                                                                        }}
+                                                                        aria-label="Batal edit"
+                                                                    >
+                                                                    </Button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <td className="px-4 py-3">
+                                                                <div
+                                                                    style={{
+                                                                        width: 28,
+                                                                        height: 28,
+                                                                        backgroundColor: category.color,
+                                                                        borderRadius: 6,
+                                                                        border: "1px solid rgba(255,255,255,0.1)",
+                                                                    }}
+                                                                    aria-label={`Warna: ${category.name}`}
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-3 font-medium text-text-1">
+                                                                {category.name}
+                                                            </td>
+                                                            <td className="px-4 py-3 font-mono text-text-3">
+                                                                {category.slug}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center">
+                                                                <span className="inline-flex items-center rounded-full bg-surface-3 px-2 py-0.5 text-xs font-semibold text-text-2">
+                                                                    {category._count?.announcements || 0}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <div className="flex justify-end gap-2">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        iconLeft={<PencilSimple size={14} />}
+                                                                        onClick={() => startEdit(category)}
+                                                                        aria-label={`Edit ${category.name}`}
+                                                                    >
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        iconLeft={<Trash size={14} />}
+                                                                        onClick={async () => {
+                                                                            if (
+                                                                                await confirm({
+                                                                                    title: "Hapus Kategori",
+                                                                                    message: `Hapus kategori "${category.name}"?`,
+                                                                                    variant: "danger",
+                                                                                })
+                                                                            ) {
+                                                                                handleDelete(category.id);
+                                                                            }
+                                                                        }}
+                                                                        aria-label={`Hapus ${category.name}`}
+                                                                    >
+                                                                    </Button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
-                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600, width: '80px' }}>
-                                        Warna
-                                    </th>
-                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
-                                        Nama
-                                    </th>
-                                    <th style={{ textAlign: 'left', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
-                                        Slug
-                                    </th>
-                                    <th style={{ textAlign: 'center', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
-                                        Pengumuman
-                                    </th>
-                                    <th style={{ textAlign: 'right', padding: '12px 20px', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
-                                        Aksi
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {group.categories.map((category, index) => (
-                                    <tr
-                                        key={category.id}
-                                        style={{
-                                            borderBottom: index < group.categories.length - 1 ? '1px solid var(--bg-tertiary)' : 'none',
-                                            backgroundColor: 'var(--bg-secondary)',
-                                            transition: 'background-color 0.2s'
-                                        }}
-                                    >
-                                        {editingId === category.id ? (
-                                            <>
-                                                <td style={{ padding: '12px 20px' }}>
-                                                    <input
-                                                        type="color"
-                                                        value={editColor}
-                                                        onChange={(e) => setEditColor(e.target.value)}
-                                                        style={{
-                                                            width: '40px',
-                                                            height: '32px',
-                                                            backgroundColor: 'var(--bg-secondary)',
-                                                            border: '1px solid var(--border-color)',
-                                                            cursor: 'pointer',
-                                                            borderRadius: '4px',
-                                                        }}
-                                                    />
-                                                </td>
-                                                <td style={{ padding: '12px 20px' }}>
-                                                    <input
-                                                        type="text"
-                                                        value={editName}
-                                                        onChange={(e) => setEditName(e.target.value)}
-                                                        style={{ ...inputStyle, padding: '8px 12px', borderRadius: '4px' }}
-                                                    />
-                                                </td>
-                                                <td style={{ padding: '12px 20px', color: 'var(--text-tertiary)' }}>
-                                                    {category.slug}
-                                                </td>
-                                                <td style={{ padding: '12px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                                    {category._count?.announcements || 0}
-                                                </td>
-                                                <td style={{ padding: '12px 20px', textAlign: 'right' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                                        <button
-                                                            onClick={() => handleEdit(category.id)}
-                                                            style={{
-                                                                padding: '8px',
-                                                                backgroundColor: '#16a34a',
-                                                                color: 'var(--text-primary)',
-                                                                border: 'none',
-                                                                cursor: 'pointer',
-                                                                borderRadius: '4px',
-                                                            }}
-                                                        >
-                                                            <FiCheck size={14} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingId(null);
-                                                                setError("");
-                                                            }}
-                                                            style={{
-                                                                padding: '8px',
-                                                                backgroundColor: 'var(--border-color)',
-                                                                color: 'var(--text-primary)',
-                                                                border: 'none',
-                                                                cursor: 'pointer',
-                                                                borderRadius: '4px',
-                                                            }}
-                                                        >
-                                                            <FiX size={14} />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <td style={{ padding: '12px 20px' }}>
-                                                    <div
-                                                        style={{
-                                                            width: '28px',
-                                                            height: '28px',
-                                                            backgroundColor: category.color,
-                                                            borderRadius: '6px',
-                                                            border: '1px solid rgba(255,255,255,0.1)'
-                                                        }}
-                                                    />
-                                                </td>
-                                                <td style={{ padding: '12px 20px', color: 'var(--text-primary)', fontWeight: 500 }}>
-                                                    {category.name}
-                                                </td>
-                                                <td style={{ padding: '12px 20px', color: 'var(--text-tertiary)', fontFamily: 'monospace', fontSize: '13px' }}>
-                                                    {category.slug}
-                                                </td>
-                                                <td style={{ padding: '12px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                                    <span style={{ backgroundColor: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
-                                                        {category._count?.announcements || 0}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '12px 20px', textAlign: 'right' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                                        <button
-                                                            onClick={() => startEdit(category)}
-                                                            style={{
-                                                                padding: '8px',
-                                                                backgroundColor: 'transparent',
-                                                                color: 'var(--text-secondary)',
-                                                                border: '1px solid var(--border-color)',
-                                                                cursor: 'pointer',
-                                                                borderRadius: '4px',
-                                                            }}
-                                                        >
-                                                            <FiEdit2 size={14} />
-                                                        </button>
-                                                        <button
-                                                            onClick={async () => {
-                                                                if (await confirm({ title: "Hapus Kategori", message: `Hapus kategori "${category.name}"?`, variant: "danger" })) {
-                                                                    handleDelete(category.id);
-                                                                }
-                                                            }}
-                                                            disabled={deletingId === category.id}
-                                                            style={{
-                                                                padding: '8px',
-                                                                backgroundColor: 'transparent',
-                                                                color: 'var(--brand-red)',
-                                                                border: '1px solid var(--border-color)',
-                                                                cursor: 'pointer',
-                                                                opacity: deletingId === category.id ? 0.5 : 1,
-                                                                borderRadius: '4px',
-                                                            }}
-                                                        >
-                                                            <FiTrash2 size={14} />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </>
-                                        )}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                ))
+                    ))
             )}
             <ConfirmDialog />
         </div>

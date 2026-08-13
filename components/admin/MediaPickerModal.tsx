@@ -1,8 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FiX, FiSearch, FiImage, FiVideo, FiFolder, FiGlobe, FiCheck, FiLoader, FiChevronDown } from "react-icons/fi";
+import {
+    X,
+    MagnifyingGlass,
+    VideoCamera,
+    Folder,
+    Globe,
+    Check,
+    Download,
+    Spinner,
+    FolderOpen,
+} from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
+import Button from "@/components/ui/Button";
 
 interface LocalMedia {
     id: string;
@@ -91,7 +102,7 @@ export default function MediaPickerModal({
             if (page === 1) {
                 setLocalMedia(data.data || []);
             } else {
-                setLocalMedia(prev => [...prev, ...(data.data || [])]);
+                setLocalMedia((prev) => [...prev, ...(data.data || [])]);
             }
             setLocalTotal(data.pagination?.total || 0);
             setLocalPage(page);
@@ -106,7 +117,7 @@ export default function MediaPickerModal({
     const fetchStockMedia = useCallback(async (page: number = 1, query: string = "") => {
         setStockLoading(true);
         try {
-            const stockType = mediaFilter === "all" ? "photo" : (mediaFilter === "image" ? "photo" : "video");
+            const stockType = mediaFilter === "all" ? "photo" : mediaFilter === "image" ? "photo" : "video";
             const queryParam = query ? `&query=${encodeURIComponent(query)}` : "&query=business";
             const response = await fetch(`/api/stock-media?type=${stockType}&page=${page}&per_page=15${queryParam}`);
             const data = await response.json();
@@ -120,7 +131,7 @@ export default function MediaPickerModal({
             if (page === 1) {
                 setStockMedia(data.data || []);
             } else {
-                setStockMedia(prev => [...prev, ...(data.data || [])]);
+                setStockMedia((prev) => [...prev, ...(data.data || [])]);
             }
             setStockTotal(data.totalResults || 0);
             setStockPage(page);
@@ -195,458 +206,270 @@ export default function MediaPickerModal({
 
     if (!isOpen) return null;
 
-    const modalStyle: React.CSSProperties = {
-        position: "fixed",
-        inset: 0,
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
-    };
-
-    const contentStyle: React.CSSProperties = {
-        backgroundColor: "#0a0a0a",
-        border: "1px solid #262626",
-        width: "90%",
-        maxWidth: "900px",
-        maxHeight: "85vh",
-        display: "flex",
-        flexDirection: "column",
-        borderRadius: "8px",
-        overflow: "hidden",
-    };
-
     return (
-        <div style={modalStyle} onClick={onClose}>
-            <div style={contentStyle} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80" onClick={onClose} role="dialog" aria-modal="true" aria-label="Pilih media">
+            <div
+                className="flex h-[85vh] w-[90%] max-w-[900px] flex-col overflow-hidden rounded-card border border-border bg-surface-1 shadow-2"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
-                <div style={{
-                    padding: "16px 20px",
-                    borderBottom: "1px solid var(--border-color)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                }}>
-                    <h2 style={{ color: "var(--text-primary)", fontSize: "18px", fontWeight: 600, margin: 0 }}>
-                        Media Library
-                    </h2>
+                <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                    <h2 className="text-lg font-semibold text-text-1 m-0">Pilih Media</h2>
                     <button
+                        type="button"
                         onClick={onClose}
-                        style={{
-                            background: "none",
-                            border: "none",
-                            color: "var(--text-muted)",
-                            cursor: "pointer",
-                            padding: "4px",
-                        }}
+                        aria-label="Tutup"
+                        className="rounded p-1 text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
                     >
-                        <FiX size={20} />
+                        <X size={20} weight="bold" />
                     </button>
                 </div>
 
                 {/* Tabs & Filters */}
-                <div style={{
-                    padding: "12px 20px",
-                    borderBottom: "1px solid var(--bg-tertiary)",
-                    display: "flex",
-                    gap: "16px",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                }}>
+                <div className="flex flex-wrap items-center gap-3 border-b border-border bg-surface-1 px-5 py-3">
                     {/* Tab Buttons */}
-                    <div style={{ display: "flex", gap: "4px" }}>
+                    <div className="flex gap-1 rounded-control bg-surface-2 p-1">
                         <button
                             type="button"
                             onClick={() => setActiveTab("local")}
-                            style={{
-                                padding: "8px 16px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                backgroundColor: activeTab === "local" ? "var(--brand-red)" : "var(--bg-tertiary)",
-                                color: activeTab === "local" ? "var(--text-primary)" : "var(--text-muted)",
-                                border: "none",
-                                borderRadius: "4px",
-                                fontSize: "13px",
-                                cursor: "pointer",
-                            }}
+                            className={`inline-flex items-center gap-2 rounded-control px-4 py-2 text-sm font-medium transition-colors ${
+                                activeTab === "local"
+                                    ? "bg-surface-1 text-text-1 shadow-sm"
+                                    : "text-text-3 hover:text-text-1"
+                            }`}
+                            aria-pressed={activeTab === "local"}
                         >
-                            <FiFolder size={14} /> Local
+                            <Folder size={14} weight="duotone" />
+                            Lokal
                         </button>
                         <button
                             type="button"
                             onClick={() => setActiveTab("stock")}
-                            style={{
-                                padding: "8px 16px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                backgroundColor: activeTab === "stock" ? "var(--brand-red)" : "var(--bg-tertiary)",
-                                color: activeTab === "stock" ? "var(--text-primary)" : "var(--text-muted)",
-                                border: "none",
-                                borderRadius: "4px",
-                                fontSize: "13px",
-                                cursor: "pointer",
-                            }}
+                            className={`inline-flex items-center gap-2 rounded-control px-4 py-2 text-sm font-medium transition-colors ${
+                                activeTab === "stock"
+                                    ? "bg-surface-1 text-text-1 shadow-sm"
+                                    : "text-text-3 hover:text-text-1"
+                            }`}
+                            aria-pressed={activeTab === "stock"}
                         >
-                            <FiGlobe size={14} /> Stock Media
+                            <Globe size={14} weight="duotone" />
+                            Stock
                         </button>
                     </div>
 
                     {/* Media Type Filter */}
                     {mediaType === "all" && (
-                        <div style={{ display: "flex", gap: "4px" }}>
-                            <button
-                                type="button"
-                                onClick={() => setMediaFilter("all")}
-                                style={{
-                                    padding: "6px 12px",
-                                    backgroundColor: mediaFilter === "all" ? "var(--border-color)" : "transparent",
-                                    color: mediaFilter === "all" ? "var(--text-primary)" : "var(--text-muted)",
-                                    border: "1px solid var(--border-strong)",
-                                    borderRadius: "4px",
-                                    fontSize: "12px",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                Semua
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setMediaFilter("image")}
-                                style={{
-                                    padding: "6px 12px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "4px",
-                                    backgroundColor: mediaFilter === "image" ? "var(--border-color)" : "transparent",
-                                    color: mediaFilter === "image" ? "var(--text-primary)" : "var(--text-muted)",
-                                    border: "1px solid var(--border-strong)",
-                                    borderRadius: "4px",
-                                    fontSize: "12px",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                <FiImage size={12} /> Foto
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setMediaFilter("video")}
-                                style={{
-                                    padding: "6px 12px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "4px",
-                                    backgroundColor: mediaFilter === "video" ? "var(--border-color)" : "transparent",
-                                    color: mediaFilter === "video" ? "var(--text-primary)" : "var(--text-muted)",
-                                    border: "1px solid var(--border-strong)",
-                                    borderRadius: "4px",
-                                    fontSize: "12px",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                <FiVideo size={12} /> Video
-                            </button>
+                        <div className="flex gap-1">
+                            {(["all", "image", "video"] as const).map((filter) => (
+                                <button
+                                    key={filter}
+                                    type="button"
+                                    onClick={() => setMediaFilter(filter)}
+                                    className={`rounded-control border px-3 py-1.5 text-xs font-medium transition-colors ${
+                                        mediaFilter === filter
+                                            ? "border-border bg-surface-2 text-text-1"
+                                            : "border-transparent text-text-3 hover:text-text-1"
+                                    }`}
+                                    aria-pressed={mediaFilter === filter}
+                                >
+                                    {filter === "all" ? "Semua" : filter === "image" ? "Foto" : "Video"}
+                                </button>
+                            ))}
                         </div>
                     )}
 
                     {/* Search */}
-                    <div style={{ flex: 1, minWidth: "200px" }}>
-                        <div style={{
-                            display: "flex",
-                            alignItems: "center",
-                            backgroundColor: "var(--bg-tertiary)",
-                            border: "1px solid var(--border-strong)",
-                            borderRadius: "4px",
-                            padding: "0 12px",
-                        }}>
-                            <FiSearch size={14} color="#737373" />
+                    <div className="min-w-[200px] flex-1">
+                        <div className="flex items-center rounded-control border border-border bg-surface-2 px-3">
+                            <MagnifyingGlass size={14} className="text-text-3" />
                             <input
                                 type="text"
                                 placeholder={activeTab === "local" ? "Cari media..." : "Cari stock media..."}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{
-                                    flex: 1,
-                                    padding: "8px 12px",
-                                    backgroundColor: "transparent",
-                                    border: "none",
-                                    color: "var(--text-primary)",
-                                    fontSize: "13px",
-                                }}
+                                aria-label={`Cari ${activeTab === "local" ? "media lokal" : "stock media"}`}
+                                className="w-full bg-transparent px-3 py-2 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-none"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div style={{
-                    flex: 1,
-                    overflow: "auto",
-                    padding: "16px 20px",
-                }}>
+                <div className="flex-1 overflow-auto p-5">
                     {activeTab === "local" ? (
-                        // Local Media Grid
                         <>
                             {localLoading && localMedia.length === 0 ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
-                                    <FiLoader size={24} style={{ animation: "spin 1s linear infinite" }} />
-                                    <p style={{ marginTop: "8px" }}>Memuat media...</p>
+                                <div className="flex flex-col items-center py-16 text-text-3">
+                                    <Spinner size={24} className="animate-spin" weight="duotone" />
+                                    <p className="mt-2 text-sm">Memuat media...</p>
                                 </div>
                             ) : localMedia.length === 0 ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
-                                    <FiFolder size={48} style={{ opacity: 0.3, marginBottom: "12px" }} />
-                                    <p>Belum ada media</p>
+                                <div className="flex flex-col items-center py-16 text-text-3">
+                                    <FolderOpen size={48} className="mb-3 opacity-30" weight="duotone" />
+                                    <p className="text-sm">Belum ada media</p>
                                 </div>
                             ) : (
                                 <>
-                                    <div style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-                                        gap: "12px",
-                                    }}>
+                                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
                                         {localMedia.map((media) => {
-                                            const isVideo = media.mimeType.startsWith("video/");
-                                            const isSelected = selectedMedia && "id" in selectedMedia && selectedMedia.id === media.id;
+                                            const isVideoMedia = media.mimeType.startsWith("video/");
+                                            const isSelected =
+                                                selectedMedia &&
+                                                "id" in selectedMedia &&
+                                                selectedMedia.id === media.id;
 
                                             return (
-                                                <div
+                                                <button
                                                     key={media.id}
+                                                    type="button"
                                                     onClick={() => setSelectedMedia(media)}
-                                                    style={{
-                                                        position: "relative",
-                                                        aspectRatio: "1",
-                                                        backgroundColor: "var(--bg-tertiary)",
-                                                        borderRadius: "4px",
-                                                        overflow: "hidden",
-                                                        cursor: "pointer",
-                                                        border: isSelected ? "2px solid var(--brand-red)" : "2px solid transparent",
-                                                    }}
+                                                    className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-colors ${
+                                                        isSelected
+                                                            ? "border-accent"
+                                                            : "border-transparent hover:border-text-3/30"
+                                                    }`}
+                                                    aria-label={`Pilih ${media.filename}`}
+                                                    aria-pressed={!!isSelected}
                                                 >
-                                                    {isVideo ? (
+                                                    {isVideoMedia ? (
                                                         <video
                                                             src={media.url}
-                                                            style={{
-                                                                width: "100%",
-                                                                height: "100%",
-                                                                objectFit: "cover",
-                                                            }}
+                                                            className="h-full w-full object-cover"
                                                         />
                                                     ) : (
                                                         <img
                                                             src={media.url}
                                                             alt={media.alt || media.filename}
-                                                            style={{
-                                                                width: "100%",
-                                                                height: "100%",
-                                                                objectFit: "cover",
-                                                            }}
+                                                            className="h-full w-full object-cover"
                                                         />
                                                     )}
-                                                    {isVideo && (
-                                                        <div style={{
-                                                            position: "absolute",
-                                                            top: "4px",
-                                                            left: "4px",
-                                                            backgroundColor: "rgba(0,0,0,0.7)",
-                                                            padding: "2px 6px",
-                                                            borderRadius: "2px",
-                                                        }}>
-                                                            <FiVideo size={12} color="#fff" />
-                                                        </div>
+                                                    {isVideoMedia && (
+                                                        <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                                            <VideoCamera size={12} />
+                                                        </span>
                                                     )}
                                                     {isSelected && (
-                                                        <div style={{
-                                                            position: "absolute",
-                                                            inset: 0,
-                                                            backgroundColor: "rgba(220, 38, 38, 0.3)",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                        }}>
-                                                            <FiCheck size={24} color="#fff" />
-                                                        </div>
+                                                        <span className="absolute inset-0 flex items-center justify-center bg-accent/30">
+                                                            <Check size={24} className="text-white" weight="bold" />
+                                                        </span>
                                                     )}
-                                                </div>
+                                                </button>
                                             );
                                         })}
                                     </div>
 
                                     {/* Load More */}
                                     {localMedia.length < localTotal && (
-                                        <div style={{ textAlign: "center", marginTop: "16px" }}>
-                                            <button
-                                                type="button"
+                                        <div className="mt-4 text-center">
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                iconLeft={<Spinner size={14} className={localLoading ? "animate-spin" : ""} />}
                                                 onClick={() => fetchLocalMedia(localPage + 1)}
                                                 disabled={localLoading}
-                                                style={{
-                                                    padding: "8px 24px",
-                                                    backgroundColor: "var(--bg-tertiary)",
-                                                    color: "var(--text-primary)",
-                                                    border: "1px solid var(--border-strong)",
-                                                    borderRadius: "4px",
-                                                    cursor: "pointer",
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    gap: "8px",
-                                                }}
                                             >
-                                                <FiChevronDown size={14} />
                                                 {localLoading ? "Memuat..." : "Muat Lebih"}
-                                            </button>
+                                            </Button>
                                         </div>
                                     )}
                                 </>
                             )}
                         </>
                     ) : (
-                        // Stock Media Grid
                         <>
                             {!stockAvailable ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
-                                    <FiGlobe size={48} style={{ opacity: 0.3, marginBottom: "12px" }} />
-                                    <p>Stock media tidak tersedia</p>
-                                    <p style={{ fontSize: "12px", marginTop: "4px" }}>Pexels API key tidak dikonfigurasi</p>
+                                <div className="flex flex-col items-center py-16 text-text-3">
+                                    <Globe size={48} className="mb-3 opacity-30" weight="duotone" />
+                                    <p className="text-sm">Stock media tidak tersedia</p>
+                                    <p className="mt-1 text-xs">Pexels API key tidak dikonfigurasi</p>
                                 </div>
                             ) : stockLoading && stockMedia.length === 0 ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
-                                    <FiLoader size={24} style={{ animation: "spin 1s linear infinite" }} />
-                                    <p style={{ marginTop: "8px" }}>Mencari stock media...</p>
+                                <div className="flex flex-col items-center py-16 text-text-3">
+                                    <Spinner size={24} className="animate-spin" weight="duotone" />
+                                    <p className="mt-2 text-sm">Mencari stock media...</p>
                                 </div>
                             ) : stockMedia.length === 0 ? (
-                                <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
-                                    <FiSearch size={48} style={{ opacity: 0.3, marginBottom: "12px" }} />
-                                    <p>Tidak ditemukan</p>
-                                    <p style={{ fontSize: "12px", marginTop: "4px" }}>Coba kata kunci lain</p>
+                                <div className="flex flex-col items-center py-16 text-text-3">
+                                    <MagnifyingGlass size={48} className="mb-3 opacity-30" weight="duotone" />
+                                    <p className="text-sm">Tidak ditemukan</p>
+                                    <p className="mt-1 text-xs">Coba kata kunci lain</p>
                                 </div>
                             ) : (
                                 <>
-                                    <div style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-                                        gap: "12px",
-                                    }}>
+                                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
                                         {stockMedia.map((media) => {
-                                            const isSelected = selectedMedia && "photographer" in selectedMedia && selectedMedia.id === media.id;
+                                            const isSelected =
+                                                selectedMedia &&
+                                                "photographer" in selectedMedia &&
+                                                selectedMedia.id === media.id;
 
                                             return (
-                                                <div
+                                                <button
                                                     key={media.id}
+                                                    type="button"
                                                     onClick={() => setSelectedMedia(media)}
-                                                    style={{
-                                                        position: "relative",
-                                                        aspectRatio: "1",
-                                                        backgroundColor: "var(--bg-tertiary)",
-                                                        borderRadius: "4px",
-                                                        overflow: "hidden",
-                                                        cursor: "pointer",
-                                                        border: isSelected ? "2px solid var(--brand-red)" : "2px solid transparent",
-                                                    }}
+                                                    className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-colors ${
+                                                        isSelected
+                                                            ? "border-accent"
+                                                            : "border-transparent hover:border-text-3/30"
+                                                    }`}
+                                                    aria-label={`Pilih stock ${media.type} by ${media.photographer}`}
+                                                    aria-pressed={!!isSelected}
                                                 >
                                                     <img
                                                         src={media.thumbnail}
                                                         alt={media.alt || `By ${media.photographer}`}
-                                                        style={{
-                                                            width: "100%",
-                                                            height: "100%",
-                                                            objectFit: "cover",
-                                                        }}
+                                                        className="h-full w-full object-cover"
                                                     />
                                                     {media.type === "video" && (
-                                                        <div style={{
-                                                            position: "absolute",
-                                                            top: "4px",
-                                                            left: "4px",
-                                                            backgroundColor: "rgba(0,0,0,0.7)",
-                                                            padding: "2px 6px",
-                                                            borderRadius: "2px",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            gap: "4px",
-                                                        }}>
-                                                            <FiVideo size={12} color="#fff" />
+                                                        <span className="absolute left-1 top-1 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                                            <VideoCamera size={12} />
                                                             {media.duration && (
-                                                                <span style={{ color: "var(--text-primary)", fontSize: "10px" }}>
-                                                                    {Math.floor(media.duration / 60)}:{String(media.duration % 60).padStart(2, "0")}
-                                                                </span>
+                                                                <>
+                                                                    {Math.floor(media.duration / 60)}:
+                                                                    {String(media.duration % 60).padStart(2, "0")}
+                                                                </>
                                                             )}
-                                                        </div>
+                                                        </span>
                                                     )}
-                                                    <div style={{
-                                                        position: "absolute",
-                                                        bottom: 0,
-                                                        left: 0,
-                                                        right: 0,
-                                                        padding: "4px 6px",
-                                                        background: "linear-gradient(transparent, rgba(0,0,0,0.8))",
-                                                    }}>
-                                                        <p style={{
-                                                            color: "var(--text-primary)",
-                                                            fontSize: "10px",
-                                                            margin: 0,
-                                                            overflow: "hidden",
-                                                            textOverflow: "ellipsis",
-                                                            whiteSpace: "nowrap",
-                                                        }}>
-                                                            📷 {media.photographer}
+                                                    <span className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 py-2">
+                                                        <p className="truncate text-[10px] font-medium text-white">
+                                                            {media.photographer}
                                                         </p>
-                                                    </div>
+                                                    </span>
                                                     {isSelected && (
-                                                        <div style={{
-                                                            position: "absolute",
-                                                            inset: 0,
-                                                            backgroundColor: "rgba(220, 38, 38, 0.3)",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                        }}>
-                                                            <FiCheck size={24} color="#fff" />
-                                                        </div>
+                                                        <span className="absolute inset-0 flex items-center justify-center bg-accent/30">
+                                                            <Check size={24} className="text-white" weight="bold" />
+                                                        </span>
                                                     )}
-                                                </div>
+                                                </button>
                                             );
                                         })}
                                     </div>
 
                                     {/* Load More */}
                                     {stockMedia.length < stockTotal && (
-                                        <div style={{ textAlign: "center", marginTop: "16px" }}>
-                                            <button
-                                                type="button"
+                                        <div className="mt-4 text-center">
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                iconLeft={<Spinner size={14} className={stockLoading ? "animate-spin" : ""} />}
                                                 onClick={() => fetchStockMedia(stockPage + 1, debouncedQuery)}
                                                 disabled={stockLoading}
-                                                style={{
-                                                    padding: "8px 24px",
-                                                    backgroundColor: "var(--bg-tertiary)",
-                                                    color: "var(--text-primary)",
-                                                    border: "1px solid var(--border-strong)",
-                                                    borderRadius: "4px",
-                                                    cursor: "pointer",
-                                                    display: "inline-flex",
-                                                    alignItems: "center",
-                                                    gap: "8px",
-                                                }}
                                             >
-                                                <FiChevronDown size={14} />
                                                 {stockLoading ? "Memuat..." : "Muat Lebih"}
-                                            </button>
+                                            </Button>
                                         </div>
                                     )}
 
                                     {/* Pexels Attribution */}
-                                    <p style={{
-                                        textAlign: "center",
-                                        color: "var(--text-tertiary)",
-                                        fontSize: "11px",
-                                        marginTop: "16px",
-                                    }}>
+                                    <p className="mt-4 text-center text-[11px] text-text-3">
                                         Photos and videos provided by{" "}
                                         <a
                                             href="https://www.pexels.com"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            style={{ color: "#07A081" }}
+                                            className="text-emerald-500 underline decoration-emerald-500/30 hover:text-emerald-400"
                                         >
                                             Pexels
                                         </a>
@@ -658,79 +481,38 @@ export default function MediaPickerModal({
                 </div>
 
                 {/* Footer */}
-                <div style={{
-                    padding: "12px 20px",
-                    borderTop: "1px solid var(--border-color)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                }}>
-                    <div style={{ color: "var(--text-muted)", fontSize: "12px" }}>
+                <div className="flex items-center justify-between border-t border-border px-5 py-3">
+                    <div className="text-xs text-text-3">
                         {selectedMedia ? (
                             "filename" in selectedMedia ? (
-                                <span>Dipilih: {selectedMedia.filename}</span>
+                                <span>Dipilih: <span className="font-medium text-text-1">{selectedMedia.filename}</span></span>
                             ) : (
-                                <span>Dipilih: Stock {selectedMedia.type} by {selectedMedia.photographer}</span>
+                                <span>Dipilih: Stock <span className="font-medium text-text-1">{selectedMedia.type}</span> by {selectedMedia.photographer}</span>
                             )
                         ) : (
                             <span>Pilih media untuk digunakan</span>
                         )}
                     </div>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                        <button
-                            type="button"
+                    <div className="flex gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={onClose}
-                            style={{
-                                padding: "8px 16px",
-                                backgroundColor: "transparent",
-                                color: "var(--text-muted)",
-                                border: "1px solid var(--border-strong)",
-                                borderRadius: "4px",
-                                cursor: "pointer",
-                                fontSize: "13px",
-                            }}
                         >
                             Batal
-                        </button>
-                        <button
-                            type="button"
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            iconLeft={downloading ? <Spinner size={14} className="animate-spin" /> : <Download size={14} weight="bold" />}
                             onClick={handleSelect}
                             disabled={!selectedMedia || downloading}
-                            style={{
-                                padding: "8px 16px",
-                                backgroundColor: selectedMedia ? "var(--brand-red)" : "var(--border-strong)",
-                                color: "var(--text-primary)",
-                                border: "none",
-                                borderRadius: "4px",
-                                cursor: selectedMedia ? "pointer" : "not-allowed",
-                                fontSize: "13px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                            }}
                         >
-                            {downloading ? (
-                                <>
-                                    <FiLoader size={14} style={{ animation: "spin 1s linear infinite" }} />
-                                    Downloading...
-                                </>
-                            ) : (
-                                <>
-                                    <FiCheck size={14} />
-                                    Pilih
-                                </>
-                            )}
-                        </button>
+                            {downloading ? "Downloading..." : "Pilih"}
+                        </Button>
                     </div>
                 </div>
             </div>
-
-            <style jsx global>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
         </div>
     );
 }
