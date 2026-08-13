@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, PencilSimple, Trash, X, MagnifyingGlass, Eraser } from "@phosphor-icons/react";
@@ -52,32 +52,7 @@ interface AnnouncementsListProps {
     categories: Category[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- skeleton for future client loading boundary
-function LedgerSkeletonRow() {
-    return (
-        <tr className="border-b border-border">
-            <td className="px-4 py-3" />
-            <td className="px-4 py-3">
-                <div className="h-4 bg-surface-2 rounded w-64 animate-pulse" />
-            </td>
-            <td className="px-4 py-3">
-                <div className="h-5 bg-surface-2 rounded w-20 animate-pulse" />
-            </td>
-            <td className="px-4 py-3">
-                <div className="h-5 bg-surface-2 rounded w-24 animate-pulse" />
-            </td>
-            <td className="px-4 py-3">
-                <div className="h-4 bg-surface-2 rounded w-12 animate-pulse" />
-            </td>
-            <td className="px-4 py-3">
-                <div className="h-4 bg-surface-2 rounded w-16 animate-pulse" />
-            </td>
-            <td className="px-4 py-3" />
-        </tr>
-    );
-}
-
-export default function AnnouncementsList({ announcements }: AnnouncementsListProps) {
+export default function AnnouncementsList({ announcements, categories }: AnnouncementsListProps) {
     const router = useRouter();
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -161,6 +136,16 @@ export default function AnnouncementsList({ announcements }: AnnouncementsListPr
         });
     }, [announcements, filterCategory, keyword, filterStatus]);
 
+    // Prune selectedIds when filtered set shrinks (filter change hides selected rows)
+    useEffect(() => {
+        setSelectedIds((prev) => {
+            const filteredIds = new Set(filtered.map((a) => a.id));
+            const next = new Set<string>();
+            prev.forEach((id) => { if (filteredIds.has(id)) next.add(id); });
+            return next;
+        });
+    }, [filtered]);
+
     const resetFilters = () => {
         setKeyword("");
         setFilterCategory("all");
@@ -175,17 +160,15 @@ export default function AnnouncementsList({ announcements }: AnnouncementsListPr
         { value: "diturunkan", label: "Diturunkan" },
     ];
 
-    // Collect all unique categories from data + props
+    // Category filter chips from the props (covers zero-announcement categories too)
     const dataCategories = useMemo(() => {
         const seen = new Set<string>();
-        return announcements
-            .map((a) => {
-                if (seen.has(a.category.name)) return null;
-                seen.add(a.category.name);
-                return a.category;
-            })
-            .filter(Boolean) as { name: string; color: string }[];
-    }, [announcements]);
+        return categories.filter((c) => {
+            if (seen.has(c.name)) return false;
+            seen.add(c.name);
+            return true;
+        });
+    }, [categories]);
 
     const hasFilters = keyword || filterCategory !== "all" || filterStatus !== "semua";
 
