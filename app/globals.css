@@ -6,39 +6,89 @@
 
 /* Custom CSS Variables */
 :root {
-  /* Brand red — source of truth: tailwind.config.ts santos.red */
+  /* ---- Masthead accent (site-primary injected by SiteThemeProvider) ---- */
+  --site-primary: #ED1C24;
+  --site-primary-light: #FF3B42;
+  --site-primary-dark: #C41920;
+  --site-primary-alpha: rgba(237, 28, 36, 0.1);
+  --site-text-on-primary: #FFFFFF;
+
+  /* ---- Brand red — source of truth: tailwind.config.ts santos.red ---- */
   --brand-red: #ED1C24;
   --brand-red-dark: #C41920;
   --brand-red-light: #FF3B42;
   --brand-red-alpha: rgba(237, 28, 36, 0.1);
 
-  /* Legacy aliases (backward compat — will be removed after full migration) */
+  /* ---- Semantic surfaces (NIGHT edition — default) ---- */
+  --surface-0: #09090B;
+  --surface-1: #111113;
+  --surface-2: #18181B;
+  --surface-3: #27272A;
+  --border: #27272A;
+
+  /* ---- Text (NIGHT) ---- */
+  --text-1: #FAFAFA;
+  --text-2: #A1A1AA;
+  --text-3: #71717A;
+
+  /* ---- Accent (default brand red, overridden by --site-primary) ---- */
+  --accent: var(--brand-red);
+
+  /* ---- Semantics / status ---- */
+  --color-success: #22c55e;
+  --color-success-subtle: rgba(34, 197, 94, 0.12);
+  --color-warning: #eab308;
+  --color-warning-subtle: rgba(234, 179, 8, 0.12);
+  --color-danger: #ef4444;
+  --color-danger-subtle: rgba(239, 68, 68, 0.12);
+  --color-info: #60a5fa;
+  --color-info-subtle: rgba(96, 165, 250, 0.12);
+
+  /* ---- Radius scale (spec §3.1) ---- */
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-sheet: 12px;
+  --radius-accent: 2px;
+
+  /* ---- Shadows tinted to background hue (no pure-black drop shadows in light) ---- */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+
+  /* ---- Legacy aliases (backward compat — remove after full migration) ---- */
   --santos-red: var(--brand-red);
   --santos-red-dark: var(--brand-red-dark);
   --santos-red-light: var(--brand-red-light);
+  /* backgrounds */
+  --bg-primary: var(--surface-0);
+  --bg-secondary: var(--surface-1);
+  --bg-tertiary: var(--surface-2);
+  --bg-card: var(--surface-1);
+  --bg-hover: var(--surface-2);
+  /* text */
+  --text-primary: var(--text-1);
+  --text-secondary: var(--text-2);
+  --text-muted: var(--text-3);
+  --text-tertiary: var(--text-3);
+  /* borders */
+  --border-color: var(--border);
+  --border-strong: var(--surface-3);
+}
 
-  /* Backgrounds */
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #1a1a1a;
-  --bg-card: #111111;
-  --bg-hover: #171717;
-
-  /* Text Colors */
-  --text-primary: #ffffff;
-  --text-secondary: #a1a1aa;
-  --text-muted: #737373;
-  --text-tertiary: #525252;
-
-  /* Borders */
-  --border-color: #262626;
-  --border-strong: #333333;
-
-  /* Semantic / Status Colors */
-  --color-success: #22c55e;
-  --color-error: #ef4444;
-  --color-warning: #eab308;
-  --color-info: #60a5fa;
+/* ---- PAPER edition (light). App defaults to night; this is opt-in via <html class="theme-light"> ---- */
+html.theme-light {
+  --surface-0: #F7F6F3;
+  --surface-1: #FFFFFF;
+  --surface-2: #EDEBE6;
+  --surface-3: #E4E1DA;
+  --border: #E0DDD5;
+  --text-1: #1C1917;
+  --text-2: #57534E;
+  --text-3: #8A857E;
+  --accent: var(--brand-red);
+  --shadow-1: 0 1px 2px rgba(28, 25, 23, 0.06);
+  --shadow-2: 0 4px 12px -2px rgba(28, 25, 23, 0.08);
+  --shadow-3: 0 12px 32px -8px rgba(28, 25, 23, 0.12);
 }
 
 /* Brand utility classes */
@@ -52,24 +102,30 @@ html {
 }
 
 body {
-  background-color: #000000;
-  color: #ffffff;
+  background-color: var(--surface-0);
+  color: var(--text-1);
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
 }
 
-/* Headings */
+/* Headings — Sora (display) */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-family: var(--font-sora), var(--font-montserrat), system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   text-wrap: balance;
+}
+
+/* Mono helper for numerals / clocks / counts */
+.mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Links */
@@ -94,13 +150,13 @@ a {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-red);
+  background: var(--accent);
 }
 
 /* Selection */
 ::selection {
-  background: var(--brand-red);
-  color: #ffffff;
+  background: var(--accent);
+  color: var(--site-text-on-primary);
 }
 
 /* Animations */
@@ -251,7 +307,7 @@ a {
 
 /* Accessibility - Focus Visible */
 *:focus-visible {
-  outline: 2px solid var(--brand-red);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
