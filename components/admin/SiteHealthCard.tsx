@@ -6,7 +6,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { FiActivity, FiFileText, FiUsers, FiTag, FiImage, FiRefreshCw } from 'react-icons/fi';
+import { Heartbeat, FileText, Users, Tag, Image, ArrowsClockwise } from '@phosphor-icons/react';
+import Card from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
 
 interface HealthMetrics {
     totalAnnouncements: number;
@@ -64,13 +67,8 @@ export default function SiteHealthCard({
 
     if (isLoading) {
         return (
-            <div style={{
-                backgroundColor: 'rgba(255,255,255,0.03)',
-                borderRadius: '12px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                padding: compact ? '16px' : '24px',
-            }}>
-                <div style={{ color: 'var(--text-tertiary)', fontSize: '13px', textAlign: 'center' }}>
+            <div className="bg-surface-1 border border-border rounded-card p-6">
+                <div className="text-text-3 text-sm text-center">
                     Loading health metrics...
                 </div>
             </div>
@@ -79,82 +77,53 @@ export default function SiteHealthCard({
 
     if (error || !metrics) {
         return (
-            <div style={{
-                backgroundColor: 'rgba(239,68,68,0.05)',
-                borderRadius: '12px',
-                border: '1px solid rgba(239,68,68,0.2)',
-                padding: compact ? '16px' : '24px',
-            }}>
-                <div style={{ color: 'var(--color-error)', fontSize: '13px', textAlign: 'center' }}>
+            <div className="bg-danger-subtle border border-danger rounded-card p-6">
+                <div className="text-danger text-sm text-center">
                     {error || 'Failed to load metrics'}
                 </div>
-                <button
+                <Button
                     onClick={fetchHealth}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        margin: '12px auto 0',
-                        padding: '8px 16px',
-                        backgroundColor: 'transparent',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '6px',
-                        color: 'var(--text-muted)',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                    }}
+                    variant="secondary"
+                    size="sm"
+                    iconLeft={<ArrowsClockwise size={12} />}
                 >
-                    <FiRefreshCw size={12} />
                     Retry
-                </button>
+                </Button>
             </div>
         );
     }
 
     const statItems = [
         {
-            icon: FiFileText,
+            icon: FileText,
             label: 'Articles',
             value: metrics.totalAnnouncements,
             subValue: `${metrics.publishedAnnouncements} published`,
-            color: '#22c55e',
         },
         {
-            icon: FiTag,
+            icon: Tag,
             label: 'Categories',
             value: metrics.totalCategories,
-            color: '#f59e0b',
         },
         {
-            icon: FiUsers,
+            icon: Users,
             label: 'Users',
             value: metrics.totalUsers,
-            color: '#3b82f6',
         },
         {
-            icon: FiImage,
+            icon: Image,
             label: 'Media',
             value: metrics.totalMediaFiles,
-            color: '#a855f7',
         },
     ];
 
     if (compact) {
         return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                padding: '12px 16px',
-                backgroundColor: 'rgba(255,255,255,0.03)',
-                borderRadius: '8px',
-                border: '1px solid rgba(255,255,255,0.1)',
-            }}>
+            <div className="flex items-center gap-4 px-4 py-3 bg-surface-1 border border-border rounded-control">
                 {statItems.map((item) => (
-                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <item.icon size={14} color={item.color} />
-                        <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}>
+                    <div key={item.label} className="flex items-center gap-1.5">
+                        <item.icon weight="fill" size={14} className="text-text-2" />
+                        <span className="text-text-1 text-sm font-semibold font-mono tabular-nums">
                             {item.value}
                         </span>
                     </div>
@@ -164,66 +133,41 @@ export default function SiteHealthCard({
     }
 
     return (
-        <div style={{
-            backgroundColor: 'var(--bg-tertiary)',
-            borderRadius: '12px',
-            border: '1px solid rgba(255,255,255,0.1)',
-            overflow: 'hidden',
-        }}>
+        <Card>
             {/* Header */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '16px 20px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                backgroundColor: `${primaryColor}10`,
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <FiActivity size={18} color={primaryColor} />
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{siteName} Health</span>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                <div className="flex items-center gap-2.5">
+                    <Heartbeat size={18} weight="fill" className="text-accent" />
+                    <span className="font-semibold text-text-1">{siteName} Health</span>
                 </div>
                 <button
                     onClick={fetchHealth}
-                    style={{
-                        padding: '6px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'var(--text-muted)',
-                    }}
+                    className="p-1.5 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-control transition-colors duration-150"
                     title="Refresh"
+                    aria-label="Refresh health metrics"
                 >
-                    <FiRefreshCw size={14} />
+                    <ArrowsClockwise size={14} />
                 </button>
             </div>
 
             {/* Stats Grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '1px',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-            }}>
+            <div className="grid grid-cols-2 gap-px bg-border">
                 {statItems.map((item) => (
                     <div
                         key={item.label}
-                        style={{
-                            padding: '20px',
-                            backgroundColor: 'var(--bg-tertiary)',
-                        }}
+                        className="bg-surface-1 px-5 py-5"
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <item.icon size={16} color={item.color} />
-                            <span style={{ color: 'var(--text-tertiary)', fontSize: '12px', textTransform: 'uppercase' }}>
+                        <div className="flex items-center gap-2 mb-2">
+                            <item.icon weight="fill" size={16} className="text-text-3" />
+                            <span className="text-text-3 text-xs font-semibold uppercase">
                                 {item.label}
                             </span>
                         </div>
-                        <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        <div className="text-3xl font-bold text-text-1 font-mono tabular-nums">
                             {item.value}
                         </div>
                         {item.subValue && (
-                            <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                            <div className="text-text-3 text-xs mt-1">
                                 {item.subValue}
                             </div>
                         )}
@@ -233,44 +177,30 @@ export default function SiteHealthCard({
 
             {/* Recent Activity */}
             {metrics.recentActivity?.length > 0 && (
-                <div style={{
-                    padding: '16px 20px',
-                    borderTop: '1px solid rgba(255,255,255,0.05)',
-                }}>
-                    <h4 style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '12px', textTransform: 'uppercase' }}>
+                <div className="px-5 py-4 border-t border-border">
+                    <h4 className="text-text-3 text-xs font-semibold uppercase mb-3">
                         Recent Activity
                     </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {metrics.recentActivity.slice(0, 3).map((activity, idx) => (
-                            <div
-                                key={idx}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    fontSize: '12px',
-                                }}
-                            >
-                                <span style={{
-                                    padding: '2px 6px',
-                                    backgroundColor: activity.action === 'CREATE' ? 'rgba(34,197,94,0.1)' :
-                                        activity.action === 'UPDATE' ? 'rgba(59,130,246,0.1)' :
-                                            'rgba(239,68,68,0.1)',
-                                    color: activity.action === 'CREATE' ? 'var(--color-success)' :
-                                        activity.action === 'UPDATE' ? '#3b82f6' :
-                                            'var(--color-error)',
-                                    borderRadius: '4px',
-                                    fontSize: '10px',
-                                    fontWeight: 600,
-                                }}>
-                                    {activity.action}
-                                </span>
-                                <span style={{ color: 'var(--text-muted)' }}>{activity.entityType}</span>
-                            </div>
-                        ))}
+                    <div className="flex flex-col gap-2">
+                        {metrics.recentActivity.slice(0, 3).map((activity, idx) => {
+                            const tone = activity.action === 'CREATE'
+                                ? 'success' as const
+                                : activity.action === 'UPDATE'
+                                ? 'info' as const
+                                : 'danger' as const;
+                            return (
+                                <div
+                                    key={idx}
+                                    className="flex items-center gap-2 text-xs"
+                                >
+                                    <Badge tone={tone}>{activity.action}</Badge>
+                                    <span className="text-text-2">{activity.entityType}</span>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}
-        </div>
+        </Card>
     );
 }
