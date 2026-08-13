@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AdminTopbar from "./AdminTopbar";
 
 interface AdminMainContentProps {
     children: React.ReactNode;
@@ -28,6 +29,7 @@ export default function AdminMainContent({ children }: AdminMainContentProps) {
             paddingTop: isDesktop ? '0' : '60px', // Space for mobile menu button
 
         }}>
+            <AdminTopbar />
             {children}
         </main>
     );
