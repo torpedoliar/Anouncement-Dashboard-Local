@@ -6,6 +6,7 @@ import UpdateBanner from "@/components/admin/UpdateBanner";
 import AdminMainContent from "@/components/admin/AdminMainContent";
 
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
+import AdminSiteThemeProvider from "@/components/admin/AdminSiteThemeProvider";
 
 export default async function AdminLayout({
     children,
@@ -20,6 +21,7 @@ export default async function AdminLayout({
 
     return (
         <NextAuthProvider basePath="/api/auth">
+            <AdminSiteThemeProvider>
             <div style={{
                 minHeight: '100vh',
                 backgroundColor: 'var(--bg-primary)',
@@ -38,6 +40,7 @@ export default async function AdminLayout({
                     {children}
                 </AdminMainContent>
             </div>
+            </AdminSiteThemeProvider>
         </NextAuthProvider>
     );
 }
