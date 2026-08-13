@@ -36,6 +36,8 @@ export default function NewsletterPage() {
     const [page, setPage] = useState(1);
     const [activeOnly, setActiveOnly] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [subscriberStats, setSubscriberStats] = useState<{ active: number; inactive: number } | null>(null);
+    const [isStatsLoading, setIsStatsLoading] = useState(true);
 
     const fetchSubscribers = useCallback(async () => {
         setIsLoading(true);
@@ -59,6 +61,43 @@ export default function NewsletterPage() {
     useEffect(() => {
         fetchSubscribers();
     }, [fetchSubscribers]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const fetchSubscriberStats = async () => {
+            setIsStatsLoading(true);
+            try {
+                const [activeResponse, inactiveResponse] = await Promise.all([
+                    fetch("/api/newsletter?page=1&limit=1&active=true"),
+                    fetch("/api/newsletter?page=1&limit=1&active=false"),
+                ]);
+
+                if (!activeResponse.ok || !inactiveResponse.ok) return;
+
+                const [activeData, inactiveData] = await Promise.all([
+                    activeResponse.json(),
+                    inactiveResponse.json(),
+                ]);
+
+                if (!cancelled) {
+                    setSubscriberStats({
+                        active: activeData.pagination?.total ?? 0,
+                        inactive: inactiveData.pagination?.total ?? 0,
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch subscriber stats:", err);
+            } finally {
+                if (!cancelled) setIsStatsLoading(false);
+            }
+        };
+
+        fetchSubscriberStats();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("id-ID", {
@@ -132,18 +171,20 @@ export default function NewsletterPage() {
             <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <Card className="p-4">
                     <p className="mb-2 text-xs font-medium text-text-3">TOTAL SUBSCRIBER</p>
-                    <p className="font-mono text-2xl font-semibold tabular-nums text-text-1">{pagination?.total || 0}</p>
+                    <p className="font-mono text-2xl font-semibold tabular-nums text-text-1">
+                        {isStatsLoading || !subscriberStats ? "—" : subscriberStats.active + subscriberStats.inactive}
+                    </p>
                 </Card>
                 <Card className="p-4">
                     <p className="mb-2 text-xs font-medium text-text-3">AKTIF</p>
                     <p className="font-mono text-2xl font-semibold tabular-nums text-success">
-                        {subscribers.filter((s) => s.isActive).length}
+                        {isStatsLoading || !subscriberStats ? "—" : subscriberStats.active}
                     </p>
                 </Card>
                 <Card className="p-4">
                     <p className="mb-2 text-xs font-medium text-text-3">TIDAK AKTIF</p>
                     <p className="font-mono text-2xl font-semibold tabular-nums text-danger">
-                        {subscribers.filter((s) => !s.isActive).length}
+                        {isStatsLoading || !subscriberStats ? "—" : subscriberStats.inactive}
                     </p>
                 </Card>
             </div>
