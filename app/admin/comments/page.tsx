@@ -252,10 +252,11 @@ export default function CommentsPage() {
                 {(["PENDING", "APPROVED", "REJECTED", "SPAM"] as const).map((status) => {
                     const meta = STATUS_META[status];
                     const count = comments.filter((c) => c.status === status).length;
+                    const toneColor = meta.tone === "warning" ? "var(--color-warning)" : meta.tone === "success" ? "var(--color-success)" : meta.tone === "danger" ? "var(--color-error)" : "var(--color-warning)";
                     return (
                         <div key={status} className="rounded-lg p-5 border" style={{ backgroundColor: "var(--bg-secondary)", borderColor: "var(--border-color)" }}>
                             <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{status}</p>
-                            <p className="text-[24px] font-bold" style={{ color: meta.tone === "warning" ? "#fbbf24" : meta.tone === "success" ? "#22c55e" : meta.tone === "danger" ? "#ef4444" : "#9ca3af" }}>
+                            <p className="text-[24px] font-bold" style={{ color: toneColor }}>
                                 {count}
                             </p>
                         </div>
@@ -274,6 +275,7 @@ export default function CommentsPage() {
                     {comments.map((comment) => {
                         const meta = STATUS_META[comment.status];
                         const isPending = pendingComment === comment.id;
+                        const StatusIcon = meta.Icon;
                         return (
                             <div
                                 key={comment.id}
@@ -292,7 +294,7 @@ export default function CommentsPage() {
                                             <span className="text-xs" style={{ color: "var(--text-muted)" }}>{comment.authorEmail}</span>
                                         )}
                                         <Badge tone={meta.tone}>
-                                            <meta.Icon size={12} />
+                                            <StatusIcon size={12} />
                                             {meta.label}
                                         </Badge>
                                         <span className="text-xs ml-auto font-mono tabular-nums" style={{ color: "var(--text-tertiary)" }}>
