@@ -29,7 +29,13 @@ export default function Dropdown({ trigger, items, align = "right" }: DropdownPr
 
   return (
     <div ref={ref} className="relative inline-block text-left">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
         {trigger}
       </button>
       {open && (
