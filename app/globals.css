@@ -73,6 +73,8 @@
   /* borders */
   --border-color: var(--border);
   --border-strong: var(--surface-3);
+  /* error (renamed to --color-danger, aliased for compat) */
+  --color-error: var(--color-danger);
 }
 
 /* ---- PAPER edition (light). App defaults to night; this is opt-in via <html class="theme-light"> ---- */
