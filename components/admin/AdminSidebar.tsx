@@ -15,7 +15,7 @@ import {
 } from "@phosphor-icons/react";
 import { adminNavGroups, findActiveAdminItem } from "@/lib/admin-nav";
 import Button from "@/components/ui/Button";
-import SiteSelector from "./SiteSelector";
+import MastheadRack from "./MastheadRack";
 
 interface AdminSidebarProps {
     userName?: string | null;
@@ -164,9 +164,9 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                     </Button>
                 </div>
 
-                {/* Site Selector (kept for now — replaced by MastheadRack in Task 5) */}
+                {/* Site rack (masthead) */}
                 <div className="border-b border-border px-4 pb-4">
-                    <SiteSelector />
+                    <MastheadRack />
                 </div>
 
                 {/* Navigation */}
