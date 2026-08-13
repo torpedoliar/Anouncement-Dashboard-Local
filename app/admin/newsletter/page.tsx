@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FiMail, FiUserPlus, FiTrash2, FiDownload, FiRefreshCw, FiSearch } from "react-icons/fi";
+import {
+    ArrowClockwise,
+    DownloadSimple,
+    EnvelopeSimple,
+    MagnifyingGlass,
+} from "@phosphor-icons/react";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import Input from "@/components/ui/Input";
 
 interface Subscriber {
     id: string;
@@ -60,15 +69,15 @@ export default function NewsletterPage() {
     };
 
     const handleExport = () => {
-        const activeSubscribers = subscribers.filter(s => s.isActive);
+        const activeSubscribers = subscribers.filter((s) => s.isActive);
         const csv = [
             ["Email", "Name", "Source", "Subscribed Date"].join(","),
-            ...activeSubscribers.map(s => [
+            ...activeSubscribers.map((s) => [
                 s.email,
                 s.name || "",
                 s.source,
                 formatDate(s.subscribedAt),
-            ].join(","))
+            ].join(",")),
         ].join("\n");
 
         const blob = new Blob([csv], { type: "text/csv" });
@@ -79,233 +88,150 @@ export default function NewsletterPage() {
         a.click();
     };
 
-    const filteredSubscribers = subscribers.filter(s =>
+    const filteredSubscribers = subscribers.filter((s) =>
         s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (isLoading && subscribers.length === 0) {
         return (
-            <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
+            <div className="flex min-h-[60vh] items-center justify-center p-8">
+                <p className="text-text-3">Memuat subscriber...</p>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: "32px" }}>
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+        <div className="mx-auto max-w-[1400px] p-6 md:p-8">
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
-                        NEWSLETTER
-                    </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
-                        Subscribers
-                    </h1>
+                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">NEWSLETTER</p>
+                    <h1 className="font-display text-2xl font-bold text-text-1">Subscriber</h1>
+                    <p className="mt-1 text-sm text-text-3">Kelola daftar penerima newsletter situs.</p>
                 </div>
-                <div style={{ display: "flex", gap: "12px" }}>
-                    <button
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        iconLeft={<ArrowClockwise size={16} />}
                         onClick={() => fetchSubscribers()}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            padding: "10px 16px",
-                            backgroundColor: "var(--bg-tertiary)",
-                            color: "var(--text-primary)",
-                            fontSize: "13px",
-                            border: "1px solid var(--border-strong)",
-                            cursor: "pointer",
-                        }}
                     >
-                        <FiRefreshCw size={14} />
-                        Refresh
-                    </button>
-                    <button
+                        Segarkan
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="primary"
+                        iconLeft={<DownloadSimple size={16} />}
                         onClick={handleExport}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            padding: "10px 16px",
-                            backgroundColor: "var(--brand-red)",
-                            color: "var(--text-primary)",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            border: "none",
-                            cursor: "pointer",
-                        }}
                     >
-                        <FiDownload size={14} />
-                        Export CSV
-                    </button>
+                        Ekspor CSV
+                    </Button>
                 </div>
             </div>
 
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>TOTAL SUBSCRIBERS</p>
-                    <p style={{ color: "var(--text-primary)", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || 0}</p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>ACTIVE</p>
-                    <p style={{ color: "var(--color-success)", fontSize: "24px", fontWeight: 700 }}>
-                        {subscribers.filter(s => s.isActive).length}
+            <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Card className="p-4">
+                    <p className="mb-2 text-xs font-medium text-text-3">TOTAL SUBSCRIBER</p>
+                    <p className="font-mono text-2xl font-semibold tabular-nums text-text-1">{pagination?.total || 0}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="mb-2 text-xs font-medium text-text-3">AKTIF</p>
+                    <p className="font-mono text-2xl font-semibold tabular-nums text-success">
+                        {subscribers.filter((s) => s.isActive).length}
                     </p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>UNSUBSCRIBED</p>
-                    <p style={{ color: "var(--color-error)", fontSize: "24px", fontWeight: 700 }}>
-                        {subscribers.filter(s => !s.isActive).length}
+                </Card>
+                <Card className="p-4">
+                    <p className="mb-2 text-xs font-medium text-text-3">TIDAK AKTIF</p>
+                    <p className="font-mono text-2xl font-semibold tabular-nums text-danger">
+                        {subscribers.filter((s) => !s.isActive).length}
                     </p>
-                </div>
+                </Card>
             </div>
 
-            {/* Filters */}
-            <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
-                <div style={{ flex: 1, position: "relative" }}>
-                    <FiSearch size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)" }} />
-                    <input
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="relative max-w-xl flex-1">
+                    <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3" size={16} />
+                    <Input
                         type="text"
+                        aria-label="Cari subscriber"
                         placeholder="Cari email atau nama..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{
-                            width: "100%", boxSizing: "border-box",
-                            padding: "12px 12px 12px 40px",
-                            backgroundColor: "var(--bg-card)",
-                            border: "1px solid var(--border-strong)",
-                            color: "var(--text-primary)",
-                            fontSize: "14px",
-                        }}
+                        className="pl-9"
                     />
                 </div>
-                <label style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "0 16px",
-                    backgroundColor: "var(--bg-tertiary)",
-                    border: "1px solid var(--border-strong)",
-                    color: "var(--text-secondary)",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                }}>
+                <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-control border border-border bg-surface-1 px-3 text-sm text-text-2">
                     <input
                         type="checkbox"
                         checked={activeOnly}
                         onChange={(e) => setActiveOnly(e.target.checked)}
-                        style={{ width: "16px", height: "16px" }}
+                        className="h-4 w-4 accent-accent"
                     />
                     Aktif saja
                 </label>
             </div>
 
-            {/* Subscribers Table */}
-            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
-                    <thead>
-                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>EMAIL</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>SOURCE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>SUBSCRIBED</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredSubscribers.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} style={{ padding: "48px", textAlign: "center", color: "var(--text-tertiary)" }}>
-                                    <FiMail size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
-                                    <p>Tidak ada subscriber ditemukan</p>
-                                </td>
+            <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-[760px] border-collapse text-sm" aria-label="Daftar subscriber newsletter">
+                        <thead>
+                            <tr className="border-b border-border bg-surface-2">
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-3">EMAIL</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-3">NAMA</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-3">SUMBER</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-3">BERLANGGANAN</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-text-3">STATUS</th>
                             </tr>
-                        ) : (
-                            filteredSubscribers.map((subscriber, index) => (
-                                <tr key={subscriber.id} style={{ borderBottom: index < filteredSubscribers.length - 1 ? "1px solid var(--border-color)" : "none" }}>
-                                    <td style={{ padding: "20px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                            <div style={{
-                                                width: "32px",
-                                                height: "32px",
-                                                backgroundColor: "var(--bg-tertiary)",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                borderRadius: "4px",
-                                            }}>
-                                                <FiMail size={14} color="#737373" />
-                                            </div>
-                                            <span style={{ color: "var(--text-primary)", fontSize: "14px" }}>{subscriber.email}</span>
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "14px" }}>
-                                        {subscriber.name || "-"}
-                                    </td>
-                                    <td style={{ padding: "20px" }}>
-                                        <span style={{
-                                            padding: "4px 10px",
-                                            backgroundColor: "var(--bg-tertiary)",
-                                            color: "var(--text-muted)",
-                                            fontSize: "11px",
-                                            fontWeight: 600,
-                                        }}>
-                                            {subscriber.source}
-                                        </span>
-                                    </td>
-                                    <td style={{ padding: "20px", color: "#71717a", fontSize: "13px" }}>
-                                        {formatDate(subscriber.subscribedAt)}
-                                    </td>
-                                    <td style={{ padding: "20px" }}>
-                                        {subscriber.isActive ? (
-                                            <span style={{
-                                                padding: "4px 12px",
-                                                backgroundColor: "rgba(34, 197, 94, 0.2)",
-                                                color: "var(--color-success)",
-                                                fontSize: "11px",
-                                                fontWeight: 600,
-                                            }}>
-                                                ACTIVE
-                                            </span>
-                                        ) : (
-                                            <span style={{
-                                                padding: "4px 12px",
-                                                backgroundColor: "rgba(239, 68, 68, 0.2)",
-                                                color: "var(--color-error)",
-                                                fontSize: "11px",
-                                                fontWeight: 600,
-                                            }}>
-                                                INACTIVE
-                                            </span>
-                                        )}
+                        </thead>
+                        <tbody>
+                            {filteredSubscribers.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-4 py-14 text-center">
+                                        <EnvelopeSimple size={30} className="mx-auto mb-3 text-text-3" />
+                                        <p className="text-sm text-text-2">Tidak ada subscriber yang ditemukan.</p>
+                                        {searchTerm && <p className="mt-1 text-xs text-text-3">Coba ubah kata kunci pencarian.</p>}
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            ) : (
+                                filteredSubscribers.map((subscriber) => (
+                                    <tr key={subscriber.id} className="border-b border-border last:border-0 hover:bg-surface-2/60">
+                                        <td className="whitespace-nowrap px-4 py-3 font-mono text-sm tabular-nums text-text-1">
+                                            {subscriber.email}
+                                        </td>
+                                        <td className="px-4 py-3 text-text-2">{subscriber.name || "—"}</td>
+                                        <td className="px-4 py-3">
+                                            <Badge tone="neutral">{subscriber.source}</Badge>
+                                        </td>
+                                        <td className="whitespace-nowrap px-4 py-3 font-mono text-xs tabular-nums text-text-2">
+                                            {formatDate(subscriber.subscribedAt)}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <Badge tone={subscriber.isActive ? "success" : "danger"}>
+                                                {subscriber.isActive ? "Aktif" : "Tidak aktif"}
+                                            </Badge>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
 
-            {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-                <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
                     {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-                        <button
+                        <Button
                             key={p}
+                            type="button"
+                            variant={p === page ? "primary" : "secondary"}
+                            size="sm"
                             onClick={() => setPage(p)}
-                            style={{
-                                padding: "8px 16px",
-                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
-                                color: "var(--text-primary)",
-                                border: "none",
-                                cursor: "pointer",
-                            }}
+                            aria-label={`Halaman ${p}`}
+                            aria-current={p === page ? "page" : undefined}
                         >
-                            {p}
-                        </button>
+                            <span className="font-mono tabular-nums">{p}</span>
+                        </Button>
                     ))}
                 </div>
             )}
