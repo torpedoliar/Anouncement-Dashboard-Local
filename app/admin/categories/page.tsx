@@ -34,6 +34,7 @@ export default function CategoriesPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [error, setError] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const { confirm, ConfirmDialog } = useConfirm();
 
     // Form states
@@ -115,6 +116,7 @@ export default function CategoriesPage() {
     };
 
     const handleDelete = async (id: string) => {
+        setDeletingId(id);
         try {
             const response = await fetch(`/api/categories/${id}`, {
                 method: "DELETE",
@@ -128,6 +130,8 @@ export default function CategoriesPage() {
             }
         } catch {
             setError("Terjadi kesalahan");
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -435,8 +439,10 @@ export default function CategoriesPage() {
                                                                                 handleDelete(category.id);
                                                                             }
                                                                         }}
+                                                                        disabled={deletingId === category.id}
                                                                         aria-label={`Hapus ${category.name}`}
                                                                     >
+                                                                        {deletingId === category.id ? "Menghapus…" : null}
                                                                     </Button>
                                                                 </div>
                                                             </td>
