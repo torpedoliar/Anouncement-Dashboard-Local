@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FiMessageSquare, FiCheck, FiX, FiTrash2, FiFilter, FiExternalLink } from "react-icons/fi";
 import Link from "next/link";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
+import Badge from "@/components/ui/Badge";
 
 interface Comment {
     id: string;
@@ -37,12 +37,75 @@ interface Pagination {
     totalPages: number;
 }
 
+/* --- Phosphor Bold icons (inline, no deps) --- */
+function IconMessage({ size = 16, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" {...rest}><path d="M215.8,50.64A87.93,87.93,0,0,0,128,24C74.76,24,32,63.8,24.33,116L8,232l104.61-28.78A88,88,0,0,0,232,128,86.59,86.59,0,0,0,215.8,50.64ZM128,196a16,16,0,0,1-4.24-.58L40.1,219.25l16.16-81.24A15.66,15.66,0,0,1,56,128a72,72,0,0,1,72-72,70.78,70.78,0,0,1,26.2,5A72,72,0,0,1,128,196Z"/></svg>
+    );
+}
+function IconCheck({ size = 16, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" {...rest}><path d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Z"/></svg>
+    );
+}
+function IconX({ size = 16, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" {...rest}><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,71.66,194.66a8,8,0,0,1-11.32-11.32l56-56-56-56A8,8,0,0,1,71.66,59.34L128,114.69l56-55.35a8,8,0,0,1,11.32,11.32l-56,56,56,56Z"/></svg>
+    );
+}
+function IconFlag({ size = 16, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" {...rest}><path d="M216,48H176V32a16,16,0,0,0-32,0V48H64A32,32,0,0,0,32,80v128a32,32,0,0,0,32,32H192a32,32,0,0,0,32-32V64A32,32,0,0,0,216,48ZM96,208V64h48V48h16v128a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16V64H64v128a16,16,0,0,0,16,16H96Z"/></svg>
+    );
+}
+function IconTrash({ size = 16, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" {...rest}><path d="M216,48V208a16,16,0,0,1-16,16H56A16,16,0,0,1,40,208V48H24V32H208V48ZM104,120v72a8,8,0,0,0,16,0V120a8,8,0,0,0-16,0Zm48,0v72a8,8,0,0,0,16,0V120a8,8,0,0,0-16,0Z"/></svg>
+    );
+}
+function IconMagnifyingGlass({ size = 16, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" {...rest}><path d="M229.66,218.34,175.02,163.7A87.9,87.9,0,1,0,163.7,175.02l54.64,54.64a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></svg>
+    );
+}
+function IconArrowSquareOut({ size = 12, ...rest }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" {...rest}><path d="M224,32v128a8,8,0,0,1-16,0V68.69L95.34,177.36a8,8,0,0,1-11.32-11.32L196.69,56H160a8,8,0,0,1,0-16h48A32,32,0,0,1,240,72V160a8,8,0,0,1-16,0V32A8,8,0,0,0,216,24h-48a8,8,0,0,1,0-16h48A32,32,0,0,1,240,40V160a8,8,0,0,1-16,0ZM64,88H16a8,8,0,0,0,0,16h48V144a8,8,0,0,0,16,0V104h40a8,8,0,0,0,0-16H80V48a8,8,0,0,0-16,0Z"/></svg>
+    );
+}
+/* --- Status helper: tone + icon + label --- */
+type ActionKey = "APPROVED" | "REJECTED" | "SPAM";
+
+const STATUS_META: Record<Comment["status"], { tone: "warning" | "success" | "danger" | "info"; Icon: React.FC<{ size?: number }>; label: string }> = {
+    PENDING: { tone: "warning", Icon: IconMessage, label: "Menunggu" },
+    APPROVED: { tone: "success", Icon: IconCheck, label: "Disetujui" },
+    REJECTED: { tone: "danger", Icon: IconX, label: "Ditolak" },
+    SPAM: { tone: "info", Icon: IconFlag, label: "Spam" },
+};
+
+/* --- Comment actions that update a single comment --- */
+type CommentAction = { type: "approve" } | { type: "reject" } | { type: "spam" } | { type: "delete" };
+
+function actionLabel(a: CommentAction): string {
+    switch (a.type) {
+        case "approve": return "Menyetujui";
+        case "reject": return "Menolak";
+        case "spam": return "Menandai spam";
+        case "delete": return "Menghapus";
+    }
+}
+
+/* --- Page --- */
 export default function CommentsPage() {
     const [comments, setComments] = useState<Comment[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState<string>("");
+    const [pendingComment, setPendingComment] = useState<string | null>(null);
+    const [pendingAction, setPendingAction] = useState<CommentAction | null>(null);
+    const [modalAction, setModalAction] = useState<CommentAction | null>(null);
+    const [modalCommentId, setModalCommentId] = useState<string | null>(null);
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
 
@@ -50,7 +113,6 @@ export default function CommentsPage() {
         try {
             let url = `/api/comments?page=${page}&limit=20`;
             if (statusFilter) url += `&status=${statusFilter}`;
-
             const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
@@ -68,282 +130,344 @@ export default function CommentsPage() {
         fetchComments();
     }, [fetchComments]);
 
-    const handleModerate = async (commentId: string, status: "APPROVED" | "REJECTED" | "SPAM") => {
+    /* --- Inline moderation handlers --- */
+    const handleModerate = async (commentId: string, status: ActionKey) => {
+        setPendingComment(commentId);
+        setPendingAction({ type: status.toLowerCase() as Exclude<CommentAction["type"], "delete"> });
         try {
             const response = await fetch(`/api/comments/${commentId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status }),
             });
-
             if (!response.ok) {
                 const data = await response.json();
                 showToast(data.error || "Gagal memperbarui komentar", "error");
-                return;
+            } else {
+                fetchComments();
+                showToast("Komentar berhasil diperbarui", "success");
             }
-
-            fetchComments();
-            showToast("Komentar berhasil diperbarui", "success");
         } catch {
             showToast("Terjadi kesalahan", "error");
+        } finally {
+            setPendingComment(null);
+            setPendingAction(null);
         }
     };
 
     const handleDelete = async (commentId: string) => {
         if (!(await confirm({ title: "Hapus Komentar", message: "Apakah Anda yakin ingin menghapus komentar ini?", variant: "danger" }))) return;
-
+        setPendingComment(commentId);
+        setPendingAction({ type: "delete" });
         try {
             const response = await fetch(`/api/comments/${commentId}`, {
                 method: "DELETE",
             });
-
             if (!response.ok) {
                 const data = await response.json();
                 showToast(data.error || "Gagal menghapus komentar", "error");
-                return;
+            } else {
+                fetchComments();
+                showToast("Komentar berhasil dihapus", "success");
             }
-
-            fetchComments();
-            showToast("Komentar berhasil dihapus", "success");
         } catch {
             showToast("Terjadi kesalahan", "error");
+        } finally {
+            setPendingComment(null);
+            setPendingAction(null);
         }
     };
 
+    /* --- Modal confirm for moderate actions --- */
+    const showConfirmAction = (action: CommentAction, commentId: string) => {
+        setModalAction(action);
+        setModalCommentId(commentId);
+    };
+
+    const handleModalConfirm = async () => {
+        if (!modalAction || !modalCommentId) return;
+        setModalAction(null);
+        setModalCommentId(null);
+        if (modalAction.type === "approve") await handleModerate(modalCommentId, "APPROVED");
+        else if (modalAction.type === "reject") await handleModerate(modalCommentId, "REJECTED");
+        else if (modalAction.type === "spam") await handleModerate(modalCommentId, "SPAM");
+    };
+
+    /* --- Helpers --- */
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
+            day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
         });
     };
 
-    const getStatusBadge = (status: string) => {
-        const styles: Record<string, { bg: string; color: string }> = {
-            PENDING: { bg: "rgba(251, 191, 36, 0.2)", color: "#fbbf24" },
-            APPROVED: { bg: "rgba(34, 197, 94, 0.2)", color: "#22c55e" },
-            REJECTED: { bg: "rgba(239, 68, 68, 0.2)", color: "#ef4444" },
-            SPAM: { bg: "rgba(156, 163, 175, 0.2)", color: "#9ca3af" },
-        };
-        const style = styles[status] || styles.PENDING;
-        return (
-            <span style={{
-                padding: "4px 12px",
-                backgroundColor: style.bg,
-                color: style.color,
-                fontSize: "11px",
-                fontWeight: 600,
-            }}>
-                {status}
-            </span>
-        );
-    };
+    const handlePageChange = (newPage: number) => { setPage(newPage); };
 
+    /* --- Render --- */
     if (isLoading) {
         return (
-            <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
+            <div className="flex items-center justify-center min-h-[60vh]" style={{ padding: "32px" }}>
+                <p className="text-text-3">Memuat komentar...</p>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: "32px" }}>
+        <div className="max-w-[1400px] mx-auto" style={{ padding: "32px" }}>
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                    <p className="text-xs font-semibold tracking-widest mb-2" style={{ color: "var(--brand-red)" }}>
                         KOMENTAR
                     </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
+                    <h1 className="text-[28px] font-bold" style={{ fontFamily: "Montserrat, sans-serif", color: "var(--text-primary)" }}>
                         Moderasi Komentar
                     </h1>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <FiFilter size={16} color="#737373" />
+                <div className="flex items-center gap-3">
+                    <IconMagnifyingGlass size={16} />
+                    <label htmlFor="status-filter" className="sr-only">Filter status</label>
                     <select
+                        id="status-filter"
                         value={statusFilter}
                         onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                        className="rounded-md px-3 py-2 text-sm border"
                         style={{
                             padding: "10px 16px",
                             backgroundColor: "var(--bg-tertiary)",
                             border: "1px solid var(--border-strong)",
                             color: "var(--text-primary)",
-                            fontSize: "13px",
                         }}
                     >
                         <option value="">Semua Status</option>
                         <option value="PENDING">Pending</option>
-                        <option value="APPROVED">Approved</option>
-                        <option value="REJECTED">Rejected</option>
+                        <option value="APPROVED">Disetujui</option>
+                        <option value="REJECTED">Ditolak</option>
                         <option value="SPAM">Spam</option>
                     </select>
                 </div>
             </div>
 
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
-                {["PENDING", "APPROVED", "REJECTED", "SPAM"].map((status) => (
-                    <div key={status} style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                        <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>{status}</p>
-                        <p style={{ color: getStatusBadge(status).props.style.color, fontSize: "24px", fontWeight: 700 }}>
-                            {comments.filter(c => c.status === status).length}
-                        </p>
-                    </div>
-                ))}
+            {/* Stats row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {(["PENDING", "APPROVED", "REJECTED", "SPAM"] as const).map((status) => {
+                    const meta = STATUS_META[status];
+                    const count = comments.filter((c) => c.status === status).length;
+                    return (
+                        <div key={status} className="rounded-lg p-5 border" style={{ backgroundColor: "var(--bg-secondary)", borderColor: "var(--border-color)" }}>
+                            <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{status}</p>
+                            <p className="text-[24px] font-bold" style={{ color: meta.tone === "warning" ? "#fbbf24" : meta.tone === "success" ? "#22c55e" : meta.tone === "danger" ? "#ef4444" : "#9ca3af" }}>
+                                {count}
+                            </p>
+                        </div>
+                    );
+                })}
             </div>
 
-            {/* Comments List */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {comments.length === 0 ? (
-                    <div style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        border: "1px solid var(--border-color)",
-                        padding: "48px",
-                        textAlign: "center",
-                        color: "var(--text-tertiary)",
-                    }}>
-                        <FiMessageSquare size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
-                        <p>Tidak ada komentar ditemukan</p>
-                    </div>
-                ) : (
-                    comments.map((comment) => (
-                        <div key={comment.id} style={{
-                            backgroundColor: "var(--bg-secondary)",
-                            border: "1px solid var(--border-color)",
-                            padding: "20px",
-                        }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-                                <div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                                        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{comment.authorName}</span>
+            {/* Comment ledger */}
+            {comments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 rounded-lg border" style={{ backgroundColor: "var(--bg-secondary)", borderColor: "var(--border-color)" }}>
+                    <IconMessage size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
+                    <p className="text-text-3">Tidak ada komentar ditemukan</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {comments.map((comment) => {
+                        const meta = STATUS_META[comment.status];
+                        const isPending = pendingComment === comment.id;
+                        return (
+                            <div
+                                key={comment.id}
+                                className="rounded-lg border transition-opacity"
+                                style={{
+                                    backgroundColor: "var(--bg-secondary)",
+                                    borderColor: "var(--border-color)",
+                                    opacity: isPending ? 0.6 : 1,
+                                }}
+                            >
+                                <div className="p-4">
+                                    {/* Row header: author + email + status + time */}
+                                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                                        <span className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>{comment.authorName}</span>
                                         {comment.authorEmail && (
-                                            <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>{comment.authorEmail}</span>
+                                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{comment.authorEmail}</span>
                                         )}
-                                        {getStatusBadge(comment.status)}
+                                        <Badge tone={meta.tone}>
+                                            <meta.Icon size={12} />
+                                            {meta.label}
+                                        </Badge>
+                                        <span className="text-xs ml-auto font-mono tabular-nums" style={{ color: "var(--text-tertiary)" }}>
+                                            {formatDate(comment.createdAt)}
+                                        </span>
                                     </div>
+
+                                    {/* Announcement link */}
                                     <Link
-                                        href={`/sesi/${comment.announcement.sites[0]?.site.slug || 'santos-jaya-abadi'}/${comment.announcement.slug}`}
+                                        href={`/sesi/${comment.announcement.sites[0]?.site.slug || "santos-jaya-abadi"}/${comment.announcement.slug}`}
                                         target="_blank"
-                                        style={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            gap: "6px",
-                                            color: "var(--color-info)",
-                                            fontSize: "13px",
-                                            textDecoration: "none",
-                                        }}
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-xs mb-2 hover:underline"
+                                        style={{ color: "var(--color-info)" }}
                                     >
                                         {comment.announcement.title}
-                                        <FiExternalLink size={12} />
+                                        <IconArrowSquareOut size={12} />
                                     </Link>
-                                </div>
-                                <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{formatDate(comment.createdAt)}</span>
-                            </div>
 
-                            <p style={{ color: "#d4d4d4", fontSize: "14px", lineHeight: 1.6, marginBottom: "16px" }}>
-                                {comment.content}
-                            </p>
+                                    {/* Content excerpt */}
+                                    <p className="text-sm leading-relaxed mb-3" style={{ color: "#d4d4d4" }}>
+                                        {comment.content.length > 200
+                                            ? comment.content.slice(0, 200) + "…"
+                                            : comment.content}
+                                    </p>
 
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <div style={{ display: "flex", gap: "8px" }}>
+                                    {/* Action buttons — only for PENDING */}
                                     {comment.status === "PENDING" && (
-                                        <>
+                                        <div className="flex flex-wrap items-center gap-2">
                                             <button
-                                                onClick={() => handleModerate(comment.id, "APPROVED")}
+                                                onClick={() => showConfirmAction({ type: "approve" }, comment.id)}
+                                                disabled={isPending}
+                                                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-opacity disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                                                 style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: "6px",
-                                                    padding: "8px 16px",
                                                     backgroundColor: "rgba(34, 197, 94, 0.2)",
                                                     color: "var(--color-success)",
-                                                    fontSize: "12px",
-                                                    fontWeight: 600,
-                                                    border: "none",
-                                                    cursor: "pointer",
                                                 }}
+                                                aria-label={isPending ? "Menyetujui komentar" : "Setujui komentar"}
                                             >
-                                                <FiCheck size={14} />
-                                                Approve
+                                                {isPending && pendingAction?.type === "approve" ? (
+                                                    <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <IconCheck size={14} />
+                                                )}
+                                                {isPending && pendingAction?.type === "approve" ? "Menyetujui..." : "Setujui"}
                                             </button>
                                             <button
-                                                onClick={() => handleModerate(comment.id, "REJECTED")}
+                                                onClick={() => showConfirmAction({ type: "reject" }, comment.id)}
+                                                disabled={isPending}
+                                                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-opacity disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                                                 style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: "6px",
-                                                    padding: "8px 16px",
                                                     backgroundColor: "rgba(239, 68, 68, 0.2)",
                                                     color: "var(--color-error)",
-                                                    fontSize: "12px",
-                                                    fontWeight: 600,
-                                                    border: "none",
-                                                    cursor: "pointer",
                                                 }}
+                                                aria-label={isPending ? "Menolak komentar" : "Tolak komentar"}
                                             >
-                                                <FiX size={14} />
-                                                Reject
+                                                {isPending && pendingAction?.type === "reject" ? (
+                                                    <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <IconX size={14} />
+                                                )}
+                                                {isPending && pendingAction?.type === "reject" ? "Menolak..." : "Tolak"}
                                             </button>
                                             <button
-                                                onClick={() => handleModerate(comment.id, "SPAM")}
+                                                onClick={() => showConfirmAction({ type: "spam" }, comment.id)}
+                                                disabled={isPending}
+                                                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold border transition-opacity disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                                                 style={{
-                                                    padding: "8px 16px",
                                                     backgroundColor: "var(--bg-tertiary)",
                                                     color: "var(--text-muted)",
-                                                    fontSize: "12px",
-                                                    fontWeight: 600,
-                                                    border: "1px solid var(--border-strong)",
-                                                    cursor: "pointer",
+                                                    borderColor: "var(--border-strong)",
                                                 }}
+                                                aria-label={isPending ? "Menandai sebagai spam" : "Tandai sebagai spam"}
                                             >
-                                                Spam
+                                                {isPending && pendingAction?.type === "spam" ? (
+                                                    <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <IconFlag size={14} />
+                                                )}
+                                                {isPending && pendingAction?.type === "spam" ? "Menandai..." : "Spam"}
                                             </button>
-                                        </>
+                                        </div>
                                     )}
+
+                                    {/* Delete button */}
+                                    <div className="flex justify-end">
+                                        <button
+                                            onClick={() => handleDelete(comment.id)}
+                                            disabled={isPending}
+                                            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold border transition-opacity disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                            style={{
+                                                backgroundColor: "transparent",
+                                                borderColor: "var(--border-color)",
+                                                color: "var(--brand-red)",
+                                            }}
+                                            aria-label={isPending ? "Menghapus komentar" : "Hapus komentar"}
+                                        >
+                                            {isPending && pendingAction?.type === "delete" ? (
+                                                <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <IconTrash size={14} />
+                                            )}
+                                            {isPending && pendingAction?.type === "delete" ? "Menghapus..." : "Hapus"}
+                                        </button>
+                                    </div>
                                 </div>
-                                <button
-                                    onClick={() => handleDelete(comment.id)}
-                                    style={{
-                                        padding: "8px",
-                                        backgroundColor: "transparent",
-                                        border: "1px solid var(--border-color)",
-                                        color: "var(--brand-red)",
-                                        cursor: "pointer",
-                                    }}
-                                    title="Delete"
-                                >
-                                    <FiTrash2 size={14} />
-                                </button>
                             </div>
-                        </div>
-                    ))
-                )}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-                <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
+                <div className="flex justify-center gap-2 mt-6">
                     {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
                         <button
                             key={p}
-                            onClick={() => setPage(p)}
+                            onClick={() => handlePageChange(p)}
+                            className="rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                             style={{
-                                padding: "8px 16px",
                                 backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
                                 color: "var(--text-primary)",
-                                border: "none",
-                                cursor: "pointer",
                             }}
+                            aria-label={`Halaman ${p}`}
+                            disabled={p === page}
                         >
                             {p}
                         </button>
                     ))}
                 </div>
             )}
+
+            {/* ConfirmDialog for delete */}
             <ConfirmDialog />
+
+            {/* ConfirmDialog for moderate actions */}
+            {modalAction && modalCommentId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => { setModalAction(null); setModalCommentId(null); }}>
+                    <div
+                        className="rounded-lg p-6 max-w-sm w-full mx-4 border shadow-lg"
+                        style={{ backgroundColor: "var(--bg-surface)" }}
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={`Konfirmasi ${actionLabel(modalAction)}`}
+                    >
+                        <p className="mb-4 text-sm" style={{ color: "var(--text-primary)" }}>
+                            {modalAction.type === "approve" && "Apakah Anda yakin ingin menyetujui komentar ini?"}
+                            {modalAction.type === "reject" && "Apakah Anda yakin ingin menolak komentar ini?"}
+                            {modalAction.type === "spam" && "Apakah Anda yakin ingin menandai komentar ini sebagai spam?"}
+                        </p>
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => { setModalAction(null); setModalCommentId(null); }}
+                                className="rounded-md px-4 py-2 text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                style={{
+                                    backgroundColor: "var(--bg-tertiary)",
+                                    color: "var(--text-primary)",
+                                    borderColor: "var(--border-strong)",
+                                }}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleModalConfirm}
+                                className="rounded-md px-4 py-2 text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                style={{ backgroundColor: "var(--brand-red)" }}
+                            >
+                                Konfirmasi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
