@@ -66,6 +66,8 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
         setCollapsed((prev) => {
             const next = !prev;
             localStorage.setItem("adminSidebarCollapsed", next ? "1" : "0");
+            // Tell AdminMainContent to reflow the content margin (same tab).
+            window.dispatchEvent(new CustomEvent("admin:sidebar-collapse", { detail: { collapsed: next } }));
             return next;
         });
     };
@@ -103,7 +105,7 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
 
             {/* Sidebar Container */}
             <aside
-                className={`fixed top-0 left-0 z-50 h-full border-r border-border bg-surface-0 flex flex-col transition-[width,transform] duration-300 ${rail ? "w-16" : "w-60"} ${sidebarVisible ? "translate-x-0" : "-translate-x-full"}`}
+                className={`fixed top-0 left-0 z-50 h-full border-r border-border bg-surface-0 flex flex-col transition-[width,transform] duration-300 ${rail ? "w-16" : "w-64"} ${sidebarVisible ? "translate-x-0" : "-translate-x-full"}`}
                 aria-label="Navigasi admin"
             >
                 {/* Logo + collapse toggle */}
