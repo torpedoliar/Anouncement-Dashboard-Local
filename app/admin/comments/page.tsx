@@ -252,7 +252,7 @@ export default function CommentsPage() {
                 {(["PENDING", "APPROVED", "REJECTED", "SPAM"] as const).map((status) => {
                     const meta = STATUS_META[status];
                     const count = comments.filter((c) => c.status === status).length;
-                    const toneColor = meta.tone === "warning" ? "var(--color-warning)" : meta.tone === "success" ? "var(--color-success)" : meta.tone === "danger" ? "var(--color-error)" : "var(--color-warning)";
+                    const toneColor = meta.tone === "warning" ? "var(--color-warning)" : meta.tone === "success" ? "var(--color-success)" : meta.tone === "danger" ? "var(--color-error)" : "var(--text-tertiary)";
                     return (
                         <div key={status} className="rounded-lg p-5 border" style={{ backgroundColor: "var(--bg-secondary)", borderColor: "var(--border-color)" }}>
                             <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{status}</p>
