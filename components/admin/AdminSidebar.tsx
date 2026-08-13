@@ -1,34 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
-    FiHome,
-    FiFileText,
-    FiSettings,
-    FiLogOut,
-    FiPlusCircle,
-    FiTag,
-    FiUsers,
-    FiActivity,
-    FiMenu,
-    FiX,
-    FiClock,
-    FiImage,
-    FiMessageSquare,
-    FiMonitor,
-    FiMail,
-    FiSend,
-    FiGlobe,
-    FiPieChart,
-    FiGrid,
-    FiUserPlus,
-    FiShield
-} from "react-icons/fi";
+    Clock,
+    CaretLeft,
+    CaretRight,
+    PlusCircle,
+    SignOut,
+    X,
+    List,
+} from "@phosphor-icons/react";
+import { adminNavGroups, findActiveAdminItem } from "@/lib/admin-nav";
+import Button from "@/components/ui/Button";
 import SiteSelector from "./SiteSelector";
-
 
 interface AdminSidebarProps {
     userName?: string | null;
@@ -40,18 +27,23 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(true);
+    const [collapsed, setCollapsed] = useState(() =>
+        typeof window !== "undefined"
+            ? localStorage.getItem("adminSidebarCollapsed") === "1"
+            : false
+    );
     const [currentTime, setCurrentTime] = useState<Date | null>(null);
     const pathname = usePathname();
+    const router = useRouter();
 
     // Detect screen size
     useEffect(() => {
         const checkScreenSize = () => {
             setIsDesktop(window.innerWidth >= 1024);
         };
-
         checkScreenSize();
-        window.addEventListener('resize', checkScreenSize);
-        return () => window.removeEventListener('resize', checkScreenSize);
+        window.addEventListener("resize", checkScreenSize);
+        return () => window.removeEventListener("resize", checkScreenSize);
     }, []);
 
     // Close sidebar when route changes on mobile
@@ -70,38 +62,22 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
         return () => clearInterval(timer);
     }, []);
 
+    const toggleCollapsed = () => {
+        setCollapsed((prev) => {
+            const next = !prev;
+            localStorage.setItem("adminSidebarCollapsed", next ? "1" : "0");
+            return next;
+        });
+    };
+
     const handleLogout = async () => {
         setIsLoggingOut(true);
         await signOut({ callbackUrl: "/admin-login" });
     };
 
-    const navItems = [
-        { href: "/admin", icon: FiHome, label: "DASHBOARD" },
-        // Only SuperAdmin sees Sites and Users management
-        ...(isSuperAdmin ? [
-            { href: "/admin/sites", icon: FiGlobe, label: "SITES" },
-            { href: "/admin/users", icon: FiUsers, label: "PENGGUNA" },
-            { href: "/admin/portal-apps", icon: FiGrid, label: "PORTAL APPS" },
-            { href: "/admin/portal-groups", icon: FiUsers, label: "PORTAL GROUPS" },
-            { href: "/admin/portal-users", icon: FiUserPlus, label: "PORTAL USERS" },
-            { href: "/admin/portal-sessions", icon: FiMonitor, label: "PORTAL SESI" },
-            { href: "/admin/portal-audit", icon: FiShield, label: "PORTAL AUDIT" },
-            { href: "/admin/global-analytics", icon: FiPieChart, label: "GLOBAL ANALYTICS" },
-            { href: "/admin/audit-trail", icon: FiActivity, label: "AUDIT TRAIL" },
-        ] : []),
-        { href: "/admin/announcements", icon: FiFileText, label: "PENGUMUMAN" },
-        { href: "/admin/categories", icon: FiTag, label: "KATEGORI" },
-        { href: "/admin/media", icon: FiImage, label: "MEDIA" },
-        { href: "/admin/comments", icon: FiMessageSquare, label: "KOMENTAR" },
-        { href: "/admin/analytics", icon: FiActivity, label: "ANALYTICS" },
-        { href: "/admin/sessions", icon: FiMonitor, label: "SESI" },
-        { href: "/admin/email", icon: FiMail, label: "EMAIL" },
-        { href: "/admin/newsletter", icon: FiSend, label: "NEWSLETTER" },
-        { href: "/admin/settings", icon: FiSettings, label: "PENGATURAN" },
-    ];
-
-    // Sidebar should be visible if: Desktop OR Mobile+Open
+    // Sidebar: fixed desktop (icon rail ↔ expanded) OR mobile slide-over
     const sidebarVisible = isDesktop || isOpen;
+    const rail = isDesktop && collapsed;
 
     return (
         <>
@@ -109,162 +85,128 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
             {!isDesktop && (
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    style={{
-                        position: 'fixed',
-                        top: '16px',
-                        left: '16px',
-                        zIndex: 60,
-                        padding: '8px',
-                        backgroundColor: 'var(--bg-hover)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '6px',
-                        color: 'var(--text-primary)',
-                        cursor: 'pointer',
-                        transform: isOpen ? 'translateX(256px)' : 'translateX(0)',
-                        transition: 'transform 0.3s ease-in-out',
-                    }}
-                    aria-label="Toggle Menu"
+                    className="fixed top-4 left-4 z-[60] rounded-control border border-border bg-surface-2 p-2 text-text-1 cursor-pointer transition-transform duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    style={{ transform: isOpen ? "translateX(256px)" : "translateX(0)" }}
+                    aria-label="Buka menu"
                 >
-                    {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+                    {isOpen ? <X size={24} /> : <List size={24} />}
                 </button>
             )}
 
             {/* Backdrop for Mobile */}
             {!isDesktop && isOpen && (
                 <div
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        backgroundColor: 'rgba(0,0,0,0.5)',
-                        zIndex: 40,
-                    }}
+                    className="fixed inset-0 z-40 bg-black/50"
                     onClick={() => setIsOpen(false)}
                 />
             )}
 
             {/* Sidebar Container */}
-            <aside style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                zIndex: 50,
-                height: '100%',
-                width: '256px',
-                backgroundColor: 'var(--bg-primary)',
-                borderRight: '1px solid var(--bg-tertiary)',
-                display: 'flex',
-                flexDirection: 'column',
-                transform: sidebarVisible ? 'translateX(0)' : 'translateX(-100%)',
-                transition: 'transform 0.3s ease-in-out',
-            }}>
-                {/* Logo */}
-                <div style={{ padding: '24px', borderBottom: '1px solid var(--bg-tertiary)' }}>
-                    <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            backgroundColor: 'var(--brand-red)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <span style={{
-                                fontFamily: 'Montserrat, sans-serif',
-                                fontWeight: 'bold',
-                                color: 'var(--text-primary)',
-                                fontSize: '18px',
-                            }}>S</span>
+            <aside
+                className={`fixed top-0 left-0 z-50 h-full border-r border-border bg-surface-0 flex flex-col transition-[width,transform] duration-300 ${rail ? "w-16" : "w-60"} ${sidebarVisible ? "translate-x-0" : "-translate-x-full"}`}
+                aria-label="Navigasi admin"
+            >
+                {/* Logo + collapse toggle */}
+                <div className={`flex items-center border-b border-border py-6 ${rail ? "justify-center px-0" : "justify-between px-6"}`}>
+                    <Link href="/admin" className="flex items-center gap-3 min-w-0" aria-label="Admin dashboard">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-accent" aria-hidden="true">
+                            <span className="font-display font-bold text-white text-lg">S</span>
                         </div>
-                        <div>
-                            <h1 style={{
-                                fontFamily: 'Montserrat, sans-serif',
-                                fontWeight: 700,
-                                color: 'var(--text-primary)',
-                                fontSize: '11px',
-                                letterSpacing: '0.1em',
-                            }}>ADMIN</h1>
-                            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>Dashboard</p>
-                        </div>
-                    </Link>
-                    {/* Current Date & Time */}
-                    {currentTime && (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            marginTop: '12px',
-                            padding: '8px 10px',
-                            backgroundColor: 'var(--bg-secondary)',
-                            borderRadius: '4px',
-                        }}>
-                            <FiClock size={14} style={{ color: 'var(--brand-red)' }} />
-                            <div>
-                                <p style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                                    {currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
-                                </p>
-                                <p style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, fontFamily: 'monospace' }}>
-                                    {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                </p>
+                        {!rail && (
+                            <div className="min-w-0">
+                                <h1 className="font-display text-[11px] font-bold tracking-[0.1em] text-text-1 truncate">ADMIN</h1>
+                                <p className="text-[11px] text-text-3 truncate">Dashboard</p>
                             </div>
-                        </div>
+                        )}
+                    </Link>
+                    {isDesktop && (
+                        <button
+                            onClick={toggleCollapsed}
+                            className="ml-2 rounded-control p-1.5 text-text-2 hover:bg-surface-2 hover:text-text-1 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                            aria-expanded={!rail}
+                            aria-label={rail ? "Perluas menu" : "Ciutkan menu"}
+                        >
+                            {rail ? <CaretRight size={16} /> : <CaretLeft size={16} />}
+                        </button>
                     )}
                 </div>
 
+                {/* Live clock */}
+                {currentTime && (
+                    <div className={`border-b border-border p-4 ${rail ? "flex justify-center" : ""}`}>
+                        <div className={`flex items-center gap-2 rounded-control bg-surface-1 px-2.5 py-2 ${rail ? "w-fit flex-col" : ""}`}>
+                            <Clock size={14} className="text-accent shrink-0" aria-hidden="true" />
+                            <div className={`${rail ? "text-center" : ""}`}>
+                                {!rail && (
+                                    <p className="text-[10px] font-medium text-text-2 truncate">
+                                        {currentTime.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short", year: "numeric" })}
+                                    </p>
+                                )}
+                                <p className={`font-mono tabular-nums font-semibold text-text-1 ${rail ? "text-xs" : "text-[13px]"}`}>
+                                    {currentTime.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Quick Action */}
-                <div style={{ padding: '16px', borderBottom: '1px solid var(--bg-tertiary)' }}>
-                    <Link
-                        href="/admin/announcements/new"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            width: '100%',
-                            boxSizing: 'border-box',
-                            padding: '12px 16px',
-                            backgroundColor: 'var(--brand-red)',
-                            color: 'var(--text-primary)',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            letterSpacing: '0.1em',
-                        }}
+                <div className="border-b border-border p-4">
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => router.push("/admin/announcements/new")}
+                        iconLeft={<PlusCircle size={16} aria-hidden="true" />}
+                        aria-label="Buat pengumuman baru"
                     >
-                        <FiPlusCircle size={14} />
-                        <span>BUAT BARU</span>
-                    </Link>
+                        {!rail && "Buat Baru"}
+                    </Button>
                 </div>
 
-                {/* Site Selector */}
-                <div style={{ padding: '0 16px 16px', borderBottom: '1px solid var(--bg-tertiary)' }}>
+                {/* Site Selector (kept for now — replaced by MastheadRack in Task 5) */}
+                <div className="border-b border-border px-4 pb-4">
                     <SiteSelector />
                 </div>
 
                 {/* Navigation */}
-                <nav style={{ flex: 1, overflowY: 'auto', padding: '16px 0' }}>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                        {navItems.map((item) => {
-                            const isActive = pathname === item.href;
+                <nav className="flex-1 overflow-y-auto py-4" aria-label="Menu utama">
+                    <ul className="list-none p-0 m-0">
+                        {adminNavGroups.map((group) => {
+                            const items = group.items.filter((item) => !item.superAdminOnly || isSuperAdmin);
+                            if (items.length === 0) return null;
                             return (
-                                <li key={item.href}>
-                                    <Link
-                                        href={item.href}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            padding: '12px 24px',
-                                            color: isActive ? 'var(--brand-red)' : 'var(--text-secondary)',
-                                            backgroundColor: isActive ? 'var(--bg-secondary)' : 'transparent',
-                                            borderLeft: isActive ? '2px solid var(--brand-red)' : '2px solid transparent',
-                                            fontSize: '11px',
-                                            fontWeight: 600,
-                                            letterSpacing: '0.1em',
-                                            transition: 'all 0.2s ease',
-                                        }}
-                                    >
-                                        <item.icon size={16} />
-                                        <span>{item.label}</span>
-                                    </Link>
+                                <li key={group.id} className="mb-4">
+                                    {!rail && (
+                                        <p className="px-6 mb-1 text-xs font-medium text-text-3">{group.title}</p>
+                                    )}
+                                    <ul className="list-none p-0 m-0">
+                                        {items.map((item) => {
+                                            const active = findActiveAdminItem(pathname, adminNavGroups, isSuperAdmin)?.href === item.href;
+                                            const Icon = item.icon;
+                                            return (
+                                                <li key={item.href}>
+                                                    <Link
+                                                        href={item.href}
+                                                        className={`flex items-center gap-3 py-3 border-l-2 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                                                            active
+                                                                ? "bg-accent/10 text-accent border-accent"
+                                                                : "text-text-2 border-transparent hover:bg-surface-2 hover:text-text-1"
+                                                        } ${rail ? "justify-center px-0" : "px-6"}`}
+                                                        aria-current={active ? "page" : undefined}
+                                                        title={rail ? item.label : undefined}
+                                                    >
+                                                        <Icon
+                                                            size={rail ? 18 : 18}
+                                                            className={active ? "text-accent" : "text-text-3 group-hover:text-text-1"}
+                                                            aria-hidden="true"
+                                                        />
+                                                        {!rail && <span>{item.label}</span>}
+                                                    </Link>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
                                 </li>
                             );
                         })}
@@ -272,73 +214,35 @@ export default function AdminSidebar({ userName, userEmail, isSuperAdmin }: Admi
                 </nav>
 
                 {/* User Profile & Logout */}
-                <div style={{
-                    padding: '16px',
-                    borderTop: '1px solid var(--bg-tertiary)',
-                    backgroundColor: 'var(--bg-primary)',
-                }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginBottom: '16px',
-                    }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            backgroundColor: 'var(--bg-tertiary)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <span style={{ color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '14px' }}>
+                <div className="border-t border-border bg-surface-0 p-4">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center bg-surface-3 ${rail ? "mx-auto" : ""}`}
+                            aria-hidden="true"
+                        >
+                            <span className="text-sm font-bold text-text-1">
                                 {userName?.charAt(0)?.toUpperCase() || "A"}
                             </span>
                         </div>
-                        <div style={{ flex: 1, overflow: 'hidden' }}>
-                            <p style={{
-                                fontSize: '13px',
-                                color: 'var(--text-primary)',
-                                fontWeight: 500,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                            }}>
-                                {userName}
-                            </p>
-                            <p style={{
-                                fontSize: '11px',
-                                color: 'var(--text-tertiary)',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                            }}>
-                                {userEmail}
-                            </p>
-                        </div>
+                        {!rail && (
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-[13px] font-medium text-text-1">{userName}</p>
+                                <p className="truncate text-[11px] text-text-3">{userEmail}</p>
+                            </div>
+                        )}
                     </div>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`mt-3 w-full justify-start text-danger hover:bg-danger/10 ${rail ? "justify-center" : ""}`}
                         onClick={handleLogout}
                         disabled={isLoggingOut}
-                        style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '8px 16px',
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-muted)',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            letterSpacing: '0.1em',
-                            cursor: isLoggingOut ? 'not-allowed' : 'pointer',
-                            opacity: isLoggingOut ? 0.5 : 1,
-                        }}
+                        iconLeft={!rail ? <SignOut size={14} aria-hidden="true" /> : undefined}
+                        aria-label="Keluar"
                     >
-                        <FiLogOut size={14} />
-                        <span>{isLoggingOut ? "KELUAR..." : "KELUAR"}</span>
-                    </button>
+                        {!rail && <span>{isLoggingOut ? "Keluar..." : "Keluar"}</span>}
+                        {rail && <SignOut size={16} aria-hidden="true" />}
+                    </Button>
                 </div>
             </aside>
         </>
