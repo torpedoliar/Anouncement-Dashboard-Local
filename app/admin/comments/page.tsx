@@ -315,7 +315,7 @@ export default function CommentsPage() {
                                     </Link>
 
                                     {/* Content excerpt */}
-                                    <p className="text-sm leading-relaxed mb-3" style={{ color: "#d4d4d4" }}>
+                                    <p className="text-sm leading-relaxed mb-3" style={{ color: "var(--text-2)" }}>
                                         {comment.content.length > 200
                                             ? comment.content.slice(0, 200) + "…"
                                             : comment.content}

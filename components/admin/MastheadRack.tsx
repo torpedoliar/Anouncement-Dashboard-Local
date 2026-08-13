@@ -9,7 +9,7 @@ interface Site {
     name: string;
     slug: string;
     primaryColor?: string;
-    _count?: { announcementSites?: number };
+    _count?: { announcementSites?: number; liveCount?: number; scheduledCount?: number };
 }
 
 /**
@@ -107,6 +107,7 @@ export default function MastheadRack() {
         <div ref={dropdownRef} className="relative">
             <button
                 type="button"
+                id="masthead-rack-toggle"
                 onClick={() => setIsOpen((v) => !v)}
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
@@ -126,8 +127,8 @@ export default function MastheadRack() {
                         </span>
                         <span className="block truncate font-mono text-[11px] text-text-3">
                             {currentSite.slug}
-                            {currentSite._count?.announcementSites !== undefined &&
-                                ` · ${currentSite._count.announcementSites} siaran`}
+                            {currentSite._count?.liveCount !== undefined &&
+                                ` · ${currentSite._count.liveCount} live · ${currentSite._count.scheduledCount ?? 0} terjadwal`}
                         </span>
                     </span>
                 </span>
