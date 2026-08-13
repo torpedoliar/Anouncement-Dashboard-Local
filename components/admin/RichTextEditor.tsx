@@ -7,25 +7,13 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
-    FiBold,
-    FiItalic,
-    FiUnderline,
-    FiList,
-    FiImage,
-    FiLink,
-    FiAlignLeft,
-    FiAlignCenter,
-    FiAlignRight,
-    FiMaximize,
-    FiMinimize,
-    FiTrash2,
-    FiYoutube,
-    FiX,
-    FiVideo,
-    FiFolder,
-} from "react-icons/fi";
+    TextB, TextAUnderline, ListBullets, LinkSimple,
+    ImageSquare, YoutubeLogo, VideoCamera, FolderOpen,
+    AlignLeft, TextAlignCenter, AlignRight,
+    Check, Minus, Plus,
+} from "@phosphor-icons/react";
 import { LuHeading1, LuHeading2, LuHeading3, LuListOrdered } from "react-icons/lu";
 import MediaPickerModal from "./MediaPickerModal";
 import { useToast } from "@/contexts/ToastContext";
@@ -175,22 +163,16 @@ export default function RichTextEditor({
             const isVideo = editor.isActive('video') || editor.isActive('youtube');
             setIsImageSelected(isImage);
             setIsVideoSelected(isVideo);
-            // Also update size from current image
             if (isImage) {
                 const attrs = editor.getAttributes('image');
                 if (attrs.width) setSelectedImageSize(attrs.width);
             }
         },
         onTransaction: ({ editor }) => {
-            // Double-check image/video selection on any transaction
             const isImage = editor.isActive('image');
             const isVideo = editor.isActive('video') || editor.isActive('youtube');
-            if (isImage !== isImageSelected) {
-                setIsImageSelected(isImage);
-            }
-            if (isVideo !== isVideoSelected) {
-                setIsVideoSelected(isVideo);
-            }
+            if (isImage !== isImageSelected) setIsImageSelected(isImage);
+            if (isVideo !== isVideoSelected) setIsVideoSelected(isVideo);
         },
         editorProps: {
             attributes: {
@@ -207,22 +189,18 @@ export default function RichTextEditor({
 
     const handleImageUpload = useCallback(async (file: File) => {
         if (!editor) return;
-
         setIsUploading(true);
         try {
             const formData = new FormData();
             formData.append("file", file);
-
             const response = await fetch("/api/upload", {
                 method: "POST",
                 body: formData,
             });
-
             if (!response.ok) {
                 const data = await response.json();
                 throw new Error(data.error || "Upload failed");
             }
-
             const data = await response.json();
             editor.chain().focus().setImage({
                 src: data.url,
@@ -243,34 +221,26 @@ export default function RichTextEditor({
 
     const handleVideoUpload = useCallback(async (file: File) => {
         if (!editor) return;
-
-        // Validate file type
         if (!file.type.startsWith('video/')) {
             showToast('Format file tidak valid. Hanya video yang diperbolehkan.', 'error');
             return;
         }
-
-        // Validate file size (max 100MB)
         if (file.size > 100 * 1024 * 1024) {
             showToast('Ukuran video terlalu besar. Maksimal 100MB.', 'error');
             return;
         }
-
         setIsVideoUploading(true);
         try {
             const formData = new FormData();
             formData.append("file", file);
-
             const response = await fetch("/api/media", {
                 method: "POST",
                 body: formData,
             });
-
             if (!response.ok) {
                 const data = await response.json();
                 throw new Error(data.error || "Upload failed");
             }
-
             const data = await response.json();
             editor.chain().focus().insertContent({
                 type: 'video',
@@ -289,7 +259,6 @@ export default function RichTextEditor({
         videoInputRef.current?.click();
     };
 
-    // Extract YouTube video ID from various URL formats
     const extractYoutubeId = (url: string): string | null => {
         const patterns = [
             /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
@@ -304,30 +273,23 @@ export default function RichTextEditor({
 
     const insertYoutube = () => {
         if (!editor || !youtubeUrl) return;
-
         const videoId = extractYoutubeId(youtubeUrl);
         if (!videoId) {
             showToast('URL YouTube tidak valid. Gunakan format:\n• youtube.com/watch?v=XXX\n• youtu.be/XXX', 'error');
             return;
         }
-
         editor.chain().focus().insertContent({
             type: 'youtube',
             attrs: { videoId },
         }).run();
-
         setYoutubeUrl('');
         setShowYoutubeDialog(false);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            handleImageUpload(file);
-        }
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
+        if (file) handleImageUpload(file);
+        if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
     const addLink = useCallback(() => {
@@ -338,7 +300,6 @@ export default function RichTextEditor({
         }
     }, [editor]);
 
-    // Image manipulation functions
     const setImageAlign = useCallback((align: 'left' | 'center' | 'right') => {
         if (!editor) return;
         editor.chain().focus().updateAttributes('image', { align }).run();
@@ -364,478 +325,295 @@ export default function RichTextEditor({
 
     if (!editor) {
         return (
-            <div style={{
-                backgroundColor: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                minHeight: '350px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-tertiary)',
-            }}>
-                Loading editor...
+            <div
+                className="flex h-[300px] items-center justify-center text-sm"
+                style={{
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
+                }}
+            >
+                <span style={{ color: "var(--text-3)" }}>Loading editor...</span>
             </div>
         );
     }
 
-    const buttonStyle = (isActive: boolean = false) => ({
-        padding: '8px',
-        backgroundColor: isActive ? '#dc2626' : 'transparent',
-        color: isActive ? '#fff' : '#a3a3a3',
-        border: 'none',
+    // Toolbar button style
+    const toolbarBtn = (isActive: boolean = false) => ({
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '6px 8px',
+        border: 'none', borderRadius: '4px',
         cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.2s',
+        transition: 'all 0.15s ease',
+        background: isActive ? 'var(--brand-red)' : 'transparent',
+        color: isActive ? '#fff' : 'var(--text-2)',
     });
 
-    const dividerStyle = {
-        width: '1px',
-        height: '24px',
-        backgroundColor: '#333',
-        margin: '0 4px',
-    };
-
-    const imageButtonStyle = (isActive: boolean = false) => ({
-        padding: '6px 10px',
-        backgroundColor: isActive ? '#dc2626' : '#1a1a1a',
+    // Media action button style
+    const mediaBtn = (isActive: boolean = false) => ({
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+        padding: '4px 8px',
+        border: 'none', borderRadius: '4px',
+        cursor: 'pointer', fontSize: '12px',
+        background: isActive ? 'var(--brand-red)' : 'var(--surface-3)',
         color: '#fff',
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        borderRadius: '4px',
     });
 
     return (
-        <div style={{
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            display: 'flex',
-            flexDirection: 'column',
-            maxHeight: '80vh',
-        }}>
-            {/* Toolbar - Always visible at top */}
-            <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                gap: '2px',
-                padding: '8px 12px',
-                borderBottom: '1px solid var(--border-color)',
-                backgroundColor: '#0f0f0f',
-                flexShrink: 0,
-            }}>
+        <div
+            className="flex flex-col"
+            style={{
+                background: "var(--surface-1)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius-card)",
+                maxHeight: '80vh',
+            }}
+        >
+            {/* ── Toolbar (sticky) ── */}
+            <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 px-3 py-2 border-b"
+                style={{
+                    borderBottomColor: "var(--border)",
+                    background: "var(--surface-2)",
+                }}
+            >
                 {/* Headings */}
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                    style={buttonStyle(editor.isActive("heading", { level: 1 }))}
-                    title="Heading 1"
+                <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                    style={toolbarBtn(editor.isActive("heading", { level: 1 }))} title="Heading 1"
                 >
-                    <LuHeading1 size={18} />
+                    <LuHeading1 size={16} />
                 </button>
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                    style={buttonStyle(editor.isActive("heading", { level: 2 }))}
-                    title="Heading 2"
+                <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                    style={toolbarBtn(editor.isActive("heading", { level: 2 }))} title="Heading 2"
                 >
-                    <LuHeading2 size={18} />
+                    <LuHeading2 size={16} />
                 </button>
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                    style={buttonStyle(editor.isActive("heading", { level: 3 }))}
-                    title="Heading 3"
+                <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                    style={toolbarBtn(editor.isActive("heading", { level: 3 }))} title="Heading 3"
                 >
-                    <LuHeading3 size={18} />
+                    <LuHeading3 size={16} />
                 </button>
 
-                <div style={dividerStyle} />
+                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
 
-                {/* Text Formatting */}
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().toggleBold().run()}
-                    style={buttonStyle(editor.isActive("bold"))}
-                    title="Bold (Ctrl+B)"
+                {/* Formatting */}
+                <button type="button" onClick={() => editor.chain().focus().toggleBold().run()}
+                    style={toolbarBtn(editor.isActive("bold"))} title="Bold (Ctrl+B)"
                 >
-                    <FiBold size={16} />
+                    <TextB size={16} weight="bold" />
                 </button>
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().toggleItalic().run()}
-                    style={buttonStyle(editor.isActive("italic"))}
-                    title="Italic (Ctrl+I)"
+                <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()}
+                    style={toolbarBtn(editor.isActive("italic"))} title="Italic (Ctrl+I)"
                 >
-                    <FiItalic size={16} />
+                    <TextB size={16} style={{ fontStyle: 'italic' }} />
                 </button>
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().toggleUnderline().run()}
-                    style={buttonStyle(editor.isActive("underline"))}
-                    title="Underline (Ctrl+U)"
+                <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()}
+                    style={toolbarBtn(editor.isActive("underline"))} title="Underline (Ctrl+U)"
                 >
-                    <FiUnderline size={16} />
+                    <TextAUnderline size={16} />
                 </button>
 
-                <div style={dividerStyle} />
+                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
 
                 {/* Lists */}
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().toggleBulletList().run()}
-                    style={buttonStyle(editor.isActive("bulletList"))}
-                    title="Bullet List"
+                <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()}
+                    style={toolbarBtn(editor.isActive("bulletList"))} title="Bullet List"
                 >
-                    <FiList size={16} />
+                    <ListBullets size={16} />
                 </button>
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                    style={buttonStyle(editor.isActive("orderedList"))}
-                    title="Numbered List"
+                <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                    style={toolbarBtn(editor.isActive("orderedList"))} title="Numbered List"
                 >
                     <LuListOrdered size={16} />
                 </button>
 
-                <div style={dividerStyle} />
+                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
 
                 {/* Alignment */}
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().setTextAlign("left").run()}
-                    style={buttonStyle(editor.isActive({ textAlign: "left" }))}
-                    title="Align Left"
+                <button type="button" onClick={() => editor.chain().focus().setTextAlign("left").run()}
+                    style={toolbarBtn(editor.isActive({ textAlign: "left" }))} title="Rata Kiri"
                 >
-                    <FiAlignLeft size={16} />
+                    <AlignLeft size={16} />
                 </button>
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().setTextAlign("center").run()}
-                    style={buttonStyle(editor.isActive({ textAlign: "center" }))}
-                    title="Align Center"
+                <button type="button" onClick={() => editor.chain().focus().setTextAlign("center").run()}
+                    style={toolbarBtn(editor.isActive({ textAlign: "center" }))} title="Rata Tengah"
                 >
-                    <FiAlignCenter size={16} />
+                    <TextAlignCenter size={16} />
                 </button>
-                <button
-                    type="button"
-                    onClick={() => editor.chain().focus().setTextAlign("right").run()}
-                    style={buttonStyle(editor.isActive({ textAlign: "right" }))}
-                    title="Align Right"
+                <button type="button" onClick={() => editor.chain().focus().setTextAlign("right").run()}
+                    style={toolbarBtn(editor.isActive({ textAlign: "right" }))} title="Rata Kanan"
                 >
-                    <FiAlignRight size={16} />
+                    <AlignRight size={16} />
                 </button>
 
-                <div style={dividerStyle} />
+                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
 
-                {/* Link & Image */}
-                <button
-                    type="button"
-                    onClick={addLink}
-                    style={buttonStyle(editor.isActive("link"))}
-                    title="Insert Link"
+                {/* Link */}
+                <button type="button" onClick={addLink}
+                    style={toolbarBtn(editor.isActive("link"))} title="Insert Link"
                 >
-                    <FiLink size={16} />
+                    <LinkSimple size={16} />
                 </button>
-                <button
-                    type="button"
-                    onClick={handleImageClick}
+
+                {/* Image */}
+                <button type="button" onClick={handleImageClick}
                     disabled={isUploading}
-                    style={{
-                        ...buttonStyle(),
-                        opacity: isUploading ? 0.5 : 1,
-                    }}
+                    style={{ ...toolbarBtn(), opacity: isUploading ? 0.5 : 1 }}
                     title="Insert Image"
                 >
-                    <FiImage size={16} />
+                    <ImageSquare size={16} />
                 </button>
 
-                {isUploading && (
-                    <span style={{ color: 'var(--text-muted)', fontSize: '12px', marginLeft: '8px' }}>
-                        Uploading...
-                    </span>
-                )}
+                {isUploading && <span className="text-xs" style={{ color: 'var(--text-3)', marginLeft: '6px' }}>Uploading...</span>}
 
-                <div style={dividerStyle} />
+                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
 
-                {/* YouTube embed */}
-                <button
-                    type="button"
-                    onClick={() => setShowYoutubeDialog(true)}
-                    style={buttonStyle()}
-                    title="Embed YouTube Video"
+                {/* YouTube */}
+                <button type="button" onClick={() => setShowYoutubeDialog(true)}
+                    style={toolbarBtn()} title="Embed YouTube"
                 >
-                    <FiYoutube size={16} />
+                    <YoutubeLogo size={16} />
                 </button>
 
                 {/* Video upload */}
-                <button
-                    type="button"
-                    onClick={handleVideoClick}
+                <button type="button" onClick={handleVideoClick}
                     disabled={isVideoUploading}
-                    style={{
-                        ...buttonStyle(),
-                        opacity: isVideoUploading ? 0.5 : 1,
-                    }}
+                    style={{ ...toolbarBtn(), opacity: isVideoUploading ? 0.5 : 1 }}
                     title="Upload Video (MP4, max 100MB)"
                 >
-                    <FiVideo size={16} />
+                    <VideoCamera size={16} />
                 </button>
 
-                {isVideoUploading && (
-                    <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-                        Uploading video...
-                    </span>
-                )}
+                {isVideoUploading && <span className="text-xs" style={{ color: 'var(--text-3)' }}>Uploading video...</span>}
 
-                {/* Hint for image resize */}
-                <span style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginLeft: 'auto' }}>
-                    💡 Klik gambar untuk resize
+                {/* Spacer */}
+                <span className="ml-auto text-xs" style={{ color: 'var(--text-3)' }}>
+                    ? Klik gambar untuk resize
                 </span>
 
-                {/* Media Library Button */}
-                <button
-                    type="button"
-                    onClick={() => setShowMediaPicker(true)}
+                {/* Media Library */}
+                <button type="button" onClick={() => setShowMediaPicker(true)}
                     style={{
-                        ...buttonStyle(),
-                        marginLeft: '8px',
-                        padding: '6px 12px',
-                        backgroundColor: 'var(--bg-tertiary)',
-                        border: '1px solid var(--border-strong)',
-                        borderRadius: '4px',
-                        gap: '6px',
-                        display: 'flex',
+                        ...toolbarBtn(),
+                        marginLeft: '6px',
+                        background: 'var(--surface-3)',
+                        border: '1px solid var(--border)',
+                        padding: '4px 10px',
                     }}
                     title="Media Library"
                 >
-                    <FiFolder size={14} /> Library
+                    <FolderOpen size={14} /> Library
                 </button>
             </div>
 
-            {/* Image Toolbar - appears when image is selected */}
+            {/* ── Image toolbar ── */}
             {isImageSelected && (
-                <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 12px',
-                    borderBottom: '1px solid var(--border-color)',
-                    backgroundColor: 'var(--bg-hover)',
-                    flexShrink: 0,
-                }}>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>
+                <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b"
+                    style={{ borderBottomColor: "var(--border)", background: "var(--surface-3)" }}
+                >
+                    <span className="text-xs font-semibold" style={{ color: "var(--text-2)" }}>
                         Gambar:
                     </span>
 
-                    {/* Size Controls */}
-                    <button
-                        type="button"
-                        onClick={() => setImageSize('25%')}
-                        style={imageButtonStyle(selectedImageSize === '25%')}
-                        title="Ukuran 25%"
-                    >
-                        <FiMinimize size={12} /> 25%
+                    <button type="button" onClick={() => setImageSize('25%')}
+                        style={mediaBtn(selectedImageSize === '25%')} title="Ukuran 25%">
+                        <Minus size={10} /> 25%
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setImageSize('50%')}
-                        style={imageButtonStyle(selectedImageSize === '50%')}
-                        title="Ukuran 50%"
-                    >
-                        50%
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setImageSize('75%')}
-                        style={imageButtonStyle(selectedImageSize === '75%')}
-                        title="Ukuran 75%"
-                    >
-                        75%
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setImageSize('100%')}
-                        style={imageButtonStyle(selectedImageSize === '100%')}
-                        title="Ukuran Penuh"
-                    >
-                        <FiMaximize size={12} /> 100%
+                    <button type="button" onClick={() => setImageSize('50%')}
+                        style={mediaBtn(selectedImageSize === '50%')} title="Ukuran 50%">50%</button>
+                    <button type="button" onClick={() => setImageSize('75%')}
+                        style={mediaBtn(selectedImageSize === '75%')} title="Ukuran 75%">75%</button>
+                    <button type="button" onClick={() => setImageSize('100%')}
+                        style={mediaBtn(selectedImageSize === '100%')} title="Ukuran Penuh">
+                        <Plus size={10} /> 100%
                     </button>
 
-                    {/* Custom Size Input */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <input
-                            type="number"
-                            min="10"
-                            max="100"
-                            value={parseInt(selectedImageSize) || 100}
-                            onChange={(e) => {
-                                const val = Math.min(100, Math.max(10, parseInt(e.target.value) || 100));
-                                setImageSize(`${val}%`);
-                            }}
-                            style={{
-                                width: '50px',
-                                padding: '5px 8px',
-                                backgroundColor: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-strong)',
-                                borderRadius: '4px',
-                                color: 'var(--text-primary)',
-                                fontSize: '12px',
-                                textAlign: 'center',
-                            }}
-                        />
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>%</span>
-                    </div>
+                    <input
+                        type="number" min="10" max="100"
+                        value={parseInt(selectedImageSize) || 100}
+                        onChange={(e) => {
+                            const val = Math.min(100, Math.max(10, parseInt(e.target.value) || 100));
+                            setImageSize(`${val}%`);
+                        }}
+                        className="w-12 rounded border px-1.5 py-0.5 text-center text-xs text-center"
+                        style={{
+                            background: "var(--surface-2)",
+                            borderColor: "var(--border)",
+                            color: "var(--text-1)",
+                        }}
+                    />
+                    <span className="text-xs" style={{ color: "var(--text-3)" }}>%</span>
 
-                    <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-strong)' }} />
+                    <div style={{ width: '1px', height: '18px', background: 'var(--border)', margin: '0 4px' }} />
 
-                    {/* Alignment Controls */}
-                    <button
-                        type="button"
-                        onClick={() => setImageAlign('left')}
-                        style={imageButtonStyle()}
-                        title="Rata Kiri"
-                    >
-                        <FiAlignLeft size={14} /> Kiri
+                    <button type="button" onClick={() => setImageAlign('left')}
+                        style={mediaBtn()} title="Rata Kiri">
+                        <AlignLeft size={12} /> Kiri
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setImageAlign('center')}
-                        style={imageButtonStyle()}
-                        title="Rata Tengah"
-                    >
-                        <FiAlignCenter size={14} /> Tengah
+                    <button type="button" onClick={() => setImageAlign('center')}
+                        style={mediaBtn()} title="Rata Tengah">
+                        <TextAlignCenter size={12} /> Tengah
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => setImageAlign('right')}
-                        style={imageButtonStyle()}
-                        title="Rata Kanan"
-                    >
-                        <FiAlignRight size={14} /> Kanan
+                    <button type="button" onClick={() => setImageAlign('right')}
+                        style={mediaBtn()} title="Rata Kanan">
+                        <AlignRight size={12} /> Kanan
                     </button>
 
-                    <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-strong)' }} />
+                    <div style={{ width: '1px', height: '18px', background: 'var(--border)', margin: '0 4px' }} />
 
-                    {/* Delete */}
-                    <button
-                        type="button"
-                        onClick={deleteImage}
-                        style={{ ...imageButtonStyle(), backgroundColor: '#7f1d1d' }}
-                        title="Hapus Gambar"
-                    >
-                        <FiTrash2 size={14} /> Hapus
+                    <button type="button" onClick={deleteImage}
+                        style={{ ...mediaBtn(), background: '#7f1d1d' }} title="Hapus Gambar">
+                        <Check size={12} weight="bold" /> Hapus
                     </button>
                 </div>
             )}
 
-            {/* Video Toolbar - appears when video is selected */}
+            {/* ── Video toolbar ── */}
             {isVideoSelected && (
-                <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 12px',
-                    borderBottom: '1px solid var(--border-color)',
-                    backgroundColor: 'var(--bg-hover)',
-                    flexShrink: 0,
-                }}>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>
+                <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b"
+                    style={{ borderBottomColor: "var(--border)", background: "var(--surface-3)" }}
+                >
+                    <span className="text-xs font-semibold" style={{ color: "var(--text-2)" }}>
                         Video:
                     </span>
-
-                    {/* Delete */}
-                    <button
-                        type="button"
-                        onClick={deleteVideo}
-                        style={{ ...imageButtonStyle(), backgroundColor: '#7f1d1d' }}
-                        title="Hapus Video"
-                    >
-                        <FiTrash2 size={14} /> Hapus Video
+                    <button type="button" onClick={deleteVideo}
+                        style={{ ...mediaBtn(), background: '#7f1d1d' }} title="Hapus Video">
+                        <Check size={12} weight="bold" /> Hapus Video
                     </button>
                 </div>
             )}
 
-            {/* Editor Content - Scrollable Area */}
-            <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                minHeight: '300px',
-            }}>
+            {/* ── Editor content ── */}
+            <div className="flex-1 overflow-y-auto" style={{ minHeight: '300px' }}>
                 <EditorContent editor={editor} />
             </div>
 
             {/* Hidden file inputs */}
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
             <input
                 ref={videoInputRef}
                 type="file"
                 accept="video/mp4,video/webm,video/ogg"
                 onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                        handleVideoUpload(file);
-                        e.target.value = '';
-                    }
+                    if (file) { handleVideoUpload(file); e.target.value = ''; }
                 }}
-                style={{ display: 'none' }}
+                className="hidden"
             />
 
-            {/* Editor Styles */}
+            {/* ── Editor styles ── */}
             <style jsx global>{`
                 .tiptap {
                     min-height: 300px;
                     padding: 16px;
                 }
-                .tiptap p {
-                    margin: 0 0 12px 0;
-                }
-                .tiptap h1 {
-                    font-size: 28px;
-                    font-weight: 700;
-                    margin: 24px 0 12px 0;
-                    color: #fff;
-                }
-                .tiptap h2 {
-                    font-size: 22px;
-                    font-weight: 600;
-                    margin: 20px 0 10px 0;
-                    color: #fff;
-                }
-                .tiptap h3 {
-                    font-size: 18px;
-                    font-weight: 600;
-                    margin: 16px 0 8px 0;
-                    color: #fff;
-                }
-                .tiptap ul, .tiptap ol {
-                    padding-left: 24px;
-                    margin: 12px 0;
-                }
-                .tiptap li {
-                    margin: 4px 0;
-                }
+                .tiptap p { margin: 0 0 12px 0; }
+                .tiptap h1 { font-size: 28px; font-weight: 700; margin: 24px 0 12px 0; color: #fff; }
+                .tiptap h2 { font-size: 22px; font-weight: 600; margin: 20px 0 10px 0; color: #fff; }
+                .tiptap h3 { font-size: 18px; font-weight: 600; margin: 16px 0 8px 0; color: #fff; }
+                .tiptap ul, .tiptap ol { padding-left: 24px; margin: 12px 0; }
+                .tiptap li { margin: 4px 0; }
                 .tiptap img {
-                    max-width: 100%;
-                    height: auto;
-                    border-radius: 8px;
-                    margin: 16px 0;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    position: relative;
+                    max-width: 100%; height: auto; border-radius: 8px;
+                    margin: 16px 0; cursor: pointer; transition: all 0.2s;
                 }
                 .tiptap img:hover {
                     outline: 2px dashed var(--text-muted);
@@ -845,70 +623,39 @@ export default function RichTextEditor({
                     outline: 3px solid #dc2626;
                     outline-offset: 4px;
                 }
-                .tiptap img[data-align="left"] {
-                    margin-left: 0;
-                    margin-right: auto;
-                }
-                .tiptap img[data-align="center"] {
-                    margin-left: auto;
-                    margin-right: auto;
-                    display: block;
-                }
-                .tiptap img[data-align="right"] {
-                    margin-left: auto;
-                    margin-right: 0;
-                    display: block;
-                }
-                .tiptap a {
-                    color: #dc2626;
-                    text-decoration: underline;
-                }
+                .tiptap img[data-align="left"] { margin-left: 0; margin-right: auto; }
+                .tiptap img[data-align="center"] { margin-left: auto; margin-right: auto; display: block; }
+                .tiptap img[data-align="right"] { margin-left: auto; margin-right: 0; display: block; }
+                .tiptap a { color: #dc2626; text-decoration: underline; }
                 .tiptap p.is-editor-empty:first-child::before {
                     content: attr(data-placeholder);
-                    float: left;
-                    color: var(--text-muted);
-                    pointer-events: none;
-                    height: 0;
-                }
-                .tiptap:focus {
-                    /* rely on globals.css focus-visible */
+                    float: left; color: var(--text-muted);
+                    pointer-events: none; height: 0;
                 }
             `}</style>
 
-            {/* YouTube URL Dialog */}
+            {/* ── YouTube dialog ── */}
             {showYoutubeDialog && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 100,
-                }}>
-                    <div style={{
-                        backgroundColor: 'var(--bg-hover)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        padding: '24px',
-                        width: '100%',
-                        maxWidth: '400px',
-                    }}>
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '16px',
-                        }}>
-                            <h3 style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FiYoutube color="#dc2626" /> Embed YouTube Video
+                <div className="fixed inset-0 z-50 flex items-center justify-center"
+                    style={{ background: 'rgba(0,0,0,0.7)' }}
+                >
+                    <div className="w-full max-w-sm rounded-card p-6"
+                        style={{
+                            background: 'var(--surface-3)',
+                            border: '1px solid var(--border)',
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-1)' }}>
+                                <YoutubeLogo size={18} className="text-[#dc2626]" /> Embed YouTube Video
                             </h3>
-                            <button
-                                type="button"
+                            <button type="button"
                                 onClick={() => { setShowYoutubeDialog(false); setYoutubeUrl(''); }}
-                                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                                className="cursor-pointer p-1" style={{ color: 'var(--text-3)' }}
+                                aria-label="Tutup"
                             >
-                                <FiX size={20} />
+                                <Minus size={18} weight="bold" />
                             </button>
                         </div>
                         <input
@@ -917,47 +664,35 @@ export default function RichTextEditor({
                             value={youtubeUrl}
                             onChange={(e) => setYoutubeUrl(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && insertYoutube()}
+                            className="w-full rounded-control border px-3 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
                             style={{
-                                width: '100%',
-                                padding: '12px',
-                                backgroundColor: 'var(--bg-secondary)',
-                                border: '1px solid var(--border-strong)',
-                                borderRadius: '6px',
-                                color: 'var(--text-primary)',
-                                fontSize: '14px',
-                                marginBottom: '12px',
+                                background: 'var(--surface-2)',
+                                borderColor: 'var(--border)',
+                                color: 'var(--text-1)',
+                                marginBottom: '8px',
                             }}
                             autoFocus
                         />
-                        <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '16px' }}>
+                        <p className="text-xs mb-4" style={{ color: 'var(--text-3)' }}>
                             Format: youtube.com/watch?v=XXX atau youtu.be/XXX
                         </p>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                            <button
-                                type="button"
+                        <div className="flex gap-2 justify-end">
+                            <button type="button"
                                 onClick={() => { setShowYoutubeDialog(false); setYoutubeUrl(''); }}
+                                className="rounded-control border px-4 py-2 text-sm cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-2)]"
                                 style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: 'transparent',
-                                    border: '1px solid var(--border-strong)',
-                                    color: 'var(--text-secondary)',
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
+                                    background: 'transparent',
+                                    borderColor: 'var(--border)',
+                                    color: 'var(--text-2)',
                                 }}
                             >
                                 Batal
                             </button>
-                            <button
-                                type="button"
-                                onClick={insertYoutube}
-                                disabled={!youtubeUrl}
+                            <button type="button" onClick={insertYoutube} disabled={!youtubeUrl}
+                                className="rounded-control px-4 py-2 text-sm font-semibold cursor-pointer transition-opacity duration-150"
                                 style={{
-                                    padding: '8px 16px',
-                                    backgroundColor: 'var(--brand-red)',
-                                    border: 'none',
-                                    color: 'var(--text-primary)',
-                                    borderRadius: '6px',
-                                    cursor: youtubeUrl ? 'pointer' : 'not-allowed',
+                                    background: 'var(--brand-red)',
+                                    color: 'var(--text-1)',
                                     opacity: youtubeUrl ? 1 : 0.5,
                                 }}
                             >
