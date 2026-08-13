@@ -7,6 +7,7 @@ import AdminMainContent from "@/components/admin/AdminMainContent";
 
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import AdminSiteThemeProvider from "@/components/admin/AdminSiteThemeProvider";
+import CommandPalette from "@/components/admin/CommandPalette";
 
 export default async function AdminLayout({
     children,
@@ -41,6 +42,7 @@ export default async function AdminLayout({
                 </AdminMainContent>
             </div>
             </AdminSiteThemeProvider>
+            <CommandPalette />
         </NextAuthProvider>
     );
 }
