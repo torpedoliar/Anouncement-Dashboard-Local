@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiShield, FiUser, FiZap } from "react-icons/fi";
+import { useState, useEffect, useMemo } from "react";
+import type { FormEvent, ReactNode } from "react";
+import { Plus, PencilSimple, Trash, X, ShieldCheck, User as UserIcon, Lightning } from "@phosphor-icons/react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/contexts/ToastContext";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
 
 interface Site {
     id: string;
@@ -18,6 +24,18 @@ interface User {
     isSuperAdmin: boolean;
     createdAt: string;
     siteIds?: string[];
+}
+
+type RoleTone = "neutral" | "success" | "warning" | "danger" | "info";
+
+function roleBadge(user: User): { label: string; tone: RoleTone; icon: ReactNode } {
+    if (user.isSuperAdmin) {
+        return { label: "SUPER ADMIN", tone: "danger", icon: <Lightning size={12} /> };
+    }
+    if (user.role === "ADMIN") {
+        return { label: "ADMIN", tone: "danger", icon: <ShieldCheck size={12} /> };
+    }
+    return { label: "EDITOR", tone: "info", icon: <UserIcon size={12} /> };
 }
 
 export default function UsersPage() {
@@ -37,6 +55,7 @@ export default function UsersPage() {
     });
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "createdAt", dir: "desc" });
 
     useEffect(() => {
         fetchUsers();
@@ -69,7 +88,34 @@ export default function UsersPage() {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSort = (key: string) => {
+        setSort((prev) =>
+            prev.key === key
+                ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+                : { key, dir: "asc" }
+        );
+    };
+
+    const sortedUsers = useMemo(() => {
+        const dir = sort.dir === "asc" ? 1 : -1;
+        return [...users].sort((a, b) => {
+            switch (sort.key) {
+                case "name":
+                    return a.name.localeCompare(b.name, "id") * dir;
+                case "role": {
+                    const roleA = a.isSuperAdmin ? "SUPER_ADMIN" : a.role;
+                    const roleB = b.isSuperAdmin ? "SUPER_ADMIN" : b.role;
+                    return roleA.localeCompare(roleB) * dir;
+                }
+                case "createdAt":
+                    return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir;
+                default:
+                    return 0;
+            }
+        });
+    }, [users, sort]);
+
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError("");
         setIsSaving(true);
@@ -78,7 +124,7 @@ export default function UsersPage() {
             const url = editingUser ? `/api/users/${editingUser.id}` : "/api/users";
             const method = editingUser ? "PUT" : "POST";
 
-            const body: Record<string, any> = {
+            const body: Record<string, unknown> = {
                 name: formData.name,
                 email: formData.email,
                 role: formData.role === "SUPER_ADMIN" ? "ADMIN" : formData.role,
@@ -124,7 +170,7 @@ export default function UsersPage() {
                 showToast(data.error || "Failed to delete user", "error");
                 return;
             }
-            
+
             showToast("User berhasil dihapus", "success");
             fetchUsers();
         } catch {
@@ -169,337 +215,244 @@ export default function UsersPage() {
         });
     };
 
-    const getRoleBadge = (user: User) => {
-        if (user.isSuperAdmin) {
-            return {
-                bg: "rgba(237, 28, 36, 0.2)",
-                color: "#ED1C24",
-                label: "SUPER ADMIN",
-                icon: <FiZap size={18} color="#ED1C24" />,
-                iconBg: "rgba(237, 28, 36, 0.15)",
-                iconBorder: "1px solid rgba(237, 28, 36, 0.3)"
-            };
-        }
-        if (user.role === "ADMIN") {
-            return {
-                bg: "rgba(220, 38, 38, 0.2)",
-                color: "#f87171",
-                label: "ADMIN",
-                icon: <FiShield size={18} color="#dc2626" />,
-                iconBg: "rgba(220, 38, 38, 0.15)",
-                iconBorder: "1px solid rgba(220, 38, 38, 0.3)"
-            };
-        }
-        return {
-            bg: "rgba(59, 130, 246, 0.2)",
-            color: "#60a5fa",
-            label: "EDITOR",
-            icon: <FiUser size={18} color="#737373" />,
-            iconBg: "#1a1a1a",
-            iconBorder: "1px solid #333"
-        };
-    };
+    const columns: TableColumn[] = [
+        { key: "name", header: "Nama", sortKey: "name" },
+        { key: "email", header: "Email" },
+        { key: "role", header: "Role", sortKey: "role" },
+        { key: "sites", header: "Situs (Akses)" },
+        { key: "createdAt", header: "Dibuat", sortKey: "createdAt" },
+        { key: "actions", header: "Aksi" },
+    ];
+
+    const rows = sortedUsers.map((user) => {
+        const rb = roleBadge(user);
+        return [
+            <div key="name" className="flex items-center gap-2">
+                <span className="font-medium text-text-1">{user.name}</span>
+            </div>,
+            <span key="email" className="break-all text-text-2">{user.email}</span>,
+            <Badge key="role" tone={rb.tone}>
+                {rb.icon}
+                {rb.label}
+            </Badge>,
+            <div key="sites" className="flex flex-wrap items-center gap-1">
+                {user.isSuperAdmin ? (
+                    <span className="text-xs italic text-text-2">Semua Situs</span>
+                ) : user.siteIds && user.siteIds.length > 0 ? (
+                    user.siteIds.map(id => {
+                        const siteName = sites.find(s => s.id === id)?.name || "Unknown";
+                        return (
+                            <span
+                                key={id}
+                                className="rounded-control border border-border bg-surface-2 px-1.5 py-0.5 text-xs text-text-2"
+                            >
+                                {siteName}
+                            </span>
+                        );
+                    })
+                ) : (
+                    <span className="text-xs text-danger">Tidak ada akses</span>
+                )}
+            </div>,
+            <span key="createdAt" className="font-mono tabular-nums text-text-2">
+                {formatDate(user.createdAt)}
+            </span>,
+            <div key="actions" className="inline-flex items-center gap-1">
+                <button
+                    type="button"
+                    onClick={() => openEditModal(user)}
+                    className="cursor-pointer rounded-control p-1.5 text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
+                    aria-label={`Edit ${user.name}`}
+                >
+                    <PencilSimple size={16} />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setUserToDelete(user)}
+                    className="cursor-pointer rounded-control p-1.5 text-text-2 transition-colors hover:bg-surface-2 hover:text-danger"
+                    aria-label={`Hapus ${user.name}`}
+                >
+                    <Trash size={16} />
+                </button>
+            </div>,
+        ];
+    });
 
     if (isLoading) {
         return (
-            <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
+            <div className="p-6">
+                {/* Header skeleton */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div className="mb-2 h-3 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-7 w-48 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div className="h-10 w-36 animate-pulse rounded bg-surface-2" />
+                </div>
+
+                {/* Ledger-shaped skeleton */}
+                <div className="rounded-card border border-border shadow-lvl-1">
+                    <div className="flex gap-4 border-b border-border px-4 py-3.5">
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-40 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-36 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-16 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="flex gap-4 border-b border-border px-4 py-4 last:border-0">
+                                <div className="h-4 w-24 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-40 animate-pulse rounded bg-surface-2" />
+                                <div className="h-5 w-24 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-36 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-24 animate-pulse rounded bg-surface-2" />
+                                <div className="h-6 w-16 animate-pulse rounded bg-surface-2" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: "32px" }}>
+        <div className="p-6">
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
-                        PENGGUNA
-                    </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
-                        Manajemen User
-                    </h1>
+                    <p className="mb-0.5 text-xs font-semibold tracking-wider text-accent">PENGGUNA</p>
+                    <h1 className="font-display text-xl font-bold text-text-1">Manajemen User</h1>
                 </div>
-                <button
-                    onClick={openAddModal}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "12px 24px",
-                        backgroundColor: "var(--brand-red)",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        border: "none",
-                        cursor: "pointer",
-                    }}
-                >
-                    <FiPlus size={16} />
+                <Button onClick={openAddModal} iconLeft={<Plus size={16} />}>
                     Tambah User
-                </button>
+                </Button>
             </div>
 
-            {/* Users Table */}
-            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
-                    <thead>
-                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>NAMA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>EMAIL</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>ROLE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>SITUS (AKSES)</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>DIBUAT</th>
-                            <th style={{ padding: "20px", textAlign: "right", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em" }}>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((user, index) => {
-                            const badge = getRoleBadge(user);
-                            return (
-                                <tr key={user.id} style={{ borderBottom: index < users.length - 1 ? "1px solid var(--border-color)" : "none", transition: "background-color 0.2s" }}>
-                                    <td style={{ padding: "20px", color: "var(--text-primary)", fontSize: "15px", fontWeight: 500 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                                            <div style={{
-                                                width: "40px",
-                                                height: "40px",
-                                                backgroundColor: badge.iconBg,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                borderRadius: "8px",
-                                                border: badge.iconBorder,
-                                            }}>
-                                                {badge.icon}
-                                            </div>
-                                            {user.name}
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "14px" }}>{user.email}</td>
-                                    <td style={{ padding: "20px" }}>
-                                        <span style={{
-                                            padding: "6px 14px",
-                                            backgroundColor: badge.bg,
-                                            color: badge.color,
-                                            fontSize: "12px",
-                                            fontWeight: 700,
-                                            letterSpacing: "0.1em",
-                                            borderRadius: "4px",
-                                        }}>
-                                            {badge.label}
-                                        </span>
-                                    </td>
-                                    <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "13px" }}>
-                                        {user.isSuperAdmin ? (
-                                            <span style={{ fontStyle: "italic" }}>Semua Situs</span>
-                                        ) : user.siteIds && user.siteIds.length > 0 ? (
-                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                                                {user.siteIds.map(id => {
-                                                    const siteName = sites.find(s => s.id === id)?.name || "Unknown";
-                                                    return (
-                                                        <span key={id} style={{ padding: "2px 6px", backgroundColor: "var(--border-color)", borderRadius: "4px", fontSize: "11px" }}>
-                                                            {siteName}
-                                                        </span>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <span style={{ color: "var(--color-error)" }}>Tidak ada akses</span>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: "20px", color: "#71717a", fontSize: "14px" }}>{formatDate(user.createdAt)}</td>
-                                    <td style={{ padding: "16px", textAlign: "right" }}>
-                                        <button
-                                            onClick={() => openEditModal(user)}
-                                            style={{
-                                                padding: "8px",
-                                                backgroundColor: "transparent",
-                                                border: "1px solid var(--border-color)",
-                                                color: "var(--text-muted)",
-                                                cursor: "pointer",
-                                                marginRight: "8px",
-                                            }}
-                                        >
-                                            <FiEdit2 size={14} />
-                                        </button>
-                                        <button
-                                            onClick={() => setUserToDelete(user)}
-                                            style={{
-                                                padding: "8px",
-                                                backgroundColor: "transparent",
-                                                border: "1px solid var(--border-color)",
-                                                color: "var(--brand-red)",
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            <FiTrash2 size={14} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+            {/* Users ledger */}
+            {users.length === 0 ? (
+                <div className="rounded-card border border-border p-12 text-center shadow-lvl-1">
+                    <p className="text-text-3">Belum ada pengguna.</p>
+                </div>
+            ) : (
+                <div className="overflow-hidden rounded-card border border-border shadow-lvl-1">
+                    <Table
+                        columns={columns}
+                        rows={rows}
+                        sort={sort}
+                        onSort={handleSort}
+                        ariaLabel="Daftar pengguna"
+                    />
+                </div>
+            )}
 
             {/* Modal */}
             {showModal && (
-                <div style={{
-                    position: "fixed",
-                    inset: 0,
-                    backgroundColor: "rgba(0, 0, 0, 0.8)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 50,
-                }}>
-                    <div style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        border: "1px solid var(--border-color)",
-                        width: "100%", boxSizing: "border-box",
-                        maxWidth: "400px",
-                        padding: "24px",
-                        maxHeight: "90vh",
-                        overflowY: "auto"
-                    }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={editingUser ? "Edit User" : "Tambah User"}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setShowModal(false);
+                    }}
+                >
+                    <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-sheet border border-border bg-surface-1 p-6 shadow-lvl-3">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h2 className="font-display text-lg font-semibold text-text-1">
                                 {editingUser ? "Edit User" : "Tambah User"}
                             </h2>
-                            <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
-                                <FiX size={20} />
+                            <button
+                                type="button"
+                                onClick={() => setShowModal(false)}
+                                className="cursor-pointer rounded-control p-1.5 text-text-2 hover:bg-surface-2 hover:text-text-1"
+                                aria-label="Tutup"
+                            >
+                                <X size={20} />
                             </button>
                         </div>
 
                         {error && (
-                            <div style={{ padding: "12px", backgroundColor: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "var(--color-error)", fontSize: "14px", marginBottom: "16px" }}>
+                            <div className="mb-4 rounded-control border border-danger-subtle bg-danger-subtle px-3 py-2 text-sm text-danger">
                                 {error}
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit}>
-                            <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NAMA</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    required
-                                    style={{
-                                        width: "100%", boxSizing: "border-box",
-                                        padding: "12px",
-                                        backgroundColor: "var(--bg-card)",
-                                        border: "1px solid var(--border-color)",
-                                        color: "var(--text-primary)",
-                                        fontSize: "14px",
-                                    }}
-                                />
-                            </div>
-                            <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>EMAIL</label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    required
-                                    style={{
-                                        width: "100%", boxSizing: "border-box",
-                                        padding: "12px",
-                                        backgroundColor: "var(--bg-card)",
-                                        border: "1px solid var(--border-color)",
-                                        color: "var(--text-primary)",
-                                        fontSize: "14px",
-                                    }}
-                                />
-                            </div>
-                            <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
-                                    PASSWORD {editingUser && "(kosongkan jika tidak ingin mengubah)"}
-                                </label>
-                                <input
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    required={!editingUser}
-                                    style={{
-                                        width: "100%", boxSizing: "border-box",
-                                        padding: "12px",
-                                        backgroundColor: "var(--bg-card)",
-                                        border: "1px solid var(--border-color)",
-                                        color: "var(--text-primary)",
-                                        fontSize: "14px",
-                                    }}
-                                />
-                            </div>
-                            <div style={{ marginBottom: "24px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>ROLE</label>
-                                <select
-                                    value={formData.role}
-                                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                                    style={{
-                                        width: "100%", boxSizing: "border-box",
-                                        padding: "12px",
-                                        backgroundColor: "var(--bg-card)",
-                                        border: "1px solid var(--border-color)",
-                                        color: "var(--text-primary)",
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    <option value="EDITOR">EDITOR</option>
-                                    <option value="ADMIN">ADMIN</option>
-                                    <option value="SUPER_ADMIN">SUPER ADMIN</option>
-                                </select>
-                            </div>
-                            
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <Input
+                                label="NAMA"
+                                type="text"
+                                required
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="Nama lengkap"
+                            />
+                            <Input
+                                label="EMAIL"
+                                type="email"
+                                required
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                placeholder="email@contoh.com"
+                            />
+                            <Input
+                                label={editingUser ? "PASSWORD (kosongkan jika tidak ingin mengubah)" : "PASSWORD"}
+                                type="password"
+                                required={!editingUser}
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                placeholder="••••••••"
+                            />
+                            <Select
+                                label="ROLE"
+                                value={formData.role}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        role: e.target.value as "ADMIN" | "EDITOR" | "SUPER_ADMIN",
+                                    })
+                                }
+                                options={[
+                                    { value: "EDITOR", label: "EDITOR" },
+                                    { value: "ADMIN", label: "ADMIN" },
+                                    { value: "SUPER_ADMIN", label: "SUPER ADMIN" },
+                                ]}
+                            />
+
                             {formData.role !== "SUPER_ADMIN" && (
-                                <div style={{ marginBottom: "24px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>AKSES SITUS (Hanya beri centang untuk diizinkan)</label>
-                                    <div style={{
-                                        border: "1px solid var(--border-color)",
-                                        backgroundColor: "var(--bg-card)",
-                                        padding: "12px",
-                                        maxHeight: "150px",
-                                        overflowY: "auto",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "8px"
-                                    }}>
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-medium text-text-1">
+                                        AKSES SITUS (Hanya beri centang untuk diizinkan)
+                                    </label>
+                                    <div className="max-h-40 overflow-y-auto rounded-control border border-border bg-surface-1 p-3">
                                         {sites.length === 0 ? (
-                                            <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>Tidak ada situs tersedia</span>
+                                            <span className="text-xs text-text-3">Tidak ada situs tersedia</span>
                                         ) : (
-                                            sites.map(site => (
-                                                <label key={site.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#e5e5e5", fontSize: "14px" }}>
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={formData.siteIds.includes(site.id)}
-                                                        onChange={() => handleSiteToggle(site.id)}
-                                                        style={{ accentColor: "var(--brand-red)" }}
-                                                    />
-                                                    {site.name}
-                                                </label>
-                                            ))
+                                            <div className="space-y-2">
+                                                {sites.map(site => (
+                                                    <label
+                                                        key={site.id}
+                                                        className="flex cursor-pointer items-center gap-2 text-sm text-text-1"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.siteIds.includes(site.id)}
+                                                            onChange={() => handleSiteToggle(site.id)}
+                                                            className="h-4 w-4 cursor-pointer accent-accent"
+                                                        />
+                                                        {site.name}
+                                                    </label>
+                                                ))}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
                             )}
 
-                            <button
-                                type="submit"
-                                disabled={isSaving}
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px",
-                                    backgroundColor: "var(--brand-red)",
-                                    color: "var(--text-primary)",
-                                    fontSize: "13px",
-                                    fontWeight: 600,
-                                    border: "none",
-                                    cursor: isSaving ? "not-allowed" : "pointer",
-                                    opacity: isSaving ? 0.6 : 1,
-                                }}
-                            >
+                            <Button type="submit" disabled={isSaving} className="w-full">
                                 {isSaving ? "MENYIMPAN..." : "SIMPAN"}
-                            </button>
+                            </Button>
                         </form>
                     </div>
                 </div>
