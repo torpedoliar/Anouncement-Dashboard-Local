@@ -7,7 +7,7 @@ export default function ChartTooltip({ active, payload, label, valueFormatter }:
       {label != null && <p className="mb-1 text-xs text-text-3">{label}</p>}
       {payload.map((p: any) => (
         <p key={p.dataKey} className="flex items-center gap-2 font-mono text-sm tabular-nums text-text-1">
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color || p.payload?.fill }} aria-hidden="true" />
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color || p.payload?.fill || p.payload?.primaryColor }} aria-hidden="true" />
           <span className="text-text-3">{p.name}:</span>
           {(valueFormatter ? valueFormatter(p.value) : p.value?.toLocaleString("id-ID"))}
         </p>

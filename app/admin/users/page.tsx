@@ -62,6 +62,18 @@ export default function UsersPage() {
         fetchSites();
     }, []);
 
+    useEffect(() => {
+        if (!showModal) return;
+        const handleModalKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                setShowModal(false);
+            }
+        };
+        document.addEventListener("keydown", handleModalKeyDown);
+        return () => document.removeEventListener("keydown", handleModalKeyDown);
+    }, [showModal]);
+
     const fetchUsers = async () => {
         try {
             const response = await fetch("/api/users");
