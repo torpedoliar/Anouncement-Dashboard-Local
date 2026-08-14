@@ -2,16 +2,40 @@
 
 /**
  * Global Analytics Page
- * Cross-site analytics dashboard for SuperAdmin
+ * Cross-site analytics dashboard for SuperAdmin.
+ *
+ * NOTE: This page is SuperAdmin/cross-site, so --site-primary (the active
+ * masthead accent) is NOT the singular accent here — each site's own
+ * `primaryColor` is used per-card/per-bar via DB-driven inline styles.
  */
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-    FiArrowLeft, FiGlobe, FiFileText, FiUsers, FiEye, FiTrendingUp,
-    FiBarChart2, FiRefreshCw, FiPieChart
-} from "react-icons/fi";
+    ArrowLeft,
+    ArrowClockwise,
+    Globe,
+    FileText,
+    Users,
+    Eye,
+    TrendUp,
+    ChartBar,
+} from "@phosphor-icons/react";
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Cell,
+} from "recharts";
+import { getChartTheme } from "@/lib/chart-theme";
+import StatTile from "@/components/admin/StatTile";
+import ChartTooltip from "@/components/admin/ChartTooltip";
+import Button from "@/components/ui/Button";
 
 interface SiteStats {
     id: string;
@@ -35,6 +59,15 @@ interface GlobalStats {
     totalUsers: number;
     siteStats: SiteStats[];
 }
+
+const CHART_METRICS = [
+    { key: "Articles", label: "Artikel" },
+    { key: "Views", label: "Views" },
+    { key: "Categories", label: "Kategori" },
+    { key: "Users", label: "Users" },
+] as const;
+
+type ChartMetricKey = (typeof CHART_METRICS)[number]["key"];
 
 export default function GlobalAnalyticsPage() {
     const router = useRouter();
@@ -103,217 +136,176 @@ export default function GlobalAnalyticsPage() {
         fetchStats();
     }, []);
 
-    const cardStyle = {
-        backgroundColor: "#1a1a1a",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: "12px",
-        padding: "24px",
-    };
+    // Chart chrome resolved from the first site's accent (fallback otherwise).
+    const ct = getChartTheme(stats?.siteStats?.[0]?.primaryColor);
+
+    const chartData: (Record<ChartMetricKey, number> & { name: string; primaryColor: string })[] =
+        stats?.siteStats.map((site) => ({
+            name: site.name,
+            primaryColor: site.primaryColor,
+            Articles: site.stats.publishedAnnouncements,
+            Views: site.stats.totalViews,
+            Categories: site.stats.totalCategories,
+            Users: site.stats.totalUsers,
+        })) || [];
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "var(--bg-secondary)", color: "var(--text-primary)" }}>
+        <div className="min-h-screen bg-surface-1 text-text-1">
             {/* Header */}
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "24px 32px",
-                borderBottom: "1px solid rgba(255,255,255,0.1)",
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <button
+            <div className="flex items-center justify-between border-b border-border px-8 py-6">
+                <div className="flex items-center gap-4">
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => router.back()}
-                        style={{
-                            padding: "8px",
-                            backgroundColor: "transparent",
-                            border: "none",
-                            color: "var(--text-muted)",
-                            cursor: "pointer",
-                        }}
+                        aria-label="Kembali"
                     >
-                        <FiArrowLeft size={20} />
-                    </button>
+                        <ArrowLeft size={20} />
+                    </Button>
                     <div>
-                        <h1 style={{ fontSize: "24px", fontWeight: 700, display: "flex", alignItems: "center", gap: "10px" }}>
-                            <FiPieChart /> Global Analytics
+                        <h1 className="flex items-center gap-2 font-display text-2xl font-semibold text-text-1">
+                            <ChartBar size={24} aria-hidden="true" />
+                            Global Analytics
                         </h1>
-                        <p style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>Cross-site performance overview</p>
+                        <p className="text-[13px] text-text-3">Cross-site performance overview</p>
                     </div>
                 </div>
-                <button
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={fetchStats}
                     disabled={isLoading}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "10px 20px",
-                        backgroundColor: "var(--border-color)",
-                        border: "none",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        cursor: isLoading ? "not-allowed" : "pointer",
-                        opacity: isLoading ? 0.6 : 1,
-                    }}
+                    aria-label="Muat ulang data"
                 >
-                    <FiRefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                    <ArrowClockwise size={16} className={isLoading ? "animate-spin" : ""} />
                     Refresh
-                </button>
+                </Button>
             </div>
 
-            <div style={{ padding: "32px", maxWidth: "1400px", margin: "0 auto" }}>
+            <div className="mx-auto max-w-[1400px] p-8">
                 {error && (
-                    <div style={{
-                        padding: "16px",
-                        backgroundColor: "rgba(239,68,68,0.1)",
-                        border: "1px solid rgba(239,68,68,0.3)",
-                        borderRadius: "8px",
-                        color: "var(--color-error)",
-                        marginBottom: "24px",
-                    }}>
+                    <div className="mb-8 rounded-card border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
                         {error}
                     </div>
                 )}
 
                 {isLoading && !stats ? (
-                    <div style={{ textAlign: "center", padding: "60px", color: "var(--text-tertiary)" }}>
-                        Loading analytics...
+                    <div className="py-16 text-center text-text-3">Loading analytics...</div>
+                ) : !stats || stats.siteStats.length === 0 ? (
+                    <div className="rounded-card border border-border bg-surface-1 p-12 text-center">
+                        <Globe size={48} weight="duotone" className="mx-auto mb-4 text-text-3" />
+                        <h3 className="mb-2 font-display text-lg font-semibold text-text-1">
+                            Tidak Ada Situs
+                        </h3>
+                        <p className="text-text-3">Belum ada situs untuk ditampilkan.</p>
                     </div>
-                ) : stats && (
+                ) : (
                     <>
-                        {/* Global Stats Grid */}
-                        <div style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(5, 1fr)",
-                            gap: "20px",
-                            marginBottom: "40px",
-                        }}>
-                            <div style={cardStyle}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-                                    <FiGlobe size={20} color="#3b82f6" />
-                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Sites</span>
-                                </div>
-                                <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalSites}</div>
-                            </div>
-                            <div style={cardStyle}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-                                    <FiFileText size={20} color="#22c55e" />
-                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Articles</span>
-                                </div>
-                                <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalAnnouncements}</div>
-                            </div>
-                            <div style={cardStyle}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-                                    <FiEye size={20} color="#a855f7" />
-                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Total Views</span>
-                                </div>
-                                <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalViews.toLocaleString()}</div>
-                            </div>
-                            <div style={cardStyle}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-                                    <FiBarChart2 size={20} color="#f59e0b" />
-                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Categories</span>
-                                </div>
-                                <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalCategories}</div>
-                            </div>
-                            <div style={cardStyle}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-                                    <FiUsers size={20} color="#ec4899" />
-                                    <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Users</span>
-                                </div>
-                                <div style={{ fontSize: "36px", fontWeight: 700 }}>{stats.totalUsers}</div>
-                            </div>
+                        {/* Global Stat Tiles */}
+                        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                            <StatTile icon={Globe} label="Sites" value={stats.totalSites} />
+                            <StatTile icon={FileText} label="Articles" value={stats.totalAnnouncements} />
+                            <StatTile icon={Eye} label="Total Views" value={stats.totalViews} />
+                            <StatTile icon={ChartBar} label="Categories" value={stats.totalCategories} />
+                            <StatTile icon={Users} label="Users" value={stats.totalUsers} />
                         </div>
 
-                        {/* Per-Site Breakdown */}
-                        <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
-                            <FiTrendingUp /> Per-Site Performance
+                        {/* Masthead comparison strip */}
+                        <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold text-text-1">
+                            <TrendUp size={20} aria-hidden="true" />
+                            Per-Site Performance
                         </h2>
-                        <div style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-                            gap: "20px",
-                        }}>
+                        <div className="mb-8 grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
                             {stats.siteStats.map((site) => (
                                 <Link
                                     key={site.id}
                                     href={`/admin/sites/${site.id}`}
-                                    style={{
-                                        ...cardStyle,
-                                        textDecoration: "none",
-                                        display: "block",
-                                        transition: "border-color 0.2s",
-                                    }}
+                                    className="block rounded-card border border-border bg-surface-1 p-5 transition-shadow duration-150 hover:shadow-lvl-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                 >
-                                    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                                        <div style={{
-                                            width: "40px",
-                                            height: "40px",
-                                            borderRadius: "10px",
-                                            backgroundColor: site.primaryColor,
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                        }}>
-                                            <FiGlobe color="#fff" size={20} />
-                                        </div>
-                                        <div>
-                                            <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text-primary)" }}>{site.name}</h3>
-                                            <span style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>/site/{site.slug}</span>
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <span
+                                            className="h-3.5 w-3.5 shrink-0 rounded-full"
+                                            style={{ backgroundColor: site.primaryColor }}
+                                            aria-hidden="true"
+                                        />
+                                        <div className="min-w-0">
+                                            <h3 className="truncate font-display text-base font-semibold text-text-1">
+                                                {site.name}
+                                            </h3>
+                                            <p className="font-mono text-[12px] text-text-3">
+                                                /site/{site.slug}
+                                            </p>
                                         </div>
                                     </div>
 
-                                    <div style={{
-                                        display: "grid",
-                                        gridTemplateColumns: "repeat(4, 1fr)",
-                                        gap: "12px",
-                                        padding: "16px 0",
-                                        borderTop: "1px solid rgba(255,255,255,0.1)",
-                                    }}>
-                                        <div style={{ textAlign: "center" }}>
-                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
+                                    <div className="grid grid-cols-4 gap-3 border-t border-border pt-4">
+                                        <div className="text-center">
+                                            <p className="font-mono text-lg font-semibold tabular-nums text-text-1">
                                                 {site.stats.publishedAnnouncements}
-                                            </div>
-                                            <div style={{ fontSize: "10px", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Articles</div>
+                                            </p>
+                                            <p className="text-[10px] uppercase tracking-wider text-text-3">
+                                                Articles
+                                            </p>
                                         </div>
-                                        <div style={{ textAlign: "center" }}>
-                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
-                                                {site.stats.totalViews.toLocaleString()}
-                                            </div>
-                                            <div style={{ fontSize: "10px", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Views</div>
+                                        <div className="text-center">
+                                            <p className="font-mono text-lg font-semibold tabular-nums text-text-1">
+                                                {site.stats.totalViews.toLocaleString("id-ID")}
+                                            </p>
+                                            <p className="text-[10px] uppercase tracking-wider text-text-3">
+                                                Views
+                                            </p>
                                         </div>
-                                        <div style={{ textAlign: "center" }}>
-                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
+                                        <div className="text-center">
+                                            <p className="font-mono text-lg font-semibold tabular-nums text-text-1">
                                                 {site.stats.totalCategories}
-                                            </div>
-                                            <div style={{ fontSize: "10px", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Categories</div>
+                                            </p>
+                                            <p className="text-[10px] uppercase tracking-wider text-text-3">
+                                                Categories
+                                            </p>
                                         </div>
-                                        <div style={{ textAlign: "center" }}>
-                                            <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
+                                        <div className="text-center">
+                                            <p className="font-mono text-lg font-semibold tabular-nums text-text-1">
                                                 {site.stats.totalUsers}
-                                            </div>
-                                            <div style={{ fontSize: "10px", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Users</div>
+                                            </p>
+                                            <p className="text-[10px] uppercase tracking-wider text-text-3">
+                                                Users
+                                            </p>
                                         </div>
-                                    </div>
-
-                                    {/* Visual bar */}
-                                    <div style={{
-                                        height: "4px",
-                                        backgroundColor: "rgba(255,255,255,0.05)",
-                                        borderRadius: "2px",
-                                        overflow: "hidden",
-                                        marginTop: "8px",
-                                    }}>
-                                        <div style={{
-                                            height: "100%",
-                                            width: `${Math.min((site.stats.totalViews / (stats.totalViews || 1)) * 100, 100)}%`,
-                                            backgroundColor: site.primaryColor,
-                                            borderRadius: "2px",
-                                        }} />
                                     </div>
                                 </Link>
                             ))}
                         </div>
+
+                        {/* Grouped bar chart — site-accent per bar */}
+                        <section className="rounded-card border border-border bg-surface-1 p-5">
+                            <h3 className="mb-2 font-display text-sm font-semibold text-text-1">
+                                Perbandingan Metrik per Situs
+                            </h3>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
+                                    <XAxis dataKey="name" stroke={ct.tick} fontSize={11} interval={0} tickFormatter={(v) => (v.length > 12 ? `${v.slice(0, 12)}…` : v)} />
+                                    <YAxis stroke={ct.tick} fontSize={11} />
+                                    <Tooltip content={<ChartTooltip />} />
+                                    {CHART_METRICS.map(({ key }) => (
+                                        <Bar key={key} dataKey={key} radius={[3, 3, 0, 0]}>
+                                            {chartData.map((entry, idx) => (
+                                                <Cell key={`${key}-${idx}`} fill={entry.primaryColor} />
+                                            ))}
+                                        </Bar>
+                                    ))}
+                                </BarChart>
+                            </ResponsiveContainer>
+                            {/* Legend (recharts <Legend> can't capture per-<Cell> colors) */}
+                            <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs text-text-3">
+                                {CHART_METRICS.map(({ key, label }) => (
+                                    <span key={key} className="flex items-center gap-1.5">
+                                        <span className="h-2 w-2 rounded-full bg-text-3" aria-hidden="true" />
+                                        {label}
+                                    </span>
+                                ))}
+                            </div>
+                        </section>
                     </>
                 )}
             </div>
