@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiDownload, FiX, FiExternalLink, FiAlertCircle, FiDatabase } from "react-icons/fi";
+import { Download, X, ArrowSquareOut, Info, Database } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
 
 interface UpdateInfo {
     hasUpdate: boolean;
@@ -129,104 +131,57 @@ export default function UpdateBanner() {
     if (!updateInfo || !updateInfo.hasUpdate || isDismissed) return null;
 
     return (
-        <div style={{
-            background: "linear-gradient(90deg, #1e3a5f 0%, #1e40af 100%)",
-            borderBottom: "1px solid #3b82f6",
-            padding: "14px 24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "12px",
-        }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <FiDownload color="#60a5fa" size={20} />
-                    <span style={{ color: "var(--text-primary)", fontSize: "14px" }}>
+        <div className="bg-info border-b border-info/40 px-6 py-3.5 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                    <Download weight="fill" size={20} className="text-info" />
+                    <span className="text-text-1 text-sm">
                         Update tersedia: <strong>v{updateInfo.latestVersion}</strong>
                     </span>
                 </div>
 
                 {updateInfo.hasSchemaUpdate && (
-                    <span style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "4px 10px",
-                        backgroundColor: "rgba(234, 179, 8, 0.2)",
-                        color: "#fbbf24",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        borderRadius: "4px",
-                    }}>
-                        <FiAlertCircle size={14} />
+                    <Badge tone="warning">
+                        <Info size={12} />
                         Database Migration
-                    </span>
+                    </Badge>
                 )}
 
                 {updateInfo.releaseNotes && (
-                    <span style={{ color: "#94a3b8", fontSize: "13px" }}>
+                    <span className="text-text-2 text-sm">
                         {updateInfo.releaseNotes.substring(0, 50)}...
                     </span>
                 )}
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <button
+            <div className="flex items-center gap-3">
+                <Button
                     onClick={handleBackup}
                     disabled={isBackingUp}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "8px 16px",
-                        backgroundColor: "rgba(34, 197, 94, 0.2)",
-                        border: "1px solid rgba(34, 197, 94, 0.4)",
-                        color: "#4ade80",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        cursor: isBackingUp ? "not-allowed" : "pointer",
-                        borderRadius: "4px",
-                    }}
+                    variant="secondary"
+                    size="sm"
+                    iconLeft={isBackingUp ? undefined : <Database size={14} />}
                 >
-                    <FiDatabase size={14} />
                     {isBackingUp ? "Backing up..." : "Backup Dulu"}
-                </button>
+                </Button>
 
                 <a
                     href="https://github.com/torpedoliar/Anouncement-Dashboard-Local"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "8px 16px",
-                        backgroundColor: "rgba(59, 130, 246, 0.2)",
-                        border: "1px solid rgba(59, 130, 246, 0.4)",
-                        color: "var(--color-info)",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                        borderRadius: "4px",
-                    }}
+                    className="inline-flex items-center gap-2 h-8 px-3 text-[13px] rounded-control font-medium border border-border bg-surface-1 text-info hover:bg-surface-2 transition-colors duration-150"
                 >
-                    <FiExternalLink size={14} />
+                    <ArrowSquareOut size={14} />
                     Lihat di GitHub
                 </a>
 
                 <button
                     onClick={handleDismiss}
-                    style={{
-                        background: "none",
-                        border: "none",
-                        color: "#64748b",
-                        cursor: "pointer",
-                        padding: "4px",
-                    }}
+                    className="p-1.5 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-control transition-colors duration-150"
                     title="Dismiss for 24 hours"
+                    aria-label="Dismiss update banner"
                 >
-                    <FiX size={18} />
+                    <X size={18} />
                 </button>
             </div>
         </div>

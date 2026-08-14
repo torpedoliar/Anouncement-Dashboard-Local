@@ -3,12 +3,10 @@
 import { ReactNode } from "react";
 import Badge from "@/components/ui/Badge";
 import { PencilSimple, Clock, Broadcast, Square, Flag } from "@phosphor-icons/react";
+import type { AnnouncementStatusValue } from "@/lib/announcement-status";
 
 export type AnnouncementStatus =
-  | "draft"
-  | "scheduled"
-  | "published"
-  | "taken-down"
+  | AnnouncementStatusValue
   | "pending-approval";
 
 const STATUS_META: Record<AnnouncementStatus, { tone: BadgeTone; label: string; icon: ReactNode }> = {

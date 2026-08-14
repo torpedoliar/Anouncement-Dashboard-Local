@@ -1,6 +1,6 @@
 "use client";
 
-import { FiTrash2, FiEye, FiEyeOff, FiX } from "react-icons/fi";
+import { Trash, Eye, EyeSlash, X } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
@@ -49,8 +49,7 @@ export default function BulkActionBar({ selectedCount, onClear, selectedIds }: B
             } else {
                 showToast(data.error || "Gagal melakukan aksi", "error");
             }
-        } catch (error) {
-            console.error("Bulk action error:", error);
+        } catch {
             showToast("Terjadi kesalahan", "error");
         } finally {
             setIsLoading(false);
@@ -61,115 +60,52 @@ export default function BulkActionBar({ selectedCount, onClear, selectedIds }: B
     if (selectedCount === 0) return null;
 
     return (
-        <div
-            style={{
-                position: "fixed",
-                bottom: "24px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                display: "flex",
-                alignItems: "center",
-                gap: "16px",
-                padding: "16px 24px",
-                backgroundColor: "var(--bg-hover)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "12px",
-                boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
-                zIndex: 100,
-            }}
-        >
-            <span style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 600 }}>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap items-center gap-3 px-5 py-3 bg-surface-1 border border-border rounded-card shadow-3 z-50">
+            <span className="text-sm font-medium text-text-1 tabular-nums">
                 {selectedCount} dipilih
             </span>
 
-            <div style={{ width: "1px", height: "24px", backgroundColor: "var(--border-strong)" }} />
+            <span className="w-px h-6 bg-border" />
 
             <button
                 onClick={() => performBulkAction("publish")}
                 disabled={isLoading}
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 16px",
-                    backgroundColor: "#14532d",
-                    border: "1px solid var(--color-success)",
-                    color: "var(--color-success)",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    borderRadius: "6px",
-                    cursor: isLoading ? "not-allowed" : "pointer",
-                    opacity: isLoading && actionInProgress !== "publish" ? 0.5 : 1,
-                }}
+                className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium bg-success-subtle text-success rounded-control border border-success hover:bg-success/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Publish terpilih"
             >
-                <FiEye size={14} />
+                <Eye size={14} />
                 {actionInProgress === "publish" ? "..." : "Publish"}
             </button>
 
             <button
                 onClick={() => performBulkAction("unpublish")}
                 disabled={isLoading}
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 16px",
-                    backgroundColor: "#78350f",
-                    border: "1px solid #f59e0b",
-                    color: "#f59e0b",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    borderRadius: "6px",
-                    cursor: isLoading ? "not-allowed" : "pointer",
-                    opacity: isLoading && actionInProgress !== "unpublish" ? 0.5 : 1,
-                }}
+                className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium bg-warning-subtle text-warning rounded-control border border-warning hover:bg-warning/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Unpublish terpilih"
             >
-                <FiEyeOff size={14} />
+                <EyeSlash size={14} />
                 {actionInProgress === "unpublish" ? "..." : "Unpublish"}
             </button>
 
             <button
                 onClick={() => performBulkAction("delete")}
                 disabled={isLoading}
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 16px",
-                    backgroundColor: "#7f1d1d",
-                    border: "1px solid var(--color-error)",
-                    color: "var(--color-error)",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    borderRadius: "6px",
-                    cursor: isLoading ? "not-allowed" : "pointer",
-                    opacity: isLoading && actionInProgress !== "delete" ? 0.5 : 1,
-                }}
+                className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium bg-danger-subtle text-danger rounded-control border border-danger hover:bg-danger/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Hapus terpilih"
             >
-                <FiTrash2 size={14} />
+                <Trash size={14} />
                 {actionInProgress === "delete" ? "..." : "Hapus"}
             </button>
 
-            <div style={{ width: "1px", height: "24px", backgroundColor: "var(--border-strong)" }} />
+            <span className="w-px h-6 bg-border" />
 
             <button
                 onClick={onClear}
                 disabled={isLoading}
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "32px",
-                    height: "32px",
-                    backgroundColor: "transparent",
-                    border: "1px solid var(--border-strong)",
-                    color: "var(--text-muted)",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                }}
+                className="inline-flex items-center justify-center w-8 h-8 text-text-2 hover:text-text-1 hover:bg-surface-2 rounded-control border border-border transition-colors disabled:opacity-50"
                 aria-label="Batalkan seleksi"
             >
-                <FiX size={16} />
+                <X size={16} />
             </button>
 
             <ConfirmDialog

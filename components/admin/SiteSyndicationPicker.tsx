@@ -3,10 +3,11 @@
 /**
  * Site Syndication Picker Component
  * Select multiple sites to publish to, with per-site Primary / Hero / Pin flags.
+ * Token-native restyle: replaces inline styles + react-icons/fi.
  */
 
 import { useState, useEffect } from 'react';
-import { FiGlobe, FiCheck, FiStar, FiMapPin } from 'react-icons/fi';
+import { GlobeSimple, Check, Star, MapPin } from '@phosphor-icons/react';
 
 interface Site {
     id: string;
@@ -99,29 +100,41 @@ export default function SiteSyndicationPicker({
 
     if (isLoading) {
         return (
-            <div style={boxStyle}>
-                <div style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>Loading sites...</div>
+            <div
+                className="rounded-card p-4 text-sm"
+                style={{
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
+                }}
+            >
+                <span style={{ color: "var(--text-3)" }}>Loading sites...</span>
             </div>
         );
     }
 
     if (sites.length === 0) {
         return (
-            <div style={boxStyle}>
-                <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+            <div
+                className="rounded-card p-4 text-sm"
+                style={{
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
+                }}
+            >
+                <span style={{ color: "var(--text-3)" }}>
                     No sites available. Please create a site first.
-                </div>
+                </span>
             </div>
         );
     }
 
     return (
         <div>
-            <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+            <label className="mb-2 block text-xs font-medium" style={{ color: "var(--text-3)" }}>
                 Publish to Sites
             </label>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
                 {sites.map((site) => {
                     const assoc = value.find((v) => v.siteId === site.id);
                     const selected = !!assoc;
@@ -129,13 +142,10 @@ export default function SiteSyndicationPicker({
                     return (
                         <div
                             key={site.id}
+                            className="overflow-hidden rounded-card"
                             style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                backgroundColor: selected ? 'rgba(237,28,36,0.1)' : 'rgba(255,255,255,0.03)',
-                                border: `2px solid ${selected ? site.primaryColor : 'rgba(255,255,255,0.1)'}`,
-                                borderRadius: '10px',
-                                overflow: 'hidden',
+                                border: `2px solid ${selected ? site.primaryColor : 'var(--border)'}`,
+                                background: selected ? `${site.primaryColor}15` : "var(--surface-2)",
                                 opacity: disabled ? 0.6 : 1,
                             }}
                         >
@@ -144,45 +154,41 @@ export default function SiteSyndicationPicker({
                                 type="button"
                                 onClick={() => toggleSite(site.id)}
                                 disabled={disabled}
+                                className="flex w-full items-center gap-2.5 px-3 py-3 text-left cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-3)]"
                                 style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    padding: '12px',
-                                    backgroundColor: 'transparent',
-                                    border: 'none',
-                                    cursor: disabled ? 'not-allowed' : 'pointer',
-                                    textAlign: 'left',
+                                    border: 'none', background: 'transparent',
                                 }}
                             >
-                                <div style={{
-                                    width: '32px', height: '32px', borderRadius: '6px',
-                                    backgroundColor: site.primaryColor, display: 'flex',
-                                    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                                }}>
-                                    {selected ? <FiCheck color="#fff" size={16} /> : <FiGlobe color="#fff" size={16} />}
+                                <div
+                                    className="flex size-8 shrink-0 items-center justify-center rounded-control"
+                                    style={{ backgroundColor: site.primaryColor }}
+                                >
+                                    {selected ? (
+                                        <Check size={16} weight="bold" color="#fff" />
+                                    ) : (
+                                        <GlobeSimple size={16} weight="fill" color="#fff" />
+                                    )}
                                 </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{
-                                        fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)',
-                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                    }}>
+                                <div className="min-w-0 flex-1 overflow-hidden">
+                                    <div className="truncate text-sm font-semibold" style={{ color: "var(--text-1)" }}>
                                         {site.name}
                                     </div>
-                                    <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>/site/{site.slug}</div>
+                                    <div className="truncate text-xs" style={{ color: "var(--text-3)" }}>
+                                        /site/{site.slug}
+                                    </div>
                                 </div>
                             </button>
 
                             {/* Per-site placement controls */}
                             {selected && (
-                                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <div style={{ display: 'flex' }}>
+                                <div style={{ borderTop: `1px solid var(--border)` }}>
+                                    <div className="flex">
                                         <FlagButton
                                             active={!!assoc?.isHero}
                                             color={site.primaryColor}
                                             disabled={disabled}
                                             onClick={() => toggleFlag(site.id, 'isHero')}
-                                            icon={<FiStar size={12} fill={assoc?.isHero ? '#fff' : 'none'} />}
+                                            icon={<Star size={12} weight="fill" />}
                                             label="Hero"
                                         />
                                         <FlagButton
@@ -190,7 +196,7 @@ export default function SiteSyndicationPicker({
                                             color={site.primaryColor}
                                             disabled={disabled}
                                             onClick={() => toggleFlag(site.id, 'isPinned')}
-                                            icon={<FiMapPin size={12} />}
+                                            icon={<MapPin size={12} weight="fill" />}
                                             label="Pin"
                                             borderLeft
                                         />
@@ -200,18 +206,14 @@ export default function SiteSyndicationPicker({
                                             type="button"
                                             onClick={() => setPrimary(site.id)}
                                             disabled={disabled}
+                                            className="flex w-full cursor-pointer items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-colors duration-150 hover:bg-[var(--surface-3)]"
                                             style={{
-                                                width: '100%',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                                padding: '8px',
-                                                backgroundColor: assoc?.isPrimary ? site.primaryColor : 'rgba(255,255,255,0.05)',
-                                                border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)',
-                                                color: assoc?.isPrimary ? 'var(--text-primary)' : 'var(--text-muted)',
-                                                fontSize: '11px', fontWeight: 600,
-                                                cursor: disabled ? 'not-allowed' : 'pointer',
+                                                borderTop: `1px solid var(--border)`,
+                                                background: assoc?.isPrimary ? site.primaryColor : 'var(--surface-3)',
+                                                color: assoc?.isPrimary ? 'var(--text-1)' : 'var(--text-3)',
                                             }}
                                         >
-                                            <FiStar size={12} fill={assoc?.isPrimary ? '#fff' : 'none'} />
+                                            <Star size={12} weight="fill" />
                                             {assoc?.isPrimary ? 'Primary Site' : 'Set as Primary'}
                                         </button>
                                     )}
@@ -223,27 +225,20 @@ export default function SiteSyndicationPicker({
             </div>
 
             {value.length > 1 && (
-                <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
-                    <FiStar size={10} style={{ marginRight: '6px' }} />
+                <p className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: "var(--text-3)" }}>
+                    <Star size={10} weight="fill" className="text-[#eab308]" />
                     Primary site digunakan untuk canonical URL (SEO). Hero &amp; Pin diatur terpisah per site.
-                </div>
+                </p>
             )}
 
             {value.length === 0 && (
-                <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--color-error)' }}>
+                <p className="mt-2 text-xs" style={{ color: "var(--color-danger)" }}>
                     Pilih minimal satu site
-                </div>
+                </p>
             )}
         </div>
     );
 }
-
-const boxStyle: React.CSSProperties = {
-    padding: '16px',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.1)',
-};
 
 function FlagButton({
     active, color, disabled, onClick, icon, label, borderLeft = false,
@@ -256,16 +251,12 @@ function FlagButton({
             type="button"
             onClick={onClick}
             disabled={disabled}
+            className="flex flex-1 cursor-pointer items-center justify-center gap-1 py-2 text-xs font-semibold transition-colors duration-150 hover:bg-[var(--surface-3)]"
             style={{
-                flex: 1,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                padding: '8px',
-                backgroundColor: active ? color : 'rgba(255,255,255,0.05)',
-                border: 'none',
-                borderLeft: borderLeft ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                color: active ? 'var(--text-primary)' : 'var(--text-muted)',
-                fontSize: '11px', fontWeight: 600,
-                cursor: disabled ? 'not-allowed' : 'pointer',
+                border: borderLeft ? `1px solid var(--border)` : 'none',
+                borderTop: '1px solid var(--border)',
+                background: active ? color : 'var(--surface-3)',
+                color: active ? 'var(--text-1)' : 'var(--text-3)',
             }}
         >
             {icon}

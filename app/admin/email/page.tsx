@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiMail, FiSave, FiRefreshCw, FiCheck, FiX, FiServer } from "react-icons/fi";
+import {
+    ArrowClockwise,
+    Check,
+    EnvelopeSimple,
+    FloppyDisk,
+    HardDrive,
+    X,
+} from "@phosphor-icons/react";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import Input from "@/components/ui/Input";
 import { useToast } from "@/contexts/ToastContext";
 
 interface EmailSettings {
@@ -92,280 +103,171 @@ export default function EmailPage() {
 
     if (isLoading) {
         return (
-            <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
+            <div className="flex min-h-[60vh] items-center justify-center p-8">
+                <p className="text-text-3">Memuat pengaturan email...</p>
             </div>
         );
     }
 
     if (!settings) {
         return (
-            <div style={{ padding: "32px", textAlign: "center", color: "var(--color-error)" }}>
-                Failed to load email settings
+            <div className="p-6 md:p-8">
+                <div className="rounded-card border border-danger bg-danger-subtle p-4 text-sm text-danger" role="alert">
+                    Gagal memuat pengaturan email.
+                </div>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: "32px" }}>
-            {/* Header */}
-            <div style={{ marginBottom: "32px" }}>
-                <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
-                    EMAIL
-                </p>
-                <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
-                    Pengaturan Email
-                </h1>
+        <div className="mx-auto max-w-[1200px] p-6 md:p-8">
+            <div className="mb-8">
+                <p className="mb-1 text-xs font-semibold tracking-widest text-accent">EMAIL</p>
+                <h1 className="font-display text-2xl font-bold text-text-1">Pengaturan Email</h1>
+                <p className="mt-1 text-sm text-text-3">Atur pengiriman email, identitas pengirim, dan notifikasi otomatis.</p>
             </div>
 
             <form onSubmit={handleSave}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
-                    {/* SMTP Settings */}
-                    <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", padding: "24px" }}>
-                        <h2 style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--text-primary)", fontSize: "16px", fontWeight: 600, marginBottom: "24px" }}>
-                            <FiServer size={18} />
-                            Konfigurasi SMTP
-                        </h2>
+                <div className="grid gap-5 lg:grid-cols-2">
+                    <Card className="p-5">
+                        <div className="mb-5 flex items-center gap-2 border-b border-border pb-4">
+                            <HardDrive size={19} className="text-text-2" />
+                            <div>
+                                <h2 className="text-base font-semibold text-text-1">Konfigurasi SMTP</h2>
+                                <p className="mt-0.5 text-xs text-text-3">Hubungkan layanan email untuk pengiriman.</p>
+                            </div>
+                        </div>
 
-                        <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
-                                SMTP HOST
-                            </label>
-                            <input
+                        <div className="space-y-4">
+                            <Input
                                 type="text"
+                                label="SMTP host"
                                 value={settings.smtpHost}
                                 onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
                                 placeholder="localhost"
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px",
-                                    backgroundColor: "var(--bg-card)",
-                                    border: "1px solid var(--border-strong)",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
                             />
-                        </div>
 
-                        <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
-                                PORT
-                            </label>
-                            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                                <input
+                            <div className="flex flex-wrap items-end gap-5">
+                                <Input
                                     type="number"
+                                    label="Port"
                                     value={settings.smtpPort}
                                     onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) || 25 })}
-                                    style={{
-                                        width: "100px",
-                                        padding: "12px",
-                                        backgroundColor: "var(--bg-card)",
-                                        border: "1px solid var(--border-strong)",
-                                        color: "var(--text-primary)",
-                                        fontSize: "14px",
-                                    }}
+                                    className="max-w-[120px]"
                                 />
-                                <label style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-secondary)", fontSize: "13px", cursor: "pointer" }}>
+                                <label className="inline-flex h-10 cursor-pointer items-center gap-2 pb-0.5 text-sm text-text-2">
                                     <input
                                         type="checkbox"
                                         checked={settings.smtpSecure}
                                         onChange={(e) => setSettings({ ...settings, smtpSecure: e.target.checked })}
-                                        style={{ width: "18px", height: "18px", accentColor: "var(--brand-red)" }}
+                                        className="h-4 w-4 accent-accent"
                                     />
                                     SSL/TLS (port 465)
                                 </label>
                             </div>
-                        </div>
 
-                        <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
-                                USERNAME (opsional)
-                            </label>
-                            <input
+                            <Input
                                 type="text"
+                                label="Username (opsional)"
                                 value={settings.smtpUser || ""}
                                 onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value || null })}
                                 placeholder="user@domain.com"
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px",
-                                    backgroundColor: "var(--bg-card)",
-                                    border: "1px solid var(--border-strong)",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
                             />
-                        </div>
 
-                        <div style={{ marginBottom: "24px" }}>
-                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
-                                PASSWORD (opsional)
-                            </label>
-                            <input
+                            <Input
                                 type="password"
+                                label="Password (opsional)"
                                 value={settings.smtpPass || ""}
                                 onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value || null })}
                                 placeholder="••••••••"
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px",
-                                    backgroundColor: "var(--bg-card)",
-                                    border: "1px solid var(--border-strong)",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
                             />
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={handleTestConnection}
-                            disabled={isTesting}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                padding: "12px 20px",
-                                backgroundColor: "var(--bg-tertiary)",
-                                color: "var(--text-primary)",
-                                fontSize: "13px",
-                                fontWeight: 600,
-                                border: "1px solid var(--border-strong)",
-                                cursor: isTesting ? "not-allowed" : "pointer",
-                                opacity: isTesting ? 0.6 : 1,
-                            }}
-                        >
-                            <FiRefreshCw size={14} className={isTesting ? "animate-spin" : ""} />
-                            {isTesting ? "Testing..." : "Test Connection"}
-                        </button>
+                        <div className="mt-5 border-t border-border pt-5">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                iconLeft={<ArrowClockwise size={16} className={isTesting ? "animate-spin" : ""} />}
+                                onClick={handleTestConnection}
+                                disabled={isTesting}
+                            >
+                                {isTesting ? "Menguji..." : "Uji koneksi"}
+                            </Button>
 
-                        {testResult && (
-                            <div style={{
-                                marginTop: "16px",
-                                padding: "12px",
-                                backgroundColor: testResult.success ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
-                                border: `1px solid ${testResult.success ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-                                color: testResult.success ? "#22c55e" : "#ef4444",
-                                fontSize: "13px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                            }}>
-                                {testResult.success ? <FiCheck size={16} /> : <FiX size={16} />}
-                                {testResult.success ? "Connection successful!" : testResult.error}
+                            {testResult && (
+                                <div className="mt-4 flex items-center gap-2 text-sm" role="status">
+                                    {testResult.success ? (
+                                        <Badge tone="success"><Check size={13} /> Koneksi berhasil</Badge>
+                                    ) : (
+                                        <Badge tone="danger"><X size={13} /> {testResult.error || "Koneksi gagal"}</Badge>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </Card>
+
+                    <Card className="p-5">
+                        <div className="mb-5 flex items-center gap-2 border-b border-border pb-4">
+                            <EnvelopeSimple size={19} className="text-text-2" />
+                            <div>
+                                <h2 className="text-base font-semibold text-text-1">Identitas pengirim</h2>
+                                <p className="mt-0.5 text-xs text-text-3">Tentukan nama dan alamat balasan email.</p>
                             </div>
-                        )}
-                    </div>
+                        </div>
 
-                    {/* Sender Settings */}
-                    <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", padding: "24px" }}>
-                        <h2 style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--text-primary)", fontSize: "16px", fontWeight: 600, marginBottom: "24px" }}>
-                            <FiMail size={18} />
-                            Informasi Pengirim
-                        </h2>
-
-                        <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
-                                NAMA PENGIRIM
-                            </label>
-                            <input
+                        <div className="space-y-4">
+                            <Input
                                 type="text"
+                                label="Nama pengirim"
                                 value={settings.fromName}
                                 onChange={(e) => setSettings({ ...settings, fromName: e.target.value })}
                                 placeholder="Santos Jaya Abadi News"
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px",
-                                    backgroundColor: "var(--bg-card)",
-                                    border: "1px solid var(--border-strong)",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
                             />
-                        </div>
 
-                        <div style={{ marginBottom: "16px" }}>
-                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
-                                EMAIL PENGIRIM
-                            </label>
-                            <input
+                            <Input
                                 type="email"
+                                label="Email pengirim"
                                 value={settings.fromEmail}
                                 onChange={(e) => setSettings({ ...settings, fromEmail: e.target.value })}
                                 placeholder="news@company.com"
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px",
-                                    backgroundColor: "var(--bg-card)",
-                                    border: "1px solid var(--border-strong)",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
                             />
-                        </div>
 
-                        <div style={{ marginBottom: "24px" }}>
-                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>
-                                REPLY-TO EMAIL (opsional)
-                            </label>
-                            <input
+                            <Input
                                 type="email"
+                                label="Reply-to email (opsional)"
                                 value={settings.replyToEmail || ""}
                                 onChange={(e) => setSettings({ ...settings, replyToEmail: e.target.value || null })}
                                 placeholder="reply@company.com"
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px",
-                                    backgroundColor: "var(--bg-card)",
-                                    border: "1px solid var(--border-strong)",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
                             />
                         </div>
 
-                        <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "24px" }}>
-                            <label style={{ display: "flex", alignItems: "center", gap: "12px", color: "var(--text-secondary)", fontSize: "14px", cursor: "pointer" }}>
+                        <div className="mt-6 border-t border-border pt-5">
+                            <label className="flex cursor-pointer items-start gap-3 text-sm text-text-2">
                                 <input
                                     type="checkbox"
                                     checked={settings.autoSendNewArticle}
                                     onChange={(e) => setSettings({ ...settings, autoSendNewArticle: e.target.checked })}
-                                    style={{ width: "18px", height: "18px" }}
+                                    className="mt-0.5 h-4 w-4 accent-accent"
                                 />
-                                Kirim email otomatis saat artikel baru dipublikasikan
+                                <span>
+                                    <span className="block font-medium text-text-1">Kirim otomatis saat artikel baru dipublikasikan</span>
+                                    <span className="mt-0.5 block text-xs text-text-3">Subscriber aktif akan menerima notifikasi artikel baru.</span>
+                                </span>
                             </label>
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
-                {/* Save Button */}
-                <div style={{ marginTop: "24px", display: "flex", alignItems: "center", gap: "16px" }}>
-                    <button
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <Button
                         type="submit"
+                        iconLeft={<FloppyDisk size={16} />}
                         disabled={isSaving}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            padding: "14px 28px",
-                            backgroundColor: "var(--brand-red)",
-                            color: "var(--text-primary)",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            border: "none",
-                            cursor: isSaving ? "not-allowed" : "pointer",
-                            opacity: isSaving ? 0.6 : 1,
-                        }}
                     >
-                        <FiSave size={16} />
-                        {isSaving ? "Menyimpan..." : "Simpan Pengaturan"}
-                    </button>
-
+                        {isSaving ? "Menyimpan..." : "Simpan pengaturan"}
+                    </Button>
                     {successMessage && (
-                        <span style={{ color: "var(--color-success)", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
-                            <FiCheck size={16} />
-                            {successMessage}
-                        </span>
+                        <Badge tone="success"><Check size={13} /> {successMessage}</Badge>
                     )}
                 </div>
             </form>

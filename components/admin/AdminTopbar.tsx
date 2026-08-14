@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, CaretDown, SignOut, Gear } from "@phosphor-icons/react";
+import { Bell, CaretDown, SignOut, Gear, Sun, Moon } from "@phosphor-icons/react";
 import { useSiteTheme } from "@/components/SiteThemeProvider";
 import { findActiveAdminItem } from "@/lib/admin-nav";
 import Dropdown from "@/components/ui/Dropdown";
 
 export default function AdminTopbar() {
     const [currentTime, setCurrentTime] = useState<Date | null>(null);
+    const [adminTheme, setAdminTheme] = useState<"light" | "dark" | null>(null);
     const pathname = usePathname();
     const router = useRouter();
     const siteTheme = useSiteTheme();
@@ -21,6 +22,29 @@ export default function AdminTopbar() {
         }, 1000);
         return () => clearInterval(timer);
     }, []);
+
+    // Theme toggle - read from localStorage after mount to avoid hydration mismatch
+    useEffect(() => {
+        const saved = localStorage.getItem("adminTheme") as "light" | "dark" | null;
+        const theme = saved === "light" ? "light" : "dark";
+        setAdminTheme(theme);
+        if (theme === "light") {
+            document.documentElement.classList.add("theme-light");
+        } else {
+            document.documentElement.classList.remove("theme-light");
+        }
+    }, []);
+
+    const handleToggleTheme = () => {
+        const next = adminTheme === "light" ? "dark" : "light";
+        setAdminTheme(next);
+        localStorage.setItem("adminTheme", next);
+        if (next === "light") {
+            document.documentElement.classList.add("theme-light");
+        } else {
+            document.documentElement.classList.remove("theme-light");
+        }
+    };
 
     const active = findActiveAdminItem(pathname, undefined, false);
 
@@ -77,6 +101,21 @@ export default function AdminTopbar() {
                     onClick={() => router.push("/admin/analytics")}
                 >
                     <Bell size={18} aria-hidden="true" />
+                </button>
+
+                {/* Light/night theme toggle */}
+                <button
+                    className="rounded-control p-2 text-text-2 hover:bg-surface-2 hover:text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    style={{ transition: `color var(--motion-standard) var(--motion-ease)` }}
+                    aria-pressed={adminTheme === "light"}
+                    aria-label="Beralih tampilan terang/gelap"
+                    title={adminTheme === "light" ? "Tampilan gelap" : "Tampilan terang"}
+                    onClick={handleToggleTheme}
+                >
+                    {adminTheme === "light"
+                        ? <Moon size={18} aria-hidden="true" />
+                        : <Sun size={18} aria-hidden="true" />
+                    }
                 </button>
 
                 {/* User menu */}

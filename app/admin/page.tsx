@@ -1,16 +1,11 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
-import {
-    FiFileText,
-    FiEye,
-    FiEdit,
-    FiTrendingUp,
-    FiPlusCircle,
-    FiArrowRight
-} from "react-icons/fi";
+import { Files, Eye, PencilSimple, Broadcast } from "@phosphor-icons/react";
 import { formatNumber, formatDateShort } from "@/lib/utils";
 import { runScheduler } from "@/lib/scheduler";
 import { resolveAdminSiteId } from "@/lib/site-context";
+import { deriveAnnouncementStatus } from "@/lib/announcement-status";
+import StatusPill from "@/components/ui/StatusPill";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +42,13 @@ async function getRecentAnnouncements(siteId: string | null) {
     });
 }
 
+const statConfig = [
+    { icon: Files, label: "TOTAL", key: "total" as const },
+    { icon: Broadcast, label: "PUBLISHED", key: "published" as const },
+    { icon: PencilSimple, label: "DRAFT", key: "drafts" as const },
+    { icon: Eye, label: "VIEWS", key: "totalViews" as const },
+];
+
 export default async function AdminDashboard() {
     // Run auto-scheduler check
     await runScheduler();
@@ -57,258 +59,117 @@ export default async function AdminDashboard() {
         getRecentAnnouncements(siteId),
     ]);
 
-    const statCards = [
-        { icon: FiFileText, label: "TOTAL", value: stats.total, color: "#dc2626" },
-        { icon: FiEye, label: "PUBLISHED", value: stats.published, color: "#22c55e" },
-        { icon: FiEdit, label: "DRAFT", value: stats.drafts, color: "#eab308" },
-        { icon: FiTrendingUp, label: "VIEWS", value: stats.totalViews, color: "#3b82f6" },
-    ];
-
     return (
-        <div style={{ padding: '32px' }}>
+        <div className="p-8">
             {/* Header */}
-            <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px',
-                marginBottom: '32px',
-            }}>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                 <div>
-                    <p style={{
-                        color: 'var(--brand-red)',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        letterSpacing: '0.2em',
-                        marginBottom: '4px',
-                    }}>
+                    <p className="text-accent text-xs font-semibold tracking-widest mb-1">
                         OVERVIEW
                     </p>
-                    <h1 style={{
-                        fontFamily: 'Montserrat, sans-serif',
-                        fontSize: '24px',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                    }}>
-                        Dashboard
-                    </h1>
+                    <h1 className="text-xl font-bold">Dashboard</h1>
                 </div>
                 <Link
                     href="/admin/announcements/new"
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '12px 24px',
-                        backgroundColor: 'var(--brand-red)',
-                        color: 'var(--text-primary)',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        letterSpacing: '0.1em',
-                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white text-xs font-semibold tracking-widest rounded-control transition-colors duration-150 hover:opacity-90"
                 >
-                    <FiPlusCircle size={14} />
+                    <Files weight="fill" size={14} />
                     BUAT PENGUMUMAN
                 </Link>
             </div>
 
-            {/* Stats Cards */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '24px',
-                marginBottom: '32px',
-            }}>
-                {statCards.map((stat, index) => (
+            {/* Stat Tiles */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {statConfig.map(({ icon: Icon, label, key }) => (
                     <div
-                        key={index}
-                        style={{
-                            backgroundColor: '#0a0a0a',
-                            border: '1px solid #262626',
-                            borderLeft: `4px solid ${stat.color}`,
-                            borderRadius: '8px',
-                            padding: '28px',
-                            position: 'relative',
-                            overflow: 'hidden',
-                        }}
+                        key={label}
+                        className="bg-surface-1 border border-border rounded-card shadow-lvl-1 p-7 relative overflow-hidden transition-opacity duration-150"
                     >
-                        {/* Gradient background */}
-                        <div style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            width: '50%',
-                            height: '100%',
-                            background: `linear-gradient(135deg, transparent 0%, ${stat.color}08 100%)`,
-                            pointerEvents: 'none',
-                        }} />
-                        <div style={{ position: 'relative', zIndex: 1 }}>
-                            <div
-                                style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginBottom: '20px',
-                                    backgroundColor: `${stat.color}20`,
-                                    borderRadius: '12px',
-                                    border: `1px solid ${stat.color}40`,
-                                    color: stat.color,
-                                }}
-                            >
-                                <stat.icon size={22} />
-                            </div>
-                            <p style={{
-                                color: 'var(--text-secondary)',
-                                fontSize: '12px',
-                                fontWeight: 700,
-                                letterSpacing: '0.15em',
-                                marginBottom: '8px',
-                            }}>
-                                {stat.label}
-                            </p>
-                            <p style={{
-                                fontFamily: 'Montserrat, sans-serif',
-                                fontSize: '36px',
-                                fontWeight: 800,
-                                color: 'var(--text-primary)',
-                                lineHeight: 1,
-                            }}>
-                                {formatNumber(stat.value)}
-                            </p>
+                        <div
+                            className="w-12 h-12 flex items-center justify-center mb-5 bg-accent-subtle rounded-control"
+                        >
+                            <Icon size={22} className="text-accent" weight="duotone" />
                         </div>
+                        <p className="text-text-2 text-xs font-semibold tracking-widest mb-2">
+                            {label}
+                        </p>
+                        <p className="font-mono tabular-nums text-3xl font-bold text-text-1 leading-none">
+                            {formatNumber(stats[key])}
+                        </p>
                     </div>
                 ))}
             </div>
 
-            {/* Recent Announcements */}
-            <div style={{
-                backgroundColor: 'var(--bg-secondary)',
-                border: '1px solid var(--bg-tertiary)',
-            }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '24px',
-                    borderBottom: '1px solid var(--bg-tertiary)',
-                }}>
+            {/* Recent Announcements Ledger */}
+            <div className="bg-surface-1 border border-border rounded-card overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                     <div>
-                        <p style={{
-                            color: 'var(--brand-red)',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            letterSpacing: '0.2em',
-                            marginBottom: '4px',
-                        }}>
+                        <p className="text-accent text-xs font-semibold tracking-widest mb-1">
                             AKTIVITAS
                         </p>
-                        <h2 style={{
-                            fontFamily: 'Montserrat, sans-serif',
-                            fontWeight: 700,
-                            color: 'var(--text-primary)',
-                        }}>
-                            Pengumuman Terbaru
-                        </h2>
+                        <h2 className="text-base font-bold">Pengumuman Terbaru</h2>
                     </div>
                     <Link
                         href="/admin/announcements"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            color: 'var(--brand-red)',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            letterSpacing: '0.1em',
-                        }}
+                        className="inline-flex items-center gap-2 text-accent text-xs font-semibold tracking-widest hover:opacity-80 transition-opacity duration-150"
                     >
                         LIHAT SEMUA
-                        <FiArrowRight size={14} />
+                        <Files weight="bold" size={14} />
                     </Link>
                 </div>
 
                 {recentAnnouncements.length > 0 ? (
                     <div>
-                        {recentAnnouncements.map((announcement) => (
-                            <div
-                                key={announcement.id}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '20px 24px',
-                                    borderBottom: '1px solid var(--bg-tertiary)',
-                                }}
-                            >
-                                <div style={{ flex: 1, overflow: 'hidden' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                        <span style={{
-                                            padding: '4px 8px',
-                                            backgroundColor: `${announcement.category.color}20`,
-                                            color: announcement.category.color,
-                                            fontSize: '10px',
-                                            fontWeight: 600,
-                                        }}>
-                                            {announcement.category.name.toUpperCase()}
-                                        </span>
-                                        {announcement.isPinned && (
-                                            <span style={{
-                                                padding: '4px 8px',
-                                                backgroundColor: 'rgba(220, 38, 38, 0.2)',
-                                                color: 'var(--brand-red)',
-                                                fontSize: '10px',
-                                                fontWeight: 600,
-                                            }}>
-                                                PINNED
-                                            </span>
-                                        )}
-                                        {!announcement.isPublished && (
-                                            <span style={{
-                                                padding: '4px 8px',
-                                                backgroundColor: 'rgba(234, 179, 8, 0.2)',
-                                                color: 'var(--color-warning)',
-                                                fontSize: '10px',
-                                                fontWeight: 600,
-                                            }}>
-                                                DRAFT
-                                            </span>
-                                        )}
-                                    </div>
-                                    <h3 style={{
-                                        color: 'var(--text-primary)',
-                                        fontWeight: 500,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                    }}>
-                                        {announcement.title}
-                                    </h3>
-                                    <p style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>
-                                        {formatDateShort(announcement.createdAt)} • {formatNumber(announcement.viewCount)} views
-                                    </p>
-                                </div>
-                                <Link
-                                    href={`/admin/announcements/${announcement.id}/edit`}
-                                    aria-label="Edit pengumuman"
-                                    style={{
-                                        padding: '8px',
-                                        color: 'var(--text-muted)',
-                                    }}
+                        {recentAnnouncements.map((announcement) => {
+                            const status = deriveAnnouncementStatus({ isPublished: announcement.isPublished });
+                            return (
+                                <div
+                                    key={announcement.id}
+                                    className="flex items-center gap-4 px-6 py-5 border-b border-border last:border-b-0 transition-colors duration-150 hover:bg-surface-2"
                                 >
-                                    <FiEdit size={18} />
-                                </Link>
-                            </div>
-                        ))}
+                                    {/* Status + Title */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <StatusPill status={status} />
+                                            <span
+                                                className="text-[10px] font-semibold"
+                                                style={{ color: announcement.category.color }}
+                                            >
+                                                {announcement.category.name.toUpperCase()}
+                                            </span>
+                                            {announcement.isPinned && (
+                                                <span className="inline-flex items-center gap-1 rounded-[6px] px-2 py-0.5 text-xs font-medium bg-danger text-danger">
+                                                    <Files size={10} />
+                                                    PINNED
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h3 className="text-text-1 text-sm font-medium truncate">
+                                            {announcement.title}
+                                        </h3>
+                                        <p className="text-text-3 text-sm font-mono tabular-nums">
+                                            {formatDateShort(announcement.createdAt)} &middot; {formatNumber(announcement.viewCount)} views
+                                        </p>
+                                    </div>
+
+                                    {/* Edit link */}
+                                    <Link
+                                        href={`/admin/announcements/${announcement.id}/edit`}
+                                        aria-label="Edit pengumuman"
+                                        className="p-2 text-text-3 hover:text-text-1 transition-colors duration-150"
+                                    >
+                                        <PencilSimple size={18} />
+                                    </Link>
+                                </div>
+                            );
+                        })}
                     </div>
                 ) : (
-                    <div style={{ textAlign: 'center', padding: '48px' }}>
-                        <p style={{ color: 'var(--text-tertiary)', marginBottom: '16px' }}>Belum ada pengumuman.</p>
+                    <div className="text-center py-12">
+                        <p className="text-text-3 mb-4">Belum ada pengumuman.</p>
                         <Link
                             href="/admin/announcements/new"
-                            style={{ color: 'var(--brand-red)', fontWeight: 700 }}
+                            className="text-accent font-bold hover:opacity-80 transition-opacity duration-150"
                         >
                             Buat pengumuman pertama &gt;&gt;
                         </Link>

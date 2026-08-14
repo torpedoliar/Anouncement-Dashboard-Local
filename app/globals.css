@@ -55,6 +55,11 @@
   --shadow-2: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
   --shadow-3: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
 
+  /* ---- Motion timing (150–300ms, spring-ish ease, transform/opacity only) ---- */
+  --motion-fast: 150ms;
+  --motion-standard: 300ms;
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
   /* ---- Legacy aliases (backward compat — remove after full migration) ---- */
   --santos-red: var(--brand-red);
   --santos-red-dark: var(--brand-red-dark);

@@ -10,6 +10,40 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { getAccessibleSites } from '@/lib/site-access';
+import { deriveAnnouncementStatus } from '@/lib/announcement-status';
+
+// Live ("published") vs future-scheduled counts per site, computed in JS:
+// Prisma 5's _count cannot filter nested relation counts, so tally from one
+// parallel announcement query using the shared status helper (single source
+// of truth for what "live" means — no relabeling of total syndications).
+async function getSiteLiveScheduledCounts(siteIds: string[]) {
+    if (siteIds.length === 0) return new Map<string, { live: number; scheduled: number }>();
+    const annRows = await prisma.announcement.findMany({
+        where: { sites: { some: { siteId: { in: siteIds } } } },
+        select: {
+            id: true,
+            isPublished: true,
+            scheduledAt: true,
+            takedownAt: true,
+            sites: { where: { siteId: { in: siteIds } }, select: { siteId: true } },
+        },
+    });
+    const counts = new Map<string, { live: number; scheduled: number }>();
+    for (const row of annRows) {
+        const status = deriveAnnouncementStatus({
+            isPublished: row.isPublished,
+            scheduledAt: row.scheduledAt,
+            takedownAt: row.takedownAt,
+        });
+        for (const s of row.sites) {
+            const c = counts.get(s.siteId) ?? { live: 0, scheduled: 0 };
+            if (status === "published") c.live += 1;
+            else if (status === "scheduled") c.scheduled += 1;
+            counts.set(s.siteId, c);
+        }
+    }
+    return counts;
+}
 
 // GET /api/sites - List sites
 export async function GET(request: NextRequest) {
@@ -44,7 +78,15 @@ export async function GET(request: NextRequest) {
                 },
                 orderBy: { name: 'asc' },
             });
-            return NextResponse.json(sites);
+            const counts = await getSiteLiveScheduledCounts(sites.map((s) => s.id));
+            return NextResponse.json(sites.map((s) => ({
+                ...s,
+                _count: {
+                    ...s._count,
+                    liveCount: counts.get(s.id)?.live ?? 0,
+                    scheduledCount: counts.get(s.id)?.scheduled ?? 0,
+                },
+            })));
         }
 
         // Regular users only see their accessible sites
@@ -68,7 +110,15 @@ export async function GET(request: NextRequest) {
             orderBy: { name: 'asc' },
         });
 
-        return NextResponse.json(sites);
+        const counts = await getSiteLiveScheduledCounts(siteIds);
+        return NextResponse.json(sites.map((s) => ({
+            ...s,
+            _count: {
+                ...s._count,
+                liveCount: counts.get(s.id)?.live ?? 0,
+                scheduledCount: counts.get(s.id)?.scheduled ?? 0,
+            },
+        })));
     } catch (error) {
         console.error('Error fetching sites:', error);
         return NextResponse.json({ error: 'Failed to fetch sites' }, { status: 500 });

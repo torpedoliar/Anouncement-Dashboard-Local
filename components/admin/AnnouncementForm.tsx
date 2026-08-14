@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FiSave, FiX, FiUpload, FiStar, FiMapPin, FiEye, FiClock, FiImage, FiVideo, FiYoutube, FiPlay, FiFolder, FiMessageSquare } from "react-icons/fi";
+import { Check, YoutubeLogo, Image as ImageIcon, VideoCamera, FolderOpen, Play, Eye, Clock, Star, X, UploadSimple, ChatCenteredText } from "@phosphor-icons/react";
 import RichTextEditor from "./RichTextEditor";
 import MediaPickerModal from "./MediaPickerModal";
 import SiteSyndicationPicker, { SiteAssoc } from "./SiteSyndicationPicker";
+import AnnouncementPreview from "./AnnouncementPreview";
+import { useSiteTheme } from "@/components/SiteThemeProvider";
+import { deriveAnnouncementStatus } from "@/lib/announcement-status";
 
 interface Category {
     id: string;
@@ -38,6 +41,7 @@ type MediaType = "image" | "video" | "youtube";
 
 export default function AnnouncementForm({ categories, defaultSiteId, initialData }: AnnouncementFormProps) {
     const router = useRouter();
+    const { theme, siteName: currentSiteName } = useSiteTheme();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -72,13 +76,32 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
 
     const isEditing = !!initialData?.id;
 
-    // --- Draft autosave (edit mode only) ---
+    // Draft state
     const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved">("idle");
     const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
     const [pendingDraft, setPendingDraft] = useState<{ content: string; updatedAt: string } | null>(null);
     const lastSavedContent = useRef<string>(initialData?.content || "");
 
-    // On open: detect an unsaved draft newer than the saved content and offer restore
+    // Derive status for display
+    const status = deriveAnnouncementStatus({
+        isPublished,
+        scheduledAt: scheduledAt || undefined,
+        takedownAt: takedownAt || undefined,
+    });
+
+    // Status label map
+    const statusLabel = {
+        draft: "Draf",
+        scheduled: "Terjadwal",
+        published: "Terbit sekarang",
+        "taken-down": "Sudah ditarik",
+    } as const;
+
+    // Word count & reading time
+    const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+    const readingTime = content.trim() ? Math.max(1, Math.ceil(wordCount / 200)) : 0;
+
+    // On open: detect unsaved draft
     useEffect(() => {
         if (!isEditing || !initialData?.id) return;
         let cancelled = false;
@@ -92,13 +115,13 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                     setPendingDraft({ content: data.draftContent, updatedAt: data.draftUpdatedAt });
                 }
             } catch {
-                // Non-critical: draft detection failure shouldn't block editing
+                // Non-critical
             }
         })();
         return () => { cancelled = true; };
     }, [isEditing, initialData?.id]);
 
-    // Debounced autosave of content while editing
+    // Debounced autosave
     useEffect(() => {
         if (!isEditing || !initialData?.id) return;
         if (content === lastSavedContent.current) return;
@@ -121,7 +144,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
             } catch {
                 setDraftStatus("idle");
             }
-        }, 3000); // 3s after the user stops typing
+        }, 3000);
 
         return () => clearTimeout(handle);
     }, [content, isEditing, initialData?.id]);
@@ -138,56 +161,24 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
         if (initialData?.id) {
             try {
                 await fetch(`/api/announcements/${initialData.id}/draft`, { method: "DELETE" });
-            } catch {
-                // Non-critical
-            }
+            } catch { /* non-critical */ }
         }
     };
 
-    const inputStyle = {
-        width: '100%',
-        padding: '12px 16px',
-        backgroundColor: '#0a0a0a',
-        border: '1px solid #262626',
-        color: '#fff',
-        fontSize: '14px',
-    };
-
-    const labelStyle = {
-        display: 'block',
-        color: '#a3a3a3',
-        fontSize: '13px',
-        fontWeight: 500 as const,
-        marginBottom: '8px',
-    };
-
-    const cardStyle = {
-        backgroundColor: '#0a0a0a',
-        border: '1px solid #1a1a1a',
-        padding: '16px',
-    };
-
+    // --- Media handlers (unchanged) ---
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         setImageUploading(true);
         setError("");
-
         try {
             const formData = new FormData();
             formData.append("file", file);
-
-            const response = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-            });
-
+            const response = await fetch("/api/upload", { method: "POST", body: formData });
             if (!response.ok) {
                 const data = await response.json();
                 throw new Error(data.error || "Upload failed");
             }
-
             const data = await response.json();
             setImagePath(data.url);
         } catch (err) {
@@ -200,36 +191,24 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
     const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
-        // Validate file size (100MB max)
         if (file.size > 100 * 1024 * 1024) {
             setError("Ukuran video maksimal 100MB");
             return;
         }
-
-        // Validate file type
         if (file.type !== "video/mp4") {
             setError("Format video harus MP4");
             return;
         }
-
         setVideoUploading(true);
         setError("");
-
         try {
             const formData = new FormData();
             formData.append("file", file);
-
-            const response = await fetch("/api/media", {
-                method: "POST",
-                body: formData,
-            });
-
+            const response = await fetch("/api/media", { method: "POST", body: formData });
             if (!response.ok) {
                 const data = await response.json();
                 throw new Error(data.error || "Upload failed");
             }
-
             const data = await response.json();
             setVideoPath(data.url);
         } catch (err) {
@@ -239,7 +218,6 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
         }
     };
 
-    // Extract YouTube video ID
     const extractYoutubeId = (url: string): string | null => {
         const patterns = [
             /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
@@ -257,14 +235,12 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
         setIsLoading(true);
         setError("");
 
-        // Validate YouTube URL if selected
         if (mediaType === "youtube" && youtubeUrl && !extractYoutubeId(youtubeUrl)) {
             setError("URL YouTube tidak valid");
             setIsLoading(false);
             return;
         }
 
-        // Require at least one target site
         if (siteAssocs.length === 0) {
             setError("Pilih minimal satu site untuk publish");
             setIsLoading(false);
@@ -300,7 +276,6 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                 throw new Error(data.error || "Failed to save");
             }
 
-            // Saved content is now canonical — discard any autosaved draft
             if (isEditing && initialData?.id) {
                 lastSavedContent.current = content;
                 fetch(`/api/announcements/${initialData.id}/draft`, { method: "DELETE" }).catch(() => {});
@@ -317,510 +292,471 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
 
     const youtubeVideoId = extractYoutubeId(youtubeUrl);
 
+    // Build media preview object for the preview panel
+    const previewMedia =
+        mediaType === "image"
+            ? { type: "image" as const, url: imagePath || null }
+            : mediaType === "video"
+                ? { type: "video" as const, url: videoPath || null }
+                : { type: "youtube" as const, url: youtubeUrl || null };
+
+    const selectedCategory = categories.find(c => c.id === categoryId);
+
     return (
-        <>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                {/* Error */}
-                {error && (
-                    <div style={{
-                        padding: '16px',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                        color: 'var(--color-error)',
-                        fontSize: '14px',
-                    }}>
-                        {error}
-                    </div>
-                )}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            {/* Error banner */}
+            {error && (
+                <div
+                    className="rounded-card p-4 text-sm"
+                    style={{ background: "var(--color-danger-subtle)", border: "1px solid var(--color-danger)" }}
+                >
+                    {error}
+                </div>
+            )}
 
-                {/* Unsaved draft restore banner */}
-                {pendingDraft && (
-                    <div style={{
-                        padding: '14px 16px',
-                        backgroundColor: 'rgba(234, 179, 8, 0.1)',
-                        border: '1px solid rgba(234, 179, 8, 0.4)',
-                        color: 'var(--color-warning)',
-                        fontSize: '13px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '12px',
-                    }}>
-                        <span>
-                            Ditemukan draft otomatis yang belum disimpan
-                            {pendingDraft.updatedAt && ` (${new Date(pendingDraft.updatedAt).toLocaleString('id-ID')})`}.
-                        </span>
-                        <span style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                            <button type="button" onClick={restoreDraft} style={{
-                                padding: '6px 12px', backgroundColor: 'var(--color-warning)', color: 'var(--bg-primary)',
-                                border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                            }}>Pulihkan</button>
-                            <button type="button" onClick={discardDraft} style={{
-                                padding: '6px 12px', backgroundColor: 'transparent', color: 'var(--color-warning)',
-                                border: '1px solid rgba(234,179,8,0.4)', fontSize: '12px', cursor: 'pointer',
-                            }}>Abaikan</button>
-                        </span>
-                    </div>
-                )}
+            {/* Unsaved draft restore banner */}
+            {pendingDraft && (
+                <div
+                    className="flex items-center justify-between gap-4 rounded-card p-3.5 text-sm"
+                    style={{
+                        background: "var(--color-warning-subtle)",
+                        border: "1px solid rgba(234,179,8,0.4)",
+                        color: "var(--color-warning)",
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <span>
+                        Ditemukan draft otomatis yang belum disimpan
+                        {pendingDraft.updatedAt && ` (${new Date(pendingDraft.updatedAt).toLocaleString("id-ID")})`}.
+                    </span>
+                    <span className="flex gap-2 shrink-0">
+                        <button type="button" onClick={restoreDraft}
+                            className="rounded-control px-3 py-1.5 text-xs font-semibold cursor-pointer"
+                            style={{ background: "var(--color-warning)", color: "var(--surface-0)" }}
+                        >Pulihkan</button>
+                        <button type="button" onClick={discardDraft}
+                            className="rounded-control border px-3 py-1.5 text-xs cursor-pointer"
+                            style={{
+                                background: "transparent",
+                                color: "var(--color-warning)",
+                                borderColor: "rgba(234,179,8,0.4)",
+                            }}
+                        >Abaikan</button>
+                    </span>
+                </div>
+            )}
 
-                {/* Autosave indicator */}
-                {isEditing && draftStatus !== "idle" && (
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        {draftStatus === "saving"
-                            ? "Menyimpan draft..."
-                            : draftSavedAt
-                                ? `Draft tersimpan otomatis ${draftSavedAt.toLocaleTimeString('id-ID')}`
-                                : ""}
-                    </div>
-                )}
+            {/* Autosave indicator */}
+            {isEditing && draftStatus !== "idle" && (
+                <p className="text-xs" style={{ color: "var(--text-3)" }}>
+                    {draftStatus === "saving"
+                        ? "Menyimpan draft..."
+                        : draftSavedAt
+                            ? `Draft tersimpan otomatis ${draftSavedAt.toLocaleTimeString("id-ID")}`
+                            : ""}
+                </p>
+            )}
 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 1fr',
-                    gap: '24px',
-                }}>
-                    {/* Main Content */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        {/* Title */}
-                        <div>
-                            <label style={labelStyle}>
-                                Judul Pengumuman *
-                            </label>
+            {/* ── Publish status bar (top) ── */}
+            <div
+                className="flex flex-wrap items-center gap-3 rounded-card p-4"
+                style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
+            >
+                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-3)" }}>
+                    Status
+                </span>
+                <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+                    style={{
+                        background: status === "published"
+                            ? "var(--color-success-subtle)"
+                            : status === "scheduled"
+                                ? "var(--color-warning-subtle)"
+                                : "var(--color-info-subtle)",
+                        color: status === "published"
+                            ? "var(--color-success)"
+                            : status === "scheduled"
+                                ? "var(--color-warning)"
+                                : "var(--color-info)",
+                    }}
+                >
+                    <Check size={12} weight="bold" />
+                    {statusLabel[status]}
+                </span>
+
+                <label className="flex items-center gap-2.5 cursor-pointer" aria-label="Publish">
+                    <input
+                        type="checkbox"
+                        checked={isPublished}
+                        onChange={(e) => setIsPublished(e.target.checked)}
+                        className="size-4 accent-[var(--brand-red)]"
+                    />
+                    <Eye size={16} weight="fill" className="text-[#22c55e]" />
+                    <span className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Publish</span>
+                </label>
+
+                <div className="flex items-center gap-2">
+                    <label htmlFor="scheduledAt" className="text-xs" style={{ color: "var(--text-3)" }}>
+                        <Clock size={12} weight="fill" className="inline mr-1 text-[#22c55e]" />
+                        Terjadwal
+                    </label>
+                    <input
+                        id="scheduledAt"
+                        type="datetime-local"
+                        value={scheduledAt}
+                        onChange={(e) => setScheduledAt(e.target.value)}
+                        className="rounded-control border px-2 py-1 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
+                        style={{ background: "var(--surface-0)", borderColor: "var(--border)", color: "var(--text-1)" }}
+                    />
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <label htmlFor="takedownAt" className="text-xs" style={{ color: "var(--text-3)" }}>
+                        <Clock size={12} weight="fill" className="inline mr-1 text-[#ef4444]" />
+                        Takedown
+                    </label>
+                    <input
+                        id="takedownAt"
+                        type="datetime-local"
+                        value={takedownAt}
+                        onChange={(e) => setTakedownAt(e.target.value)}
+                        className="rounded-control border px-2 py-1 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
+                        style={{ background: "var(--surface-0)", borderColor: "var(--border)", color: "var(--text-1)" }}
+                    />
+                </div>
+
+                {siteAssocs.length > 0 && (
+                    <span className="ml-auto text-xs" style={{ color: "var(--text-3)" }}>
+                        <Star size={11} weight="fill" className="inline mr-1 text-[#eab308]" />
+                        {siteAssocs.some(s => s.isPrimary) && "Primary"} · {siteAssocs.filter(s => s.isHero).length} hero · {siteAssocs.filter(s => s.isPinned).length} pin · {siteAssocs.length} site
+                    </span>
+                )}
+            </div>
+
+            {/* ── Two-pane layout ── */}
+            <div className="flex flex-col lg:grid lg:grid-cols-[1fr_380px] lg:gap-6">
+                {/* LEFT: fields */}
+                <div className="flex flex-col gap-5">
+                    {/* Title */}
+                    <div>
+                        <label htmlFor="title" className="block text-sm font-medium mb-2" style={{ color: "var(--text-2)" }}>
+                            Judul Pengumuman *
+                        </label>
+                        <input
+                            id="title"
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Masukkan judul pengumuman"
+                            required
+                            className="w-full rounded-control border px-4 py-3 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
+                            style={{
+                                background: "var(--surface-0)",
+                                borderColor: "var(--border)",
+                                color: "var(--text-1)",
+                            }}
+                        />
+                    </div>
+
+                    {/* Content */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-2)" }}>
+                            Konten *
+                        </label>
+                        <RichTextEditor content={content} onChange={setContent} placeholder="Tulis konten pengumuman..." />
+                        {/* Word count / reading time */}
+                        {content.trim() && (
+                            <p className="mt-1.5 mono text-xs" style={{ color: "var(--text-3)" }}>
+                                {wordCount} kata · {readingTime} min baca
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Options (allow comments) */}
+                    <div
+                        className="flex items-center gap-3 rounded-card p-4"
+                        style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
+                    >
+                        <label htmlFor="allowComments" className="flex items-center gap-2.5 cursor-pointer">
                             <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Masukkan judul pengumuman"
-                                style={inputStyle}
-                                required
+                                id="allowComments"
+                                type="checkbox"
+                                checked={allowComments}
+                                onChange={(e) => setAllowComments(e.target.checked)}
+                                className="size-4 accent-[var(--brand-red)]"
                             />
-                        </div>
-
-                        {/* Content */}
-                        <div>
-                            <label style={labelStyle}>
-                                Konten *
-                            </label>
-                            <RichTextEditor
-                                content={content}
-                                onChange={setContent}
-                                placeholder="Tulis konten pengumuman..."
-                            />
-                        </div>
+                            <ChatCenteredText size={16} weight="fill" className="text-[#60a5fa]" />
+                            <span className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Izinkan Komentar</span>
+                        </label>
                     </div>
 
-                    {/* Sidebar */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {/* Category */}
-                        <div style={cardStyle}>
-                            <label style={labelStyle}>Kategori</label>
+                    {/* Category + Site Syndication */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="rounded-card p-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                            <label htmlFor="categoryId" className="block text-sm font-medium mb-2" style={{ color: "var(--text-2)" }}>
+                                Kategori
+                            </label>
                             <select
+                                id="categoryId"
                                 value={categoryId}
                                 onChange={(e) => setCategoryId(e.target.value)}
-                                style={inputStyle}
+                                className="w-full rounded-control border px-3 py-2 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
+                                style={{
+                                    background: "var(--surface-0)",
+                                    borderColor: "var(--border)",
+                                    color: "var(--text-1)",
+                                }}
                             >
                                 {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
-                                        {cat.name}
-                                    </option>
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {/* Site Syndication */}
-                        <div style={cardStyle}>
+                        <div className="rounded-card p-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
                             <SiteSyndicationPicker
                                 value={siteAssocs}
                                 defaultSiteId={defaultSiteId}
                                 onChange={setSiteAssocs}
                             />
                         </div>
+                    </div>
 
-                        {/* Media Upload - Image/Video/YouTube */}
-                        <div style={cardStyle}>
-                            <label style={labelStyle}>Media Cover</label>
+                    {/* Media cover */}
+                    <div className="rounded-card p-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                        <label className="block text-sm font-medium mb-3" style={{ color: "var(--text-2)" }}>
+                            Media Cover
+                        </label>
 
-                            {/* Media Type Toggle */}
-                            <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
+                        {/* Media type toggle */}
+                        <div className="flex gap-1 mb-4">
+                            {([
+                                { type: "image" as const, icon: ImageIcon, label: "Gambar" },
+                                { type: "video" as const, icon: VideoCamera, label: "Video" },
+                                { type: "youtube" as const, icon: YoutubeLogo, label: "YouTube" },
+                            ] as const).map(({ type, icon: Icon, label }) => (
                                 <button
+                                    key={type}
                                     type="button"
-                                    onClick={() => setMediaType("image")}
+                                    onClick={() => setMediaType(type)}
+                                    aria-pressed={mediaType === type}
+                                    className="flex-1 flex items-center justify-center gap-1.5 rounded-control py-2 px-2 text-xs font-semibold transition-colors duration-150 cursor-pointer"
                                     style={{
-                                        flex: 1,
-                                        padding: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px',
-                                        backgroundColor: mediaType === "image" ? 'var(--brand-red)' : 'var(--bg-tertiary)',
-                                        color: mediaType === "image" ? 'var(--text-primary)' : 'var(--text-muted)',
-                                        border: 'none',
-                                        fontSize: '12px',
-                                        cursor: 'pointer',
+                                        background: mediaType === type ? "var(--brand-red)" : "var(--surface-3)",
+                                        color: mediaType === type ? "var(--text-1)" : "var(--text-3)",
                                     }}
                                 >
-                                    <FiImage size={14} /> Gambar
+                                    <Icon size={14} /> {label}
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setMediaType("video")}
-                                    style={{
-                                        flex: 1,
-                                        padding: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px',
-                                        backgroundColor: mediaType === "video" ? 'var(--brand-red)' : 'var(--bg-tertiary)',
-                                        color: mediaType === "video" ? 'var(--text-primary)' : 'var(--text-muted)',
-                                        border: 'none',
-                                        fontSize: '12px',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <FiVideo size={14} /> Video
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setMediaType("youtube")}
-                                    style={{
-                                        flex: 1,
-                                        padding: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px',
-                                        backgroundColor: mediaType === "youtube" ? 'var(--brand-red)' : 'var(--bg-tertiary)',
-                                        color: mediaType === "youtube" ? 'var(--text-primary)' : 'var(--text-muted)',
-                                        border: 'none',
-                                        fontSize: '12px',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <FiYoutube size={14} /> YouTube
-                                </button>
-                            </div>
+                            ))}
+                        </div>
 
-                            {/* Image Upload */}
-                            {mediaType === "image" && (
-                                imagePath ? (
-                                    <div style={{ position: 'relative' }}>
-                                        <img
-                                            src={imagePath}
-                                            alt="Preview"
-                                            style={{
-                                                width: '100%',
-                                                height: '128px',
-                                                objectFit: 'cover',
-                                            }}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setImagePath("")}
-                                            style={{
-                                                position: 'absolute',
-                                                top: '8px',
-                                                right: '8px',
-                                                padding: '4px',
-                                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                color: 'var(--text-primary)',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            <FiX size={16} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        <label style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            height: '100px',
-                                            border: '2px dashed var(--border-strong)',
-                                            cursor: 'pointer',
-                                        }}>
-                                            <FiImage size={24} color="var(--text-muted)" style={{ marginBottom: '4px' }} />
-                                            <span style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
-                                                {imageUploading ? "Uploading..." : "Upload gambar"}
-                                            </span>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleImageUpload}
-                                                style={{ display: 'none' }}
-                                                disabled={imageUploading}
-                                            />
-                                        </label>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowMediaPicker(true)}
-                                            style={{
-                                                padding: '8px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                backgroundColor: 'var(--bg-tertiary)',
-                                                color: 'var(--text-secondary)',
-                                                border: '1px solid var(--border-strong)',
-                                                fontSize: '12px',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            <FiFolder size={14} /> Media Library
-                                        </button>
-                                    </div>
-                                )
-                            )}
-
-                            {/* Video Upload */}
-                            {mediaType === "video" && (
-                                videoPath ? (
-                                    <div style={{ position: 'relative' }}>
-                                        <video
-                                            src={videoPath}
-                                            style={{
-                                                width: '100%',
-                                                height: '128px',
-                                                objectFit: 'cover',
-                                                backgroundColor: 'var(--bg-primary)',
-                                            }}
-                                        />
-                                        <div style={{
-                                            position: 'absolute',
-                                            inset: 0,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            backgroundColor: 'rgba(0,0,0,0.4)',
-                                        }}>
-                                            <FiPlay size={32} color="#fff" />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setVideoPath("")}
-                                            style={{
-                                                position: 'absolute',
-                                                top: '8px',
-                                                right: '8px',
-                                                padding: '4px',
-                                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                color: 'var(--text-primary)',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            <FiX size={16} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        <label style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            height: '128px',
-                                            border: '2px dashed var(--border-strong)',
-                                            cursor: videoUploading ? 'not-allowed' : 'pointer',
-                                            opacity: videoUploading ? 0.6 : 1,
-                                        }}>
-                                            <FiVideo size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
-                                            <span style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>
-                                                {videoUploading ? "Uploading video..." : "Klik untuk upload video"}
-                                            </span>
-                                            <span style={{ color: '#404040', fontSize: '11px', marginTop: '4px' }}>
-                                                MP4, max 100MB
-                                            </span>
-                                            <input
-                                                type="file"
-                                                accept="video/mp4"
-                                                onChange={handleVideoUpload}
-                                                style={{ display: 'none' }}
-                                                disabled={videoUploading}
-                                            />
-                                        </label>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowMediaPicker(true)}
-                                            style={{
-                                                padding: '8px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                backgroundColor: 'var(--bg-tertiary)',
-                                                color: 'var(--text-secondary)',
-                                                border: '1px solid var(--border-strong)',
-                                                fontSize: '12px',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            <FiFolder size={14} /> Media Library
-                                        </button>
-                                    </div>
-                                )
-                            )}
-
-                            {/* YouTube URL */}
-                            {mediaType === "youtube" && (
-                                <div>
-                                    <input
-                                        type="text"
-                                        placeholder="https://youtube.com/watch?v=..."
-                                        value={youtubeUrl}
-                                        onChange={(e) => setYoutubeUrl(e.target.value)}
-                                        style={{ ...inputStyle, marginBottom: '8px' }}
+                        {/* Image upload/preview */}
+                        {mediaType === "image" && (
+                            imagePath ? (
+                                <div className="relative">
+                                    <img
+                                        src={imagePath}
+                                        alt="Preview"
+                                        className="w-full h-32 object-cover rounded-card"
                                     />
-                                    {youtubeVideoId && (
-                                        <div style={{
-                                            position: 'relative',
-                                            paddingBottom: '56.25%',
-                                            height: 0,
-                                            overflow: 'hidden',
-                                            borderRadius: '4px',
-                                        }}>
-                                            <iframe
-                                                src={`https://www.youtube.com/embed/${youtubeVideoId}`}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    border: 'none',
-                                                }}
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                allowFullScreen
-                                            />
-                                        </div>
-                                    )}
-                                    {!youtubeVideoId && youtubeUrl && (
-                                        <p style={{ color: 'var(--color-error)', fontSize: '12px' }}>
-                                            URL YouTube tidak valid
-                                        </p>
-                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setImagePath("")}
+                                        className="absolute top-2 right-2 size-6 rounded-full flex items-center justify-center cursor-pointer"
+                                        style={{ background: "rgba(0,0,0,0.8)", color: "var(--text-1)" }}
+                                        aria-label="Hapus gambar"
+                                    >
+                                        <X size={14} weight="bold" />
+                                    </button>
                                 </div>
-                            )}
-                        </div>
+                            ) : (
+                                <div className="flex flex-col gap-2">
+                                    <label
+                                        className="flex flex-col items-center justify-center h-28 border-2 border-dashed cursor-pointer rounded-card transition-colors duration-150 hover:border-[var(--text-3)]"
+                                        style={{ borderColor: "var(--border-strong)" }}
+                                        role="button"
+                                        aria-label="Upload gambar"
+                                    >
+                                        <UploadSimple size={24} className="mb-1" style={{ color: "var(--text-3)" }} />
+                                        <span className="text-xs" style={{ color: "var(--text-3)" }}>
+                                            {imageUploading ? "Uploading..." : "Upload gambar"}
+                                        </span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            className="hidden"
+                                            disabled={imageUploading}
+                                        />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowMediaPicker(true)}
+                                        className="flex items-center justify-center gap-1.5 rounded-control border py-2 px-3 text-xs cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-3)]"
+                                        style={{
+                                            background: "var(--surface-3)",
+                                            borderColor: "var(--border-strong)",
+                                            color: "var(--text-2)",
+                                        }}
+                                    >
+                                        <FolderOpen size={14} /> Media Library
+                                    </button>
+                                </div>
+                            )
+                        )}
 
-                        {/* Options */}
-                        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <h4 style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Opsi</h4>
+                        {/* Video upload/preview */}
+                        {mediaType === "video" && (
+                            videoPath ? (
+                                <div className="relative">
+                                    <video
+                                        src={videoPath}
+                                        className="w-full h-32 object-cover rounded-card"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
+                                        <Play size={32} weight="fill" color="#fff" />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setVideoPath("")}
+                                        className="absolute top-2 right-2 size-6 rounded-full flex items-center justify-center cursor-pointer"
+                                        style={{ background: "rgba(0,0,0,0.8)", color: "var(--text-1)" }}
+                                        aria-label="Hapus video"
+                                    >
+                                        <X size={14} weight="bold" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-2">
+                                    <label
+                                        className="flex flex-col items-center justify-center h-32 border-2 border-dashed cursor-pointer rounded-card transition-colors duration-150 hover:border-[var(--text-3)]"
+                                        style={{ borderColor: "var(--border-strong)" }}
+                                        role="button"
+                                        aria-label="Upload video MP4, maksimal 100MB"
+                                    >
+                                        <VideoCamera size={32} className="mb-2" style={{ color: "var(--text-3)" }} />
+                                        <span className="text-sm" style={{ color: "var(--text-3)" }}>
+                                            {videoUploading ? "Uploading video..." : "Klik untuk upload video"}
+                                        </span>
+                                        <span className="text-xs mt-1" style={{ color: "var(--text-3)" }}>
+                                            MP4, max 100MB
+                                        </span>
+                                        <input
+                                            type="file"
+                                            accept="video/mp4"
+                                            onChange={handleVideoUpload}
+                                            className="hidden"
+                                            disabled={videoUploading}
+                                        />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowMediaPicker(true)}
+                                        className="flex items-center justify-center gap-1.5 rounded-control border py-2 px-3 text-xs cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-3)]"
+                                        style={{
+                                            background: "var(--surface-3)",
+                                            borderColor: "var(--border-strong)",
+                                            color: "var(--text-2)",
+                                        }}
+                                    >
+                                        <FolderOpen size={14} /> Media Library
+                                    </button>
+                                </div>
+                            )
+                        )}
 
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                        {/* YouTube URL */}
+                        {mediaType === "youtube" && (
+                            <div>
                                 <input
-                                    type="checkbox"
-                                    checked={isPublished}
-                                    onChange={(e) => setIsPublished(e.target.checked)}
-                                    style={{ width: '16px', height: '16px', accentColor: 'var(--brand-red)' }}
+                                    type="text"
+                                    placeholder="https://youtube.com/watch?v=..."
+                                    value={youtubeUrl}
+                                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                                    className="w-full rounded-control border px-4 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
+                                    style={{
+                                        background: "var(--surface-0)",
+                                        borderColor: "var(--border)",
+                                        color: "var(--text-1)",
+                                        marginBottom: "8px",
+                                    }}
                                 />
-                                <FiEye size={16} color="#22c55e" />
-                                <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Publish</span>
-                            </label>
+                                {youtubeVideoId && (
+                                    <div className="relative" style={{ paddingBottom: "56.25%", height: 0, overflow: "hidden", borderRadius: "6px" }}>
+                                        <iframe
+                                            src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+                                            className="absolute inset-0 size-full"
+                                            style={{ border: 0 }}
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            title="YouTube embed"
+                                        />
+                                    </div>
+                                )}
+                                {!youtubeVideoId && youtubeUrl && (
+                                    <p className="text-xs mt-1" style={{ color: "var(--color-danger)" }}>
+                                        URL YouTube tidak valid
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={allowComments}
-                                    onChange={(e) => setAllowComments(e.target.checked)}
-                                    style={{ width: '16px', height: '16px', accentColor: 'var(--brand-red)' }}
-                                />
-                                <FiMessageSquare size={16} color="#60a5fa" />
-                                <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Izinkan Komentar</span>
-                            </label>
-
-                            <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', lineHeight: 1.5 }}>
-                                <FiStar size={11} color="#eab308" style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                                Hero &amp; <FiMapPin size={11} color="#dc2626" style={{ margin: '0 4px', verticalAlign: 'middle' }} />
-                                Pin sekarang diatur per-site di bagian <strong>Publish to Sites</strong> di atas.
-                            </p>
-                        </div>
-
-                        {/* Scheduled Publish */}
-                        <div style={cardStyle}>
-                            <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FiClock size={14} color="#22c55e" />
-                                Jadwalkan Publish
-                            </label>
-                            <input
-                                type="datetime-local"
-                                value={scheduledAt}
-                                onChange={(e) => setScheduledAt(e.target.value)}
-                                style={inputStyle}
-                            />
-                            <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginTop: '4px' }}>
-                                Kosongkan jika ingin publish manual
-                            </p>
-                        </div>
-
-                        {/* Scheduled Takedown */}
-                        <div style={cardStyle}>
-                            <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FiClock size={14} color="#ef4444" />
-                                Jadwalkan Takedown
-                            </label>
-                            <input
-                                type="datetime-local"
-                                value={takedownAt}
-                                onChange={(e) => setTakedownAt(e.target.value)}
-                                style={inputStyle}
-                            />
-                            <p style={{ color: 'var(--text-tertiary)', fontSize: '11px', marginTop: '4px' }}>
-                                Kosongkan jika tidak ingin auto-takedown
-                            </p>
-                        </div>
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-4 pt-2 border-t" style={{ borderColor: "var(--surface-2)" }}>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="inline-flex items-center gap-2 rounded-control px-6 py-3 text-sm font-semibold cursor-pointer transition-opacity duration-150"
+                            style={{
+                                background: "var(--brand-red)",
+                                color: "var(--text-1)",
+                                opacity: isLoading ? 0.5 : 1,
+                            }}
+                        >
+                            <UploadSimple size={16} weight="bold" />
+                            {isLoading ? "Menyimpan..." : isEditing ? "Perbarui" : "Simpan"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => router.back()}
+                            className="rounded-control border px-6 py-3 text-sm font-semibold cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-3)]"
+                            style={{
+                                background: "transparent",
+                                color: "var(--text-3)",
+                                borderColor: "var(--border-strong)",
+                            }}
+                        >
+                            Batal
+                        </button>
                     </div>
                 </div>
 
-                {/* Actions */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    paddingTop: '24px',
-                    borderTop: '1px solid var(--bg-tertiary)',
-                }}>
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '12px 24px',
-                            backgroundColor: 'var(--brand-red)',
-                            color: 'var(--text-primary)',
-                            fontSize: '13px',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: isLoading ? 'not-allowed' : 'pointer',
-                            opacity: isLoading ? 0.5 : 1,
-                        }}
-                    >
-                        <FiSave size={16} />
-                        {isLoading ? "Menyimpan..." : isEditing ? "Perbarui" : "Simpan"}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => router.back()}
-                        style={{
-                            padding: '12px 24px',
-                            backgroundColor: 'transparent',
-                            color: 'var(--text-muted)',
-                            fontSize: '13px',
-                            fontWeight: 600,
-                            border: '1px solid var(--border-strong)',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        Batal
-                    </button>
+                {/* RIGHT: live preview (sticky on desktop) */}
+                <div className="hidden lg:block lg:sticky lg:top-4 lg:self-start lg:pt-1">
+                    <AnnouncementPreview
+                        title={title}
+                        content={content}
+                        category={selectedCategory?.name}
+                        media={previewMedia}
+                        siteName={currentSiteName}
+                        primaryColor={theme.primaryColor}
+                    />
                 </div>
-            </form>
+            </div>
+
+            {/* Mobile preview — stacks below */}
+            <div className="lg:hidden">
+                <AnnouncementPreview
+                    title={title}
+                    content={content}
+                    category={selectedCategory?.name}
+                    media={previewMedia}
+                    siteName={currentSiteName}
+                    primaryColor={theme.primaryColor}
+                />
+            </div>
 
             {/* Media Picker Modal */}
             <MediaPickerModal
@@ -838,6 +774,6 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                 }}
                 mediaType={mediaType === "youtube" ? "all" : mediaType}
             />
-        </>
+        </form>
     );
 }
