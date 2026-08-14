@@ -193,7 +193,7 @@ export default function GlobalAnalyticsPage() {
                     <div className="py-16 text-center text-text-3">Loading analytics...</div>
                 ) : !stats || stats.siteStats.length === 0 ? (
                     <div className="rounded-card border border-border bg-surface-1 p-12 text-center">
-                        <Globe size={48} weight="duotone" className="mx-auto mb-4 text-text-3" />
+                        <Globe size={48} weight="duotone" className="mx-auto mb-4 text-text-3" aria-hidden="true" />
                         <h3 className="mb-2 font-display text-lg font-semibold text-text-1">
                             Tidak Ada Situs
                         </h3>
@@ -241,7 +241,7 @@ export default function GlobalAnalyticsPage() {
                                     <div className="grid grid-cols-4 gap-3 border-t border-border pt-4">
                                         <div className="text-center">
                                             <p className="font-mono text-lg font-semibold tabular-nums text-text-1">
-                                                {site.stats.publishedAnnouncements}
+                                                {site.stats.publishedAnnouncements.toLocaleString("id-ID")}
                                             </p>
                                             <p className="text-[10px] uppercase tracking-wider text-text-3">
                                                 Articles
@@ -257,7 +257,7 @@ export default function GlobalAnalyticsPage() {
                                         </div>
                                         <div className="text-center">
                                             <p className="font-mono text-lg font-semibold tabular-nums text-text-1">
-                                                {site.stats.totalCategories}
+                                                {site.stats.totalCategories.toLocaleString("id-ID")}
                                             </p>
                                             <p className="text-[10px] uppercase tracking-wider text-text-3">
                                                 Categories
@@ -265,7 +265,7 @@ export default function GlobalAnalyticsPage() {
                                         </div>
                                         <div className="text-center">
                                             <p className="font-mono text-lg font-semibold tabular-nums text-text-1">
-                                                {site.stats.totalUsers}
+                                                {site.stats.totalUsers.toLocaleString("id-ID")}
                                             </p>
                                             <p className="text-[10px] uppercase tracking-wider text-text-3">
                                                 Users
@@ -281,6 +281,19 @@ export default function GlobalAnalyticsPage() {
                             <h3 className="mb-2 font-display text-sm font-semibold text-text-1">
                                 Perbandingan Metrik per Situs
                             </h3>
+                            {/* Site → color legend: each bar fill follows that site's primaryColor */}
+                            <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-text-3">
+                                {stats.siteStats.map((site) => (
+                                    <span key={site.id} className="flex items-center gap-1.5">
+                                        <span
+                                            className="h-2 w-2 rounded-full"
+                                            style={{ backgroundColor: site.primaryColor }}
+                                            aria-hidden="true"
+                                        />
+                                        {site.name}
+                                    </span>
+                                ))}
+                            </div>
                             <ResponsiveContainer width="100%" height={300}>
                                 <BarChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke={ct.grid} />
