@@ -119,7 +119,7 @@ export default function SiteSettingsPage() {
     if (isLoading) {
         return (
             <div className="flex justify-center p-8">
-                <div className="spinner" />
+                <div className="h-7 w-7 animate-spin rounded-full border-2 border-border border-t-accent" aria-hidden="true" />
             </div>
         );
     }

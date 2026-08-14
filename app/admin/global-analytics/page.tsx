@@ -190,7 +190,20 @@ export default function GlobalAnalyticsPage() {
                 )}
 
                 {isLoading && !stats ? (
-                    <div className="py-16 text-center text-text-3">Loading analytics...</div>
+                    <div className="space-y-8">
+                        {/* Stat tiles skeleton */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                            {[0, 1, 2, 3, 4].map((i) => (
+                                <div key={i} className="h-24 animate-pulse rounded-card bg-surface-2" aria-hidden="true" />
+                            ))}
+                        </div>
+                        {/* Site cards skeleton */}
+                        <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))]">
+                            {[0, 1, 2].map((i) => (
+                                <div key={i} className="h-40 animate-pulse rounded-card border border-border bg-surface-1" aria-hidden="true" />
+                            ))}
+                        </div>
+                    </div>
                 ) : !stats || stats.siteStats.length === 0 ? (
                     <div className="rounded-card border border-border bg-surface-1 p-12 text-center">
                         <Globe size={48} weight="duotone" className="mx-auto mb-4 text-text-3" aria-hidden="true" />
@@ -215,7 +228,7 @@ export default function GlobalAnalyticsPage() {
                             <TrendUp size={20} aria-hidden="true" />
                             Per-Site Performance
                         </h2>
-                        <div className="mb-8 grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
+                        <div className="mb-8 grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))]">
                             {stats.siteStats.map((site) => (
                                 <Link
                                     key={site.id}

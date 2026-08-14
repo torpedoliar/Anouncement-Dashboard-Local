@@ -110,8 +110,19 @@ export default function SitesPage() {
 
     if (isLoading) {
         return (
-            <div className="flex min-h-[40vh] items-center justify-center p-6">
-                <p className="text-text-3">Memuat...</p>
+            <div className="p-6">
+                {/* Header skeleton */}
+                <div className="mb-8 h-8 w-64 animate-pulse rounded bg-surface-2" />
+                {/* Card grid skeleton */}
+                <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr))]">
+                    {[0, 1, 2].map((i) => (
+                        <div
+                            key={i}
+                            className="h-56 animate-pulse rounded-card bg-surface-2"
+                            aria-hidden="true"
+                        />
+                    ))}
+                </div>
             </div>
         );
     }
@@ -138,7 +149,7 @@ export default function SitesPage() {
             </div>
 
             {/* Sites Grid */}
-            <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(400px,1fr))]">
+            <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr))]">
                 {sites.map((site) => {
                     const health = healthMap[site.id];
                     const healthMeta = health ? HEALTH_META[health.status] : null;

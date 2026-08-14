@@ -230,7 +230,7 @@ export default function AnalyticsDashboard() {
                                     key={article.id}
                                     className="flex items-center gap-3 rounded-card border border-border bg-surface-1 p-3"
                                 >
-                                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] font-mono text-xs font-semibold ${index === 0 ? "bg-accent text-white" : "bg-surface-2 text-text-2"}`}>
+                                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-control font-mono text-xs font-semibold ${index === 0 ? "bg-accent text-[var(--site-text-on-primary)]" : "bg-surface-2 text-text-2"}`}>
                                         {index + 1}
                                     </span>
                                     <div className="min-w-0 flex-1">
@@ -238,7 +238,7 @@ export default function AnalyticsDashboard() {
                                             {article.title}
                                         </p>
                                         {article.category && (
-                                            <span className="text-[11px]" style={{ color: article.category.color }}>
+                                            <span className="text-xs" style={{ color: article.category.color }}>
                                                 {article.category.name}
                                             </span>
                                         )}
