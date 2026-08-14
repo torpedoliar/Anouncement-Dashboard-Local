@@ -6,20 +6,31 @@
  */
 
 import { useState, useEffect } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
-    FiGlobe,
-    FiPlus,
-    FiSettings,
-    FiEdit2,
-    FiExternalLink,
-    FiUsers,
-    FiFileText,
-    FiFolder,
-    FiCheckCircle,
-    FiAlertCircle,
-    FiAlertTriangle
-} from "react-icons/fi";
+    Globe,
+    Plus,
+    GearSix,
+    PencilSimple,
+    ArrowSquareOut,
+    Users,
+    FileText,
+    Folder,
+    CheckCircle,
+    Warning,
+    WarningCircle,
+} from "@phosphor-icons/react";
+import Card from "@/components/ui/Card";
+import Badge from "@/components/ui/Badge";
+
+/** Kit Button primary visual applied to <Link> — the kit Button renders a <button>, which cannot nest inside an <a>. */
+const BUTTON_PRIMARY =
+    "inline-flex h-10 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+const ACTION_LINK =
+    "inline-flex items-center justify-center gap-1.5 rounded-control px-3 py-2 text-[13px] font-medium transition-colors duration-150";
+const ACTION_LINK_SECONDARY = `${ACTION_LINK} border border-border bg-surface-1 text-text-1 hover:bg-surface-2`;
+const ACTION_LINK_ACCENT = `${ACTION_LINK} border border-accent-subtle bg-accent-subtle text-accent hover:opacity-90`;
 
 interface Site {
     id: string;
@@ -34,11 +45,15 @@ interface Site {
         announcementSites: number;
         categories: number;
         userAccess: number;
+        liveCount: number;
+        scheduledCount: number;
     };
 }
 
+type HealthStatusKey = "good" | "warning" | "critical";
+
 interface HealthStatus {
-    status: 'good' | 'warning' | 'critical';
+    status: HealthStatusKey;
     metrics: {
         viewsLast7d: number;
         draftCount: number;
@@ -46,6 +61,12 @@ interface HealthStatus {
         scheduledPosts: number;
     };
 }
+
+const HEALTH_META: Record<HealthStatusKey, { tone: "success" | "warning" | "danger"; label: string; icon: ReactNode }> = {
+    good: { tone: "success", label: "Sehat", icon: <CheckCircle size={14} weight="fill" /> },
+    warning: { tone: "warning", label: "Perhatian", icon: <Warning size={14} weight="fill" /> },
+    critical: { tone: "danger", label: "Kritis", icon: <WarningCircle size={14} weight="fill" /> },
+};
 
 export default function SitesPage() {
     const [sites, setSites] = useState<Site[]>([]);
@@ -87,290 +108,168 @@ export default function SitesPage() {
         }
     };
 
-    const getStatusIcon = (status?: 'good' | 'warning' | 'critical') => {
-        switch (status) {
-            case 'good':
-                return <FiCheckCircle color="#22c55e" size={20} />;
-            case 'warning':
-                return <FiAlertTriangle color="#f59e0b" size={20} />;
-            case 'critical':
-                return <FiAlertCircle color="#ef4444" size={20} />;
-            default:
-                return null;
-        }
-    };
-
-    const getStatusColor = (status?: 'good' | 'warning' | 'critical') => {
-        switch (status) {
-            case 'good': return '#22c55e';
-            case 'warning': return '#f59e0b';
-            case 'critical': return '#ef4444';
-            default: return '#666';
-        }
-    };
-
     if (isLoading) {
         return (
-            <div style={{ padding: '40px', textAlign: 'center' }}>
-                <div style={{ color: 'var(--text-muted)' }}>Loading sites...</div>
+            <div className="flex min-h-[40vh] items-center justify-center p-6">
+                <p className="text-text-3">Memuat...</p>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: '24px' }}>
+        <div className="p-6">
             {/* Header */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '32px'
-            }}>
+            <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>
+                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">
+                        Sites
+                    </p>
+                    <h1 className="font-display text-2xl font-semibold text-text-1">
                         Site Management
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+                    <p className="mt-1 text-text-3">
                         Manage all sites in your multi-site network
                     </p>
                 </div>
-                <Link
-                    href="/admin/sites/new"
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '12px 24px',
-                        backgroundColor: 'var(--brand-red)',
-                        color: 'var(--text-primary)',
-                        borderRadius: '8px',
-                        textDecoration: 'none',
-                        fontWeight: 600,
-                        transition: 'transform 0.2s',
-                    }}
-                >
-                    <FiPlus size={18} />
+                <Link href="/admin/sites/new" className={BUTTON_PRIMARY}>
+                    <Plus size={16} weight="bold" />
                     Create New Site
                 </Link>
             </div>
 
             {/* Sites Grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
-                gap: '24px',
-            }}>
+            <div className="grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(400px,1fr))]">
                 {sites.map((site) => {
                     const health = healthMap[site.id];
+                    const healthMeta = health ? HEALTH_META[health.status] : null;
                     return (
-                        <div
-                            key={site.id}
-                            style={{
-                                backgroundColor: 'var(--bg-tertiary)',
-                                borderRadius: '12px',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                overflow: 'hidden',
-                            }}
-                        >
-                            {/* Header */}
-                            <div style={{
-                                padding: '20px',
-                                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'flex-start',
-                            }}>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                    <div style={{
-                                        width: '48px',
-                                        height: '48px',
-                                        borderRadius: '10px',
-                                        backgroundColor: site.primaryColor,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}>
-                                        <FiGlobe color="#fff" size={24} />
+                        <Card key={site.id} className="overflow-hidden">
+                            {/* Masthead */}
+                            <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <div
+                                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-card"
+                                        style={{ backgroundColor: site.primaryColor }}
+                                    >
+                                        <Globe size={22} weight="fill" className="text-white" />
                                     </div>
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <h3 style={{ fontSize: '18px', fontWeight: 600 }}>{site.name}</h3>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="truncate font-display text-lg font-semibold text-text-1">
+                                                {site.name}
+                                            </h3>
                                             {site.isDefault && (
-                                                <span style={{
-                                                    fontSize: '10px',
-                                                    padding: '2px 8px',
-                                                    backgroundColor: 'rgba(237,28,36,0.2)',
-                                                    color: 'var(--brand-red)',
-                                                    borderRadius: '4px',
-                                                    textTransform: 'uppercase',
-                                                    fontWeight: 600,
-                                                }}>
-                                                    Default
-                                                </span>
+                                                <Badge tone="danger">Default</Badge>
                                             )}
                                         </div>
-                                        <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                                        <div className="font-mono text-[13px] text-text-3">
                                             /site/{site.slug}
                                         </div>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    {getStatusIcon(health?.status)}
-                                    <span style={{
-                                        fontSize: '12px',
-                                        color: getStatusColor(health?.status),
-                                        textTransform: 'capitalize',
-                                    }}>
-                                        {health?.status || 'Loading...'}
-                                    </span>
-                                </div>
+                                {healthMeta ? (
+                                    <Badge tone={healthMeta.tone} className="shrink-0">
+                                        {healthMeta.icon}
+                                        {healthMeta.label}
+                                    </Badge>
+                                ) : (
+                                    <Badge tone="neutral" className="shrink-0">
+                                        Memuat...
+                                    </Badge>
+                                )}
+                            </div>
+
+                            {/* Live/scheduled honesty */}
+                            <div className="border-b border-border bg-surface-2/50 px-5 py-2.5">
+                                <span className="font-mono text-[13px] tabular-nums text-text-2">
+                                    {site._count.liveCount}{" "}
+                                    <span className="text-text-3">live</span>
+                                    <span className="mx-1.5 text-text-3">·</span>
+                                    {site._count.scheduledCount}{" "}
+                                    <span className="text-text-3">terjadwal</span>
+                                </span>
                             </div>
 
                             {/* Stats */}
-                            <div style={{
-                                padding: '16px 20px',
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(4, 1fr)',
-                                gap: '12px',
-                                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                            }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>
-                                        <FiFileText size={12} style={{ marginRight: '4px' }} />
+                            <div className="grid grid-cols-4 gap-4 border-b border-border px-5 py-4">
+                                <div className="text-center">
+                                    <div className="mb-1 flex items-center justify-center gap-1 text-[11px] text-text-3">
+                                        <FileText size={12} />
                                         Articles
                                     </div>
-                                    <div style={{ fontSize: '18px', fontWeight: 600 }}>
+                                    <div className="font-mono text-lg font-semibold tabular-nums text-text-1">
                                         {site._count.announcementSites}
                                     </div>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>
-                                        <FiFolder size={12} style={{ marginRight: '4px' }} />
+                                <div className="text-center">
+                                    <div className="mb-1 flex items-center justify-center gap-1 text-[11px] text-text-3">
+                                        <Folder size={12} />
                                         Categories
                                     </div>
-                                    <div style={{ fontSize: '18px', fontWeight: 600 }}>
+                                    <div className="font-mono text-lg font-semibold tabular-nums text-text-1">
                                         {site._count.categories}
                                     </div>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>
-                                        <FiUsers size={12} style={{ marginRight: '4px' }} />
+                                <div className="text-center">
+                                    <div className="mb-1 flex items-center justify-center gap-1 text-[11px] text-text-3">
+                                        <Users size={12} />
                                         Users
                                     </div>
-                                    <div style={{ fontSize: '18px', fontWeight: 600 }}>
+                                    <div className="font-mono text-lg font-semibold tabular-nums text-text-1">
                                         {site._count.userAccess}
                                     </div>
                                 </div>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '11px', marginBottom: '4px' }}>
+                                <div className="text-center">
+                                    <div className="mb-1 text-[11px] text-text-3">
                                         Views (7d)
                                     </div>
-                                    <div style={{ fontSize: '18px', fontWeight: 600 }}>
-                                        {health?.metrics?.viewsLast7d?.toLocaleString() || '-'}
+                                    <div className="font-mono text-lg font-semibold tabular-nums text-text-1">
+                                        {health?.metrics?.viewsLast7d?.toLocaleString() || "-"}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Actions */}
-                            <div style={{ padding: '16px 20px', display: 'flex', gap: '8px' }}>
+                            <div className="flex gap-2 p-4 px-5">
                                 <Link
                                     href={`/admin/sites/${site.id}`}
-                                    style={{
-                                        flex: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px',
-                                        padding: '10px',
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '8px',
-                                        color: 'var(--text-primary)',
-                                        textDecoration: 'none',
-                                        fontSize: '13px',
-                                        transition: 'background 0.2s',
-                                    }}
+                                    className={`${ACTION_LINK_SECONDARY} flex-1`}
                                 >
-                                    <FiEdit2 size={14} />
+                                    <PencilSimple size={14} weight="bold" />
                                     Edit
                                 </Link>
                                 <Link
                                     href={`/admin/sites/${site.id}/settings`}
-                                    style={{
-                                        flex: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px',
-                                        padding: '10px',
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '8px',
-                                        color: 'var(--text-primary)',
-                                        textDecoration: 'none',
-                                        fontSize: '13px',
-                                        transition: 'background 0.2s',
-                                    }}
+                                    className={`${ACTION_LINK_SECONDARY} flex-1`}
                                 >
-                                    <FiSettings size={14} />
+                                    <GearSix size={14} weight="bold" />
                                     Settings
                                 </Link>
                                 <Link
                                     href={`/site/${site.slug}`}
                                     target="_blank"
-                                    style={{
-                                        flex: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px',
-                                        padding: '10px',
-                                        backgroundColor: 'rgba(237,28,36,0.1)',
-                                        border: '1px solid rgba(237,28,36,0.2)',
-                                        borderRadius: '8px',
-                                        color: 'var(--brand-red)',
-                                        textDecoration: 'none',
-                                        fontSize: '13px',
-                                        transition: 'background 0.2s',
-                                    }}
+                                    className={`${ACTION_LINK_ACCENT} flex-1`}
                                 >
-                                    <FiExternalLink size={14} />
+                                    <ArrowSquareOut size={14} weight="bold" />
                                     View
                                 </Link>
                             </div>
-                        </div>
+                        </Card>
                     );
                 })}
             </div>
 
             {sites.length === 0 && (
-                <div style={{
-                    textAlign: 'center',
-                    padding: '60px 20px',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                }}>
-                    <FiGlobe size={48} color="#666" style={{ marginBottom: '16px' }} />
-                    <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>No Sites Yet</h3>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
+                <div className="rounded-card border border-border bg-surface-1 p-12 text-center">
+                    <Globe size={48} weight="duotone" className="mx-auto mb-4 text-text-3" />
+                    <h3 className="mb-2 font-display text-lg font-semibold text-text-1">
+                        No Sites Yet
+                    </h3>
+                    <p className="mb-6 text-text-3">
                         Create your first site to get started with multi-site management.
                     </p>
-                    <Link
-                        href="/admin/sites/new"
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '12px 24px',
-                            backgroundColor: 'var(--brand-red)',
-                            color: 'var(--text-primary)',
-                            borderRadius: '8px',
-                            textDecoration: 'none',
-                            fontWeight: 600,
-                        }}
-                    >
-                        <FiPlus size={18} />
+                    <Link href="/admin/sites/new" className={BUTTON_PRIMARY}>
+                        <Plus size={16} weight="bold" />
                         Create First Site
                     </Link>
                 </div>

@@ -8,9 +8,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FiArrowLeft, FiSave, FiTrash2, FiUsers, FiCheck, FiX } from "react-icons/fi";
+import { ArrowLeft, FloppyDisk, Trash, Users, Check, X } from "@phosphor-icons/react";
 import { use } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
+
+/** Kit Button visual applied to <Link> — the kit Button renders a <button>, which cannot nest inside an <a>. */
+const ACTION_LINK_SECONDARY =
+    "inline-flex items-center justify-center gap-2 rounded-control border border-border bg-surface-1 px-4 py-2.5 text-[13px] font-medium text-text-1 transition-colors duration-150 hover:bg-surface-2";
 
 interface Site {
     id: string;
@@ -125,17 +131,17 @@ export default function EditSitePage({ params }: PageProps) {
 
     if (isLoading) {
         return (
-            <div style={{ padding: "40px", textAlign: "center" }}>
-                <div style={{ color: "var(--text-muted)" }}>Loading site...</div>
+            <div className="flex min-h-[40vh] items-center justify-center p-6">
+                <p className="text-text-3">Loading site...</p>
             </div>
         );
     }
 
     if (!site) {
         return (
-            <div style={{ padding: "40px", textAlign: "center" }}>
-                <div style={{ color: "var(--color-error)" }}>{error || "Site not found"}</div>
-                <Link href="/admin/sites" style={{ color: "var(--text-muted)", marginTop: "16px", display: "inline-block" }}>
+            <div className="p-10 text-center">
+                <p className="text-danger">{error || "Site not found"}</p>
+                <Link href="/admin/sites" className="mt-4 inline-block text-text-3 hover:text-text-1">
                     Back to Sites
                 </Link>
             </div>
@@ -143,106 +149,60 @@ export default function EditSitePage({ params }: PageProps) {
     }
 
     return (
-        <div style={{ padding: "24px", maxWidth: "800px", margin: "0 auto" }}>
+        <div className="mx-auto max-w-[800px] p-6">
             {/* Header */}
-            <div style={{ marginBottom: "32px" }}>
+            <div className="mb-8">
                 <Link
                     href="/admin/sites"
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        color: "var(--text-muted)",
-                        textDecoration: "none",
-                        marginBottom: "16px",
-                    }}
+                    className="mb-4 inline-flex items-center gap-2 text-text-3 transition-colors duration-150 hover:text-text-1"
                 >
-                    <FiArrowLeft size={16} />
+                    <ArrowLeft size={16} />
                     Back to Sites
                 </Link>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div className="flex items-center justify-between gap-4">
                     <div>
-                        <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "8px" }}>
+                        <h1 className="font-display text-2xl font-semibold text-text-1">
                             Edit Site
                         </h1>
-                        <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
+                        <p className="mt-1 text-text-3">
                             Manage site details and settings
                         </p>
                     </div>
                     {site.isDefault && (
-                        <span style={{
-                            fontSize: "11px",
-                            padding: "6px 12px",
-                            backgroundColor: "rgba(237,28,36,0.1)",
-                            color: "var(--brand-red)",
-                            borderRadius: "6px",
-                            fontWeight: 600,
-                        }}>
-                            DEFAULT SITE
-                        </span>
+                        <Badge tone="danger" className="uppercase tracking-wide">
+                            Default Site
+                        </Badge>
                     )}
                 </div>
             </div>
 
             {/* Quick Actions */}
-            <div style={{
-                display: "flex",
-                gap: "12px",
-                marginBottom: "24px",
-            }}>
+            <div className="mb-6 flex flex-wrap gap-3">
                 <Link
                     href={`/admin/sites/${id}/settings`}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "10px 16px",
-                        backgroundColor: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        textDecoration: "none",
-                        fontSize: "13px",
-                    }}
+                    className={ACTION_LINK_SECONDARY}
                 >
                     Site Settings
                 </Link>
                 <Link
                     href={`/admin/sites/${id}/users`}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "10px 16px",
-                        backgroundColor: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        textDecoration: "none",
-                        fontSize: "13px",
-                    }}
+                    className={ACTION_LINK_SECONDARY}
                 >
-                    <FiUsers size={14} />
+                    <Users size={14} weight="bold" />
                     Manage Users
                 </Link>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSave}>
-                <div style={{
-                    backgroundColor: "var(--bg-tertiary)",
-                    borderRadius: "12px",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    padding: "24px",
-                    marginBottom: "24px",
-                }}>
-                    <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "20px" }}>
+                <div className="mb-6 rounded-card border border-border bg-surface-1 p-6">
+                    <h2 className="mb-5 font-display text-lg font-semibold text-text-1">
                         Basic Information
                     </h2>
 
                     {/* Name */}
-                    <div style={{ marginBottom: "20px" }}>
-                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
+                    <div className="mb-5">
+                        <label className="mb-2 block text-[13px] text-text-3">
                             Site Name *
                         </label>
                         <input
@@ -250,129 +210,85 @@ export default function EditSitePage({ params }: PageProps) {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
-                            style={{
-                                width: "100%", boxSizing: "border-box",
-                                padding: "12px 16px",
-                                backgroundColor: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                borderRadius: "8px",
-                                color: "var(--text-primary)",
-                                fontSize: "14px",
-                            }}
+                            className="w-full rounded-control border border-border bg-surface-1 px-4 py-3 text-sm text-text-1 placeholder:text-text-3"
                         />
                     </div>
 
                     {/* Slug */}
-                    <div style={{ marginBottom: "20px" }}>
-                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
+                    <div className="mb-5">
+                        <label className="mb-2 block text-[13px] text-text-3">
                             URL Slug *
                         </label>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ color: "var(--text-tertiary)", fontSize: "14px" }}>/site/</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-text-3">/site/</span>
                             <input
                                 type="text"
                                 value={slug}
                                 onChange={(e) => setSlug(e.target.value)}
                                 required
                                 pattern="[a-z0-9-]+"
-                                style={{
-                                    flex: 1,
-                                    padding: "12px 16px",
-                                    backgroundColor: "rgba(255,255,255,0.05)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: "8px",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
+                                className="flex-1 rounded-control border border-border bg-surface-1 px-4 py-3 text-sm text-text-1 placeholder:text-text-3"
                             />
                         </div>
                     </div>
 
                     {/* Description */}
-                    <div style={{ marginBottom: "20px" }}>
-                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
+                    <div className="mb-5">
+                        <label className="mb-2 block text-[13px] text-text-3">
                             Description
                         </label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={3}
-                            style={{
-                                width: "100%", boxSizing: "border-box",
-                                padding: "12px 16px",
-                                backgroundColor: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                borderRadius: "8px",
-                                color: "var(--text-primary)",
-                                fontSize: "14px",
-                                resize: "vertical",
-                            }}
+                            className="w-full resize-y rounded-control border border-border bg-surface-1 px-4 py-3 text-sm text-text-1 placeholder:text-text-3"
                         />
                     </div>
 
                     {/* Primary Color */}
-                    <div style={{ marginBottom: "20px" }}>
-                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
+                    <div className="mb-5">
+                        <label className="mb-2 block text-[13px] text-text-3">
                             Primary Color
                         </label>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div className="flex items-center gap-3">
                             <input
                                 type="color"
                                 value={primaryColor}
                                 onChange={(e) => setPrimaryColor(e.target.value)}
-                                style={{
-                                    width: "48px",
-                                    height: "48px",
-                                    borderRadius: "8px",
-                                    border: "none",
-                                    cursor: "pointer",
-                                }}
+                                className="h-12 w-12 cursor-pointer rounded-card border-none"
                             />
                             <input
                                 type="text"
                                 value={primaryColor}
                                 onChange={(e) => setPrimaryColor(e.target.value)}
-                                style={{
-                                    width: "120px",
-                                    padding: "12px 16px",
-                                    backgroundColor: "rgba(255,255,255,0.05)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: "8px",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
+                                className="w-32 rounded-control border border-border bg-surface-1 px-4 py-3 text-sm text-text-1 placeholder:text-text-3"
                             />
                         </div>
                     </div>
 
                     {/* Active Toggle */}
                     <div>
-                        <label style={{ display: "block", fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
+                        <label className="mb-2 block text-[13px] text-text-3">
                             Site Status
                         </label>
                         <button
                             type="button"
                             onClick={() => setIsActive(!isActive)}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "12px",
-                                padding: "12px 16px",
-                                backgroundColor: isActive ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
-                                border: `1px solid ${isActive ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
-                                borderRadius: "8px",
-                                cursor: "pointer",
-                            }}
+                            className={
+                                isActive
+                                    ? "flex items-center gap-3 rounded-control border border-success bg-success-subtle px-4 py-3"
+                                    : "flex items-center gap-3 rounded-control border border-danger bg-danger-subtle px-4 py-3"
+                            }
                         >
                             {isActive ? (
                                 <>
-                                    <FiCheck color="#22c55e" />
-                                    <span style={{ color: "var(--color-success)", fontWeight: 600 }}>Active</span>
+                                    <Check size={16} weight="bold" className="text-success" />
+                                    <span className="font-semibold text-success">Active</span>
                                 </>
                             ) : (
                                 <>
-                                    <FiX color="#ef4444" />
-                                    <span style={{ color: "var(--color-error)", fontWeight: 600 }}>Inactive</span>
+                                    <X size={16} weight="bold" className="text-danger" />
+                                    <span className="font-semibold text-danger">Inactive</span>
                                 </>
                             )}
                         </button>
@@ -381,75 +297,40 @@ export default function EditSitePage({ params }: PageProps) {
 
                 {/* Messages */}
                 {error && (
-                    <div style={{
-                        padding: "12px 16px",
-                        backgroundColor: "rgba(239,68,68,0.1)",
-                        border: "1px solid rgba(239,68,68,0.2)",
-                        borderRadius: "8px",
-                        color: "var(--color-error)",
-                        marginBottom: "24px",
-                    }}>
+                    <div
+                        className="mb-6 rounded-control border border-danger bg-danger-subtle px-4 py-3 text-danger"
+                        role="alert"
+                    >
                         {error}
                     </div>
                 )}
 
                 {success && (
-                    <div style={{
-                        padding: "12px 16px",
-                        backgroundColor: "rgba(34,197,94,0.1)",
-                        border: "1px solid rgba(34,197,94,0.2)",
-                        borderRadius: "8px",
-                        color: "var(--color-success)",
-                        marginBottom: "24px",
-                    }}>
+                    <div className="mb-6 rounded-control border border-success bg-success-subtle px-4 py-3 text-success">
                         {success}
                     </div>
                 )}
 
                 {/* Actions */}
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <button
+                <div className="flex items-center justify-between gap-4">
+                    <Button
                         type="button"
+                        variant="danger"
                         onClick={handleDelete}
                         disabled={isDeleting || site.isDefault}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            padding: "14px 28px",
-                            backgroundColor: "rgba(239,68,68,0.1)",
-                            border: "1px solid rgba(239,68,68,0.2)",
-                            borderRadius: "8px",
-                            color: "var(--color-error)",
-                            fontWeight: 600,
-                            cursor: isDeleting || site.isDefault ? "not-allowed" : "pointer",
-                            opacity: isDeleting || site.isDefault ? 0.5 : 1,
-                        }}
+                        iconLeft={<Trash size={16} weight="bold" />}
                     >
-                        <FiTrash2 size={16} />
                         {isDeleting ? "Deleting..." : "Delete Site"}
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                         type="submit"
+                        variant="primary"
                         disabled={isSaving}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            padding: "14px 28px",
-                            backgroundColor: "var(--brand-red)",
-                            border: "none",
-                            borderRadius: "8px",
-                            color: "var(--text-primary)",
-                            fontWeight: 600,
-                            cursor: isSaving ? "not-allowed" : "pointer",
-                            opacity: isSaving ? 0.7 : 1,
-                        }}
+                        iconLeft={<FloppyDisk size={16} weight="bold" />}
                     >
-                        <FiSave size={16} />
                         {isSaving ? "Saving..." : "Save Changes"}
-                    </button>
+                    </Button>
                 </div>
             </form>
             <ConfirmDialog />

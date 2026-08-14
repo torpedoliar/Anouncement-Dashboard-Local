@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { FiSave, FiArrowLeft, FiGlobe, FiLayout, FiShare2, FiMessageSquare, FiCheck, FiX, FiUpload, FiTrash2 } from "react-icons/fi";
+import { ArrowLeft, FloppyDisk, Layout, ShareNetwork, ChatCircleText, Check, X, UploadSimple } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 import Image from "next/image";
 
 interface SiteSettings {
@@ -117,7 +118,7 @@ export default function SiteSettingsPage() {
 
     if (isLoading) {
         return (
-            <div style={{ padding: '32px', display: 'flex', justifyContent: 'center' }}>
+            <div className="flex justify-center p-8">
                 <div className="spinner" />
             </div>
         );
@@ -126,182 +127,106 @@ export default function SiteSettingsPage() {
     if (!settings) return null;
 
     return (
-        <div style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto' }}>
+        <div className="mx-auto max-w-[1000px] p-8">
             {/* Toast Notification */}
             {message && (
-                <div style={{
-                    position: 'fixed',
-                    top: '24px',
-                    right: '24px',
-                    padding: '12px 20px',
-                    borderRadius: '8px',
-                    backgroundColor: message.type === 'success' ? 'var(--color-success)' : 'var(--color-error)',
-                    color: 'var(--text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    zIndex: 9999,
-                    fontSize: '14px',
-                    fontWeight: 500,
-                }}>
-                    {message.type === 'success' ? <FiCheck /> : <FiX />}
+                <div
+                    className={`fixed right-6 top-6 z-[9999] flex items-center gap-2 rounded-card px-5 py-3 text-sm font-medium text-white shadow-lvl-2 ${
+                        message.type === 'success' ? 'bg-success' : 'bg-danger'
+                    }`}
+                    role="status"
+                >
+                    {message.type === 'success' ? <Check size={16} weight="bold" /> : <X size={16} weight="bold" />}
                     {message.text}
                 </div>
             )}
 
             {/* Header */}
-            <div style={{ marginBottom: '32px' }}>
+            <div className="mb-8">
                 <button
                     onClick={() => router.back()}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        color: 'var(--text-secondary)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        marginBottom: '16px',
-                    }}
+                    className="mb-4 inline-flex items-center gap-2 text-[13px] text-text-2 transition-colors duration-150 hover:text-text-1"
                 >
-                    <FiArrowLeft /> Kembali
+                    <ArrowLeft size={16} /> Kembali
                 </button>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                        <h1 className="mb-2 font-display text-2xl font-semibold text-text-1">
                             Pengaturan Site
                         </h1>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                        <p className="text-text-3">
                             Konfigurasi tampilan dan fitur untuk site ini
                         </p>
                     </div>
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={isSaving}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            backgroundColor: 'var(--brand-red)',
-                            color: 'var(--text-primary)',
-                            border: 'none',
-                            padding: '10px 20px',
-                            borderRadius: '6px',
-                            fontWeight: 600,
-                            cursor: isSaving ? 'not-allowed' : 'pointer',
-                            opacity: isSaving ? 0.7 : 1,
-                        }}
+                        iconLeft={!isSaving ? <FloppyDisk size={14} weight="bold" /> : undefined}
                     >
-                        {isSaving ? (
-                            <>Menyimpan...</>
-                        ) : (
-                            <>
-                                <FiSave /> Simpan Perubahan
-                            </>
-                        )}
-                    </button>
+                        {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+                    </Button>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div style={{
-                display: 'flex',
-                gap: '24px',
-                borderBottom: '1px solid var(--border-color)',
-                marginBottom: '32px'
-            }}>
+            <div className="mb-8 flex gap-6 border-b border-border">
                 {[
-                    { id: 'general', label: 'Umum', icon: FiLayout },
-                    { id: 'social', label: 'Media Sosial', icon: FiShare2 },
-                    { id: 'comments', label: 'Komentar', icon: FiMessageSquare },
+                    { id: 'general', label: 'Umum', icon: Layout },
+                    { id: 'social', label: 'Media Sosial', icon: ShareNetwork },
+                    { id: 'comments', label: 'Komentar', icon: ChatCircleText },
                 ].map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: activeTab === tab.id ? '2px solid var(--brand-red)' : '2px solid transparent',
-                            padding: '12px 4px',
-                            color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            fontWeight: activeTab === tab.id ? 600 : 400,
-                            marginBottom: '-1px',
-                        }}
+                        className={
+                            activeTab === tab.id
+                                ? "-mb-px flex items-center gap-2 border-b-2 border-accent p-3 font-semibold text-text-1"
+                                : "-mb-px flex items-center gap-2 border-b-2 border-transparent p-3 font-medium text-text-2 transition-colors duration-150 hover:text-text-1"
+                        }
                     >
-                        <tab.icon />
+                        <tab.icon size={16} weight={activeTab === tab.id ? "fill" : "regular"} />
                         {tab.label}
                     </button>
                 ))}
             </div>
 
             {/* Content */}
-            <div style={{ backgroundColor: 'var(--bg-hover)', borderRadius: '8px', padding: '24px', border: '1px solid var(--border-color)' }}>
-
+            <div className="rounded-card border border-border bg-surface-2 p-6">
                 {/* General Tab */}
                 {activeTab === 'general' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div className="flex flex-col gap-6">
 
                         {/* Site Branding */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                        <div className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
                             <div>
-                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
+                                <label className="mb-2 block text-[13px] text-text-2">
                                     Nama Situs
                                 </label>
                                 <input
                                     type="text"
                                     value={settings.siteName || ''}
                                     onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                                    style={{
-                                        width: '100%',
-                                        backgroundColor: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '6px',
-                                        padding: '12px',
-                                        color: 'var(--text-primary)',
-                                        boxSizing: 'border-box'
-                                    }}
+                                    className="w-full rounded-control border border-border bg-surface-1 px-3 py-3 text-sm text-text-1 placeholder:text-text-3"
                                 />
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
+                                <label className="mb-2 block text-[13px] text-text-2">
                                     Warna Utama
                                 </label>
-                                <div style={{ display: 'flex', gap: '12px' }}>
+                                <div className="flex gap-3">
                                     <input
                                         type="color"
                                         value={settings.primaryColor || '#dc2626'}
                                         onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-                                        style={{
-                                            width: '48px',
-                                            height: '45px',
-                                            padding: '0',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            backgroundColor: 'transparent'
-                                        }}
+                                        className="h-[45px] w-12 cursor-pointer rounded-control border-none bg-transparent p-0"
                                     />
                                     <input
                                         type="text"
                                         value={settings.primaryColor || '#dc2626'}
                                         onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-                                        style={{
-                                            flex: 1,
-                                            backgroundColor: 'var(--bg-secondary)',
-                                            border: '1px solid var(--border-color)',
-                                            borderRadius: '6px',
-                                            padding: '12px',
-                                            color: 'var(--text-primary)',
-                                                boxSizing: 'border-box'
-                                        }}
+                                        className="flex-1 rounded-control border border-border bg-surface-1 px-3 py-3 text-sm text-text-1 placeholder:text-text-3"
                                     />
                                 </div>
                             </div>
@@ -309,125 +234,79 @@ export default function SiteSettingsPage() {
 
                         {/* Logo Upload */}
                         <div>
-                            <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
+                            <label className="mb-2 block text-[13px] text-text-2">
                                 Logo Perusahaan
                             </label>
                             {settings.logoPath ? (
-                                <div style={{ position: 'relative', width: '120px', height: '120px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+                                <div className="relative h-[120px] w-[120px] overflow-hidden rounded-card border border-border bg-surface-0">
                                     <Image
                                         src={settings.logoPath}
                                         alt="Logo"
                                         fill
-                                        style={{ objectFit: 'contain', padding: '10px' }}
+                                        className="object-contain p-2.5"
                                     />
                                     <button
                                         onClick={() => setSettings({ ...settings, logoPath: null })}
-                                        style={{
-                                            position: 'absolute',
-                                            top: '4px',
-                                            right: '4px',
-                                            padding: '4px',
-                                            backgroundColor: 'var(--brand-red)',
-                                            color: 'var(--text-primary)',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                        }}
+                                        aria-label="Hapus logo"
+                                        className="absolute right-1 top-1 rounded-control bg-accent p-1 text-white transition-opacity duration-150 hover:opacity-90"
                                     >
-                                        <FiX size={12} />
+                                        <X size={12} weight="bold" />
                                     </button>
                                 </div>
                             ) : (
-                                <label style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '120px',
-                                    height: '120px',
-                                    border: '1px dashed var(--border-strong)',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    backgroundColor: 'var(--bg-secondary)',
-                                }}>
-                                    <FiUpload size={24} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
-                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>Upload Logo</span>
+                                <label className="flex h-[120px] w-[120px] cursor-pointer flex-col items-center justify-center rounded-card border border-dashed border-border bg-surface-1 transition-colors duration-150 hover:bg-surface-2">
+                                    <UploadSimple size={24} className="mb-2 text-text-3" />
+                                    <span className="text-[11px] text-text-3">Upload Logo</span>
                                     <input
                                         type="file"
                                         accept="image/*"
                                         onChange={(e) => handleImageUpload(e, "logoPath")}
-                                        style={{ display: 'none' }}
+                                        className="hidden"
                                     />
                                 </label>
                             )}
-                            <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                            <p className="mt-2 text-xs text-text-3">
                                 Format: PNG, JPG, GIF (max 2MB). Disarankan background transparan.
                             </p>
                         </div>
 
-                        <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '24px 0' }}></div>
+                        <div className="my-6 h-px bg-border"></div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                        <div className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
                             <div>
-                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
+                                <label className="mb-2 block text-[13px] text-text-2">
                                     Hero Title
                                 </label>
                                 <input
                                     type="text"
                                     value={settings.heroTitle}
                                     onChange={(e) => setSettings({ ...settings, heroTitle: e.target.value })}
-                                    style={{
-                                        width: '100%',
-                                        backgroundColor: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '6px',
-                                        padding: '12px',
-                                        color: 'var(--text-primary)',
-                                        boxSizing: 'border-box'
-                                    }}
+                                    className="w-full rounded-control border border-border bg-surface-1 px-3 py-3 text-sm text-text-1 placeholder:text-text-3"
                                 />
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
+                                <label className="mb-2 block text-[13px] text-text-2">
                                     Hero Subtitle
                                 </label>
                                 <input
                                     type="text"
                                     value={settings.heroSubtitle}
                                     onChange={(e) => setSettings({ ...settings, heroSubtitle: e.target.value })}
-                                    style={{
-                                        width: '100%',
-                                        backgroundColor: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '6px',
-                                        padding: '12px',
-                                        color: 'var(--text-primary)',
-                                        boxSizing: 'border-box'
-                                    }}
+                                    className="w-full rounded-control border border-border bg-surface-1 px-3 py-3 text-sm text-text-1 placeholder:text-text-3"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
+                            <label className="mb-2 block text-[13px] text-text-2">
                                 About Text / Footer Text
                             </label>
                             <textarea
                                 value={settings.aboutText || ''}
                                 onChange={(e) => setSettings({ ...settings, aboutText: e.target.value })}
                                 rows={4}
-                                style={{
-                                    width: '100%',
-                                    backgroundColor: 'var(--bg-secondary)',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: '6px',
-                                    padding: '12px',
-                                    color: 'var(--text-primary)',
-                                    resize: 'vertical',
-                                    boxSizing: 'border-box',
-                                    minHeight: '120px'
-                                }}
+                                className="w-full min-h-[120px] resize-y rounded-control border border-border bg-surface-1 px-3 py-3 text-sm text-text-1 placeholder:text-text-3"
                             />
                         </div>
                     </div>
@@ -435,7 +314,7 @@ export default function SiteSettingsPage() {
 
                 {/* Social Media Tab */}
                 {activeTab === 'social' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                    <div className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
                         {[
                             { key: 'instagramUrl', label: 'Instagram URL' },
                             { key: 'facebookUrl', label: 'Facebook URL' },
@@ -444,7 +323,7 @@ export default function SiteSettingsPage() {
                             { key: 'youtubeUrl', label: 'YouTube URL' },
                         ].map((field) => (
                             <div key={field.key}>
-                                <label style={{ display: 'block', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '13px' }}>
+                                <label className="mb-2 block text-[13px] text-text-2">
                                     {field.label}
                                 </label>
                                 <input
@@ -452,15 +331,7 @@ export default function SiteSettingsPage() {
                                     value={(settings as any)[field.key] || ''}
                                     onChange={(e) => setSettings({ ...settings, [field.key]: e.target.value })}
                                     placeholder="https://..."
-                                    style={{
-                                        width: '100%',
-                                        backgroundColor: 'var(--bg-secondary)',
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: '6px',
-                                        padding: '12px',
-                                        color: 'var(--text-primary)',
-                                        boxSizing: 'border-box'
-                                    }}
+                                    className="w-full rounded-control border border-border bg-surface-1 px-3 py-3 text-sm text-text-1 placeholder:text-text-3"
                                 />
                             </div>
                         ))}
@@ -469,105 +340,75 @@ export default function SiteSettingsPage() {
 
                 {/* Comments Tab */}
                 {activeTab === 'comments' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '16px',
-                            backgroundColor: 'var(--bg-secondary)',
-                            borderRadius: '6px',
-                            border: '1px solid var(--border-color)'
-                        }}>
+                    <div className="flex flex-col gap-6">
+                        <div className="flex items-center justify-between gap-4 rounded-control border border-border bg-surface-1 p-4">
                             <div>
-                                <h3 style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
+                                <h3 className="mb-1 text-sm font-semibold text-text-1">
                                     Auto Approve Komentar
                                 </h3>
-                                <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', maxWidth: '400px' }}>
+                                <p className="max-w-[400px] text-xs text-text-3">
                                     Jika aktif, komentar akan langsung muncul tanpa perlu persetujuan admin.
                                 </p>
                             </div>
-                            <div style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px', flexShrink: 0 }}>
+                            <div className="relative inline-block h-6 w-12 shrink-0">
                                 <input
                                     type="checkbox"
                                     checked={settings.commentAutoApprove}
                                     onChange={(e) => setSettings({ ...settings, commentAutoApprove: e.target.checked })}
-                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                    className="h-0 w-0 opacity-0"
                                     id="auto-approve-toggle"
                                 />
                                 <label
                                     htmlFor="auto-approve-toggle"
-                                    style={{
-                                        position: 'absolute',
-                                        cursor: 'pointer',
-                                        top: 0, left: 0, right: 0, bottom: 0,
-                                        backgroundColor: settings.commentAutoApprove ? 'var(--brand-red)' : 'var(--border-color)',
-                                        borderRadius: '24px',
-                                        transition: '.4s',
-                                    }}
+                                    className={
+                                        settings.commentAutoApprove
+                                            ? "absolute inset-0 cursor-pointer rounded-full bg-accent transition-colors duration-300"
+                                            : "absolute inset-0 cursor-pointer rounded-full bg-border transition-colors duration-300"
+                                    }
                                 >
-                                    <span style={{
-                                        position: 'absolute',
-                                        content: '""',
-                                        height: '18px',
-                                        width: '18px',
-                                        left: settings.commentAutoApprove ? '26px' : '4px',
-                                        bottom: '3px',
-                                        backgroundColor: 'white',
-                                        borderRadius: '50%',
-                                        transition: '.4s',
-                                    }} />
+                                    <span
+                                        className={
+                                            settings.commentAutoApprove
+                                                ? "absolute bottom-[3px] left-[26px] h-[18px] w-[18px] rounded-full bg-white transition-all duration-300"
+                                                : "absolute bottom-[3px] left-1 h-[18px] w-[18px] rounded-full bg-white transition-all duration-300"
+                                        }
+                                    />
                                 </label>
                             </div>
                         </div>
 
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '16px',
-                            backgroundColor: 'var(--bg-secondary)',
-                            borderRadius: '6px',
-                            border: '1px solid var(--border-color)'
-                        }}>
+                        <div className="flex items-center justify-between gap-4 rounded-control border border-border bg-surface-1 p-4">
                             <div>
-                                <h3 style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>
+                                <h3 className="mb-1 text-sm font-semibold text-text-1">
                                     Wajib Email
                                 </h3>
-                                <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', maxWidth: '400px' }}>
+                                <p className="max-w-[400px] text-xs text-text-3">
                                     Pengunjung harus mengisi alamat email saat berkomentar.
                                 </p>
                             </div>
-                            <div style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px', flexShrink: 0 }}>
+                            <div className="relative inline-block h-6 w-12 shrink-0">
                                 <input
                                     type="checkbox"
                                     checked={settings.commentRequireEmail}
                                     onChange={(e) => setSettings({ ...settings, commentRequireEmail: e.target.checked })}
-                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                    className="h-0 w-0 opacity-0"
                                     id="require-email-toggle"
                                 />
                                 <label
                                     htmlFor="require-email-toggle"
-                                    style={{
-                                        position: 'absolute',
-                                        cursor: 'pointer',
-                                        top: 0, left: 0, right: 0, bottom: 0,
-                                        backgroundColor: settings.commentRequireEmail ? 'var(--brand-red)' : 'var(--border-color)',
-                                        borderRadius: '24px',
-                                        transition: '.4s',
-                                    }}
+                                    className={
+                                        settings.commentRequireEmail
+                                            ? "absolute inset-0 cursor-pointer rounded-full bg-accent transition-colors duration-300"
+                                            : "absolute inset-0 cursor-pointer rounded-full bg-border transition-colors duration-300"
+                                    }
                                 >
-                                    <span style={{
-                                        position: 'absolute',
-                                        content: '""',
-                                        height: '18px',
-                                        width: '18px',
-                                        left: settings.commentRequireEmail ? '26px' : '4px',
-                                        bottom: '3px',
-                                        backgroundColor: 'white',
-                                        borderRadius: '50%',
-                                        transition: '.4s',
-                                    }} />
+                                    <span
+                                        className={
+                                            settings.commentRequireEmail
+                                                ? "absolute bottom-[3px] left-[26px] h-[18px] w-[18px] rounded-full bg-white transition-all duration-300"
+                                                : "absolute bottom-[3px] left-1 h-[18px] w-[18px] rounded-full bg-white transition-all duration-300"
+                                        }
+                                    />
                                 </label>
                             </div>
                         </div>
@@ -577,4 +418,3 @@ export default function SiteSettingsPage() {
         </div>
     );
 }
-
