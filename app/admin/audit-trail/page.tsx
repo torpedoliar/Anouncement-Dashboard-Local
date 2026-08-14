@@ -1,7 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FiActivity, FiFilter, FiChevronLeft, FiChevronRight, FiDownload, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import {
+    CaretDown,
+    CaretLeft,
+    CaretRight,
+    DownloadSimple,
+    Info,
+    ListChecks,
+    MagnifyingGlass,
+    SlidersHorizontal,
+    Warning,
+    WarningCircle,
+} from "@phosphor-icons/react";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
 
 interface AuditLogEntry {
     id: string;
@@ -28,6 +43,88 @@ interface Pagination {
     limit: number;
     total: number;
     totalPages: number;
+}
+
+type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
+
+const ACTOR_OPTIONS = [
+    { value: "", label: "Semua Actor" },
+    { value: "ADMIN_USER", label: "Admin CMS" },
+    { value: "PORTAL_USER", label: "Portal User" },
+    { value: "SYSTEM", label: "System" },
+];
+
+const CATEGORY_OPTIONS = [
+    { value: "", label: "Semua Kategori" },
+    { value: "AUTH", label: "Auth" },
+    { value: "CONTENT", label: "Content" },
+    { value: "USER_MGMT", label: "User Mgmt" },
+    { value: "PORTAL", label: "Portal" },
+    { value: "SECURITY", label: "Security" },
+    { value: "SYSTEM", label: "System" },
+    { value: "CONFIG", label: "Config" },
+];
+
+const OUTCOME_OPTIONS = [
+    { value: "", label: "Semua Outcome" },
+    { value: "SUCCESS", label: "Success" },
+    { value: "FAILURE", label: "Failure" },
+];
+
+const SEVERITY_OPTIONS = [
+    { value: "", label: "Semua Severity" },
+    { value: "INFO", label: "Info" },
+    { value: "WARNING", label: "Warning" },
+    { value: "ERROR", label: "Error" },
+];
+
+const ENTITY_OPTIONS = [
+    { value: "", label: "Semua Entity" },
+    { value: "ANNOUNCEMENT", label: "Announcement" },
+    { value: "CATEGORY", label: "Category" },
+    { value: "COMMENT", label: "Comment" },
+    { value: "USER", label: "User" },
+    { value: "PORTAL_APP", label: "Portal App" },
+    { value: "PORTAL_USER", label: "Portal User" },
+    { value: "PORTAL_CREDENTIAL", label: "Portal Credential" },
+    { value: "SETTINGS", label: "Settings" },
+    { value: "SYSTEM", label: "System" },
+];
+
+const ACTOR_LABELS: Record<string, string> = {
+    ADMIN_USER: "Admin CMS",
+    PORTAL_USER: "Portal User",
+    SYSTEM: "System",
+};
+
+function actorTone(actorType: string): BadgeTone {
+    switch (actorType) {
+        case "ADMIN_USER": return "info";
+        case "PORTAL_USER": return "warning";
+        default: return "neutral";
+    }
+}
+
+function severityElement(severity: string) {
+    if (severity === "WARNING") {
+        return (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-warning">
+                <Warning size={14} aria-hidden="true" /> Warning
+            </span>
+        );
+    }
+    if (severity === "ERROR") {
+        return (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-danger">
+                <WarningCircle size={14} aria-hidden="true" /> Error
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1 text-xs text-text-3">
+            <Info size={14} aria-hidden="true" /> Info
+        </span>
+    );
 }
 
 export default function AuditTrailPage() {
@@ -106,28 +203,6 @@ export default function AuditTrailPage() {
             hour: "2-digit", minute: "2-digit",
         });
 
-    const getActorBadge = (actorType: string) => {
-        const styles: Record<string, { bg: string; color: string }> = {
-            ADMIN_USER: { bg: "rgba(59, 130, 246, 0.2)", color: "#3b82f6" },
-            PORTAL_USER: { bg: "rgba(168, 85, 247, 0.2)", color: "#a855f7" },
-            SYSTEM: { bg: "rgba(234, 179, 8, 0.2)", color: "#eab308" },
-        };
-        return styles[actorType] || { bg: "rgba(115, 115, 115, 0.2)", color: "#737373" };
-    };
-
-    const getOutcomeBadge = (outcome: string) =>
-        outcome === "SUCCESS"
-            ? { bg: "rgba(34, 197, 94, 0.2)", color: "#22c55e" }
-            : { bg: "rgba(220, 38, 38, 0.2)", color: "#dc2626" };
-
-    const getSeverityColor = (severity: string) => {
-        switch (severity) {
-            case "WARNING": return "#eab308";
-            case "ERROR": return "#dc2626";
-            default: return "#737373";
-        }
-    };
-
     const parseJSON = (val: unknown) => {
         if (!val) return null;
         if (typeof val === "object") return val;
@@ -139,221 +214,345 @@ export default function AuditTrailPage() {
         setPagination({ ...pagination, page: 1 });
     };
 
-    const selectStyle: React.CSSProperties = {
-        padding: "8px 12px", backgroundColor: "#111", border: "1px solid #262626",
-        color: "#fff", fontSize: "13px", borderRadius: "4px",
+    const updateFilter = (key: keyof typeof filters, value: string) => {
+        setFilters((prev) => ({ ...prev, [key]: value }));
+        setPagination((p) => ({ ...p, page: 1 }));
     };
 
-    return (
-        <div style={{ padding: "32px" }}>
-            {/* Header */}
-            <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
-                        AUDIT TRAIL
-                    </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
-                        Audit Trail
-                    </h1>
+    const truncateId = (id: string) =>
+        id.length > 12 ? `${id.substring(0, 12)}...` : id;
+
+    if (isLoading) {
+        return (
+            <div className="p-6">
+                {/* Header skeleton */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div className="mb-2 h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-7 w-48 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div className="flex gap-2">
+                        <div className="h-10 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-10 w-20 animate-pulse rounded bg-surface-2" />
+                    </div>
                 </div>
-                <div style={{ display: "flex", gap: "8px" }}>
-                    <button onClick={() => handleExport("csv")} style={{
-                        display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px",
-                        backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--text-secondary)",
-                        fontSize: "13px", cursor: "pointer", borderRadius: "4px",
-                    }}>
-                        <FiDownload size={14} /> CSV
-                    </button>
-                    <button onClick={() => handleExport("json")} style={{
-                        display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px",
-                        backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--text-secondary)",
-                        fontSize: "13px", cursor: "pointer", borderRadius: "4px",
-                    }}>
-                        <FiDownload size={14} /> JSON
-                    </button>
+
+                {/* Filter skeleton */}
+                <div className="mb-6 rounded-card border border-border bg-surface-1 p-4 shadow-lvl-1">
+                    <div className="mb-3 flex items-center gap-2">
+                        <div className="h-4 w-4 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-16 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} className="h-10 w-full animate-pulse rounded-control bg-surface-2 sm:w-44" />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Ledger skeleton */}
+                <div className="overflow-hidden rounded-card border border-border shadow-lvl-1">
+                    <div className="relative">
+                        <div className="pointer-events-none absolute inset-y-0 left-[1.25rem] w-px border-l border-border" aria-hidden="true" />
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="flex flex-col gap-3 border-b border-border px-4 py-4 last:border-0 sm:flex-row sm:gap-6">
+                                <div className="flex shrink-0 items-center pl-4 sm:w-44">
+                                    <span className="absolute left-[1.25rem] h-2 w-2 animate-pulse rounded-full bg-surface-2" />
+                                    <div className="h-3 w-28 animate-pulse rounded bg-surface-2" />
+                                </div>
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex flex-wrap gap-2">
+                                        <div className="h-5 w-24 animate-pulse rounded bg-surface-2" />
+                                        <div className="h-5 w-16 animate-pulse rounded bg-surface-2" />
+                                        <div className="h-5 w-28 animate-pulse rounded bg-surface-2" />
+                                        <div className="h-5 w-14 animate-pulse rounded bg-surface-2" />
+                                    </div>
+                                    <div className="h-3 w-40 animate-pulse rounded bg-surface-2" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-6">
+            {/* Header */}
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p className="mb-0.5 text-xs font-semibold tracking-widest text-accent">AUDIT TRAIL</p>
+                    <h1 className="font-display text-2xl font-bold text-text-1">Audit Trail</h1>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        iconLeft={<DownloadSimple size={16} aria-hidden="true" />}
+                        onClick={() => handleExport("csv")}
+                    >
+                        CSV
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        iconLeft={<DownloadSimple size={16} aria-hidden="true" />}
+                        onClick={() => handleExport("json")}
+                    >
+                        JSON
+                    </Button>
                 </div>
             </div>
 
             {/* Filters */}
-            <div style={{
-                display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "24px",
-                padding: "16px", backgroundColor: "var(--bg-secondary)", border: "1px solid var(--bg-tertiary)", borderRadius: "8px",
-            }}>
-                <FiFilter size={16} color="#737373" style={{ marginTop: "8px" }} />
-                <select value={filters.actorType} onChange={(e) => { setFilters({ ...filters, actorType: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle}>
-                    <option value="">Semua Actor</option>
-                    <option value="ADMIN_USER">Admin CMS</option>
-                    <option value="PORTAL_USER">Portal User</option>
-                    <option value="SYSTEM">System</option>
-                </select>
-                <select value={filters.category} onChange={(e) => { setFilters({ ...filters, category: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle}>
-                    <option value="">Semua Kategori</option>
-                    <option value="AUTH">Auth</option>
-                    <option value="CONTENT">Content</option>
-                    <option value="USER_MGMT">User Mgmt</option>
-                    <option value="PORTAL">Portal</option>
-                    <option value="SECURITY">Security</option>
-                    <option value="SYSTEM">System</option>
-                    <option value="CONFIG">Config</option>
-                </select>
-                <select value={filters.outcome} onChange={(e) => { setFilters({ ...filters, outcome: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle}>
-                    <option value="">Semua Outcome</option>
-                    <option value="SUCCESS">Success</option>
-                    <option value="FAILURE">Failure</option>
-                </select>
-                <select value={filters.severity} onChange={(e) => { setFilters({ ...filters, severity: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle}>
-                    <option value="">Semua Severity</option>
-                    <option value="INFO">Info</option>
-                    <option value="WARNING">Warning</option>
-                    <option value="ERROR">Error</option>
-                </select>
-                <select value={filters.entityType} onChange={(e) => { setFilters({ ...filters, entityType: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle}>
-                    <option value="">Semua Entity</option>
-                    <option value="ANNOUNCEMENT">Announcement</option>
-                    <option value="CATEGORY">Category</option>
-                    <option value="COMMENT">Comment</option>
-                    <option value="USER">User</option>
-                    <option value="PORTAL_APP">Portal App</option>
-                    <option value="PORTAL_USER">Portal User</option>
-                    <option value="PORTAL_CREDENTIAL">Portal Credential</option>
-                    <option value="SETTINGS">Settings</option>
-                    <option value="SYSTEM">System</option>
-                </select>
-                <input
-                    type="text"
-                    placeholder="Cari email/aksi..."
-                    value={filters.search}
-                    onChange={(e) => { setFilters({ ...filters, search: e.target.value }); setPagination({ ...pagination, page: 1 }); }}
-                    style={{ ...selectStyle, minWidth: "150px" }}
-                />
-                <input type="date" value={filters.from} onChange={(e) => { setFilters({ ...filters, from: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle} />
-                <input type="date" value={filters.to} onChange={(e) => { setFilters({ ...filters, to: e.target.value }); setPagination({ ...pagination, page: 1 }); }} style={selectStyle} />
-                <button onClick={resetFilters} style={{
-                    padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--border-color)",
-                    color: "var(--text-muted)", fontSize: "13px", cursor: "pointer", borderRadius: "4px",
-                }}>Reset</button>
+            <div className="mb-6 rounded-card border border-border bg-surface-1 p-4 shadow-lvl-1">
+                <div className="mb-3 flex items-center gap-2">
+                    <SlidersHorizontal size={16} className="text-text-3" aria-hidden="true" />
+                    <span className="text-xs font-semibold tracking-widest text-text-3">FILTER</span>
+                </div>
+                <div className="flex flex-wrap items-end gap-3">
+                    <div className="w-full sm:w-44">
+                        <Select
+                            label="Actor"
+                            value={filters.actorType}
+                            onChange={(e) => updateFilter("actorType", e.target.value)}
+                            options={ACTOR_OPTIONS}
+                        />
+                    </div>
+                    <div className="w-full sm:w-44">
+                        <Select
+                            label="Kategori"
+                            value={filters.category}
+                            onChange={(e) => updateFilter("category", e.target.value)}
+                            options={CATEGORY_OPTIONS}
+                        />
+                    </div>
+                    <div className="w-full sm:w-44">
+                        <Select
+                            label="Outcome"
+                            value={filters.outcome}
+                            onChange={(e) => updateFilter("outcome", e.target.value)}
+                            options={OUTCOME_OPTIONS}
+                        />
+                    </div>
+                    <div className="w-full sm:w-44">
+                        <Select
+                            label="Severity"
+                            value={filters.severity}
+                            onChange={(e) => updateFilter("severity", e.target.value)}
+                            options={SEVERITY_OPTIONS}
+                        />
+                    </div>
+                    <div className="w-full sm:w-44">
+                        <Select
+                            label="Entity"
+                            value={filters.entityType}
+                            onChange={(e) => updateFilter("entityType", e.target.value)}
+                            options={ENTITY_OPTIONS}
+                        />
+                    </div>
+                    <div className="relative w-full sm:w-56">
+                        <MagnifyingGlass
+                            size={16}
+                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3"
+                            aria-hidden="true"
+                        />
+                        <Input
+                            label="Pencarian"
+                            type="text"
+                            placeholder="Cari email/aksi..."
+                            value={filters.search}
+                            onChange={(e) => updateFilter("search", e.target.value)}
+                            className="pl-9"
+                        />
+                    </div>
+                    <div className="w-full sm:w-44">
+                        <Input
+                            label="Dari"
+                            type="date"
+                            value={filters.from}
+                            onChange={(e) => updateFilter("from", e.target.value)}
+                        />
+                    </div>
+                    <div className="w-full sm:w-44">
+                        <Input
+                            label="Sampai"
+                            type="date"
+                            value={filters.to}
+                            onChange={(e) => updateFilter("to", e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-end pb-px">
+                        <Button type="button" variant="ghost" onClick={resetFilters}>
+                            Reset
+                        </Button>
+                    </div>
+                </div>
             </div>
 
-            {/* Table */}
-            {isLoading ? (
-                <div style={{ padding: "64px", textAlign: "center", color: "var(--text-tertiary)" }}>Loading...</div>
-            ) : logs.length === 0 ? (
-                <div style={{ padding: "64px", textAlign: "center", backgroundColor: "var(--bg-secondary)", border: "1px solid var(--bg-tertiary)", borderRadius: "8px" }}>
-                    <FiActivity size={48} color="#262626" style={{ marginBottom: "16px" }} />
-                    <p style={{ color: "var(--text-tertiary)" }}>Belum ada audit log</p>
+            {/* Timeline / Empty */}
+            {logs.length === 0 ? (
+                <div className="rounded-card border border-border bg-surface-1 p-14 text-center shadow-lvl-1">
+                    <ListChecks size={32} className="mx-auto mb-3 text-text-3" aria-hidden="true" />
+                    <p className="text-sm text-text-2">Belum ada audit log</p>
+                    <p className="mt-1 text-xs text-text-3">Belum ada aktivitas yang tercatat di sistem.</p>
                 </div>
             ) : (
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                    <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
-                        <thead>
-                            <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
-                                {["WAKTU", "ACTOR", "KATEGORI", "AKSI", "ENTITY", "OUTCOME", "IP", "DETAIL"].map((h) => (
-                                    <th key={h} style={{ padding: "14px 16px", textAlign: "left", color: "var(--text-secondary)", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em" }}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {logs.map((log, i) => {
-                                const actorBadge = getActorBadge(log.actorType);
-                                const outcomeBadge = getOutcomeBadge(log.outcome);
+                <div className="overflow-hidden rounded-card border border-border bg-surface-1 shadow-lvl-1">
+                    <div className="relative">
+                        {/* Timeline rail */}
+                        <div
+                            className="pointer-events-none absolute inset-y-0 left-[1.25rem] w-px border-l border-border"
+                            aria-hidden="true"
+                        />
+                        <ul className="divide-y divide-border">
+                            {logs.map((log) => {
                                 const isExpanded = expandedId === log.id;
+                                const changes = parseJSON(log.changes);
+                                const metadata = parseJSON(log.metadata);
+                                const actorLabel = ACTOR_LABELS[log.actorType] || log.actorType;
                                 return (
-                                    <tr key={log.id} style={{ borderBottom: i < logs.length - 1 ? "1px solid var(--border-color)" : "none" }}>
-                                        <td style={{ padding: "14px 16px", color: "#71717a", fontSize: "13px", whiteSpace: "nowrap" }}>{formatDate(log.createdAt)}</td>
-                                        <td style={{ padding: "14px 16px" }}>
-                                            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                                <span style={{ padding: "2px 8px", backgroundColor: actorBadge.bg, color: actorBadge.color, fontSize: "11px", fontWeight: 700, borderRadius: "4px", width: "fit-content" }}>{log.actorType}</span>
-                                                <span style={{ color: "var(--text-primary)", fontSize: "13px" }}>{log.actorName || "-"}</span>
-                                                <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{log.actorEmail || ""}</span>
+                                    <li key={log.id}>
+                                        <div className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-surface-2/60 sm:flex-row sm:items-start sm:gap-6">
+                                            {/* Timestamp column */}
+                                            <div className="relative shrink-0 pl-4 sm:w-44">
+                                                <span
+                                                    className="absolute left-0 top-1.5 h-2 w-2 rounded-full bg-border"
+                                                    aria-hidden="true"
+                                                />
+                                                <time className="whitespace-nowrap font-mono text-xs tabular-nums text-text-3">
+                                                    {formatDate(log.createdAt)}
+                                                </time>
                                             </div>
-                                        </td>
-                                        <td style={{ padding: "14px 16px", color: "var(--text-secondary)", fontSize: "13px" }}>{log.category}</td>
-                                        <td style={{ padding: "14px 16px" }}>
-                                            <span style={{ padding: "4px 10px", backgroundColor: "rgba(115, 115, 115, 0.2)", color: "#d4d4d4", fontSize: "12px", fontWeight: 600, borderRadius: "4px" }}>{log.action}</span>
-                                        </td>
-                                        <td style={{ padding: "14px 16px", color: "var(--text-secondary)", fontSize: "13px" }}>
-                                            <div>{log.entityType}</div>
-                                            {log.entityId && <div style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{log.entityId.substring(0, 12)}...</div>}
-                                        </td>
-                                        <td style={{ padding: "14px 16px" }}>
-                                            <span style={{ padding: "4px 10px", backgroundColor: outcomeBadge.bg, color: outcomeBadge.color, fontSize: "12px", fontWeight: 700, borderRadius: "4px" }}>{log.outcome}</span>
-                                            {log.severity !== "INFO" && (
-                                                <span style={{ marginLeft: "6px", color: getSeverityColor(log.severity), fontSize: "11px", fontWeight: 600 }}>{log.severity}</span>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: "14px 16px", color: "var(--text-tertiary)", fontSize: "12px" }}>{log.ipAddress || "-"}</td>
-                                        <td style={{ padding: "14px 16px" }}>
-                                            <button onClick={() => setExpandedId(isExpanded ? null : log.id)} style={{
-                                                background: "none", border: "1px solid var(--border-color)", color: "var(--text-muted)",
-                                                cursor: "pointer", padding: "4px 8px", borderRadius: "4px", fontSize: "12px",
-                                                display: "flex", alignItems: "center", gap: "4px",
-                                            }}>
-                                                {isExpanded ? <FiChevronUp size={12} /> : <FiChevronDown size={12} />} Detail
-                                            </button>
-                                        </td>
-                                    </tr>
+
+                                            {/* Content */}
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                                                    <Badge tone={actorTone(log.actorType)}>
+                                                        {actorLabel}
+                                                    </Badge>
+                                                    <span className="text-sm font-medium text-text-1">
+                                                        {log.actorName || "-"}
+                                                    </span>
+                                                    <span className="text-text-3" aria-hidden="true">·</span>
+                                                    <Badge tone="neutral">{log.action}</Badge>
+                                                    <span className="font-mono text-xs tabular-nums text-text-2">
+                                                        {log.entityType}
+                                                    </span>
+                                                    {log.entityId && (
+                                                        <span className="font-mono text-xs tabular-nums text-text-3">
+                                                            {truncateId(log.entityId)}
+                                                        </span>
+                                                    )}
+                                                    <Badge
+                                                        tone={log.outcome === "SUCCESS" ? "success" : "danger"}
+                                                    >
+                                                        {log.outcome}
+                                                    </Badge>
+                                                    {severityElement(log.severity)}
+                                                </div>
+                                                {(log.category || log.ipAddress || log.actorEmail) && (
+                                                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-3">
+                                                        {log.category && <span>{log.category}</span>}
+                                                        {log.ipAddress && (
+                                                            <span className="font-mono tabular-nums">{log.ipAddress}</span>
+                                                        )}
+                                                        {log.actorEmail && <span className="break-all">{log.actorEmail}</span>}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Toggle detail */}
+                                            <div className="shrink-0 sm:pt-0.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                                                    aria-expanded={isExpanded}
+                                                    aria-controls={`audit-detail-${log.id}`}
+                                                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-control border border-border px-2.5 py-1 text-xs font-medium text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                                                >
+                                                    <span>{isExpanded ? "Tutup" : "Detail"}</span>
+                                                    {isExpanded
+                                                        ? <CaretDown size={12} aria-hidden="true" />
+                                                        : <CaretRight size={12} aria-hidden="true" />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Expanded detail */}
+                                        {isExpanded && (
+                                            <div
+                                                id={`audit-detail-${log.id}`}
+                                                className="border-t border-border px-4 pb-4 pt-3 sm:pl-[12.5rem]"
+                                            >
+                                                {log.errorMessage && (
+                                                    <div className="mb-3 flex items-start gap-2 rounded-control border border-danger-subtle bg-danger-subtle px-3 py-2 text-sm text-danger">
+                                                        <WarningCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                                                        <span className="break-all">{log.errorMessage}</span>
+                                                    </div>
+                                                )}
+                                                {changes && (
+                                                    <div className="mt-3">
+                                                        <p className="mb-1.5 text-xs font-medium text-text-3">CHANGES</p>
+                                                        <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-control border border-border bg-surface-1 p-3 font-mono text-xs leading-relaxed tabular-nums text-text-2">
+                                                            {JSON.stringify(changes, null, 2)}
+                                                        </pre>
+                                                    </div>
+                                                )}
+                                                {metadata && (
+                                                    <div className="mt-3">
+                                                        <p className="mb-1.5 text-xs font-medium text-text-3">METADATA</p>
+                                                        <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-control border border-border bg-surface-1 p-3 font-mono text-xs leading-relaxed tabular-nums text-text-2">
+                                                            {JSON.stringify(metadata, null, 2)}
+                                                        </pre>
+                                                    </div>
+                                                )}
+                                                {log.userAgent && (
+                                                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                        <span className="text-xs font-medium text-text-3">USER-AGENT</span>
+                                                        <span className="break-all text-xs text-text-2">{log.userAgent}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </li>
                                 );
                             })}
-                        </tbody>
-                    </table>
-
-                    {/* Expanded detail rows */}
-                    {logs.map((log) => {
-                        if (expandedId !== log.id) return null;
-                        const changes = parseJSON(log.changes);
-                        const metadata = parseJSON(log.metadata);
-                        return (
-                            <div key={`detail-${log.id}`} style={{ padding: "20px", borderTop: "1px solid var(--border-color)", backgroundColor: "#0d0d0d" }}>
-                                {log.errorMessage && (
-                                    <div style={{ marginBottom: "12px" }}>
-                                        <span style={{ color: "var(--brand-red)", fontSize: "12px", fontWeight: 600 }}>Error: </span>
-                                        <span style={{ color: "#fca5a5", fontSize: "13px" }}>{log.errorMessage}</span>
-                                    </div>
-                                )}
-                                {changes && (
-                                    <div style={{ marginBottom: "12px" }}>
-                                        <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600 }}>Changes:</span>
-                                        <pre style={{
-                                            marginTop: "6px", padding: "12px", backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)",
-                                            borderRadius: "4px", color: "#d4d4d4", fontSize: "12px", overflowX: "auto",
-                                            whiteSpace: "pre-wrap", wordBreak: "break-all",
-                                        }}>{JSON.stringify(changes, null, 2)}</pre>
-                                    </div>
-                                )}
-                                {metadata && (
-                                    <div>
-                                        <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600 }}>Metadata:</span>
-                                        <pre style={{
-                                            marginTop: "6px", padding: "12px", backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)",
-                                            borderRadius: "4px", color: "#d4d4d4", fontSize: "12px", overflowX: "auto",
-                                            whiteSpace: "pre-wrap", wordBreak: "break-all",
-                                        }}>{JSON.stringify(metadata, null, 2)}</pre>
-                                    </div>
-                                )}
-                                {log.userAgent && (
-                                    <div style={{ marginTop: "8px" }}>
-                                        <span style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600 }}>User-Agent: </span>
-                                        <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{log.userAgent}</span>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                        </ul>
+                    </div>
 
                     {/* Pagination */}
                     {pagination.totalPages > 1 && (
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", borderTop: "1px solid var(--bg-tertiary)" }}>
-                            <span style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>
-                                {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total}
+                        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <span className="font-mono text-xs tabular-nums text-text-3">
+                                {((pagination.page - 1) * pagination.limit) + 1}–
+                                {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total}
                             </span>
-                            <div style={{ display: "flex", gap: "8px" }}>
-                                <button onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })} disabled={pagination.page === 1} style={{ padding: "8px 12px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: pagination.page === 1 ? "var(--border-strong)" : "var(--text-muted)", cursor: pagination.page === 1 ? "not-allowed" : "pointer", borderRadius: "4px" }}>
-                                    <FiChevronLeft size={14} />
-                                </button>
-                                <span style={{ color: "var(--text-tertiary)", fontSize: "13px", padding: "8px 12px" }}>{pagination.page} / {pagination.totalPages}</span>
-                                <button onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })} disabled={pagination.page === pagination.totalPages} style={{ padding: "8px 12px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: pagination.page === pagination.totalPages ? "var(--border-strong)" : "var(--text-muted)", cursor: pagination.page === pagination.totalPages ? "not-allowed" : "pointer", borderRadius: "4px" }}>
-                                    <FiChevronRight size={14} />
-                                </button>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                                    disabled={pagination.page === 1}
+                                    aria-label="Halaman sebelumnya"
+                                >
+                                    <CaretLeft size={14} aria-hidden="true" />
+                                </Button>
+                                <span className="font-mono text-xs tabular-nums text-text-2">
+                                    {pagination.page} / {pagination.totalPages}
+                                </span>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                                    disabled={pagination.page === pagination.totalPages}
+                                    aria-label="Halaman berikutnya"
+                                >
+                                    <CaretRight size={14} aria-hidden="true" />
+                                </Button>
                             </div>
                         </div>
                     )}
