@@ -15,8 +15,13 @@ import {
     Pie,
     Cell,
 } from "recharts";
-import { FiTrendingUp, FiEye, FiFileText, FiLoader, FiAlertCircle } from "react-icons/fi";
+import { TrendUp, Eye, FileText, Warning } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
+import { useSiteTheme } from "@/components/SiteThemeProvider";
+import { getChartTheme } from "@/lib/chart-theme";
+import Select from "@/components/ui/Select";
+import StatTile from "./StatTile";
+import ChartTooltip from "./ChartTooltip";
 
 interface DailyView {
     date: string;
@@ -52,11 +57,19 @@ interface AnalyticsData {
     hasAnalyticsData?: boolean;
 }
 
+const DAY_RANGE_OPTIONS = [
+    { value: "7", label: "7 hari terakhir" },
+    { value: "30", label: "30 hari terakhir" },
+    { value: "90", label: "90 hari terakhir" },
+];
+
 export default function AnalyticsDashboard() {
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [days, setDays] = useState(30);
     const { showToast } = useToast();
+    const { theme } = useSiteTheme();
+    const chartTheme = getChartTheme(theme.primaryColor);
 
     useEffect(() => {
         fetchAnalytics();
@@ -83,162 +96,68 @@ export default function AnalyticsDashboard() {
 
     if (isLoading) {
         return (
-            <div style={{
-                padding: "32px",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: "400px",
-            }}>
-                <FiLoader size={32} style={{ color: "var(--brand-red)", animation: "spin 1s linear infinite" }} />
+            <div className="p-6">
+                <Header days={days} onDaysChange={setDays} />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {[0, 1, 2].map((i) => (
+                        <div key={i} className="h-24 animate-pulse rounded-sheet bg-surface-2" aria-hidden="true" />
+                    ))}
+                </div>
+                <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="h-80 animate-pulse rounded-sheet bg-surface-2" aria-hidden="true" />
+                    ))}
+                </div>
             </div>
         );
     }
 
     if (!data) return null;
 
+    const categoryData = data.categoryDistribution.filter((c) => c.views > 0);
+
     return (
-        <div style={{ padding: "32px" }}>
-            {/* Header */}
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "32px",
-                flexWrap: "wrap",
-                gap: "16px",
-            }}>
-                <div>
-                    <p style={{
-                        color: "var(--brand-red)",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        letterSpacing: "0.2em",
-                        marginBottom: "4px",
-                    }}>
-                        ANALYTICS
-                    </p>
-                    <h1 style={{
-                        fontFamily: "Montserrat, sans-serif",
-                        fontSize: "24px",
-                        fontWeight: 700,
-                        color: "var(--text-primary)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                    }}>
-                        <FiTrendingUp /> Statistik
-                    </h1>
-                </div>
-                <select
-                    value={days}
-                    onChange={(e) => setDays(Number(e.target.value))}
-                    style={{
-                        padding: "10px 16px",
-                        backgroundColor: "var(--bg-secondary)",
-                        border: "1px solid var(--border-color)",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        cursor: "pointer",
-                    }}
-                >
-                    <option value={7}>7 hari terakhir</option>
-                    <option value={30}>30 hari terakhir</option>
-                    <option value={90}>90 hari terakhir</option>
-                </select>
-            </div>
+        <div className="p-6">
+            <Header days={days} onDaysChange={setDays} />
 
             {/* Notice when no detailed analytics */}
             {!data.hasAnalyticsData && (
-                <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "16px 20px",
-                    backgroundColor: "var(--bg-tertiary)",
-                    border: "1px solid var(--border-strong)",
-                    borderRadius: "8px",
-                    marginBottom: "24px",
-                }}>
-                    <FiAlertCircle size={20} color="#737373" />
-                    <p style={{ color: "var(--text-secondary)", fontSize: "12px" }}>
-                        Data menggunakan estimasi dari total views.
-                    </p>
+                <div className="mb-6 flex items-start gap-3 rounded-card border border-warning/30 bg-warning/10 px-4 py-3">
+                    <Warning size={18} className="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
+                    <p className="text-sm text-warning">Data menggunakan estimasi dari total views.</p>
                 </div>
             )}
 
-            {/* Summary Cards */}
-            <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "24px",
-                marginBottom: "32px",
-            }}>
-                <SummaryCard
-                    icon={FiEye}
-                    label="TOTAL VIEWS"
-                    value={data.summary.totalViews}
-                    color="#3b82f6"
-                />
-                <SummaryCard
-                    icon={FiFileText}
-                    label="ARTIKEL PUBLISHED"
-                    value={data.summary.publishedArticles}
-                    color="#22c55e"
-                />
-                <SummaryCard
-                    icon={FiTrendingUp}
-                    label="RATA-RATA VIEWS"
-                    value={data.summary.avgViewsPerArticle}
-                    color="#f59e0b"
-                />
+            {/* Summary tiles */}
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <StatTile icon={Eye} label="Total Views" value={data.summary.totalViews} />
+                <StatTile icon={FileText} label="Artikel Published" value={data.summary.publishedArticles} />
+                <StatTile icon={TrendUp} label="Rata-rata Views" value={data.summary.avgViewsPerArticle} />
             </div>
 
             {/* Charts Grid */}
-            <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-                gap: "24px",
-            }}>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {/* Line Chart - Daily Views */}
-                <div style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    border: "1px solid var(--border-color)",
-                    padding: "24px",
-                }}>
-                    <h3 style={{
-                        color: "var(--text-primary)",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        marginBottom: "24px",
-                    }}>
-                        Views Harian
-                    </h3>
+                <section className="rounded-card border border-border bg-surface-1 p-5">
+                    <h3 className="mb-4 font-display text-sm font-semibold text-text-1">Views Harian</h3>
                     {data.dailyViews.length > 0 ? (
                         <ResponsiveContainer width="100%" height={250}>
                             <LineChart data={data.dailyViews}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
                                 <XAxis
                                     dataKey="date"
-                                    stroke="var(--text-muted)"
+                                    stroke={chartTheme.tick}
                                     fontSize={11}
                                     tickFormatter={(value) => value.slice(5)}
                                 />
-                                <YAxis stroke="var(--text-muted)" fontSize={11} />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: "#171717",
-                                        border: "1px solid #262626",
-                                        borderRadius: "8px",
-                                    }}
-                                    labelStyle={{ color: "#fff" }}
-                                />
+                                <YAxis stroke={chartTheme.tick} fontSize={11} />
+                                <Tooltip content={<ChartTooltip />} />
                                 <Line
                                     type="monotone"
                                     dataKey="pageViews"
-                                    stroke="#dc2626"
+                                    stroke={chartTheme.primary}
                                     strokeWidth={2}
-                                    dot={{ fill: "#dc2626", strokeWidth: 0, r: 3 }}
+                                    dot={{ fill: chartTheme.primary, strokeWidth: 0, r: 3 }}
                                     name="Views"
                                 />
                             </LineChart>
@@ -246,69 +165,41 @@ export default function AnalyticsDashboard() {
                     ) : (
                         <EmptyChartMessage message="Belum ada data views harian" />
                     )}
-                </div>
+                </section>
 
                 {/* Bar Chart - Top Articles */}
-                <div style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    border: "1px solid var(--border-color)",
-                    padding: "24px",
-                }}>
-                    <h3 style={{
-                        color: "var(--text-primary)",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        marginBottom: "24px",
-                    }}>
-                        Top 10 Artikel
-                    </h3>
+                <section className="rounded-card border border-border bg-surface-1 p-5">
+                    <h3 className="mb-4 font-display text-sm font-semibold text-text-1">Top 10 Artikel</h3>
                     {data.topArticles.length > 0 ? (
                         <ResponsiveContainer width="100%" height={250}>
                             <BarChart data={data.topArticles.slice(0, 10)} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-                                <XAxis type="number" stroke="var(--text-muted)" fontSize={11} />
+                                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                                <XAxis type="number" stroke={chartTheme.tick} fontSize={11} />
                                 <YAxis
                                     type="category"
                                     dataKey="title"
-                                    stroke="var(--text-muted)"
+                                    stroke={chartTheme.tick}
                                     fontSize={10}
                                     width={120}
                                     tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + "..." : value}
                                 />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: "#171717",
-                                        border: "1px solid #262626",
-                                        borderRadius: "8px",
-                                    }}
-                                />
-                                <Bar dataKey="views" fill="#dc2626" radius={[0, 4, 4, 0]} name="Views" />
+                                <Tooltip content={<ChartTooltip />} />
+                                <Bar dataKey="views" fill={chartTheme.primary} radius={[0, 4, 4, 0]} name="Views" />
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
                         <EmptyChartMessage message="Belum ada artikel" />
                     )}
-                </div>
+                </section>
 
                 {/* Pie Chart - Category Distribution */}
-                <div style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    border: "1px solid var(--border-color)",
-                    padding: "24px",
-                }}>
-                    <h3 style={{
-                        color: "var(--text-primary)",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        marginBottom: "24px",
-                    }}>
-                        Distribusi Kategori
-                    </h3>
-                    {data.categoryDistribution.filter(c => c.views > 0).length > 0 ? (
+                <section className="rounded-card border border-border bg-surface-1 p-5">
+                    <h3 className="mb-4 font-display text-sm font-semibold text-text-1">Distribusi Kategori</h3>
+                    {categoryData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
-                                    data={data.categoryDistribution.filter(c => c.views > 0)}
+                                    data={categoryData}
                                     dataKey="views"
                                     nameKey="name"
                                     cx="50%"
@@ -317,85 +208,43 @@ export default function AnalyticsDashboard() {
                                     label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                                     labelLine={false}
                                 >
-                                    {data.categoryDistribution.filter(c => c.views > 0).map((entry, index) => (
+                                    {categoryData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Pie>
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: "#171717",
-                                        border: "1px solid #262626",
-                                        borderRadius: "8px",
-                                    }}
-                                />
+                                <Tooltip content={<ChartTooltip />} />
                             </PieChart>
                         </ResponsiveContainer>
                     ) : (
                         <EmptyChartMessage message="Belum ada data kategori" />
                     )}
-                </div>
+                </section>
 
                 {/* Top Articles List */}
-                <div style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    border: "1px solid var(--border-color)",
-                    padding: "24px",
-                }}>
-                    <h3 style={{
-                        color: "var(--text-primary)",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        marginBottom: "24px",
-                    }}>
-                        Artikel Terpopuler
-                    </h3>
+                <section className="rounded-card border border-border bg-surface-1 p-5">
+                    <h3 className="mb-4 font-display text-sm font-semibold text-text-1">Artikel Terpopuler</h3>
                     {data.topArticles.length > 0 ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <div className="flex flex-col gap-3">
                             {data.topArticles.slice(0, 5).map((article, index) => (
                                 <div
                                     key={article.id}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "12px",
-                                        padding: "12px",
-                                        backgroundColor: "var(--bg-card)",
-                                        borderRadius: "8px",
-                                    }}
+                                    className="flex items-center gap-3 rounded-card border border-border bg-surface-1 p-3"
                                 >
-                                    <span style={{
-                                        width: "28px",
-                                        height: "28px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        backgroundColor: index === 0 ? "var(--brand-red)" : "var(--border-color)",
-                                        color: "var(--text-primary)",
-                                        fontSize: "12px",
-                                        fontWeight: 600,
-                                        borderRadius: "6px",
-                                    }}>
+                                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] font-mono text-xs font-semibold ${index === 0 ? "bg-accent text-white" : "bg-surface-2 text-text-2"}`}>
                                         {index + 1}
                                     </span>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{
-                                            color: "var(--text-primary)",
-                                            fontSize: "13px",
-                                            fontWeight: 500,
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            whiteSpace: "nowrap",
-                                        }}>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-medium text-text-1">
                                             {article.title}
                                         </p>
                                         {article.category && (
-                                            <span style={{ color: article.category.color, fontSize: "11px" }}>
+                                            <span className="text-[11px]" style={{ color: article.category.color }}>
                                                 {article.category.name}
                                             </span>
                                         )}
                                     </div>
-                                    <span style={{ color: "var(--text-muted)", fontSize: "13px", fontWeight: 600 }}>
-                                        {article.views} views
+                                    <span className="font-mono text-sm font-semibold tabular-nums text-text-2">
+                                        {article.views.toLocaleString("id-ID")} views
                                     </span>
                                 </div>
                             ))}
@@ -403,67 +252,38 @@ export default function AnalyticsDashboard() {
                     ) : (
                         <EmptyChartMessage message="Belum ada artikel" />
                     )}
-                </div>
+                </section>
             </div>
         </div>
     );
 }
 
-function SummaryCard({ icon: Icon, label, value, color }: {
-    icon: typeof FiEye;
-    label: string;
-    value: number;
-    color: string;
+function Header({ days, onDaysChange }: {
+    days: number;
+    onDaysChange: (days: number) => void;
 }) {
     return (
-        <div style={{
-            backgroundColor: "#0a0a0a",
-            border: "1px solid #262626",
-            borderLeft: `4px solid ${color}`,
-            borderRadius: "8px",
-            padding: "20px",
-        }}>
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                marginBottom: "12px",
-            }}>
-                <div style={{
-                    width: "40px",
-                    height: "40px",
-                    backgroundColor: `${color}20`,
-                    borderRadius: "8px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color,
-                }}>
-                    <Icon size={20} />
-                </div>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p className="mb-0.5 text-xs font-semibold tracking-wider text-accent">ANALYTICS</p>
+                <h1 className="flex items-center gap-2 font-display text-2xl font-bold text-text-1">
+                    <TrendUp size={24} aria-hidden="true" /> Statistik
+                </h1>
             </div>
-            <p style={{ color: "var(--text-muted)", fontSize: "11px", letterSpacing: "0.1em", marginBottom: "4px" }}>
-                {label}
-            </p>
-            <p style={{ color: "var(--text-primary)", fontSize: "28px", fontWeight: 700 }}>
-                {value.toLocaleString()}
-            </p>
+            <Select
+                value={String(days)}
+                onChange={(e) => onDaysChange(Number(e.target.value))}
+                aria-label="Rentang hari"
+                className="sm:w-48"
+                options={DAY_RANGE_OPTIONS}
+            />
         </div>
     );
 }
 
 function EmptyChartMessage({ message }: { message: string }) {
     return (
-        <div style={{
-            height: "250px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--text-tertiary)",
-            fontSize: "14px",
-            backgroundColor: "var(--bg-card)",
-            borderRadius: "8px",
-        }}>
+        <div className="flex h-[250px] items-center justify-center rounded-card border border-border bg-surface-1 text-sm text-text-3">
             {message}
         </div>
     );
