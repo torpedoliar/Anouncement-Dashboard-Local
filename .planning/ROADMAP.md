@@ -27,6 +27,24 @@ These six competing-variant WARNINGs from `INGEST-CONFLICTS.md` remain explicit 
 
 ## Phases
 
+- [x] **Phase 1: Foundation — Portal Data & Auth** - Portal + audit schema, portal auth, crypto, audit helper, RBAC helpers, env fail-closed
+- [x] **Phase 2: Audit Trail** - logAudit retrofit of every mutation route, audit page/API, export, retention, backfill
+- [x] **Phase 3: Admin Portal** - SuperAdmin CRUD for portal apps, users, sessions
+- [x] **Phase 4: Portal UX** - Portal login, grid, credentials, forgot/reset password, settings
+- [x] **Phase 5: SSO Launch** - Form-based auto-submit SSO with failure states and audits
+- [x] **Phase 6: Integration & Hardening** - Backup/restore, rate limits, seed, env, version bump, security checklist
+- [x] **Phase 6.1: Portal Group-Based Access** - Groups of apps as access unit, union with direct overrides (INSERTED)
+- [x] **Phase 6.2: Per-User App Visibility** - Onboarding wizard + group/app toggles in settings (INSERTED)
+- [x] **Phase 6.3: Restricted Apps + Multi-Credential** - isPublic gating + labeled accounts with picker (INSERTED)
+- [x] **Phase 6.4: Auto Login-Field Detection** - Deteksi Otomatis button + SSRF-safe detection API (INSERTED)
+- [x] **Phase 7: Design System Foundation** - Semantic tokens, Tailwind mapping, ui/ kit, site accent wiring
+- [x] **Phase 8: Admin Shell** - Grouped sidebar, masthead topbar/rack, Ctrl+K palette, responsive + a11y
+- [x] **Phase 9: Content Desk** - Dashboard, announcement ledger + editor, media/categories/comments/newsletter restyle
+- [x] **Phase 10: Data Surfaces** - Chart language, KPI tiles, ledger tables, audit timeline
+- [ ] **Phase 11: Portal & Auth Surfaces** - Shared auth frame, portal grid + secondary surfaces, portal ledgers (CURRENT)
+
+## Phase Details
+
 ### M1 — Portal v3.0 (SHIPPED, collapsed)
 
 <details>
@@ -270,7 +288,15 @@ These six competing-variant WARNINGs from `INGEST-CONFLICTS.md` remain explicit 
   3. Portal secondary surfaces restyled only: /portal/settings, SSOCredentialVault, CorruptCredential, NoCredential, OnboardingWizard (multi-step progress), AccountSelector, AccessDenied, PortalHeader — token classes, no raw hex/inline chrome, Phosphor icons
   4. Portal admin ledgers (portal-sessions, portal-audit, portal-users, portal-groups) restyled in the ledger family with RBAC badges; filters and CSV/JSON export unchanged
   5. Zero-regression verification: no API contract, cookie, session, or schema change (git diff against M1 baseline clean except UI files); `npx tsc --noEmit` + scoped eslint green; manual E2E (login → grid → save credential → SSO launch → failure path → lockout → audit rows) passes; OPD-1/OPD-4 rechecks pass (portal-access untouched; no stale portalUserId_appId lookups)
-**Plans**: TBD (3–4 plans expected: auth frames, portal grid, secondary surfaces + ledgers, regression E2E)
+**Plans**: 4 plans (waves 1–3)
+
+```
+Plans:
+- [ ] 11-01-PLAN.md — Shared auth frames (AuthFrame tracer: portal-login + admin-login token-native, inline error, behavior-identical)
+- [ ] 11-02-PLAN.md — Portal shell + grid restructure (PortalHeader, GroupedAppGrid chips 1/2/3/4 cols, AppCard)
+- [ ] 11-03-PLAN.md — SSO secondary surfaces (failure sheets, auto-submit interstitials, vault, wizard, settings, credentials)
+- [ ] 11-04-PLAN.md — Portal admin ledgers + regression evidence (sessions/audit/users/apps/groups, E2E checklist, OPD-1/OPD-4 rechecks)
+```
 **Rollback safety**: any misbehaving surface reverts component-only — the no-logic-change rule keeps behavior intact
 
 ## Progress
