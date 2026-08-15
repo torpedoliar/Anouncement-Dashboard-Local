@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { CheckCircle, WarningCircle } from "@phosphor-icons/react";
+import Card from "@/components/ui/Card";
 
 interface AppCardProps {
     id: string;
@@ -14,65 +16,48 @@ interface AppCardProps {
 
 export default function AppCard({ name, slug, description, logoPath, category, credentialCount }: AppCardProps) {
     return (
-        <div style={{
-            backgroundColor: "var(--bg-card)",
-            border: "1px solid var(--border-color)",
-            borderRadius: "12px",
-            padding: "24px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-        }}>
+        <Card className="group p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lvl-2 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div className="flex items-center gap-3">
                 {logoPath ? (
                     <img
                         src={logoPath}
                         alt={name}
-                        style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover" }}
+                        className="h-10 w-10 rounded-card object-cover"
                     />
                 ) : (
-                    <div style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "8px",
-                        backgroundColor: "var(--border-color)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "var(--text-muted)",
-                        fontSize: "18px",
-                        fontWeight: 700,
-                    }}>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-surface-3 text-base font-semibold text-text-2">
                         {name.charAt(0).toUpperCase()}
                     </div>
                 )}
-                <div>
-                    <h3 style={{ color: "var(--text-primary)", fontSize: "15px", fontWeight: 600, margin: 0 }}>{name}</h3>
+                <div className="min-w-0">
+                    <h3 className="truncate text-sm font-semibold text-text-1">{name}</h3>
                     {category && (
-                        <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>{category}</span>
+                        <span className="text-xs text-text-3">{category}</span>
                     )}
                 </div>
             </div>
 
             {/* Description */}
             {description && (
-                <p style={{ color: "var(--text-muted)", fontSize: "13px", margin: 0, lineHeight: "1.5" }}>
-                    {description.length > 100 ? description.substring(0, 100) + "..." : description}
-                </p>
+                <p className="mt-3 line-clamp-2 text-sm text-text-2">{description}</p>
             )}
 
             {/* Health indicator */}
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                fontSize: "12px",
-                color: credentialCount > 0 ? "var(--color-success)" : "var(--color-warning)",
-            }}>
-                {credentialCount > 0
-                    ? (credentialCount === 1 ? "✓ 1 akun tersimpan" : `✓ ${credentialCount} akun tersimpan`)
-                    : "⚠ Belum ada akun"}
+            <div className="mt-3 flex items-center gap-1.5 text-xs">
+                {credentialCount > 0 ? (
+                    <>
+                        <CheckCircle size={16} className="shrink-0 text-success" aria-hidden="true" />
+                        <span className="text-success">
+                            <span className="font-mono tabular-nums">{credentialCount}</span> akun tersimpan
+                        </span>
+                    </>
+                ) : (
+                    <>
+                        <WarningCircle size={16} className="shrink-0 text-warning" aria-hidden="true" />
+                        <span className="text-warning">Belum ada akun</span>
+                    </>
+                )}
             </div>
 
             {/* Action */}
@@ -81,38 +66,18 @@ export default function AppCard({ name, slug, description, logoPath, category, c
                     href={`/portal/app/${slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                        display: "block",
-                        textAlign: "center",
-                        padding: "10px",
-                        backgroundColor: "var(--brand-red)",
-                        color: "var(--text-primary)",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                    }}
+                    className="mt-4 block w-full rounded-control bg-accent py-2 text-center text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
-                    Buka Aplikasi
+                    Buka
                 </Link>
             ) : (
                 <Link
                     href={`/portal/credentials?app=${slug}`}
-                    style={{
-                        display: "block",
-                        textAlign: "center",
-                        padding: "10px",
-                        backgroundColor: "var(--border-color)",
-                        color: "var(--text-secondary)",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        textDecoration: "none",
-                    }}
+                    className="mt-4 block w-full rounded-control border border-border bg-surface-1 py-2 text-center text-sm font-semibold text-text-1 transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                     Simpan Kredensial
                 </Link>
             )}
-        </div>
+        </Card>
     );
 }
