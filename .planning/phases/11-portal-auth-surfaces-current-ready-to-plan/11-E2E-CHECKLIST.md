@@ -1,11 +1,11 @@
 # 11-E2E-CHECKLIST.md — Verifikasi Manual E2E Phase 11 (UI Ugrade Portal & Auth Surfaces)
 
-> Plan: `11-04-PLAN.md` (Task 4). Berlaku setelah 3 commit UI (P11-04) diterapkan dan dev server berjalan.
+> Plan: `11-04-PLAN.md` (Task 4). Berlaku setelah commit UI (P11-04, termasuk commit perbaikan spacing/error-state) diterapkan dan dev server berjalan.
 > Prasyarat: `PORTAL_CREDENTIAL_KEY` ter-set, DB memiliki minimal 1 portal user, 1 app SSO (FORM), 1 grup.
 
 ---
 
-## A. Alur Manual (8 Langkah)
+## A. Alur Manual (9 Langkah)
 
 ### Langkah 1 — Login Portal
 1. Buka `/admin-login`, login sebagai SuperAdmin.
@@ -42,18 +42,24 @@
 3. Harapan: tidak freeze, ada jalur kembali ke `/portal` dan tombol/aksen "edit kredensial" masih bisa dipakai tanpa login ulang.
 4. Harapan: entry audit log launch tetap tercatat (walaupun gagal di sisi app).
 
-### Langkah 7 — Reset / Revocation Sesi
+### Langkah 7 — Lockout Akun (Gagal Login Berulang)
+1. Pada `/portal-login`, masukkan NIK/username yang salah secara berulang (sesuai batas percobaan yang dikonfigurasi, mis. 5×).
+2. Harapan: setelah melewati batas, sistem menolak login dengan pesan **"Akun terkunci. Coba lagi dalam N menit."** (N = durasi lockout).
+3. Harapan: sebelum batas tercapai, setiap percobaan salah menampilkan pesan kredensial salah dan tidak me-reset hitungan.
+4. Harapan: sesudah masa lockout habis, login NIK yang benar berhasil lagi; sesi baru tercatat di `/admin/portal-sessions`.
+
+### Langkah 8 — Reset / Revocation Sesi
 1. Di `/admin/portal-sessions`: revoke (cabut) sesi portal user.
 2. Setelah revoke, akses user ke app → kembali ke `/portal-login` (sesi batal).
 3. Alternatif: reset password di `/admin/portal-users` → password lama harus ditolak.
 
-### Langkah 8 — Verifikasi Audit Trail (ISO 27001)
+### Langkah 9 — Verifikasi Audit Trail (ISO 27001)
 1. Buka `/admin/portal-audit`:
    - Tab Ringkasan: Top 5 risiko sharing muncul jika ada.
    - Tab "Deteksi Account Sharing": baris dengan `targetUsername` yang dipakai >1 user.
    - Tab "Unused Access": >90 hari tidak aktif.
-   - Tab "Access Control Matrix": sel берhubung (credential ada / kosong).
-   - Tab "Histori Pencabutan": baris revoke yang baru saja dilakukan Langkah 7.
+   - Tab "Access Control Matrix": sel terhubung (credential ada / kosong).
+   - Tab "Histori Pencabutan": baris revoke yang baru saja dilakukan Langkah 8.
 2. Buka `/admin/audit-trail`: seluruh aksi portal (saved cred, launch, revoke, reset password) ada dengan `entityType=portal*` dan metadata ter-redact.
 
 ---
@@ -70,24 +76,25 @@ git diff HEAD -- lib/portal-access.ts lib/portal-layout.ts lib/portal-auth.ts li
 Hasil di commit P11-04: **kosong (zero-diff)** — STATUS: ✅ PASS
 
 ### OPD-4 — Tidak Ada Stock Compound Lookup Baru
-Scan diff seluruh commit fase untuk pola stale `portalUserId_appId` compound:
+Scan diff seluruh commit fase (base `903dbe5` → HEAD) untuk pola stale `portalUserId_appId` compound:
 
 ```bash
-git diff HEAD~3..HEAD | grep -iE "portalUser.*appId.*(unique|compound)|appId.*portalUser.*(unique|compound)"
+git diff 903dbe5..HEAD | grep -iE "portalUser.*appId.*(unique|compound)|appId.*portalUser.*(unique|compound)"
 ```
 
 Hasil di commit P11-04: **tidak ada match** — STATUS: ✅ PASS
 
 ### Scope Check — Hanya UI
 ```bash
-git diff --name-only HEAD~3..HEAD
+git diff --name-only HEAD~4..HEAD
 ```
-Hasil (5 file, semuanya `app/admin/portal-*/page.tsx`):
+Hasil (6 file: 5 halaman + checklist itu sendiri):
 - `app/admin/portal-apps/page.tsx`
 - `app/admin/portal-audit/page.tsx`
 - `app/admin/portal-groups/page.tsx`
 - `app/admin/portal-sessions/page.tsx`
 - `app/admin/portal-users/page.tsx`
+- `.planning/phases/11-portal-auth-surfaces-current-ready-to-plan/11-E2E-CHECKLIST.md`
 
 Tidak ada API route / lib / schema / middleware ikut berubah — STATUS: ✅ PASS
 
@@ -102,7 +109,9 @@ Tidak ada API route / lib / schema / middleware ikut berubah — STATUS: ✅ PAS
 | Langkah 4 (SSO auto-submit) | ⬜ manual |
 | Langkah 5 (account picker) | ⬜ manual |
 | Langkah 6 (failure path) | ⬜ manual |
-| Langkah 7 (lockout/revoke) | ⬜ manual |
+| Langkah 7 (lockout) | ⬜ manual |
+| Langkah 8 (lockout/revoke) | ⬜ manual |
+| Langkah 9 (audit rows) | ⬜ manual |
 | Langkah 8 (audit rows) | ⬜ manual |
 | OPD-1 frozen-diff | ✅ PASS |
 | OPD-4 compound scan | ✅ PASS |

@@ -296,7 +296,7 @@ export default function PortalGroupsPage() {
             {/* Header */}
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p className="mb-0.5 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
+                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
                     <h1 className="font-display text-2xl font-semibold text-text-1">Grup Portal</h1>
                 </div>
                 <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
@@ -431,7 +431,7 @@ export default function PortalGroupsPage() {
 
                             {/* App assignment */}
                             <div>
-                                <span className="mb-1.5 block text-sm font-semibold text-text-1">APLIKASI DALAM GRUP</span>
+                                <span className="mb-2 block text-sm font-semibold text-text-1">APLIKASI DALAM GRUP</span>
                                 <div className="max-h-40 space-y-2 overflow-y-auto rounded-control border border-border bg-surface-1 p-3">
                                     {apps.length === 0 ? (
                                         <span className="text-sm text-text-3">Tidak ada aplikasi tersedia</span>

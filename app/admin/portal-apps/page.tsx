@@ -383,7 +383,7 @@ export default function PortalAppsPage() {
             {/* Header */}
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p className="mb-0.5 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
+                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
                     <h1 className="font-display text-2xl font-semibold text-text-1">Aplikasi Portal</h1>
                 </div>
                 <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
@@ -527,7 +527,7 @@ export default function PortalAppsPage() {
                                     placeholder="https://app.example.com"
                                 />
                                 <div>
-                                    <div className="mb-1.5 flex items-center justify-between">
+                                    <div className="mb-2 flex items-center justify-between">
                                         <span className="text-sm font-semibold text-text-1">LOGIN URL</span>
                                         <Button
                                             type="button"
@@ -596,7 +596,7 @@ export default function PortalAppsPage() {
                             </div>
 
                             <div>
-                                <span className="mb-1.5 block text-sm font-semibold text-text-1">EXTRA FIELDS (JSON)</span>
+                                <span className="mb-2 block text-sm font-semibold text-text-1">EXTRA FIELDS (JSON)</span>
                                 <textarea
                                     value={formData.extraFields}
                                     onChange={(e) => setFormData({ ...formData, extraFields: e.target.value })}

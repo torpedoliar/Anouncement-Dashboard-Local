@@ -8,6 +8,7 @@ import {
     DownloadSimple,
     ShieldCheck,
     Users,
+    WarningCircle,
 } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import Table, { type TableColumn } from "@/components/ui/Table";
@@ -15,6 +16,7 @@ import Table, { type TableColumn } from "@/components/ui/Table";
 export default function PortalAuditPage() {
     const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState("dashboard");
 
     useEffect(() => {
@@ -27,9 +29,13 @@ export default function PortalAuditPage() {
             if (res.ok) {
                 const json = await res.json();
                 setData(json);
+                setError(null);
+            } else {
+                setError("Terjadi kesalahan. Silakan coba lagi.");
             }
         } catch (e) {
             console.error(e);
+            setError("Terjadi kesalahan. Silakan coba lagi.");
         } finally {
             setIsLoading(false);
         }
@@ -96,11 +102,28 @@ export default function PortalAuditPage() {
         );
     }
 
+    if (error) {
+        return (
+            <div className="p-6">
+                <div className="mb-6">
+                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
+                    <h1 className="font-display text-2xl font-semibold text-text-1">Portal Audit (ISO 27001)</h1>
+                </div>
+                <div className="flex flex-col items-center gap-4 rounded-card border border-danger/30 bg-danger-subtle p-12 text-center shadow-lvl-1">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-card bg-danger-subtle">
+                        <WarningCircle size={24} className="text-danger" aria-hidden="true" />
+                    </div>
+                    <p className="text-sm text-danger">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
     if (!data) {
         return (
             <div className="p-6">
                 <div className="mb-6">
-                    <p className="mb-0.5 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
+                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
                     <h1 className="font-display text-2xl font-semibold text-text-1">Portal Audit (ISO 27001)</h1>
                 </div>
                 <div className="flex flex-col items-center gap-4 rounded-card border border-border p-12 text-center shadow-lvl-1">
@@ -154,7 +177,7 @@ export default function PortalAuditPage() {
         <div className="p-6">
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p className="mb-0.5 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
+                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
                     <h1 className="font-display text-2xl font-semibold text-text-1">Portal Audit (ISO 27001)</h1>
                 </div>
             </div>
