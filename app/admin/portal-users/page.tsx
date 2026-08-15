@@ -1,9 +1,30 @@
 "use client";
 
-import { useState, useEffect, useCallback, Fragment } from "react";
-import { FiUsers, FiPlus, FiEdit, FiTrash, FiKey, FiToggleLeft, FiToggleRight, FiX, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
+import {
+    CaretDown,
+    CaretLeft,
+    CaretRight,
+    CaretRight as ChevronRight,
+    Key,
+    PencilSimple,
+    Plus,
+    ShieldCheck,
+    ToggleLeft,
+    ToggleRight,
+    Trash,
+    User,
+    UserCircle,
+    X,
+} from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import Card from "@/components/ui/Card";
 
 interface PortalApp {
     id: string;
@@ -69,6 +90,7 @@ export default function PortalUsersPage() {
     const [newPassword, setNewPassword] = useState("");
     const [isResetting, setIsResetting] = useState(false);
     const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+    const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "createdAt", dir: "desc" });
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
 
@@ -116,6 +138,18 @@ export default function PortalUsersPage() {
         fetchApps();
         fetchGroups();
     }, [fetchUsers]);
+
+    useEffect(() => {
+        if (!showModal) return;
+        const handleModalKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                closeModal();
+            }
+        };
+        document.addEventListener("keydown", handleModalKeyDown);
+        return () => document.removeEventListener("keydown", handleModalKeyDown);
+    }, [showModal]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -327,412 +361,417 @@ export default function PortalUsersPage() {
         });
     };
 
-    const inputStyle: React.CSSProperties = {
-        width: "100%", boxSizing: "border-box",
-        padding: "12px",
-        backgroundColor: "#111",
-        border: "1px solid #262626",
-        color: "#fff",
-        fontSize: "14px",
+    const handleSort = (key: string) => {
+        setSort((prev) =>
+            prev.key === key
+                ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+                : { key, dir: "asc" }
+        );
     };
+
+    const sortedUsers = useMemo(() => {
+        const dir = sort.dir === "asc" ? 1 : -1;
+        return [...users].sort((a, b) => {
+            switch (sort.key) {
+                case "name":
+                    return a.name.localeCompare(b.name, "id") * dir;
+                case "role":
+                    return a.role.localeCompare(b.role) * dir;
+                case "createdAt":
+                    return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir;
+                default:
+                    return 0;
+            }
+        });
+    }, [users, sort]);
+
+    const getRoleBadge = (role: string) => {
+        if (role === "PORTAL_ADMIN") {
+            return { tone: "danger" as const, icon: <ShieldCheck size={12} aria-hidden="true" /> };
+        }
+        return { tone: "neutral" as const, icon: <UserCircle size={12} aria-hidden="true" /> };
+    };
+
+    const columns: TableColumn[] = [
+        { key: "name", header: "NAMA", sortKey: "name" },
+        { key: "nik", header: "NIK HRIS" },
+        { key: "role", header: "ROLE", sortKey: "role" },
+        { key: "groups", header: "GRUP" },
+        { key: "status", header: "STATUS" },
+        { key: "createdAt", header: "DIBUAT", sortKey: "createdAt" },
+        { key: "actions", header: "AKSI" },
+    ];
+
+    const rows = sortedUsers.map((user) => {
+        const roleBadge = getRoleBadge(user.role);
+        return [
+            <div key="user" className="flex items-center gap-3">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-card border ${
+                    user.role === "PORTAL_ADMIN" ? "border-info/30 bg-info-subtle" : "border-border bg-surface-2"
+                }`}>
+                    <User size={14} className={user.role === "PORTAL_ADMIN" ? "text-info" : "text-text-2"} />
+                </div>
+                <span className="text-sm font-semibold text-text-1">{user.name}</span>
+            </div>,
+            <span key="nik" className="font-mono text-xs tabular-nums text-text-2">{user.nik}</span>,
+            <Badge key="role" tone={roleBadge.tone}>
+                {roleBadge.icon}
+                {user.role}
+            </Badge>,
+            <div key="groups" className="flex flex-wrap items-center gap-1">
+                {user.groups && user.groups.length > 0 ? (
+                    user.groups.map(g => (
+                        <Badge key={g.id} tone="neutral">{g.group.name}</Badge>
+                    ))
+                ) : (
+                    <span className="text-xs text-text-3">-</span>
+                )}
+            </div>,
+            <Badge key="status" tone={user.isActive ? "success" : "neutral"}>
+                {user.isActive ? "AKTIF" : "NONAKTIF"}
+            </Badge>,
+            <span key="createdAt" className="whitespace-nowrap font-mono text-xs tabular-nums text-text-2">
+                {formatDate(user.createdAt)}
+            </span>,
+            <div key="actions" className="inline-flex items-center gap-1">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedUserId(expandedUserId === user.id ? null : user.id)}
+                    aria-label="Lihat Akses"
+                    title="Lihat Akses"
+                >
+                    {expandedUserId === user.id ? <CaretDown size={14} /> : <ChevronRight size={14} />}
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToggleStatus(user)}
+                    aria-label={user.isActive ? "Nonaktifkan" : "Aktifkan"}
+                    title={user.isActive ? "Nonaktifkan" : "Aktifkan"}
+                    className={user.isActive ? "text-success" : "text-danger"}
+                >
+                    {user.isActive ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openResetModal(user)}
+                    aria-label="Reset Password"
+                    title="Reset Password"
+                    className="text-warning"
+                >
+                    <Key size={14} />
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openEditModal(user)}
+                    aria-label="Edit"
+                    title="Edit"
+                >
+                    <PencilSimple size={14} />
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(user)}
+                    aria-label="Hapus"
+                    title="Hapus"
+                    className="text-danger"
+                >
+                    <Trash size={14} />
+                </Button>
+            </div>,
+        ];
+    });
 
     if (isLoading) {
         return (
-            <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
+            <div className="p-6">
+                {/* Header skeleton */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div className="mb-2 h-3 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-7 w-48 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div className="h-10 w-40 animate-pulse rounded bg-surface-2" />
+                </div>
+
+                {/* Stats skeleton */}
+                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="rounded-card border border-border p-4 shadow-lvl-1">
+                            <div className="mb-2 h-3 w-20 animate-pulse rounded bg-surface-2" />
+                            <div className="h-7 w-12 animate-pulse rounded bg-surface-2" />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Ledger-shaped skeleton */}
+                <div className="rounded-card border border-border shadow-lvl-1">
+                    <div className="flex gap-4 border-b border-border px-4 py-3">
+                        <div className="h-3 w-28 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-16 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="flex gap-4 border-b border-border px-4 py-4 last:border-0">
+                                <div className="h-4 w-28 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-16 animate-pulse rounded bg-surface-2" />
+                                <div className="h-5 w-24 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-24 animate-pulse rounded bg-surface-2" />
+                                <div className="h-5 w-20 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-24 animate-pulse rounded bg-surface-2" />
+                                <div className="h-6 w-24 animate-pulse rounded bg-surface-2" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
 
+    const adminCount = users.filter(u => u.role === "PORTAL_ADMIN").length;
+    const activeCount = users.filter(u => u.isActive).length;
+    const inactiveCount = users.filter(u => !u.isActive).length;
+
     return (
-        <div style={{ padding: "32px" }}>
+        <div className="p-6">
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
-                        PORTAL
-                    </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
-                        Pengguna Portal
-                    </h1>
+                    <p className="mb-0.5 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
+                    <h1 className="font-display text-2xl font-semibold text-text-1">Pengguna Portal</h1>
                 </div>
-                <button
-                    onClick={openAddModal}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "12px 24px",
-                        backgroundColor: "var(--brand-red)",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        border: "none",
-                        cursor: "pointer",
-                    }}
-                >
-                    <FiPlus size={16} />
+                <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
                     Tambah Pengguna
-                </button>
+                </Button>
             </div>
 
             {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "32px" }}>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>TOTAL PENGGUNA</p>
-                    <p style={{ color: "var(--text-primary)", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || users.length}</p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>AKTIF</p>
-                    <p style={{ color: "var(--color-success)", fontSize: "24px", fontWeight: 700 }}>
-                        {users.filter(u => u.isActive).length}
-                    </p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>NONAKTIF</p>
-                    <p style={{ color: "var(--color-error)", fontSize: "24px", fontWeight: 700 }}>
-                        {users.filter(u => !u.isActive).length}
-                    </p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>PORTAL ADMIN</p>
-                    <p style={{ color: "#a855f7", fontSize: "24px", fontWeight: 700 }}>
-                        {users.filter(u => u.role === "PORTAL_ADMIN").length}
-                    </p>
-                </div>
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">TOTAL PENGGUNA</p>
+                    <p className="font-mono text-2xl tabular-nums text-text-1">{pagination?.total || users.length}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">AKTIF</p>
+                    <p className="font-mono text-2xl tabular-nums text-success">{activeCount}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">NONAKTIF</p>
+                    <p className="font-mono text-2xl tabular-nums text-text-1">{inactiveCount}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">PORTAL ADMIN</p>
+                    <p className="font-mono text-2xl tabular-nums text-text-1">{adminCount}</p>
+                </Card>
             </div>
 
             {/* Table */}
-            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
-                    <thead>
-                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NIK HRIS</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>ROLE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>GRUP</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>DIBUAT</th>
-                            <th style={{ padding: "20px", textAlign: "right", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.length === 0 ? (
-                            <tr>
-                                <td colSpan={7} style={{ padding: "48px", textAlign: "center", color: "var(--text-tertiary)" }}>
-                                    Tidak ada pengguna portal ditemukan
-                                </td>
-                            </tr>
-                        ) : (
-                            users.map((user, index) => (
-                                <Fragment key={user.id}>
-                                    <tr style={{ borderBottom: expandedUserId === user.id ? "none" : (index < users.length - 1 ? "1px solid var(--border-color)" : "none") }}>
-                                        <td style={{ padding: "20px" }}>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                                <div style={{
-                                                    width: "36px",
-                                                    height: "36px",
-                                                    backgroundColor: user.role === "PORTAL_ADMIN" ? "rgba(168, 85, 247, 0.15)" : "var(--bg-tertiary)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    borderRadius: "8px",
-                                                    border: user.role === "PORTAL_ADMIN" ? "1px solid rgba(168, 85, 247, 0.3)" : "1px solid var(--border-strong)",
-                                                }}>
-                                                    <FiUsers size={16} color={user.role === "PORTAL_ADMIN" ? "#a855f7" : "#737373"} />
-                                                </div>
-                                                <span style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>{user.name}</span>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "14px" }}>{user.nik}</td>
-                                        <td style={{ padding: "20px" }}>
-                                            <span style={{
-                                                padding: "4px 12px",
-                                                backgroundColor: user.role === "PORTAL_ADMIN" ? "rgba(168, 85, 247, 0.2)" : "rgba(59, 130, 246, 0.2)",
-                                                color: user.role === "PORTAL_ADMIN" ? "#a855f7" : "var(--color-info)",
-                                                fontSize: "11px",
-                                                fontWeight: 600,
-                                            }}>
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: "20px" }}>
-                                            {user.groups && user.groups.length > 0 ? (
-                                                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                                                    {user.groups.map(g => (
-                                                        <span key={g.id} style={{
-                                                            padding: "2px 8px",
-                                                            backgroundColor: "rgba(168, 85, 247, 0.15)",
-                                                            color: "#a855f7",
-                                                            fontSize: "10px",
-                                                            fontWeight: 600,
-                                                            borderRadius: "4px",
-                                                        }}>
-                                                            {g.group.name}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>-</span>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: "20px" }}>
-                                            {user.isActive ? (
-                                                <span style={{ padding: "4px 12px", backgroundColor: "rgba(34, 197, 94, 0.2)", color: "var(--color-success)", fontSize: "11px", fontWeight: 600 }}>
-                                                    AKTIF
-                                                </span>
-                                            ) : (
-                                                <span style={{ padding: "4px 12px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "var(--color-error)", fontSize: "11px", fontWeight: 600 }}>
-                                                    NONAKTIF
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: "20px", color: "#71717a", fontSize: "13px" }}>{formatDate(user.createdAt)}</td>
-                                        <td style={{ padding: "16px", textAlign: "right" }}>
-                                            <button
-                                                onClick={() => setExpandedUserId(expandedUserId === user.id ? null : user.id)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--text-muted)", cursor: "pointer", marginRight: "4px" }}
-                                                title="Lihat Akses"
-                                            >
-                                                {expandedUserId === user.id ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
-                                            </button>
-                                            <button
-                                                onClick={() => handleToggleStatus(user)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: user.isActive ? "var(--color-success)" : "var(--color-error)", cursor: "pointer", marginRight: "4px" }}
-                                                title={user.isActive ? "Nonaktifkan" : "Aktifkan"}
-                                            >
-                                                {user.isActive ? <FiToggleRight size={14} /> : <FiToggleLeft size={14} />}
-                                            </button>
-                                            <button
-                                                onClick={() => openResetModal(user)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "#fbbf24", cursor: "pointer", marginRight: "4px" }}
-                                                title="Reset Password"
-                                            >
-                                                <FiKey size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => openEditModal(user)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--text-muted)", cursor: "pointer", marginRight: "4px" }}
-                                                title="Edit"
-                                            >
-                                                <FiEdit size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(user)}
-                                                style={{ padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border-color)", color: "var(--brand-red)", cursor: "pointer" }}
-                                                title="Hapus"
-                                            >
-                                                <FiTrash size={14} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {expandedUserId === user.id && (
-                                        <tr key={`${user.id}-expanded`}>
-                                            <td colSpan={7} style={{ padding: "0 20px 20px 20px", backgroundColor: "#0d0d0d", borderBottom: index < users.length - 1 ? "1px solid var(--border-color)" : "none" }}>
-                                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                                                    {/* Groups */}
-                                                    <div style={{ padding: "16px", backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "4px" }}>
-                                                        <p style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600, marginBottom: "12px" }}>GRUP</p>
-                                                        {user.groups && user.groups.length > 0 ? (
-                                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                                                                {user.groups.map(g => (
-                                                                    <span key={g.id} style={{
-                                                                        padding: "4px 12px",
-                                                                        backgroundColor: "rgba(168, 85, 247, 0.2)",
-                                                                        color: "#a855f7",
-                                                                        fontSize: "11px",
-                                                                        fontWeight: 600,
-                                                                        borderRadius: "4px",
-                                                                    }}>
-                                                                        {g.group.name}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <p style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>Tidak ada grup</p>
-                                                        )}
-                                                    </div>
-                                                    {/* Direct access */}
-                                                    <div style={{ padding: "16px", backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "4px" }}>
-                                                        <p style={{ color: "var(--text-secondary)", fontSize: "12px", fontWeight: 600, marginBottom: "12px" }}>AKSES LANGSUNG (OVERRIDE)</p>
-                                                        {user.appAccess && user.appAccess.length > 0 ? (
-                                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                                                                {user.appAccess.map(access => (
-                                                                    <div key={access.id} style={{
-                                                                        display: "flex",
-                                                                        alignItems: "center",
-                                                                        gap: "8px",
-                                                                        padding: "6px 12px",
-                                                                        backgroundColor: "var(--bg-tertiary)",
-                                                                        border: "1px solid var(--border-strong)",
-                                                                        borderRadius: "4px",
-                                                                    }}>
-                                                                        <span style={{ color: "var(--text-primary)", fontSize: "13px" }}>{access.app.name}</span>
-                                                                        <button
-                                                                            onClick={() => handleRevokeAccess(user.id, access.appId)}
-                                                                            style={{ background: "none", border: "none", color: "var(--color-error)", cursor: "pointer", padding: "2px" }}
-                                                                            title="Cabut akses"
-                                                                        >
-                                                                            <FiX size={12} />
-                                                                        </button>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <p style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>Tidak ada akses langsung</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </Fragment>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {users.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 rounded-card border border-border p-12 text-center shadow-lvl-1">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-card bg-surface-2">
+                        <User size={24} className="text-text-3" aria-hidden="true" />
+                    </div>
+                    <p className="text-text-3">Belum ada pengguna.</p>
+                </div>
+            ) : (
+                <div className="overflow-hidden rounded-card border border-border bg-surface-1 shadow-lvl-1">
+                    <Table
+                        columns={columns}
+                        rows={rows}
+                        sort={sort}
+                        onSort={handleSort}
+                        ariaLabel="Daftar pengguna portal"
+                    />
+                </div>
+            )}
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-                <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
-                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-                        <button
-                            key={p}
-                            onClick={() => setPage(p)}
-                            style={{
-                                padding: "8px 16px",
-                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
-                                color: "var(--text-primary)",
-                                border: "none",
-                                cursor: "pointer",
-                            }}
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="font-mono text-xs tabular-nums text-text-3">
+                        {((pagination.page - 1) * pagination.limit) + 1}–
+                        {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setPage(pagination.page - 1)}
+                            disabled={pagination.page === 1}
+                            aria-label="Halaman sebelumnya"
                         >
-                            {p}
-                        </button>
+                            <CaretLeft size={14} aria-hidden="true" />
+                        </Button>
+                        <span className="font-mono text-xs tabular-nums text-text-2">
+                            {pagination.page} / {pagination.totalPages}
+                        </span>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setPage(pagination.page + 1)}
+                            disabled={pagination.page === pagination.totalPages}
+                            aria-label="Halaman berikutnya"
+                        >
+                            <CaretRight size={14} aria-hidden="true" />
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Expanded access */}
+            {expandedUserId && (
+                <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    {sortedUsers.filter(u => u.id === expandedUserId).map((user) => (
+                        <Fragment key={user.id}>
+                            <Card className="p-4">
+                                <p className="mb-3 text-xs font-semibold tracking-widest text-text-3">GRUP</p>
+                                {user.groups && user.groups.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {user.groups.map(g => (
+                                            <Badge key={g.id} tone="neutral">{g.group.name}</Badge>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-text-3">Tidak ada grup</p>
+                                )}
+                            </Card>
+                            <Card className="p-4">
+                                <p className="mb-3 text-xs font-semibold tracking-wide text-text-3">AKSES LANGSUNG (OVERRIDE)</p>
+                                {user.appAccess && user.appAccess.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {user.appAccess.map(access => (
+                                            <div key={access.id} className="flex items-center gap-2 rounded-control border border-border bg-surface-2 px-3 py-2">
+                                                <span className="text-sm text-text-1">{access.app.name}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRevokeAccess(user.id, access.appId)}
+                                                    className="cursor-pointer rounded p-1 text-danger transition-colors hover:bg-surface-3"
+                                                    aria-label={`Cabut akses ${access.app.name}`}
+                                                    title="Cabut akses"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-text-3">Tidak ada akses langsung</p>
+                                )}
+                            </Card>
+                        </Fragment>
                     ))}
                 </div>
             )}
 
             {/* Create/Edit Modal */}
             {showModal && (
-                <div style={{
-                    position: "fixed",
-                    inset: 0,
-                    backgroundColor: "rgba(0, 0, 0, 0.8)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 50,
-                }}>
-                    <div style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        border: "1px solid var(--border-color)",
-                        width: "100%", boxSizing: "border-box",
-                        maxWidth: "500px",
-                        padding: "24px",
-                        maxHeight: "90vh",
-                        overflowY: "auto",
-                    }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={editingUser ? "Edit Pengguna" : "Tambah Pengguna"}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) closeModal();
+                    }}
+                >
+                    <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-sheet border border-border bg-surface-1 p-6 shadow-lvl-3">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h2 className="font-display text-xl font-semibold text-text-1">
                                 {editingUser ? "Edit Pengguna" : "Tambah Pengguna"}
                             </h2>
-                            <button onClick={closeModal} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
-                                <FiX size={20} />
+                            <button
+                                type="button"
+                                onClick={closeModal}
+                                className="cursor-pointer rounded-control p-1 text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
+                                aria-label="Tutup"
+                            >
+                                <X size={20} />
                             </button>
                         </div>
 
                         {error && (
-                            <div style={{ padding: "12px", backgroundColor: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "var(--color-error)", fontSize: "14px", marginBottom: "16px" }}>
+                            <div className="mb-4 rounded-control border border-danger-subtle bg-danger-subtle px-3 py-2 text-sm text-danger">
                                 {error}
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit}>
-                            <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NAMA *</label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    required
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NIK HRIS *</label>
-                                <input
-                                    type="text"
-                                    value={formData.nik}
-                                    onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
-                                    required
-                                    style={inputStyle}
-                                />
-                            </div>
-
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <Input
+                                label="NAMA *"
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
+                                placeholder="Nama lengkap"
+                            />
+                            <Input
+                                label="NIK HRIS *"
+                                type="text"
+                                value={formData.nik}
+                                onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
+                                required
+                            />
                             {!editingUser && (
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>PASSWORD *</label>
-                                    <input
-                                        type="password"
-                                        value={formData.password}
-                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                        required
-                                        style={inputStyle}
-                                    />
-                                </div>
+                                <Input
+                                    label="PASSWORD *"
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    required
+                                />
                             )}
 
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>ROLE</label>
-                                    <select
-                                        value={formData.role}
-                                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                        style={inputStyle}
-                                    >
-                                        <option value="PORTAL_USER">PORTAL_USER</option>
-                                        <option value="PORTAL_ADMIN">PORTAL_ADMIN</option>
-                                    </select>
-                                </div>
-                                <div style={{ marginBottom: "16px", display: "flex", alignItems: "flex-end" }}>
-                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--text-secondary)", fontSize: "14px", paddingBottom: "12px" }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.isActive}
-                                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                            style={{ accentColor: "var(--brand-red)", width: "18px", height: "18px" }}
-                                        />
-                                        Aktif
-                                    </label>
-                                </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <Select
+                                    label="ROLE"
+                                    value={formData.role}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                    options={[
+                                        { value: "PORTAL_USER", label: "PORTAL_USER" },
+                                        { value: "PORTAL_ADMIN", label: "PORTAL_ADMIN" },
+                                    ]}
+                                />
+                                <label className="flex items-center gap-2 pt-6 text-sm text-text-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.isActive}
+                                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                        className="h-4 w-4 cursor-pointer accent-accent"
+                                    />
+                                    Aktif
+                                </label>
                             </div>
 
                             {/* Group assignment */}
-                            <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>GRUP</label>
-                                <div style={{
-                                    border: "1px solid var(--border-color)",
-                                    backgroundColor: "var(--bg-card)",
-                                    padding: "12px",
-                                    maxHeight: "150px",
-                                    overflowY: "auto",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "8px",
-                                }}>
+                            <div>
+                                <p className="mb-2 text-xs font-semibold text-text-2">GRUP</p>
+                                <div className="max-h-40 space-y-2 overflow-y-auto rounded-control border border-border bg-surface-1 p-3">
                                     {groups.length === 0 ? (
-                                        <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>Tidak ada grup tersedia</span>
+                                        <span className="text-sm text-text-3">Tidak ada grup tersedia</span>
                                     ) : (
                                         groups.map(group => (
-                                            <label key={group.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#e5e5e5", fontSize: "14px" }}>
+                                            <label key={group.id} className="flex cursor-pointer items-center gap-2 text-sm text-text-1">
                                                 <input
                                                     type="checkbox"
                                                     checked={formData.groupIds.includes(group.id)}
                                                     onChange={() => handleGroupToggle(group.id)}
-                                                    style={{ accentColor: "var(--brand-red)" }}
+                                                    className="h-4 w-4 cursor-pointer accent-accent"
                                                 />
                                                 {group.name}
                                             </label>
@@ -742,33 +781,24 @@ export default function PortalUsersPage() {
                             </div>
 
                             {/* Direct app access (override) */}
-                            <div style={{ marginBottom: "24px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>AKSES LANGSUNG (OVERRIDE)</label>
-                                <p style={{ color: "var(--text-tertiary)", fontSize: "11px", marginBottom: "8px" }}>Akses app di luar grup. Jika app sudah ada di grup, tidak perlu ditambah di sini.</p>
-                                <div style={{
-                                    border: "1px solid var(--border-color)",
-                                    backgroundColor: "var(--bg-card)",
-                                    padding: "12px",
-                                    maxHeight: "150px",
-                                    overflowY: "auto",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "8px",
-                                }}>
+                            <div>
+                                <p className="mb-1 text-xs font-semibold text-text-2">AKSES LANGSUNG (OVERRIDE)</p>
+                                <p className="mb-2 text-xs text-text-3">Akses app di luar grup. Jika app sudah ada di grup, tidak perlu ditambah di sini.</p>
+                                <div className="max-h-40 space-y-2 overflow-y-auto rounded-control border border-border bg-surface-1 p-3">
                                     {apps.length === 0 ? (
-                                        <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>Tidak ada aplikasi tersedia</span>
+                                        <span className="text-sm text-text-3">Tidak ada aplikasi tersedia</span>
                                     ) : (
                                         apps.map(app => (
-                                            <label key={app.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "#e5e5e5", fontSize: "14px" }}>
+                                            <label key={app.id} className="flex cursor-pointer items-center gap-2 text-sm text-text-1">
                                                 <input
                                                     type="checkbox"
                                                     checked={formData.appIds.includes(app.id)}
                                                     onChange={() => handleAppToggle(app.id)}
-                                                    style={{ accentColor: "var(--brand-red)" }}
+                                                    className="h-4 w-4 cursor-pointer accent-accent"
                                                 />
                                                 {app.name}
                                                 {!app.isActive && (
-                                                    <span style={{ color: "var(--text-tertiary)", fontSize: "11px" }}>(nonaktif)</span>
+                                                    <span className="text-xs text-text-3">(nonaktif)</span>
                                                 )}
                                             </label>
                                         ))
@@ -776,23 +806,9 @@ export default function PortalUsersPage() {
                                 </div>
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={isSaving}
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px",
-                                    backgroundColor: "var(--brand-red)",
-                                    color: "var(--text-primary)",
-                                    fontSize: "13px",
-                                    fontWeight: 600,
-                                    border: "none",
-                                    cursor: isSaving ? "not-allowed" : "pointer",
-                                    opacity: isSaving ? 0.6 : 1,
-                                }}
-                            >
+                            <Button type="submit" disabled={isSaving} className="w-full">
                                 {isSaving ? "MENYIMPAN..." : "SIMPAN"}
-                            </button>
+                            </Button>
                         </form>
                     </div>
                 </div>
@@ -800,63 +816,45 @@ export default function PortalUsersPage() {
 
             {/* Reset Password Modal */}
             {showResetModal && resetTarget && (
-                <div style={{
-                    position: "fixed",
-                    inset: 0,
-                    backgroundColor: "rgba(0, 0, 0, 0.8)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 60,
-                }}>
-                    <div style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        border: "1px solid var(--border-color)",
-                        width: "100%", boxSizing: "border-box",
-                        maxWidth: "400px",
-                        padding: "24px",
-                    }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
-                                Reset Password
-                            </h2>
-                            <button onClick={() => { setShowResetModal(false); setResetTarget(null); }} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
-                                <FiX size={20} />
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Reset Password"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) { setShowResetModal(false); setResetTarget(null); }
+                    }}
+                >
+                    <div className="w-full max-w-md rounded-sheet border border-border bg-surface-1 p-6 shadow-lvl-3">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h2 className="font-display text-xl font-semibold text-text-1">Reset Password</h2>
+                            <button
+                                type="button"
+                                onClick={() => { setShowResetModal(false); setResetTarget(null); }}
+                                className="cursor-pointer rounded-control p-1 text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
+                                aria-label="Tutup"
+                            >
+                                <X size={20} />
                             </button>
                         </div>
 
-                        <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginBottom: "16px" }}>
-                            Reset password untuk <strong style={{ color: "var(--text-primary)" }}>{resetTarget.name}</strong> ({resetTarget.nik})
+                        <p className="mb-4 text-sm text-text-2">
+                            Reset password untuk <strong className="text-text-1">{resetTarget.name}</strong> ({resetTarget.nik})
                         </p>
 
-                        <div style={{ marginBottom: "24px" }}>
-                            <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>PASSWORD BARU</label>
-                            <input
+                        <div className="mb-6">
+                            <Input
+                                label="PASSWORD BARU"
                                 type="password"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 placeholder="Masukkan password baru"
-                                style={inputStyle}
                             />
                         </div>
 
-                        <button
-                            onClick={handleResetPassword}
-                            disabled={isResetting || !newPassword}
-                            style={{
-                                width: "100%", boxSizing: "border-box",
-                                padding: "12px",
-                                backgroundColor: "#fbbf24",
-                                color: "var(--bg-primary)",
-                                fontSize: "13px",
-                                fontWeight: 600,
-                                border: "none",
-                                cursor: isResetting || !newPassword ? "not-allowed" : "pointer",
-                                opacity: isResetting || !newPassword ? 0.6 : 1,
-                            }}
-                        >
+                        <Button type="button" variant="primary" disabled={isResetting || !newPassword} className="w-full" onClick={handleResetPassword}>
                             {isResetting ? "MERESET..." : "RESET PASSWORD"}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
