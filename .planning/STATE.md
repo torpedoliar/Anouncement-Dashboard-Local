@@ -1,12 +1,20 @@
 ---
-gsd_state_version: '1.0'
+gsd_state_version: 1.0
+milestone: v3.0
+milestone_name: milestone
+current_phase: 11
+current_phase_name: Portal & Auth Surfaces
 status: planning
+stopped_at: Phase 11 context gathered
+last_updated: "2026-08-15T14:25:36.870Z"
+last_activity: 2026-08-15
+last_activity_desc: plan-phase 11 attempted at subagent level; stopped at the CONTEXT gate + Agent-tool gap (see Blockers). Needs a top-level run.
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 80
+  percent: 0
 ---
 
 # Project State
@@ -22,14 +30,15 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 Phase: 11 of 11 (Portal & Auth Surfaces)
 Plan: 0 of TBD (not planned yet)
-Status: Ready to plan
-Last activity: 2026-08-15 — initial GSD planning from 36-doc ingest (new-project-from-ingest); roadmap created
+Status: Approved — ready to plan
+Last activity: 2026-08-15 — plan-phase 11 attempted at subagent level; stopped at the CONTEXT gate + Agent-tool gap (see Blockers). Needs a top-level run.
 
 Progress: [████████░░] 80% (4/5 phases of the active milestone complete; phase-based estimate)
 
 ## Performance Metrics
 
 **Velocity:**
+
 - GSD-tracked plans completed: 0 (M1 and rework P0–P3 shipped before the GSD tracker existed; completion verified by repo scan, not execution records)
 
 **By Phase:**
@@ -56,7 +65,8 @@ None (capture via /gsd-add-todo when ideas arise).
 ### Blockers/Concerns
 
 - **PRE-1 — Verification environment**: `npm run build` fails pre-existing (empty `NEXTAUTH_URL` — do NOT fix); `npm run dev` cannot render (pre-existing `localStorage is not a function` + local Postgres down). Gates = `npx tsc --noEmit` + scoped eslint + static review + manual E2E. Do not touch `postcss.config.mjs`; Tailwind stays v3.
-- **PRE-2 — No plan doc for Phase 11**: ingest has the P4 design scope only (ui-ux-rework-design §5). plan-phase must ground-truth against the running repo (portal components already exist and are functional) before breaking Phase 11 into plans.
+- **PRE-2 — No plan doc for Phase 11**: ✅ RESOLVED 2026-08-15 — `phases/11-portal-auth-surfaces-current-ready-to-plan/11-SPEC.md` exists (ambiguity 0.11 ≤ 0.20 gate; 5 locked requirements; 10 acceptance checkboxes; edge-coverage + prohibition tables; interview log). Ground truth is in the spec; its declared next step is `/gsd-discuss-phase 11` (CONTEXT.md does NOT exist yet).
+- **PRE-4 — Plan-phase 11 needs top-level runtime**: initiated from a subagent context — `gsd-tools query init.plan-phase 11` returns phase_found=true, has_context=false, has_research=false, plan_count=0, research+checker enabled, text_mode=false. No Agent tool in that runtime (`gsd-tools agent` only supports `classify-failure`), so gsd-planner/gsd-plan-checker cannot be spawned; role separation forbids inline planning. Required: run `/gsd-plan-phase 11 [--skip-research]` at top level (Agent available), first deciding the has_context=false gate (discuss-first vs continue).
 - **PRE-3 — Completion evidence is repo-inferred**: M1 + P0–P3 have no GSD execution records; verify any doubt at execution time rather than trusting status columns.
 
 ## Deferred Items
@@ -70,9 +80,9 @@ None (capture via /gsd-add-todo when ideas arise).
 
 ## Session Continuity
 
-Last session: 2026-08-15 — roadmapped from ingest (PROJECT/REQUIREMENTS/ROADMAP/STATE written; 20 requirements, 15 phases, 6 OPDs)
-Stopped at: M2 Phase 11 = current focus, ready for planning
-Resume file: None
+Last session: 2026-08-15T14:25:36.862Z
+Stopped at: Phase 11 context gathered
+Resume file: .planning/phases/11-portal-auth-surfaces-current-ready-to-plan/11-CONTEXT.md
 
 ---
-*Next action: `/gsd-plan-phase 11` (Portal & Auth Surfaces)*
+*Next action: `/gsd-plan-phase 11` (Portal & Auth Surfaces) — run at TOP LEVEL (Agent tool required for researcher/planner/checker spawns)*
