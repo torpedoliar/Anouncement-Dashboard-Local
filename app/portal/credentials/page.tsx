@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { CSSProperties } from "react";
 import { useSearchParams } from "next/navigation";
-import { FiKey, FiSave, FiTrash2, FiPlus, FiChevronDown } from "react-icons/fi";
+import { CaretDown, Key, Plus, Trash } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import Input from "@/components/ui/Input";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -119,127 +121,85 @@ export default function CredentialsPage() {
     };
 
     return (
-        <div style={{ padding: "32px", maxWidth: "800px", margin: "0 auto" }}>
-            <div style={{ marginBottom: "32px" }}>
-                <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
-                    PORTAL SSO
-                </p>
-                <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff", margin: 0 }}>
-                    Kelola Kredensial
-                </h1>
-                <p style={{ color: "var(--text-muted)", fontSize: "14px", marginTop: "8px" }}>
+        <div className="mx-auto max-w-[800px] p-8">
+            <div className="mb-8">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">PORTAL SSO</p>
+                <h1 className="font-display text-2xl font-semibold text-text-1">Kredensial</h1>
+                <p className="mt-2 text-sm text-text-2">
                     Simpan satu atau beberapa akun untuk setiap aplikasi. Kredensial disimpan terenkripsi.
                 </p>
             </div>
 
             {isLoading ? (
-                <div style={{ padding: "64px", textAlign: "center", color: "var(--text-muted)" }}>Loading...</div>
+                <div className="py-16 text-center text-sm text-text-3">Loading...</div>
             ) : apps.length === 0 ? (
-                <div style={{ padding: "64px", textAlign: "center", backgroundColor: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: "12px" }}>
-                    <FiKey size={48} color="#262626" style={{ marginBottom: "16px" }} />
-                    <p style={{ color: "var(--text-muted)" }}>Belum ada aplikasi yang di-assign ke Anda.</p>
+                <div className="mx-auto max-w-[400px] rounded-sheet border border-border bg-surface-1 p-10 text-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-sheet bg-surface-2">
+                        <Key size={24} className="text-text-2" aria-hidden="true" />
+                    </div>
+                    <p className="mt-4 text-sm text-text-2">Belum ada aplikasi yang di-assign ke Anda.</p>
                 </div>
             ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div className="flex flex-col gap-3">
                     {apps.map((app) => {
                         const isExpanded = expandedApp === app.appId;
                         const data = formData[app.appId] || { label: "", username: "", password: "" };
 
                         return (
-                            <div key={app.appId} style={{
-                                backgroundColor: "#111",
-                                border: "1px solid #262626",
-                                borderRadius: "8px",
-                                overflow: "hidden",
-                            }}>
-                                {/* Header */}
-                                <div
+                            <Card key={app.appId} className="overflow-hidden">
+                                {/* Header (klik untuk expand) */}
+                                <button
+                                    type="button"
                                     onClick={() => setExpandedApp(isExpanded ? null : app.appId)}
-                                    style={{
-                                        padding: "16px 20px",
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                        cursor: "pointer",
-                                    }}
+                                    aria-expanded={isExpanded}
+                                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                 >
-                                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                        <div style={{
-                                            width: "36px",
-                                            height: "36px",
-                                            borderRadius: "8px",
-                                            backgroundColor: "#262626",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            color: "#737373",
-                                            fontSize: "16px",
-                                            fontWeight: 700,
-                                        }}>
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-card bg-surface-3 text-sm font-semibold text-text-2">
                                             {app.appName.charAt(0).toUpperCase()}
                                         </div>
-                                        <div>
-                                            <div style={{ color: "#fff", fontSize: "14px", fontWeight: 500 }}>{app.appName}</div>
-                                            <div style={{
-                                                fontSize: "12px",
-                                                color: app.credentialCount > 0 ? "#22c55e" : "#eab308",
-                                                marginTop: "2px",
-                                            }}>
+                                        <div className="min-w-0">
+                                            <div className="truncate text-sm font-semibold text-text-1">{app.appName}</div>
+                                            <div className={`mt-0.5 text-xs ${app.credentialCount > 0 ? "text-success" : "text-warning"}`}>
                                                 {app.credentialCount > 0
-                                                    ? (app.credentialCount === 1 ? "✓ 1 akun tersimpan" : `✓ ${app.credentialCount} akun tersimpan`)
-                                                    : "⚠ Belum ada akun"}
+                                                    ? <><span className="font-mono tabular-nums">{app.credentialCount}</span> akun tersimpan</>
+                                                    : "Belum ada akun"}
                                             </div>
                                         </div>
                                     </div>
-                                    <div style={{
-                                        fontSize: "12px",
-                                        color: "var(--text-muted)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                    }}>
-                                        <FiChevronDown style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
-                                    </div>
-                                </div>
+                                    <CaretDown
+                                        size={16}
+                                        className={`shrink-0 text-text-2 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                                        aria-hidden="true"
+                                    />
+                                </button>
 
                                 {/* Expanded: daftar akun + form tambah */}
                                 {isExpanded && (
-                                    <div style={{ padding: "0 20px 20px", borderTop: "1px solid #262626" }}>
+                                    <div className="border-t border-border p-4">
                                         {/* Daftar akun */}
                                         {app.accounts.length > 0 && (
-                                            <div style={{ paddingTop: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                                            <div className="mb-4 flex flex-col gap-2">
                                                 {app.accounts.map((acc) => (
-                                                    <div key={acc.id} style={{
-                                                        display: "flex",
-                                                        justifyContent: "space-between",
-                                                        alignItems: "center",
-                                                        padding: "10px 14px",
-                                                        backgroundColor: "#0a0a0a",
-                                                        border: "1px solid #262626",
-                                                        borderRadius: "8px",
-                                                    }}>
-                                                        <div>
-                                                            <div style={{ color: "#fff", fontSize: "13px", fontWeight: 600 }}>{acc.label}</div>
-                                                            <div style={{ color: "var(--text-muted)", fontSize: "11px" }}>
-                                                                {acc.lastUsedAt ? `Terakhir dipakai ${new Date(acc.lastUsedAt).toLocaleDateString()}` : "Belum pernah dipakai"}
+                                                    <div key={acc.id} className="flex items-center justify-between gap-3 rounded-control border border-border bg-surface-0 px-4 py-3">
+                                                        <div className="min-w-0">
+                                                            <div className="truncate text-sm font-semibold text-text-1">{acc.label}</div>
+                                                            <div className="mt-0.5 text-xs text-text-3">
+                                                                {acc.lastUsedAt ? (
+                                                                    <>
+                                                                        Terakhir dipakai <span className="font-mono tabular-nums">{new Date(acc.lastUsedAt).toLocaleDateString()}</span>
+                                                                    </>
+                                                                ) : (
+                                                                    "Belum pernah dipakai"
+                                                                )}
                                                             </div>
                                                         </div>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setCredToDelete(acc); }}
-                                                            style={{
-                                                                padding: "6px 10px",
-                                                                backgroundColor: "transparent",
-                                                                border: "1px solid #262626",
-                                                                borderRadius: "6px",
-                                                                color: "#dc2626",
-                                                                fontSize: "12px",
-                                                                cursor: "pointer",
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                gap: "4px",
-                                                            }}
+                                                            aria-label={`Hapus akun ${acc.label}`}
+                                                            className="inline-flex shrink-0 items-center gap-1 rounded-control px-3 py-2 text-xs font-semibold text-danger transition-colors duration-150 hover:bg-danger/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                                         >
-                                                            <FiTrash2 size={12} /> Hapus
+                                                            <Trash size={16} aria-hidden="true" /> Hapus
                                                         </button>
                                                     </div>
                                                 ))}
@@ -247,74 +207,51 @@ export default function CredentialsPage() {
                                         )}
 
                                         {/* Form tambah akun */}
-                                        <div style={{ paddingTop: "16px" }}>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
-                                                <FiPlus size={14} color="var(--text-muted)" />
-                                                <span style={{ color: "var(--text-secondary)", fontSize: "13px", fontWeight: 600 }}>Tambah Akun</span>
+                                        <div className="flex flex-col gap-4">
+                                            <Input
+                                                label="Label Akun"
+                                                type="text"
+                                                value={data.label}
+                                                onChange={(e) => setFormData((prev) => ({
+                                                    ...prev,
+                                                    [app.appId]: { ...prev[app.appId], label: e.target.value },
+                                                }))}
+                                                placeholder="Mis. Akun Pusat / Akun Cabang"
+                                            />
+                                            <Input
+                                                label="Username"
+                                                type="text"
+                                                value={data.username}
+                                                onChange={(e) => setFormData((prev) => ({
+                                                    ...prev,
+                                                    [app.appId]: { ...prev[app.appId], username: e.target.value },
+                                                }))}
+                                                placeholder="Username aplikasi"
+                                            />
+                                            <Input
+                                                label="Password"
+                                                type="password"
+                                                value={data.password}
+                                                onChange={(e) => setFormData((prev) => ({
+                                                    ...prev,
+                                                    [app.appId]: { ...prev[app.appId], password: e.target.value },
+                                                }))}
+                                                placeholder="Password aplikasi"
+                                            />
+                                            <div>
+                                                <Button
+                                                    variant="primary"
+                                                    iconLeft={<Plus size={16} aria-hidden="true" />}
+                                                    onClick={() => handleSave(app.appId)}
+                                                    disabled={saving === app.appId}
+                                                >
+                                                    {saving === app.appId ? "Menyimpan..." : "Tambah Akun"}
+                                                </Button>
                                             </div>
-                                            <div style={{ marginBottom: "12px" }}>
-                                                <label style={{ display: "block", color: "#a1a1aa", fontSize: "13px", marginBottom: "6px" }}>Label Akun</label>
-                                                <input
-                                                    type="text"
-                                                    value={data.label}
-                                                    onChange={(e) => setFormData((prev) => ({
-                                                        ...prev,
-                                                        [app.appId]: { ...prev[app.appId], label: e.target.value },
-                                                    }))}
-                                                    style={{ ...inputStyle }}
-                                                    placeholder="Mis. Akun Pusat / Akun Cabang"
-                                                />
-                                            </div>
-                                            <div style={{ marginBottom: "12px" }}>
-                                                <label style={{ display: "block", color: "#a1a1aa", fontSize: "13px", marginBottom: "6px" }}>Username</label>
-                                                <input
-                                                    type="text"
-                                                    value={data.username}
-                                                    onChange={(e) => setFormData((prev) => ({
-                                                        ...prev,
-                                                        [app.appId]: { ...prev[app.appId], username: e.target.value },
-                                                    }))}
-                                                    style={{ ...inputStyle }}
-                                                    placeholder="Username aplikasi"
-                                                />
-                                            </div>
-                                            <div style={{ marginBottom: "16px" }}>
-                                                <label style={{ display: "block", color: "#a1a1aa", fontSize: "13px", marginBottom: "6px" }}>Password</label>
-                                                <input
-                                                    type="password"
-                                                    value={data.password}
-                                                    onChange={(e) => setFormData((prev) => ({
-                                                        ...prev,
-                                                        [app.appId]: { ...prev[app.appId], password: e.target.value },
-                                                    }))}
-                                                    style={{ ...inputStyle }}
-                                                    placeholder="Password aplikasi"
-                                                />
-                                            </div>
-                                            <button
-                                                onClick={() => handleSave(app.appId)}
-                                                disabled={saving === app.appId}
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: "6px",
-                                                    padding: "10px 20px",
-                                                    backgroundColor: saving === app.appId ? "#333" : "#dc2626",
-                                                    color: "#fff",
-                                                    border: "none",
-                                                    borderRadius: "8px",
-                                                    fontSize: "13px",
-                                                    fontWeight: 600,
-                                                    cursor: saving === app.appId ? "not-allowed" : "pointer",
-                                                }}
-                                            >
-                                                <FiSave size={14} />
-                                                {saving === app.appId ? "Menyimpan..." : "Tambah Akun"}
-                                            </button>
                                         </div>
                                     </div>
                                 )}
-                            </div>
+                            </Card>
                         );
                     })}
                 </div>
@@ -336,13 +273,3 @@ export default function CredentialsPage() {
         </div>
     );
 }
-
-const inputStyle: CSSProperties = {
-    width: "100%",
-    padding: "10px 14px",
-    backgroundColor: "#0a0a0a",
-    border: "1px solid #262626",
-    borderRadius: "8px",
-    color: "#fff",
-    fontSize: "14px",
-};

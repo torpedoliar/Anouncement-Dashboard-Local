@@ -18,7 +18,11 @@ export default async function SettingsPage() {
         .filter(([, v]) => v === false).map(([aid]) => aid);
 
     return (
-        <div style={{ padding: "32px", maxWidth: "900px", margin: "0 auto" }}>
+        <div className="mx-auto max-w-[900px] p-8">
+            <div className="mb-8">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">PORTAL SSO</p>
+                <h1 className="font-display text-2xl font-semibold text-text-1">Pengaturan</h1>
+            </div>
             <VisibilitySettings groups={groups} initialHiddenGroups={initialHiddenGroups} initialHiddenApps={initialHiddenApps} />
         </div>
     );

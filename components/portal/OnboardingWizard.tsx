@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
 
 export interface WizardApp {
     id: string;
@@ -83,75 +85,67 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
     };
 
     return (
-        <div style={{ padding: "32px", maxWidth: "900px", margin: "0 auto" }}>
-            <h1 style={{ fontFamily: "Montserrat, sans-serif", color: "#fff", marginBottom: "8px" }}>
+        <div className="mx-auto max-w-[900px] p-8">
+            <h1 className="font-display text-xl font-semibold text-text-1">
                 {mode === "onboarding" ? "Pilih Aplikasi Anda" : "Pengaturan Aplikasi"}
             </h1>
-            <p style={{ color: "var(--text-muted)", marginBottom: "24px" }}>
+            <p className="mt-2 text-sm text-text-2">
                 {mode === "onboarding"
                     ? "Tentukan aplikasi yang ingin ditampilkan di beranda. Semua aktif secara default."
                     : "Pilih aplikasi yang tampil di beranda Anda, lalu klik Simpan untuk menyimpan."}
             </p>
 
-            {groups.map((g) => (
-                <div key={g.id} style={{ marginBottom: "16px", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px" }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: "8px", color: "#fff", fontWeight: 600, cursor: "pointer" }}>
-                        <input
-                            type="checkbox"
-                            checked={!hiddenGroups.has(g.id)}
-                            onChange={() => toggleGroup(g.id)}
-                        />
-                        {g.name}
-                    </label>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "10px", paddingLeft: "28px" }}>
-                        {g.apps.length === 0 ? (
-                            <span style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>Tidak ada aplikasi dalam grup ini.</span>
-                        ) : (
-                            g.apps.map((a) => (
-                                <label key={a.id} style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-secondary)", cursor: "pointer" }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={!hiddenApps.has(a.id)}
-                                        onChange={() => toggleApp(a.id)}
-                                    />
-                                    {a.name}
-                                </label>
-                            ))
-                        )}
-                    </div>
-                </div>
-            ))}
+            <div className="mt-6 flex flex-col gap-4">
+                {groups.map((g) => (
+                    <Card key={g.id} className="p-4">
+                        <label className="flex cursor-pointer items-center gap-2 font-semibold text-text-1">
+                            <input
+                                type="checkbox"
+                                className="accent-accent"
+                                checked={!hiddenGroups.has(g.id)}
+                                onChange={() => toggleGroup(g.id)}
+                            />
+                            {g.name}
+                        </label>
+                        <div className="mt-2 flex flex-col">
+                            {g.apps.length === 0 ? (
+                                <span className="py-1 pl-7 text-xs text-text-3">Tidak ada aplikasi dalam grup ini.</span>
+                            ) : (
+                                g.apps.map((a) => (
+                                    <label key={a.id} className="flex cursor-pointer items-center gap-2 py-1 pl-7 text-sm text-text-2">
+                                        <input
+                                            type="checkbox"
+                                            className="accent-accent"
+                                            checked={!hiddenApps.has(a.id)}
+                                            onChange={() => toggleApp(a.id)}
+                                        />
+                                        {a.name}
+                                    </label>
+                                ))
+                            )}
+                        </div>
+                    </Card>
+                ))}
+            </div>
 
-            {mode === "onboarding"
-                ? (
-                    <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
-                        <button
-                            onClick={() => submit(false)}
-                            disabled={saving}
-                            style={{ padding: "10px 20px", backgroundColor: "var(--brand-red)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer" }}
-                        >
-                            {saving ? "Menyimpan..." : "Simpan"}
-                        </button>
-                        <button
-                            onClick={() => submit(true)}
-                            disabled={saving}
-                            style={{ padding: "10px 20px", backgroundColor: "var(--border-color)", color: "var(--text-secondary)", border: "none", borderRadius: "8px", cursor: saving ? "not-allowed" : "pointer" }}
-                        >
-                            Lewati
-                        </button>
-                    </div>
-                )
-                : (
-                    <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
-                        <button
-                            onClick={() => submit(false)}
-                            disabled={saving}
-                            style={{ padding: "10px 20px", backgroundColor: "var(--brand-red)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer" }}
-                        >
-                            {saving ? "Menyimpan..." : "Simpan"}
-                        </button>
-                    </div>
-                )}
+            <div className="mt-6 flex gap-3">
+                <Button
+                    variant="primary"
+                    onClick={() => submit(false)}
+                    disabled={saving}
+                >
+                    {saving ? "Menyimpan..." : "Simpan"}
+                </Button>
+                {mode === "onboarding" ? (
+                    <Button
+                        variant="secondary"
+                        onClick={() => submit(true)}
+                        disabled={saving}
+                    >
+                        Lewati
+                    </Button>
+                ) : null}
+            </div>
         </div>
     );
 }
