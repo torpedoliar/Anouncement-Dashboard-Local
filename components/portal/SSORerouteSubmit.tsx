@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FiCheckCircle } from "react-icons/fi";
+import { CheckCircle } from "@phosphor-icons/react";
 
 interface SSORerouteSubmitProps {
     app: {
@@ -32,98 +32,55 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
     }, []);
 
     return (
-        <div style={{
-            minHeight: "calc(100vh - 60px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "24px",
-            backgroundColor: "#0a0a0a"
-        }}>
-            <div style={{
-                width: "100%",
-                maxWidth: "400px",
-                backgroundColor: "var(--bg-card)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "12px",
-                padding: "32px",
-                textAlign: "center"
-            }}>
+        <div className="flex min-h-screen items-center justify-center bg-surface-0 px-5 py-10">
+            <div className="w-full max-w-[400px] rounded-sheet border border-border bg-surface-1 p-8 text-center shadow-lvl-2">
                 {/* Logo */}
-                <div style={{ marginBottom: "24px", display: "flex", justifyContent: "center" }}>
+                <div className="flex justify-center">
                     {app.logoPath ? (
                         <img
                             src={app.logoPath}
                             alt={app.name}
-                            style={{ width: "64px", height: "64px", borderRadius: "12px", objectFit: "cover" }}
+                            className="h-14 w-14 rounded-sheet object-cover"
                         />
                     ) : (
-                        <div style={{
-                            width: "64px",
-                            height: "64px",
-                            borderRadius: "12px",
-                            backgroundColor: "var(--border-color)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "var(--text-muted)",
-                            fontSize: "24px",
-                            fontWeight: 700,
-                        }}>
+                        <div className="flex h-14 w-14 items-center justify-center rounded-sheet bg-surface-3 text-xl font-semibold text-text-2">
                             {app.name.charAt(0).toUpperCase()}
                         </div>
                     )}
                 </div>
 
-                <h2 style={{ color: "var(--text-primary)", fontSize: "20px", marginBottom: "8px" }}>
+                <h2 className="mt-6 font-display text-xl font-semibold text-text-1">
                     SSO ke {app.name} (Reroute)
                 </h2>
-                <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginBottom: "24px" }}>
+                <p className="mt-2 text-sm text-text-2">
                     {status === "preparing" ? "Menyiapkan sesi server-to-server..." : "Mengalihkan..."}
                 </p>
 
                 {/* Visual Feedback of the Form Injection */}
-                <div style={{
-                    backgroundColor: "#171717",
-                    border: "1px solid #262626",
-                    borderRadius: "8px",
-                    padding: "16px",
-                    marginBottom: "24px",
-                    textAlign: "left"
-                }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                        <span style={{ fontSize: "12px", color: "var(--text-tertiary)", fontWeight: 600 }}>Username</span>
-                        <span style={{ fontSize: "13px", color: "var(--color-success)", fontWeight: 500, fontFamily: "monospace" }}>
-                            {cred.username}
-                        </span>
+                <div className="mt-6 rounded-card border border-border bg-surface-2 p-4 text-left">
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-text-3">Username</span>
+                        <span className="font-mono text-sm text-success">{cred.username}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: "12px", color: "var(--text-tertiary)", fontWeight: 600 }}>Koneksi Sesi</span>
-                        <span style={{ fontSize: "13px", color: "var(--color-success)", fontWeight: 500 }}>
-                            Connecting
-                        </span>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-text-3">Koneksi Sesi</span>
+                        <span className="text-sm text-success">Connecting</span>
                     </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", color: "var(--text-muted)" }}>
+                <div className="mt-6 flex items-center justify-center gap-2">
                     {status === "preparing" ? (
                         <>
-                            <div style={{
-                                width: "16px",
-                                height: "16px",
-                                border: "2px solid var(--text-muted)",
-                                borderTopColor: "transparent",
-                                borderRadius: "50%",
-                                animation: "spin 1s linear infinite"
-                            }}>
-                                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                            </div>
-                            <span style={{ fontSize: "14px" }}>Menghubungi server target...</span>
+                            <div
+                                className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent"
+                                aria-hidden="true"
+                            />
+                            <span className="text-sm text-text-2">Menghubungi server target...</span>
                         </>
                     ) : (
                         <>
-                            <FiCheckCircle style={{ color: "var(--color-success)" }} />
-                            <span style={{ fontSize: "14px", color: "var(--color-success)" }}>Selesai!</span>
+                            <CheckCircle size={20} className="shrink-0 text-success" aria-hidden="true" />
+                            <span className="text-sm text-success">Selesai!</span>
                         </>
                     )}
                 </div>
@@ -135,7 +92,7 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
                 id="sso-reroute-form"
                 method="POST"
                 action="/api/sso/reroute"
-                style={{ display: "none" }}
+                className="hidden"
             >
                 <input type="hidden" name="appSlug" value={app.slug} />
                 {credentialId && <input type="hidden" name="credentialId" value={credentialId} />}
