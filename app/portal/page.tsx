@@ -5,7 +5,8 @@ import { getAccessiblePortalApps } from "@/lib/portal-access";
 import prisma from "@/lib/prisma";
 import OnboardingWizard from "@/components/portal/OnboardingWizard";
 import GroupedAppGrid, { GridGroup } from "@/components/portal/GroupedAppGrid";
-import { FiGrid } from "react-icons/fi";
+import Link from "next/link";
+import { SquaresFour } from "@phosphor-icons/react";
 
 export const dynamic = "force-dynamic";
 
@@ -46,18 +47,27 @@ export default async function PortalPage() {
         .filter((g) => g.apps.length > 0);
 
     return (
-        <div style={{ padding: "32px", maxWidth: "1200px", margin: "0 auto" }}>
-            <div style={{ marginBottom: "32px" }}>
-                <p style={{ color: "#dc2626", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>PORTAL SSO</p>
-                <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "#fff", margin: 0 }}>Aplikasi Saya</h1>
+        <div className="mx-auto max-w-[1200px] p-8">
+            <div className="mb-8">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">PORTAL SSO</p>
+                <h1 className="font-display text-2xl font-semibold text-text-1">Aplikasi Saya</h1>
             </div>
 
             {gridGroups.length === 0 ? (
-                <div style={{ padding: "64px", textAlign: "center", backgroundColor: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: "12px" }}>
-                    <FiGrid size={48} color="#262626" style={{ marginBottom: "16px" }} />
-                    <p style={{ color: "var(--text-muted)", fontSize: "15px" }}>
-                        Belum ada aplikasi yang ditampilkan. Atur lewat Pengaturan.
+                <div className="mx-auto max-w-[400px] rounded-sheet border border-border bg-surface-1 p-10 text-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-sheet bg-surface-2">
+                        <SquaresFour size={24} className="text-text-2" aria-hidden="true" />
+                    </div>
+                    <h2 className="mt-6 font-display text-xl font-semibold text-text-1">Belum ada aplikasi</h2>
+                    <p className="mt-2 text-sm text-text-2">
+                        Tidak ada aplikasi yang dapat ditampilkan saat ini. Atur visibilitas lewat Pengaturan.
                     </p>
+                    <Link
+                        href="/portal/settings"
+                        className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    >
+                        Buka Pengaturan
+                    </Link>
                 </div>
             ) : (
                 <GroupedAppGrid groups={gridGroups} />
