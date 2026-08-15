@@ -3,169 +3,123 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import AuthFrame from "@/components/auth/AuthFrame";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+
+// Pesan server dari lib/portal-auth.ts — diteruskan verbatim (kontrak copy 11-UI-SPEC §1)
+const SERVER_MESSAGE_PREFIXES = [
+  "Password salah",
+  "NIK tidak ditemukan",
+  "Akun dinonaktifkan. Hubungi administrator.",
+  "Akun terkunci. Coba lagi dalam ",
+];
+
+// Kode error generik provider NextAuth — dipetakan ke "NIK atau password salah"
+const GENERIC_PROVIDER_ERRORS = [
+  "CredentialsSignin",
+  "Configuration",
+  "AccessDenied",
+  "Verification",
+  "OAuthSignin",
+  "OAuthCallback",
+  "OAuthCreateAccount",
+  "EmailCreateAccount",
+  "Callback",
+  "OAuthAccountNotLinked",
+  "EmailSignin",
+  "SessionRequired",
+];
+
+function mapLoginError(error: string | undefined | null): string {
+  if (!error) return "Terjadi kesalahan. Silakan coba lagi.";
+  if (SERVER_MESSAGE_PREFIXES.some((prefix) => error.startsWith(prefix))) {
+    return error;
+  }
+  if (GENERIC_PROVIDER_ERRORS.includes(error)) {
+    return "NIK atau password salah";
+  }
+  return "Terjadi kesalahan. Silakan coba lagi.";
+}
 
 export default function PortalLoginPage() {
-    const router = useRouter();
-    const [nik, setNik] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const [nik, setNik] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-        setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-        try {
-            const result = await signIn("portal-credentials", {
-                nik,
-                password,
-                redirect: false,
-                callbackUrl: "/portal",
-            });
+    try {
+      const result = await signIn("portal-credentials", {
+        nik,
+        password,
+        redirect: false,
+        callbackUrl: "/portal",
+      });
 
-            if (result?.error) {
-                setError(result.error);
-            } else {
-                router.push("/portal");
-                router.refresh();
-            }
-        } catch {
-            setError("Terjadi kesalahan. Silakan coba lagi.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+      if (result?.error) {
+        setError(mapLoginError(result.error));
+      } else {
+        router.push("/portal");
+        router.refresh();
+      }
+    } catch {
+      setError("Terjadi kesalahan. Silakan coba lagi.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return (
-        <div style={{
-            minHeight: "100vh",
-            backgroundColor: "#0a0a0a",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-        }}>
-            <div style={{
-                width: "100%",
-                maxWidth: "400px",
-                backgroundColor: "#111",
-                border: "1px solid #262626",
-                borderRadius: "12px",
-                padding: "40px",
-            }}>
-                {/* Header */}
-                <div style={{ textAlign: "center", marginBottom: "32px" }}>
-                    <p style={{
-                        color: "#dc2626",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        letterSpacing: "0.2em",
-                        marginBottom: "8px",
-                    }}>PORTAL SSO</p>
-                    <h1 style={{
-                        fontFamily: "Montserrat, sans-serif",
-                        fontSize: "24px",
-                        fontWeight: 700,
-                        color: "#fff",
-                        margin: 0,
-                    }}>Masuk ke Portal</h1>
-                </div>
-
-                {/* Error */}
-                {error && (
-                    <div style={{
-                        padding: "12px 16px",
-                        backgroundColor: "rgba(220, 38, 38, 0.1)",
-                        border: "1px solid rgba(220, 38, 38, 0.3)",
-                        borderRadius: "8px",
-                        marginBottom: "20px",
-                        color: "#fca5a5",
-                        fontSize: "13px",
-                    }}>{error}</div>
-                )}
-
-                {/* Form */}
-                <form onSubmit={handleSubmit}>
-                    <div style={{ marginBottom: "16px" }}>
-                        <label style={{
-                            display: "block",
-                            color: "#a1a1aa",
-                            fontSize: "13px",
-                            fontWeight: 500,
-                            marginBottom: "6px",
-                        }}>NIK HRIS</label>
-                        <input
-                            type="text"
-                            value={nik}
-                            onChange={(e) => setNik(e.target.value)}
-                            required
-                            style={{
-                                width: "100%",
-                                padding: "10px 14px",
-                                backgroundColor: "#0a0a0a",
-                                border: "1px solid #262626",
-                                borderRadius: "8px",
-                                color: "#fff",
-                                fontSize: "14px",
-                            }}
-                            placeholder="Masukkan NIK Anda"
-                        />
-                    </div>
-
-                    <div style={{ marginBottom: "24px" }}>
-                        <label style={{
-                            display: "block",
-                            color: "#a1a1aa",
-                            fontSize: "13px",
-                            fontWeight: 500,
-                            marginBottom: "6px",
-                        }}>Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            style={{
-                                width: "100%",
-                                padding: "10px 14px",
-                                backgroundColor: "#0a0a0a",
-                                border: "1px solid #262626",
-                                borderRadius: "8px",
-                                color: "#fff",
-                                fontSize: "14px",
-                            }}
-                            placeholder="Password"
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        style={{
-                            width: "100%",
-                            padding: "12px",
-                            backgroundColor: isLoading ? "#333" : "#dc2626",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "8px",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            cursor: isLoading ? "not-allowed" : "pointer",
-                            marginBottom: "16px",
-                        }}
-                    >
-                        {isLoading ? "Masuk..." : "Masuk"}
-                    </button>
-
-                    <div style={{ textAlign: "center" }}>
-                        <span style={{
-                            color: "#737373",
-                            fontSize: "13px",
-                        }}>Lupa password? Hubungi Admin HRIS.</span>
-                    </div>
-                </form>
-            </div>
+  return (
+    <AuthFrame eyebrow="PORTAL SSO" title="Masuk ke Portal" error={error}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label
+            htmlFor="nik"
+            className="mb-2 block text-xs font-semibold text-text-2"
+          >
+            NIK HRIS
+          </label>
+          <Input
+            id="nik"
+            type="text"
+            value={nik}
+            onChange={(e) => setNik(e.target.value)}
+            required
+            placeholder="Masukkan NIK Anda"
+          />
         </div>
-    );
+
+        <div>
+          <label
+            htmlFor="password"
+            className="mb-2 block text-xs font-semibold text-text-2"
+          >
+            Password
+          </label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            placeholder="Password"
+          />
+        </div>
+
+        <Button type="submit" disabled={isLoading} className="w-full">
+          {isLoading ? "Masuk..." : "Masuk"}
+        </Button>
+
+        <p className="text-center text-xs text-text-3">
+          Lupa password? Hubungi Admin HRIS.
+        </p>
+      </form>
+    </AuthFrame>
+  );
 }
