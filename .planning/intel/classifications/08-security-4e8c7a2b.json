@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/specs/08-security.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "08 — Security",
+  "summary": "Security specification covering threat model, encryption, rate limiting, lockout, and deployment checklist.",
+  "scope": ["security", "threat model", "credential encryption (AES-256-GCM)", "audit redaction", "account lockout", "rate limiting", "env validation", "cross-origin SSO", "password policy", "compliance"],
+  "cross_refs": ["docs/specs/04-sso-credential-forwarding.md", "docs/specs/02-authentication-and-sessions.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

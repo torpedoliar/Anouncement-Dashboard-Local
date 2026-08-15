@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/specs/01-data-model.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "01 — Data Model (Prisma Schema)",
+  "summary": "Technical spec for Prisma data model additions: Portal SSO models, AuditLog, enums, indexes, and non-destructive migration steps.",
+  "scope": ["portal SSO", "audit trail", "Prisma schema", "PortalUser", "PortalApp", "PortalUserAppAccess", "PortalUserAppCredential", "PortalSession", "AuditLog"],
+  "cross_refs": ["02-authentication", "04-sso", "05-audit-trail.md", "09-implementation-phases.md", "prisma/schema.prisma", "version.json", "scripts/backfill-audit-log.ts", "lib/auth.ts"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/risk-register.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Risk Register",
+  "summary": "Daftar risiko implementasi dengan mitigasi dan contingency untuk portal SSO dan audit trail.",
+  "scope": ["risk register", "mitigasi", "contingency", "portal SSO", "audit trail", "database migration", "credential security", "lockout", "rate limit"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

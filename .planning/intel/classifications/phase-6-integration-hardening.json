@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/phase-6-integration-hardening.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Fase 6 — Integration & Hardening",
+  "summary": "Implementation plan for the final integration and hardening phase: backup/restore scope, middleware updates, seed, docker-compose env, version bump, and docs for portal SSO and audit trail.",
+  "scope": ["portal SSO", "audit trail", "backup/restore", "middleware rate-limit", "Prisma seed", "docker-compose env", "helper scripts", "versioning", "CLAUDE.md"],
+  "cross_refs": ["08-security.md", "10-changelog-and-env.md", "07-pages §4-§5"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Task-list implementation plan (checkboxes, DoD, validation steps, deployment commands, rollback notes). No decision-record frontmatter or Context/Decision/Consequences sections; no user stories or acceptance criteria; no API/schema/protocol contracts. Classified DOC (context only). No manifest type/precedence provided; hash tool unavailable so plain slug filename used, source_path is authoritative."
+}

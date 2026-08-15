@@ -1,0 +1,21 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/superpowers/plans/2026-08-12-portal-app-restricted-multicred.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Restricted Apps + Multi-Credential Implementation Plan",
+  "summary": "Implementation plan for restricting portal app access and supporting multiple labeled credentials per app with SSO account selection.",
+  "scope": [
+    "PortalApp.isPublic",
+    "PortalUserAppCredential",
+    "portal-access rules",
+    "SSO reroute",
+    "credential management UI",
+    "Prisma schema",
+    "admin portal-apps toggle"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Plan-format document from superpowers workflow; classified as SPEC based on dominant technical contract content (data model schema, API endpoint contracts, access-control logic, non-functional constraints). No execution tool available for SHA-256 hash computation — placeholder 'noexec' used in filename."
+}

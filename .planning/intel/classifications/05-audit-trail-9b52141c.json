@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/specs/05-audit-trail.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "05 — Audit Trail Menyeluruh",
+  "summary": "Technical spec for a centralized audit trail as the single source of truth for all transactions (admin CMS, portal, system) via the AuditLog model and lib/audit.ts helper.",
+  "scope": ["AuditLog", "lib/audit.ts", "audit event catalog", "/admin/audit-trail", "/api/audit-trail", "AUDIT_RETENTION_DAYS", "ActivityLog backfill", "sensitive-field redaction"],
+  "cross_refs": ["01-data-model.md", "app/api/announcements/route.ts", "app/api/categories/route.ts", "app/api/comments/[id]/route.ts", "app/api/users/route.ts", "app/api/sessions/route.ts", "app/api/settings/route.ts", "app/api/email/settings/route.ts", "app/api/backup/route.ts", "app/api/update/route.ts", "lib/scheduler.ts", "lib/auth.ts", "lib/portal-auth.ts", "scripts/backfill-audit-log.ts"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Hash fallback: no execution tool available this session (Bash disabled), so the filename hash uses a hand-computed, verified djb2 of the POSIX path (9b52141c) instead of SHA-256 for collision avoidance."
+}

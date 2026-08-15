@@ -1,0 +1,29 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/phase-1-foundation.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Fase 1 — Fondasi Data & Auth",
+  "summary": "Implementation plan for Phase 1: Prisma portal/audit schema, credential encryption, portal auth instance, RBAC and audit helpers, fail-closed env validation.",
+  "scope": [
+    "Prisma schema",
+    "portal models (PortalUser, PortalApp, PortalUserAppAccess, PortalUserAppCredential, PortalSession)",
+    "AuditLog model",
+    "credential encryption (AES-256-GCM)",
+    "portal auth (NextAuth)",
+    "RBAC portal helpers",
+    "audit logging helper",
+    "validation schemas",
+    "fail-closed env validation"
+  ],
+  "cross_refs": [
+    "01-data-model.md",
+    "02-authentication-and-sessions.md",
+    "03-rbac.md",
+    "04-sso-credential-forwarding.md",
+    "05-audit-trail.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "Implementation plan with strong technical-contract signals (data models, crypto format/constants, function signatures, lockout logic, DoD with specific validation commands, rollback notes). No frontmatter; task-list structure references 5 dedicated spec docs. Cross-refs recorded as bare filenames per doc text. Filename hash suffix is a deterministic djb2 checksum of the source path, not SHA-256, because no hash/compute tool was available in this classifier session (precedent set by 00-master-plan classifier)."
+}

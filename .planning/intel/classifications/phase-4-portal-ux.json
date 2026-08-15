@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/phase-4-portal-ux.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Fase 4 — Portal User Experience",
+  "summary": "Implementation plan for portal UX phase: login page, layout guard, RBAC-filtered app grid, credential self-service, and forgot/reset password flows.",
+  "scope": ["portal login", "layout guard", "app grid", "RBAC filter", "portal credentials", "password reset", "PortalUser"],
+  "cross_refs": ["02-authentication", "03-rbac", "04-sso", "06-api", "07-pages", "08-security"],
+  "locked": false,
+  "precedence": null,
+  "notes": "No frontmatter or filename convention. Structured as an implementation plan/task list, but defines implementation contracts (endpoint routes + response shapes, DB column additions, no-plaintext/no-enumeration constraints, DoD) — dominant SPEC signal."
+}

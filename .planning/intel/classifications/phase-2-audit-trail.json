@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/phase-2-audit-trail.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Fase 2 — Audit Trail (Retrofit + Halaman + Export)",
+  "summary": "Phase 2 implementation plan: retrofit logAudit into mutation routes, build /admin/audit-trail page with filters and export, backfill ActivityLog to AuditLog.",
+  "scope": ["audit trail", "AuditLog", "ActivityLog", "logAudit", "admin audit-trail page", "backup/restore", "scheduler", "CSV/JSON export", "backfill"],
+  "cross_refs": ["05-audit-trail.md", "06-api-reference.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Indonesian implementation plan (task list, DoD, validation, rollback). No frontmatter or filename convention; dominant content signals are file-level API/implementation contracts (route paths, query params, export formats, data models, retention config) → SPEC over DOC/PRD."
+}

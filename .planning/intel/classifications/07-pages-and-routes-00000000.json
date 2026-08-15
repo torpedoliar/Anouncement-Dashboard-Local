@@ -1,0 +1,26 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/specs/07-pages-and-routes.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "07 — Pages & Routes",
+  "summary": "Lists all new portal pages, layout guards, sidebar changes, and middleware configuration for the SSO portal.",
+  "scope": [
+    "portal pages",
+    "admin portal management",
+    "SSO launch",
+    "credentials management",
+    "route map",
+    "middleware",
+    "AdminSidebar",
+    "audit trail"
+  ],
+  "cross_refs": [
+    "04-sso",
+    "components/admin/AdminSidebar.tsx",
+    "middleware.ts"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/superpowers/specs/2026-08-12-portal-app-restricted-multicred.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Portal: Restricted Apps + Multi-Credential — Design",
+  "summary": "Technical spec for portal SSO: restricted (non-public) apps gated by group/direct access, and multi-credential per app with label + account picker during SSO.",
+  "scope": ["Portal SSO", "restricted apps", "multi-credential", "PortalUserGroup", "PortalUserAppAccess", "PortalUserAppCredential", "credential management", "account picker"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

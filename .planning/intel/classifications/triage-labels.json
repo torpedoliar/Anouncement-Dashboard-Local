@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/agents/triage-labels.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Triage Labels",
+  "summary": "Reference mapping of five canonical triage label names between skills vocabulary and issue tracker.",
+  "scope": ["triage labels", "issue tracker"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

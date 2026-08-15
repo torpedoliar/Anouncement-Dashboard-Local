@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/specs/03-rbac.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "03 — RBAC (Role-Based Access Control)",
+  "summary": "Technical specification of three-layer RBAC (SuperAdmin CMS, PORTAL_ADMIN, PORTAL_USER): access matrices, portal permission helpers, Zod schemas, and audit events.",
+  "scope": ["RBAC", "SuperAdmin CMS", "PortalUser", "PortalApp", "PortalUserAppAccess", "PortalUserAppCredential", "portal access matrix", "AuditLog"],
+  "cross_refs": ["05-audit-trail.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

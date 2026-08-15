@@ -1,0 +1,26 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/specs/00-overview.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "00 — Overview Portal Web SSO + Audit Trail",
+  "summary": "Overview spec adding Portal Web SSO (form-based credential forwarding), portal RBAC, and a comprehensive Audit Trail to the existing multi-tenant announcement CMS.",
+  "scope": ["Portal Web SSO", "RBAC portal", "Audit Trail", "PortalUser", "PortalApp", "PortalUserAppAccess", "PortalUserAppCredential", "PortalSession", "AuditLog", "form-based credential forwarding", "AES-256-GCM credential encryption"],
+  "cross_refs": [
+    "01-data-model.md",
+    "02-authentication-and-sessions.md",
+    "03-rbac.md",
+    "04-sso-credential-forwarding.md",
+    "05-audit-trail.md",
+    "06-api-reference.md",
+    "07-pages-and-routes.md",
+    "08-security.md",
+    "09-implementation-phases.md",
+    "10-changelog-and-env.md",
+    "lib/audit.ts",
+    "lib/email.ts"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "Status line explicitly declares 'Status: SPEC (belum diimplementasi)' plus specs/ path convention and architecture/flow/model tables → SPEC. The 'Keputusan utama' (D1–D8) table is a decision summary inside a draft spec, not standalone ADRs, so nothing is locked. Filename hash suffix is a deterministic additive checksum (sum of ASCII codes) of the source path, not SHA-256, because no hash/compute tool was available in this classifier session (precedent set by earlier classifiers in this output dir)."
+}

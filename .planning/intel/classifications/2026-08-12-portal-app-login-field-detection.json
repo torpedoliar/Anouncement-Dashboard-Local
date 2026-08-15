@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/superpowers/specs/2026-08-12-portal-app-login-field-detection.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Portal App: Deteksi Otomatis Field Login (username/password)",
+  "summary": "Spec for auto-detecting username/password login fields from a portal app's login page, filling the admin form via a new detect-fields API.",
+  "scope": ["portal apps", "login field detection", "detect-fields API", "SSO launch", "admin portal-apps form", "SSRF hardening"],
+  "cross_refs": ["app/admin/portal-apps/page.tsx", "lib/validation-schemas.ts", "app/api/portal-apps/route.ts", "app/api/portal-apps/[id]/route.ts", "prisma/schema.prisma", "app/portal/app/[appSlug]/page.tsx", "lib/portal-crypto.ts"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

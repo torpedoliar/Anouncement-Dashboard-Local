@@ -1,0 +1,30 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/specs/10-changelog-and-env.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "10 — Changelog, Env & Infra",
+  "summary": "Changelog and infrastructure contract for the Portal SSO release: version.json bump, new env vars, docker-compose, seed data, and helper scripts.",
+  "scope": ["version.json", ".env.example", "PORTAL_CREDENTIAL_KEY", "AUDIT_RETENTION_DAYS", "PORTAL_SESSION_MAX_AGE", "docker-compose.yml", "prisma/seed.ts", "Portal SSO", "audit trail", "CLAUDE.md"],
+  "cross_refs": [
+    "docs/specs/00-overview.md",
+    "docs/specs/01-data-model.md",
+    "docs/specs/02-authentication-and-sessions.md",
+    "docs/specs/03-rbac.md",
+    "docs/specs/04-sso-credential-forwarding.md",
+    "docs/specs/05-audit-trail.md",
+    "docs/specs/06-api-reference.md",
+    "docs/specs/07-pages-and-routes.md",
+    "docs/specs/08-security.md",
+    "docs/specs/09-implementation-phases.md",
+    "lib/portal-auth.ts",
+    "lib/portal-crypto.ts",
+    "lib/portal-access.ts",
+    "lib/audit.ts",
+    "scripts/make-portal-admin.ts",
+    "scripts/backfill-audit-log.ts"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

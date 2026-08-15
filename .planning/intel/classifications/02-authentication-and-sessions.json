@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/specs/02-authentication-and-sessions.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "02 — Authentication & Sessions (Portal)",
+  "summary": "Technical spec for a separate NextAuth instance for portal users with JWT sessions, DB-backed revocation, and a 5-attempt account lockout.",
+  "scope": ["portal authentication", "portal sessions", "NextAuth", "account lockout", "password reset", "portal users"],
+  "cross_refs": ["lib/auth.ts", "08-security.md", "lib/email.ts", "app/api/users/route.ts", "types/next-auth.d.ts", "/admin/sessions"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/phase-3-admin-portal.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Fase 3 — Admin Portal Management",
+  "summary": "Implementation plan for Phase 3: SuperAdmin admin panel to manage portal apps, portal users, and portal sessions (CRUD, access assignment, reset password, session revocation).",
+  "scope": ["PortalApp", "PortalUser", "PortalUserAppAccess", "portal sessions", "AuditLog", "/admin/portal-* pages", "AdminSidebar"],
+  "cross_refs": ["03-rbac.md", "06-api-reference.md", "07-pages-and-routes.md", "app/admin/sites/page.tsx", "app/admin/users/page.tsx", "app/admin/sessions/page.tsx"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Implementation plan (checkbox task list with DoD/validation/rollback), not a contract: it references specs 03-rbac.md, 06-api-reference.md, 07-pages-and-routes.md for the actual contracts. Some SPEC-like endpoint listings but no request/response schemas or SLOs defined here → DOC wins over weak SPEC signal."
+}

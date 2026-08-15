@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/superpowers/specs/2026-08-12-ui-ux-rework-design.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "SJA Announcement Dashboard — Full UI/UX Rework Design",
+  "summary": "Design specification for a full UI/UX rework of the announcement dashboard: token-based design system, newsroom shell, content desk, analytics surfaces, and portal/auth screens.",
+  "scope": ["design system", "design tokens", "admin shell/navigation", "announcement content desk", "analytics & data surfaces", "portal & auth screens", "SiteThemeProvider"],
+  "cross_refs": ["app/globals.css", "app/admin/page.tsx", "app/portal/settings/", "components/portal/SSOCredentialVault.tsx", "OnboardingWizard.tsx", "AccountSelector.tsx", "AccessDenied.tsx", "PortalHeader.tsx"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

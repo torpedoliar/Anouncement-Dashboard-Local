@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/design-quality-fix-plan.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Design-Quality Fix Plan — Impeccable Critique Remediation",
+  "summary": "Phased implementation plan (DQ-0..DQ-7) to remediate design-quality issues from an Impeccable critique (18/40) across public, admin, and portal surfaces.",
+  "scope": ["design quality", "accessibility", "public site", "admin dashboard", "portal", "design tokens", "UI components"],
+  "cross_refs": [".impeccable/critique/2026-07-23T02-54-34Z__app.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Status: PLAN (belum diimplementasi). Task-level remediation plan with checklists, DoD gates, dependency graph, and sprint sequencing; no ADR decision section, no user stories, no API/schema contracts. Weak SPEC-like signals (measurable DoD targets such as critique >=32/40 and 0 alert/confirm) are plan gates for future work, not current system constraints — context only. Filename suffix SHA-256 omitted because no hashing tool is available in this session; the slug is unique among inputs."
+}

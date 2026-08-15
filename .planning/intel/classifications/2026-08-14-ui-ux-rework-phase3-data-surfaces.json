@@ -1,0 +1,26 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/superpowers/plans/2026-08-14-ui-ux-rework-phase3-data-surfaces.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Phase 3: Data Surfaces Implementation Plan",
+  "summary": "Phase 3 UI/UX rework plan: turn admin data surfaces into token-native reading surfaces (masthead-aware charts, KPI tiles, ledger tables, audit timeline, global analytics) reusing the Phase 0/2 design system.",
+  "scope": [
+    "admin data surfaces",
+    "analytics dashboard",
+    "masthead accent charts",
+    "KPI stat tiles",
+    "ledger tables",
+    "sites desk",
+    "users desk",
+    "audit trail timeline",
+    "global analytics comparison",
+    "recharts",
+    "design system tokens",
+    "StatTile"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Strong SPEC signals: tech stack declaration, per-file change lists, consumed/produced interface contracts with type signatures, code snippets, verification gates, and hard constraints. No ADR markers (no Decision/Consequences/Status) and no PRD markers (no user stories). It is a task-oriented implementation plan (checkbox steps for agentic workers) referencing an external spec's sections (§6.1-§6.6) rather than a standalone contract doc, hence medium confidence."
+}

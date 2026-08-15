@@ -1,0 +1,23 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/specs/09-implementation-phases.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "09 — Implementation Phases",
+  "summary": "Six sequential implementation phases for Portal SSO and Audit Trail features.",
+  "scope": [
+    "portal SSO",
+    "audit trail",
+    "RBAC",
+    "credential encryption",
+    "backup/restore",
+    "middleware",
+    "seed data"
+  ],
+  "cross_refs": [
+    "04-sso"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

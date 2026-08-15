@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/superpowers/plans/2026-08-12-portal-app-login-field-detection.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Login Field Detection Implementation Plan",
+  "summary": "Task-by-task implementation plan for detection of login form fields (SJA portal SSO credential forwarding). Contains code/commit steps, no decision record, no user stories, no formal contract tables — classified DOC by the original classifier; the lost JSON was overwritten by the same-slug design class and is restored here from the classifier's report.",
+  "scope": ["login field detection", "portal SSO", "credential forwarding", "implementation plan"],
+  "cross_refs": ["docs/superpowers/specs/2026-08-12-portal-app-login-field-detection-design.md"],
+  "locked": false,
+  "precedence": null,
+  "source_hash": null
+}

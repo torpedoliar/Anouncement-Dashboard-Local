@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/test-verification-plan.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Test & Verification Plan",
+  "summary": "Per-phase verification strategy and checklists (build/lint, manual unit, integration, E2E smoke, security) for portal SSO and audit-trail implementation.",
+  "scope": ["portal SSO", "audit trail", "portal apps", "portal users", "portal sessions", "portal credentials", "backfill", "retention purge"],
+  "cross_refs": ["08-security.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Verification/checklist doc, no ADR/PRD/SPEC signals (no decision statement, user stories, or contracts). Test steps reference '08-security.md' §9. Classified DOC — context only, lowest precedence."
+}

@@ -1,0 +1,33 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/Specs & Implementation Plan — Portal Group-Based A bf82254ec5484cccb6e457e411ac006e.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Specs & Implementation Plan — Portal Group-Based Access (RBAC via Grup)",
+  "summary": "Technical specification for group-based RBAC on Portal SSO with Prisma models, access logic, CRUD APIs, admin UI, and implementation plan.",
+  "scope": [
+    "Portal SSO",
+    "group-based RBAC",
+    "PortalGroup / PortalGroupApp / PortalUserGroup Prisma models",
+    "lib/portal-access.ts",
+    "/api/portal-groups API endpoints",
+    "admin UI /admin/portal-groups",
+    "PortalUserAppAccess",
+    "migration script"
+  ],
+  "cross_refs": [
+    "prisma/schema.prisma",
+    "lib/portal-access.ts",
+    "app/api/portal-apps/route.ts",
+    "app/api/portal-apps/[id]/route.ts",
+    "app/api/portal-users/[id]/route.ts",
+    "lib/validation-schemas.ts",
+    "lib/audit.ts",
+    "app/admin/portal-apps/page.tsx",
+    "app/admin/portal-users/page.tsx",
+    "app/portal/credentials/page.tsx"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

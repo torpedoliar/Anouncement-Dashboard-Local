@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/superpowers/specs/2026-08-11-portal-user-app-visibility-design.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Portal — Per-User App Visibility (Onboarding Wizard + Toggle Grup/App)",
+  "summary": "Technical spec for per-user app visibility in the /portal grid: new PortalUserAppVisibility model, onboarding wizard, post-login toggle settings, updated visibility queries.",
+  "scope": ["Portal", "per-user app visibility", "PortalUserAppVisibility", "onboarding wizard", "PortalGroup", "PortalApp", "grid /portal", "/portal/settings", "SSO credentials"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

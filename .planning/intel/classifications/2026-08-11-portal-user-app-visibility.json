@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/superpowers/plans/2026-08-11-portal-user-app-visibility.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Portal Per-User App Visibility — Implementation Plan",
+  "summary": "Implementation plan for per-user portal app visibility: onboarding wizard, default-visible override model, and visibility save API endpoints.",
+  "scope": ["portal app visibility", "PortalUserAppVisibility", "portal-access", "/portal grid", "/portal/settings", "onboarding wizard", "Prisma schema"],
+  "cross_refs": ["README.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": "No frontmatter or filename convention; no ADR decision/status structure, no user stories → not ADR/PRD. Doc is a checkbox task plan (Tasks 1-8) — taxonomy has no PLAN type; classified SPEC because it defines implementation contracts the system must honor (Prisma model PortalUserAppVisibility, POST/PATCH /api/portal/visibility request/response + Zod schemas, helper signatures in lib/portal-access.ts). Ambiguity: plan prose could lean DOC, but code-level contracts dominate. REFERENCE for declaration shown in notes: (2505.11423) all fields sourced from document content; scope/cross_refs from explicit mentions only."
+}

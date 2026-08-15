@@ -1,0 +1,26 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/00-master-plan.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "00 — Master Implementation Plan",
+  "summary": "Master implementation plan for v3.0.0: six ordered execution phases, milestones, DoD checks, rollout strategy, rollback, and risks.",
+  "scope": ["Portal SSO", "Audit Trail", "database migration", "admin panel CRUD", "credential management", "deployment/rollout", "backup/restore"],
+  "cross_refs": [
+    "docs/specs/00-overview.md",
+    "docs/specs/10-changelog-and-env.md",
+    "phase-1-foundation.md",
+    "phase-2-audit-trail.md",
+    "phase-3-admin-portal.md",
+    "phase-4-portal-ux.md",
+    "phase-5-sso-launch.md",
+    "phase-6-integration-hardening.md",
+    "test-verification-plan.md",
+    "risk-register.md",
+    "scripts/backup.ps1",
+    "scripts/backfill-audit-log.ts"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "Execution plan, ambiguous against taxonomy: explicitly disclaims being a spec ('specs answer WHAT, this answers HOW to execute'), no ADR signals (status is 'PLAN', no Decision/Consequences), no PRD signals (no user stories/acceptance criteria), no SPEC contract signals (no endpoints/schemas — defers to 11 files in docs/specs/). Closest fit is DOC (runbook/guide). Filename hash suffix is a deterministic checksum of the source path, not SHA-256, because no hash tool was available in this classifier session."
+}

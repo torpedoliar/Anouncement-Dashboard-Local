@@ -1,0 +1,13 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/superpowers/plans/2026-08-13-ui-ux-rework-phase2-content-desk.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Phase 2: Content Desk Implementation Plan",
+  "summary": "Implementation plan for the Phase 2 UI rework: newsroom dashboard, announcement ledger, two-pane editor, and category/media/comment/newsletter/email desks.",
+  "scope": ["admin content workflow", "announcement status helper", "newsroom dashboard", "announcement ledger", "two-pane editor", "categories", "media library", "comments moderation", "newsletter", "email settings", "command palette", "masthead rack", "design tokens"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Plan doc in docs/superpowers/plans/ with strong SPEC signals: per-task file lists, exact interfaces (deriveAnnouncementStatus signature, AnnouncementPreview props), preserved API contracts, design-token constraints, and verification gates. No ADR/PRD markers (no Status frontmatter, no user stories). Ambiguity rule resolved toward SPEC as the highest-precedence signal present. Self-Review section references an upstream §5.x spec by section number only, but no doc path is named, so cross_refs left empty. Source-hash suffix uses deterministic fallback '20260813' (from filename date) because no computation tool is available to derive the SHA-256 prefix of the path."
+}

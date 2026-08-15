@@ -1,0 +1,23 @@
+{
+  "source_path": "E:/Vibe/Dashboard SJA/announcement-dashboard/docs/implementation plan/phase-5-sso-launch.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Fase 5 — SSO Launch",
+  "summary": "Implementation plan and specification for building the SSO launch page that auto-submits encrypted credentials to external apps.",
+  "scope": [
+    "SSO launch",
+    "credential forwarding",
+    "auto-submit form",
+    "audit logging",
+    "portal app",
+    "access control"
+  ],
+  "cross_refs": [
+    "04-sso-credential-forwarding.md",
+    "07-pages"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": "Document is a task-oriented implementation plan with technical specifications for file paths, component structure, data flow, and failure mode handling. Cross-refs derived from the 'Specs referensi' line at the top of the document."
+}
