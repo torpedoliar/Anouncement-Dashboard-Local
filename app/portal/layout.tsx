@@ -13,7 +13,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
     return (
         <NextAuthProvider basePath="/api/portal-auth">
-            <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
+            <div className="min-h-screen bg-surface-0 text-text-1">
                 <PortalHeader userName={session.user?.name} />
                 <main>{children}</main>
             </div>

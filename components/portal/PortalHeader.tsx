@@ -4,7 +4,8 @@ import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { FiGrid, FiKey, FiLogOut, FiMenu, FiSettings, FiX } from "react-icons/fi";
+import { GearSix, Key, List, SignOut, SquaresFour, X } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 
 interface PortalHeaderProps {
     userName?: string | null;
@@ -15,113 +16,72 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const navItems = [
-        { href: "/portal", icon: FiGrid, label: "Aplikasi" },
-        { href: "/portal/credentials", icon: FiKey, label: "Kredensial" },
-        { href: "/portal/settings", icon: FiSettings, label: "Pengaturan" },
+        { href: "/portal", icon: SquaresFour, label: "Aplikasi" },
+        { href: "/portal/credentials", icon: Key, label: "Kredensial" },
+        { href: "/portal/settings", icon: GearSix, label: "Pengaturan" },
     ];
 
     const isActive = (href: string) => pathname === href;
 
     return (
-        <header style={{
-            backgroundColor: "var(--bg-card)",
-            borderBottom: "1px solid var(--border-color)",
-            padding: "0 24px",
-            height: "60px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-        }}>
-            {/* Logo */}
-            <Link href="/portal" style={{
-                color: "var(--text-primary)",
-                fontSize: "16px",
-                fontWeight: 700,
-                textDecoration: "none",
-                fontFamily: "Montserrat, sans-serif",
-            }}>
-                <span style={{ color: "var(--brand-red)" }}>PORTAL</span> SSO
-            </Link>
+        <header className="sticky top-0 z-40 border-b border-border bg-surface-1">
+            <div className="flex h-14 items-center justify-between px-4 sm:px-6">
+                {/* Logo */}
+                <Link href="/portal" className="font-display font-semibold text-text-1">
+                    <span className="text-accent">PORTAL</span> SSO
+                </Link>
 
-            {/* Desktop nav */}
-            <nav style={{ display: "flex", alignItems: "center", gap: "4px" }} className="desktop-nav">
-                {navItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                padding: "8px 14px",
-                                borderRadius: "6px",
-                                color: isActive(item.href) ? "var(--text-primary)" : "var(--text-muted)",
-                                backgroundColor: isActive(item.href) ? "var(--border-color)" : "transparent",
-                                textDecoration: "none",
-                                fontSize: "13px",
-                                fontWeight: 500,
-                            }}
-                        >
-                            <Icon size={14} />
-                            {item.label}
-                        </Link>
-                    );
-                })}
-            </nav>
+                {/* Desktop nav */}
+                <nav className="hidden items-center gap-1 sm:flex">
+                    {navItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                aria-current={isActive(item.href) ? "page" : undefined}
+                                className={`inline-flex items-center gap-2 rounded-control px-4 py-2 text-sm font-semibold transition-colors duration-150 ${
+                                    isActive(item.href)
+                                        ? "bg-accent-subtle text-accent"
+                                        : "text-text-2 hover:bg-surface-2 hover:text-text-1"
+                                }`}
+                            >
+                                <Icon size={16} aria-hidden="true" />
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+                </nav>
 
-            {/* Right side */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>{userName}</span>
-                <button
-                    onClick={() => signOut({ callbackUrl: "/portal-login" })}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "8px 14px",
-                        backgroundColor: "transparent",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "6px",
-                        color: "var(--text-muted)",
-                        fontSize: "13px",
-                        cursor: "pointer",
-                    }}
-                >
-                    <FiLogOut size={14} />
-                    Keluar
-                </button>
+                {/* Right side */}
+                <div className="flex items-center gap-3">
+                    <span className="hidden text-sm text-text-2 sm:inline">{userName}</span>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        iconLeft={<SignOut size={16} aria-hidden="true" />}
+                        onClick={() => signOut({ callbackUrl: "/portal-login" })}
+                        aria-label="Keluar"
+                    >
+                        Keluar
+                    </Button>
 
-                {/* Mobile toggle */}
-                <button
-                    onClick={() => setMobileOpen(!mobileOpen)}
-                    style={{
-                        display: "none",
-                        background: "none",
-                        border: "none",
-                        color: "var(--text-muted)",
-                        cursor: "pointer",
-                        padding: "4px",
-                    }}
-                    className="mobile-toggle"
-                >
-                    {mobileOpen ? <FiX size={20} /> : <FiMenu size={20} />}
-                </button>
+                    {/* Mobile toggle */}
+                    <button
+                        type="button"
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
+                        aria-expanded={mobileOpen}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-control text-text-2 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1 sm:hidden"
+                    >
+                        {mobileOpen ? <X size={16} aria-hidden="true" /> : <List size={16} aria-hidden="true" />}
+                    </button>
+                </div>
             </div>
 
             {/* Mobile nav */}
             {mobileOpen && (
-                <div style={{
-                    position: "absolute",
-                    top: "60px",
-                    left: 0,
-                    right: 0,
-                    backgroundColor: "var(--bg-card)",
-                    borderBottom: "1px solid var(--border-color)",
-                    padding: "12px",
-                    zIndex: 50,
-                }}>
+                <div className="absolute inset-x-0 top-14 border-b border-border bg-surface-1 p-2">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         return (
@@ -129,19 +89,14 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
                                 key={item.href}
                                 href={item.href}
                                 onClick={() => setMobileOpen(false)}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                    padding: "12px 16px",
-                                    borderRadius: "6px",
-                                    color: isActive(item.href) ? "var(--text-primary)" : "var(--text-muted)",
-                                    backgroundColor: isActive(item.href) ? "var(--border-color)" : "transparent",
-                                    textDecoration: "none",
-                                    fontSize: "14px",
-                                }}
+                                aria-current={isActive(item.href) ? "page" : undefined}
+                                className={`flex min-h-11 items-center gap-2 rounded-control px-4 text-sm font-semibold transition-colors duration-150 ${
+                                    isActive(item.href)
+                                        ? "bg-accent-subtle text-accent"
+                                        : "text-text-2 hover:bg-surface-2 hover:text-text-1"
+                                }`}
                             >
-                                <Icon size={16} />
+                                <Icon size={16} aria-hidden="true" />
                                 {item.label}
                             </Link>
                         );
