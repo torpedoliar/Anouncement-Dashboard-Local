@@ -407,9 +407,9 @@ export default function PortalUsersPage() {
         return [
             <div key="user" className="flex items-center gap-3">
                 <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-card border ${
-                    user.role === "PORTAL_ADMIN" ? "border-info/30 bg-info-subtle" : "border-border bg-surface-2"
+                    user.role === "PORTAL_ADMIN" ? "border-danger/30 bg-danger-subtle" : "border-border bg-surface-2"
                 }`}>
-                    <User size={14} className={user.role === "PORTAL_ADMIN" ? "text-info" : "text-text-2"} />
+                    <User size={14} className={user.role === "PORTAL_ADMIN" ? "text-danger" : "text-text-2"} />
                 </div>
                 <span className="text-sm font-semibold text-text-1">{user.name}</span>
             </div>,

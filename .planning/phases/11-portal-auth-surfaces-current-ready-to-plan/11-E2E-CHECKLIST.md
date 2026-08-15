@@ -112,7 +112,6 @@ Tidak ada API route / lib / schema / middleware ikut berubah — STATUS: ✅ PAS
 | Langkah 7 (lockout) | ⬜ manual |
 | Langkah 8 (lockout/revoke) | ⬜ manual |
 | Langkah 9 (audit rows) | ⬜ manual |
-| Langkah 8 (audit rows) | ⬜ manual |
 | OPD-1 frozen-diff | ✅ PASS |
 | OPD-4 compound scan | ✅ PASS |
 | Scope (UI only) | ✅ PASS |

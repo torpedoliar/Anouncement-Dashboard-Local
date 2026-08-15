@@ -160,7 +160,7 @@ export default function CredentialsPage() {
                                         </div>
                                         <div className="min-w-0">
                                             <div className="truncate text-sm font-semibold text-text-1">{app.appName}</div>
-                                            <div className={`mt-0.5 text-xs ${app.credentialCount > 0 ? "text-success" : "text-warning"}`}>
+                                            <div className={`mt-2 text-xs ${app.credentialCount > 0 ? "text-success" : "text-warning"}`}>
                                                 {app.credentialCount > 0
                                                     ? <><span className="font-mono tabular-nums">{app.credentialCount}</span> akun tersimpan</>
                                                     : "Belum ada akun"}
@@ -184,7 +184,7 @@ export default function CredentialsPage() {
                                                     <div key={acc.id} className="flex items-center justify-between gap-3 rounded-control border border-border bg-surface-0 px-4 py-3">
                                                         <div className="min-w-0">
                                                             <div className="truncate text-sm font-semibold text-text-1">{acc.label}</div>
-                                                            <div className="mt-0.5 text-xs text-text-3">
+                                                            <div className="mt-2 text-xs text-text-3">
                                                                 {acc.lastUsedAt ? (
                                                                     <>
                                                                         Terakhir dipakai <span className="font-mono tabular-nums">{new Date(acc.lastUsedAt).toLocaleDateString()}</span>

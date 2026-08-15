@@ -34,7 +34,7 @@ export default function GroupedAppGrid({ groups }: { groups: GridGroup[] }) {
         activeGroup === ALL_GROUPS ? groups : groups.filter((g) => g.id === activeGroup);
 
     const chipClass = (active: boolean) =>
-        `rounded-full border px-4 py-2 text-xs font-semibold transition-colors duration-150 ${
+        `rounded-full border px-4 py-2 text-xs font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
             active
                 ? "border-accent/40 bg-accent-subtle text-accent"
                 : "border-border bg-surface-1 text-text-2 hover:bg-surface-2 hover:text-text-1"
