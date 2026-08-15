@@ -1,9 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FiMonitor, FiRefreshCw, FiTrash2, FiUser } from "react-icons/fi";
+import { ArrowClockwise, CaretLeft, CaretRight, Clock, Monitor, Trash } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
+import Card from "@/components/ui/Card";
 
 interface PortalUser {
     id: string;
@@ -29,6 +34,8 @@ interface Pagination {
     total: number;
     totalPages: number;
 }
+
+type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 export default function PortalSessionsPage() {
     const [sessions, setSessions] = useState<PortalSession[]>([]);
@@ -108,10 +115,10 @@ export default function PortalSessionsPage() {
 
     const isExpired = (expiresAt: string) => new Date(expiresAt) < new Date();
 
-    const getStatus = (session: PortalSession) => {
-        if (session.isRevoked) return { label: "REVOKED", bg: "rgba(239, 68, 68, 0.2)", color: "#ef4444" };
-        if (isExpired(session.expiresAt)) return { label: "EXPIRED", bg: "rgba(251, 191, 36, 0.2)", color: "#fbbf24" };
-        return { label: "AKTIF", bg: "rgba(34, 197, 94, 0.2)", color: "#22c55e" };
+    const getStatus = (session: PortalSession): { label: string; tone: BadgeTone } => {
+        if (session.isRevoked) return { label: "DICABUT", tone: "neutral" };
+        if (isExpired(session.expiresAt)) return { label: "KEDALUWARSA", tone: "warning" };
+        return { label: "AKTIF", tone: "success" };
     };
 
     const getUserAgentDevice = (userAgent: string | null) => {
@@ -124,217 +131,212 @@ export default function PortalSessionsPage() {
 
     if (isLoading) {
         return (
-            <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
+            <div className="p-6">
+                {/* Header skeleton */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div className="mb-2 h-3 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-7 w-48 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div className="h-10 w-24 animate-pulse rounded bg-surface-2" />
+                </div>
+
+                {/* Stats skeleton */}
+                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="rounded-card border border-border p-4 shadow-lvl-1">
+                            <div className="mb-2 h-3 w-24 animate-pulse rounded bg-surface-2" />
+                            <div className="h-7 w-16 animate-pulse rounded bg-surface-2" />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Ledger-shaped skeleton */}
+                <div className="rounded-card border border-border shadow-lvl-1">
+                    <div className="flex gap-4 border-b border-border px-4 py-3">
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-16 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-36 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-36 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-16 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="flex gap-4 border-b border-border px-4 py-4 last:border-0">
+                                <div className="h-4 w-24 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-16 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-20 animate-pulse rounded bg-surface-2" />
+                                <div className="h-5 w-24 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-36 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-36 animate-pulse rounded bg-surface-2" />
+                                <div className="h-6 w-16 animate-pulse rounded bg-surface-2" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
 
-    return (
-        <div style={{ padding: "32px" }}>
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
-                <div>
-                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
-                        PORTAL
-                    </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
-                        Sesi Portal
-                    </h1>
+    const activeCount = sessions.filter(s => !s.isRevoked && !isExpired(s.expiresAt)).length;
+    const revokedOrExpiredCount = sessions.filter(s => s.isRevoked || isExpired(s.expiresAt)).length;
+
+    const columns: TableColumn[] = [
+        { key: "user", header: "PENGGUNA" },
+        { key: "ip", header: "IP" },
+        { key: "device", header: "DEVICE" },
+        { key: "status", header: "STATUS" },
+        { key: "lastActive", header: "TERAKTIF" },
+        { key: "createdAt", header: "DIBUAT" },
+        { key: "actions", header: "AKSI" },
+    ];
+
+    const rows = sessions.map((session) => {
+        const status = getStatus(session);
+        return [
+            <div key="user" className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-card border border-border bg-surface-2">
+                    <Monitor size={14} className="text-text-2" />
                 </div>
-                <button
-                    onClick={() => fetchSessions()}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "12px 24px",
-                        backgroundColor: "var(--bg-tertiary)",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        border: "1px solid var(--border-strong)",
-                        cursor: "pointer",
-                    }}
-                >
-                    <FiRefreshCw size={16} />
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-text-1">{session.portalUser.name}</p>
+                    <p className="truncate text-xs text-text-3">{session.portalUser.email}</p>
+                </div>
+            </div>,
+            <span key="ip" className="font-mono text-xs tabular-nums text-text-2">
+                {session.ipAddress || "-"}
+            </span>,
+            <span key="device" className="inline-flex items-center gap-2 text-text-2">
+                <Monitor size={14} />
+                <span className="text-sm">{getUserAgentDevice(session.userAgent)}</span>
+            </span>,
+            <Badge key="status" tone={status.tone}>{status.label}</Badge>,
+            <span key="lastActive" className="whitespace-nowrap font-mono text-xs tabular-nums text-text-3">
+                {formatDate(session.lastActiveAt)}
+            </span>,
+            <span key="createdAt" className="whitespace-nowrap font-mono text-xs tabular-nums text-text-3">
+                {formatDate(session.createdAt)}
+            </span>,
+            <div key="actions" className="inline-flex items-center gap-1">
+                {!session.isRevoked && !isExpired(session.expiresAt) && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRevoke(session.id)}
+                        aria-label={`Cabut sesi ${session.portalUser.name}`}
+                        title="Cabut Sesi"
+                        className="text-danger"
+                    >
+                        <Trash size={14} />
+                    </Button>
+                )}
+            </div>,
+        ];
+    });
+
+    return (
+        <div className="p-6">
+            {/* Header */}
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p className="mb-0.5 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
+                    <h1 className="font-display text-2xl font-semibold text-text-1">Sesi Portal</h1>
+                </div>
+                <Button type="button" variant="ghost" iconLeft={<ArrowClockwise size={14} aria-hidden="true" />} onClick={() => fetchSessions()}>
                     Refresh
-                </button>
+                </Button>
             </div>
 
             {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>TOTAL SESI</p>
-                    <p style={{ color: "var(--text-primary)", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || sessions.length}</p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>SESI AKTIF</p>
-                    <p style={{ color: "var(--color-success)", fontSize: "24px", fontWeight: 700 }}>
-                        {sessions.filter(s => !s.isRevoked && !isExpired(s.expiresAt)).length}
-                    </p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>DICABUT/EXPIRED</p>
-                    <p style={{ color: "var(--color-error)", fontSize: "24px", fontWeight: 700 }}>
-                        {sessions.filter(s => s.isRevoked || isExpired(s.expiresAt)).length}
-                    </p>
-                </div>
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">TOTAL SESI</p>
+                    <p className="font-display text-2xl font-semibold text-text-1">{pagination?.total || sessions.length}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">SESI AKTIF</p>
+                    <p className="font-display text-2xl font-semibold text-success">{activeCount}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">DICABUT/EXPIRED</p>
+                    <p className="font-display text-2xl font-semibold text-text-1">{revokedOrExpiredCount}</p>
+                </Card>
             </div>
 
             {/* Filter */}
-            <div style={{ marginBottom: "24px", display: "flex", alignItems: "center", gap: "12px" }}>
-                <label style={{ color: "var(--text-muted)", fontSize: "13px", fontWeight: 600 }}>FILTER PENGGUNA:</label>
-                <select
-                    value={filterUserId}
-                    onChange={(e) => { setFilterUserId(e.target.value); setPage(1); }}
-                    style={{
-                        padding: "10px 16px",
-                        backgroundColor: "var(--bg-card)",
-                        border: "1px solid var(--border-color)",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        minWidth: "250px",
-                    }}
-                >
-                    <option value="">Semua Pengguna</option>
-                    {portalUsers.map(u => (
-                        <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
-                    ))}
-                </select>
+            <div className="mb-6 flex flex-wrap items-end gap-3">
+                <div className="w-full sm:w-72">
+                    <Select
+                        label="FILTER PENGGUNA"
+                        value={filterUserId}
+                        onChange={(e) => { setFilterUserId(e.target.value); setPage(1); }}
+                        options={[
+                            { value: "", label: "Semua Pengguna" },
+                            ...portalUsers.map(u => ({ value: u.id, label: `${u.name} (${u.email})` })),
+                        ]}
+                    />
+                </div>
                 {filterUserId && (
-                    <button
-                        onClick={() => { setFilterUserId(""); setPage(1); }}
-                        style={{
-                            padding: "10px 16px",
-                            backgroundColor: "transparent",
-                            border: "1px solid var(--border-color)",
-                            color: "var(--text-muted)",
-                            fontSize: "13px",
-                            cursor: "pointer",
-                        }}
-                    >
+                    <Button type="button" variant="ghost" onClick={() => { setFilterUserId(""); setPage(1); }}>
                         Reset
-                    </button>
+                    </Button>
                 )}
             </div>
 
             {/* Sessions Table */}
-            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
-                    <thead>
-                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>PENGGUNA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>IP</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>DEVICE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>TERAKTIF</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>DIBUAT</th>
-                            <th style={{ padding: "20px", textAlign: "right", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sessions.length === 0 ? (
-                            <tr>
-                                <td colSpan={7} style={{ padding: "48px", textAlign: "center", color: "var(--text-tertiary)" }}>
-                                    Tidak ada sesi portal ditemukan
-                                </td>
-                            </tr>
-                        ) : (
-                            sessions.map((session, index) => {
-                                const status = getStatus(session);
-                                return (
-                                    <tr key={session.id} style={{ borderBottom: index < sessions.length - 1 ? "1px solid var(--border-color)" : "none" }}>
-                                        <td style={{ padding: "20px" }}>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                                <div style={{
-                                                    width: "36px",
-                                                    height: "36px",
-                                                    backgroundColor: "var(--bg-tertiary)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    borderRadius: "8px",
-                                                }}>
-                                                    <FiUser size={16} color="#737373" />
-                                                </div>
-                                                <div>
-                                                    <p style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>{session.portalUser.name}</p>
-                                                    <p style={{ color: "var(--text-muted)", fontSize: "12px" }}>{session.portalUser.email}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "13px" }}>
-                                            {session.ipAddress || "-"}
-                                        </td>
-                                        <td style={{ padding: "20px" }}>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-secondary)" }}>
-                                                <FiMonitor size={14} />
-                                                <span style={{ fontSize: "13px" }}>{getUserAgentDevice(session.userAgent)}</span>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: "20px" }}>
-                                            <span style={{
-                                                padding: "4px 12px",
-                                                backgroundColor: status.bg,
-                                                color: status.color,
-                                                fontSize: "11px",
-                                                fontWeight: 600,
-                                            }}>
-                                                {status.label}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: "20px", color: "#71717a", fontSize: "13px" }}>
-                                            {formatDate(session.lastActiveAt)}
-                                        </td>
-                                        <td style={{ padding: "20px", color: "#71717a", fontSize: "13px" }}>
-                                            {formatDate(session.createdAt)}
-                                        </td>
-                                        <td style={{ padding: "20px", textAlign: "right" }}>
-                                            {!session.isRevoked && !isExpired(session.expiresAt) && (
-                                                <button
-                                                    onClick={() => handleRevoke(session.id)}
-                                                    style={{
-                                                        padding: "8px",
-                                                        backgroundColor: "transparent",
-                                                        border: "1px solid var(--border-color)",
-                                                        color: "var(--brand-red)",
-                                                        cursor: "pointer",
-                                                    }}
-                                                    title="Cabut Sesi"
-                                                >
-                                                    <FiTrash2 size={14} />
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
-                <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
-                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-                        <button
-                            key={p}
-                            onClick={() => setPage(p)}
-                            style={{
-                                padding: "8px 16px",
-                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
-                                color: "var(--text-primary)",
-                                border: "none",
-                                cursor: "pointer",
-                            }}
-                        >
-                            {p}
-                        </button>
-                    ))}
+            {sessions.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 rounded-card border border-border p-12 text-center shadow-lvl-1">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-card bg-surface-2">
+                        <Clock size={24} className="text-text-3" aria-hidden="true" />
+                    </div>
+                    <p className="text-text-3">Belum ada sesi.</p>
+                </div>
+            ) : (
+                <div className="overflow-hidden rounded-card border border-border bg-surface-1 shadow-lvl-1">
+                    <Table
+                        columns={columns}
+                        rows={rows}
+                        ariaLabel="Daftar sesi portal"
+                    />
+                    {pagination && pagination.totalPages > 1 && (
+                        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <span className="font-mono text-xs tabular-nums text-text-3">
+                                {((pagination.page - 1) * pagination.limit) + 1}–
+                                {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setPage(pagination.page - 1)}
+                                    disabled={pagination.page === 1}
+                                    aria-label="Halaman sebelumnya"
+                                >
+                                    <CaretLeft size={14} aria-hidden="true" />
+                                </Button>
+                                <span className="font-mono text-xs tabular-nums text-text-2">
+                                    {pagination.page} / {pagination.totalPages}
+                                </span>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setPage(pagination.page + 1)}
+                                    disabled={pagination.page === pagination.totalPages}
+                                    aria-label="Halaman berikutnya"
+                                >
+                                    <CaretRight size={14} aria-hidden="true" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
+
             <ConfirmDialog />
         </div>
     );
