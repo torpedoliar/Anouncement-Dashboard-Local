@@ -1,9 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FiGrid, FiPlus, FiEdit, FiTrash, FiX } from "react-icons/fi";
+import { CaretLeft, CaretRight, GridFour, LockKey, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import Card from "@/components/ui/Card";
 
 interface PortalApp {
     id: string;
@@ -249,454 +255,398 @@ export default function PortalAppsPage() {
         setError("");
     };
 
-    const inputStyle: React.CSSProperties = {
-        width: "100%", boxSizing: "border-box",
-        padding: "12px",
-        backgroundColor: "#111",
-        border: "1px solid #262626",
-        color: "#fff",
-        fontSize: "14px",
-    };
-
     if (isLoading) {
         return (
-            <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
+            <div className="p-6">
+                {/* Header skeleton */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div className="mb-2 h-3 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-7 w-48 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div className="h-10 w-40 animate-pulse rounded bg-surface-2" />
+                </div>
+
+                {/* Stats skeleton */}
+                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="rounded-card border border-border p-4 shadow-lvl-1">
+                            <div className="mb-2 h-3 w-24 animate-pulse rounded bg-surface-2" />
+                            <div className="h-7 w-12 animate-pulse rounded bg-surface-2" />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Ledger-shaped skeleton */}
+                <div className="rounded-card border border-border shadow-lvl-1">
+                    <div className="flex gap-4 border-b border-border px-4 py-3">
+                        <div className="h-3 w-32 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-20 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-24 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-16 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-16 animate-pulse rounded bg-surface-2" />
+                        <div className="h-3 w-16 animate-pulse rounded bg-surface-2" />
+                    </div>
+                    <div>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="flex gap-4 border-b border-border px-4 py-4 last:border-0">
+                                <div className="h-4 w-32 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-20 animate-pulse rounded bg-surface-2" />
+                                <div className="h-5 w-20 animate-pulse rounded bg-surface-2" />
+                                <div className="h-5 w-20 animate-pulse rounded bg-surface-2" />
+                                <div className="h-5 w-24 animate-pulse rounded bg-surface-2" />
+                                <div className="h-5 w-16 animate-pulse rounded bg-surface-2" />
+                                <div className="h-4 w-16 animate-pulse rounded bg-surface-2" />
+                                <div className="h-6 w-16 animate-pulse rounded bg-surface-2" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
 
+    const activeCount = apps.filter(a => a.isActive).length;
+    const inactiveCount = apps.filter(a => !a.isActive).length;
+
+    const columns: TableColumn[] = [
+        { key: "name", header: "NAMA" },
+        { key: "slug", header: "SLUG" },
+        { key: "category", header: "KATEGORI" },
+        { key: "ssoMode", header: "SSO MODE" },
+        { key: "visibility", header: "VISIBILITAS" },
+        { key: "status", header: "STATUS" },
+        { key: "order", header: "URUTAN" },
+        { key: "actions", header: "AKSI" },
+    ];
+
+    const rows = apps.map((app) => [
+        <div key="name" className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-card border border-border bg-surface-2">
+                <GridFour size={14} className="text-text-2" />
+            </div>
+            <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-text-1">{app.name}</p>
+                {app.description && (
+                    <p className="max-w-48 truncate text-xs text-text-3">{app.description}</p>
+                )}
+            </div>
+        </div>,
+        <span key="slug" className="font-mono text-xs tabular-nums text-text-2">{app.slug}</span>,
+        app.category ? (
+            <Badge key="category" tone="info">{app.category}</Badge>
+        ) : (
+            <span key="category" className="text-xs text-text-3">-</span>
+        ),
+        <Badge key="ssoMode" tone="neutral">{app.ssoMode}</Badge>,
+        app.isPublic ? (
+            <Badge key="visibility" tone="success">Publik</Badge>
+        ) : (
+            <Badge key="visibility" tone="neutral">
+                <LockKey size={12} aria-hidden="true" />
+                Terbatas
+            </Badge>
+        ),
+        <Badge key="status" tone={app.isActive ? "success" : "neutral"}>
+            {app.isActive ? "AKTIF" : "NONAKTIF"}
+        </Badge>,
+        <span key="order" className="font-mono text-xs tabular-nums text-text-2">{app.displayOrder}</span>,
+        <div key="actions" className="inline-flex items-center gap-1">
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => openEditModal(app)}
+                aria-label="Edit"
+                title="Edit"
+            >
+                <PencilSimple size={14} />
+            </Button>
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDelete(app)}
+                aria-label="Hapus"
+                title="Hapus"
+                className="text-danger"
+            >
+                <Trash size={14} />
+            </Button>
+        </div>,
+    ]);
+
     return (
-        <div style={{ padding: "32px" }}>
+        <div className="p-6">
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
-                        PORTAL
-                    </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
-                        Aplikasi Portal
-                    </h1>
+                    <p className="mb-0.5 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
+                    <h1 className="font-display text-2xl font-semibold text-text-1">Aplikasi Portal</h1>
                 </div>
-                <button
-                    onClick={openAddModal}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "12px 24px",
-                        backgroundColor: "var(--brand-red)",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        border: "none",
-                        cursor: "pointer",
-                    }}
-                >
-                    <FiPlus size={16} />
+                <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
                     Tambah Aplikasi
-                </button>
+                </Button>
             </div>
 
             {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>TOTAL APLIKASI</p>
-                    <p style={{ color: "var(--text-primary)", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || apps.length}</p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>AKTIF</p>
-                    <p style={{ color: "var(--color-success)", fontSize: "24px", fontWeight: 700 }}>
-                        {apps.filter(a => a.isActive).length}
-                    </p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>NONAKTIF</p>
-                    <p style={{ color: "var(--color-error)", fontSize: "24px", fontWeight: 700 }}>
-                        {apps.filter(a => !a.isActive).length}
-                    </p>
-                </div>
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">TOTAL APLIKASI</p>
+                    <p className="font-display text-2xl font-semibold text-text-1">{pagination?.total || apps.length}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">AKTIF</p>
+                    <p className="font-display text-2xl font-semibold text-success">{activeCount}</p>
+                </Card>
+                <Card className="p-4">
+                    <p className="mb-1 text-sm text-text-3">NONAKTIF</p>
+                    <p className="font-display text-2xl font-semibold text-danger">{inactiveCount}</p>
+                </Card>
             </div>
 
             {/* Table */}
-            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
-                    <thead>
-                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>NAMA</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>SLUG</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>KATEGORI</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>SSO MODE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>URUTAN</th>
-                            <th style={{ padding: "20px", textAlign: "right", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {apps.length === 0 ? (
-                            <tr>
-                                <td colSpan={7} style={{ padding: "48px", textAlign: "center", color: "var(--text-tertiary)" }}>
-                                    Tidak ada aplikasi portal ditemukan
-                                </td>
-                            </tr>
-                        ) : (
-                            apps.map((app, index) => (
-                                <tr key={app.id} style={{ borderBottom: index < apps.length - 1 ? "1px solid var(--border-color)" : "none" }}>
-                                    <td style={{ padding: "20px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                            <div style={{
-                                                width: "36px",
-                                                height: "36px",
-                                                backgroundColor: "var(--bg-tertiary)",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                borderRadius: "8px",
-                                            }}>
-                                                <FiGrid size={16} color="#737373" />
-                                            </div>
-                                            <div>
-                                                <p style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>{app.name}</p>
-                                                {app.description && (
-                                                    <p style={{ color: "var(--text-tertiary)", fontSize: "12px", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                                        {app.description}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: "20px", color: "var(--text-secondary)", fontSize: "13px", fontFamily: "monospace" }}>{app.slug}</td>
-                                    <td style={{ padding: "20px" }}>
-                                        {app.category ? (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(59, 130, 246, 0.2)", color: "var(--color-info)", fontSize: "11px", fontWeight: 600 }}>
-                                                {app.category}
-                                            </span>
-                                        ) : (
-                                            <span style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>-</span>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: "20px" }}>
-                                        <span style={{ padding: "4px 12px", backgroundColor: "rgba(168, 85, 247, 0.2)", color: "#a855f7", fontSize: "11px", fontWeight: 600 }}>
-                                            {app.ssoMode}
-                                        </span>
-                                    </td>
-                                    <td style={{ padding: "20px" }}>
-                                        {app.isActive ? (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(34, 197, 94, 0.2)", color: "var(--color-success)", fontSize: "11px", fontWeight: 600 }}>
-                                                AKTIF
-                                            </span>
-                                        ) : (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "var(--color-error)", fontSize: "11px", fontWeight: 600 }}>
-                                                NONAKTIF
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: "20px", color: "#71717a", fontSize: "13px" }}>{app.displayOrder}</td>
-                                    <td style={{ padding: "16px", textAlign: "right" }}>
-                                        <button
-                                            onClick={() => openEditModal(app)}
-                                            style={{
-                                                padding: "8px",
-                                                backgroundColor: "transparent",
-                                                border: "1px solid var(--border-color)",
-                                                color: "var(--text-muted)",
-                                                cursor: "pointer",
-                                                marginRight: "8px",
-                                            }}
-                                            title="Edit"
-                                        >
-                                            <FiEdit size={14} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(app)}
-                                            style={{
-                                                padding: "8px",
-                                                backgroundColor: "transparent",
-                                                border: "1px solid var(--border-color)",
-                                                color: "var(--brand-red)",
-                                                cursor: "pointer",
-                                            }}
-                                            title="Hapus"
-                                        >
-                                            <FiTrash size={14} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {apps.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 rounded-card border border-border p-12 text-center shadow-lvl-1">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-card bg-surface-2">
+                        <GridFour size={24} className="text-text-3" aria-hidden="true" />
+                    </div>
+                    <p className="text-text-3">Belum ada aplikasi.</p>
+                </div>
+            ) : (
+                <div className="overflow-hidden rounded-card border border-border bg-surface-1 shadow-lvl-1">
+                    <Table
+                        columns={columns}
+                        rows={rows}
+                        ariaLabel="Daftar aplikasi portal"
+                    />
+                </div>
+            )}
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-                <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
-                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-                        <button
-                            key={p}
-                            onClick={() => setPage(p)}
-                            style={{
-                                padding: "8px 16px",
-                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
-                                color: "var(--text-primary)",
-                                border: "none",
-                                cursor: "pointer",
-                            }}
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="font-mono text-xs tabular-nums text-text-3">
+                        {((pagination.page - 1) * pagination.limit) + 1}–
+                        {Math.min(pagination.page * pagination.limit, pagination.total)} dari {pagination.total}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setPage(pagination.page - 1)}
+                            disabled={pagination.page === 1}
+                            aria-label="Halaman sebelumnya"
                         >
-                            {p}
-                        </button>
-                    ))}
+                            <CaretLeft size={14} aria-hidden="true" />
+                        </Button>
+                        <span className="font-mono text-xs tabular-nums text-text-2">
+                            {pagination.page} / {pagination.totalPages}
+                        </span>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setPage(pagination.page + 1)}
+                            disabled={pagination.page === pagination.totalPages}
+                            aria-label="Halaman berikutnya"
+                        >
+                            <CaretRight size={14} aria-hidden="true" />
+                        </Button>
+                    </div>
                 </div>
             )}
 
             {/* Modal */}
             {showModal && (
-                <div style={{
-                    position: "fixed",
-                    inset: 0,
-                    backgroundColor: "rgba(0, 0, 0, 0.8)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 50,
-                }}>
-                    <div style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        border: "1px solid var(--border-color)",
-                        width: "100%", boxSizing: "border-box",
-                        maxWidth: "600px",
-                        padding: "24px",
-                        maxHeight: "90vh",
-                        overflowY: "auto",
-                    }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={editingApp ? "Edit Aplikasi" : "Tambah Aplikasi"}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) closeModal();
+                    }}
+                >
+                    <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-sheet border border-border bg-surface-1 p-6 shadow-lvl-3">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h2 className="font-display text-xl font-semibold text-text-1">
                                 {editingApp ? "Edit Aplikasi" : "Tambah Aplikasi"}
                             </h2>
-                            <button onClick={closeModal} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
-                                <FiX size={20} />
+                            <button
+                                type="button"
+                                onClick={closeModal}
+                                className="cursor-pointer rounded-control p-1 text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
+                                aria-label="Tutup"
+                            >
+                                <X size={20} />
                             </button>
                         </div>
 
                         {error && (
-                            <div style={{ padding: "12px", backgroundColor: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "var(--color-error)", fontSize: "14px", marginBottom: "16px" }}>
+                            <div className="mb-4 rounded-control border border-danger-subtle bg-danger-subtle px-3 py-2 text-sm text-danger">
                                 {error}
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit}>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>NAMA *</label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        required
-                                        style={inputStyle}
-                                    />
-                                </div>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>SLUG *</label>
-                                    <input
-                                        type="text"
-                                        value={formData.slug}
-                                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                                        required
-                                        style={inputStyle}
-                                    />
-                                </div>
-                            </div>
-
-                            <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>DESKRIPSI</label>
-                                <input
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <Input
+                                    label="NAMA *"
                                     type="text"
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    style={inputStyle}
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    required
+                                />
+                                <Input
+                                    label="SLUG *"
+                                    type="text"
+                                    value={formData.slug}
+                                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                                    required
                                 />
                             </div>
 
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>URL *</label>
-                                    <input
-                                        type="text"
-                                        value={formData.url}
-                                        onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                                        required
-                                        placeholder="https://app.example.com"
-                                        style={inputStyle}
-                                    />
-                                </div>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                                        <label style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: 600 }}>LOGIN URL</label>
-                                        <button
+                            <Input
+                                label="DESKRIPSI"
+                                type="text"
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            />
+
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <Input
+                                    label="URL *"
+                                    type="text"
+                                    value={formData.url}
+                                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                                    required
+                                    placeholder="https://app.example.com"
+                                />
+                                <div>
+                                    <div className="mb-1.5 flex items-center justify-between">
+                                        <span className="text-sm font-semibold text-text-1">LOGIN URL</span>
+                                        <Button
                                             type="button"
+                                            variant="secondary"
+                                            size="sm"
                                             onClick={handleDetect}
                                             disabled={detecting}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "6px",
-                                                padding: "6px 12px",
-                                                backgroundColor: detecting ? "var(--border-color)" : "rgba(59, 130, 246, 0.2)",
-                                                color: detecting ? "var(--text-muted)" : "var(--color-info)",
-                                                border: "1px solid var(--border-color)",
-                                                borderRadius: "6px",
-                                                fontSize: "12px",
-                                                fontWeight: 600,
-                                                cursor: detecting ? "not-allowed" : "pointer",
-                                            }}
                                         >
-                                            {detecting ? <span>Mendeteksi...</span> : <span>Deteksi Otomatis</span>}
-                                        </button>
+                                            {detecting ? "Mendeteksi..." : "Deteksi Otomatis"}
+                                        </Button>
                                     </div>
-                                    <input
+                                    <Input
                                         type="text"
                                         value={formData.loginUrl}
                                         onChange={(e) => setFormData({ ...formData, loginUrl: e.target.value })}
                                         placeholder="https://app.example.com/login"
-                                        style={inputStyle}
                                     />
                                     {detectMsg && (
-                                        <p style={{
-                                            marginTop: "8px",
-                                            fontSize: "12px",
-                                            color: detectMsg.type === "ok" ? "var(--color-success)" : "var(--color-error)",
-                                        }}>
+                                        <p className={`mt-1 text-xs ${detectMsg.type === "ok" ? "text-success" : "text-danger"}`}>
                                             {detectMsg.text}
                                         </p>
                                     )}
                                 </div>
                             </div>
 
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>SSO MODE</label>
-                                    <select
-                                        value={formData.ssoMode}
-                                        onChange={(e) => setFormData({ ...formData, ssoMode: e.target.value })}
-                                        style={inputStyle}
-                                    >
-                                        <option value="FORM">FORM</option>
-                                        <option value="REDIRECT">REDIRECT</option>
-                                        <option value="PROXY">PROXY</option>
-                                        <option value="TOKEN">TOKEN</option>
-                                        <option value="REROUTE">REROUTE</option>
-                                        <option value="VAULT">VAULT</option>
-                                    </select>
-                                </div>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>HTTP METHOD</label>
-                                    <select
-                                        value={formData.httpMethod}
-                                        onChange={(e) => setFormData({ ...formData, httpMethod: e.target.value })}
-                                        style={inputStyle}
-                                    >
-                                        <option value="POST">POST</option>
-                                        <option value="GET">GET</option>
-                                    </select>
-                                </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <Select
+                                    label="SSO MODE"
+                                    value={formData.ssoMode}
+                                    onChange={(e) => setFormData({ ...formData, ssoMode: e.target.value })}
+                                    options={[
+                                        { value: "FORM", label: "FORM" },
+                                        { value: "REDIRECT", label: "REDIRECT" },
+                                        { value: "PROXY", label: "PROXY" },
+                                        { value: "TOKEN", label: "TOKEN" },
+                                        { value: "REROUTE", label: "REROUTE" },
+                                        { value: "VAULT", label: "VAULT" },
+                                    ]}
+                                />
+                                <Select
+                                    label="HTTP METHOD"
+                                    value={formData.httpMethod}
+                                    onChange={(e) => setFormData({ ...formData, httpMethod: e.target.value })}
+                                    options={[
+                                        { value: "POST", label: "POST" },
+                                        { value: "GET", label: "GET" },
+                                    ]}
+                                />
                             </div>
 
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>USERNAME FIELD</label>
-                                    <input
-                                        type="text"
-                                        value={formData.usernameField}
-                                        onChange={(e) => setFormData({ ...formData, usernameField: e.target.value })}
-                                        placeholder="username"
-                                        style={inputStyle}
-                                    />
-                                </div>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>PASSWORD FIELD</label>
-                                    <input
-                                        type="text"
-                                        value={formData.passwordField}
-                                        onChange={(e) => setFormData({ ...formData, passwordField: e.target.value })}
-                                        placeholder="password"
-                                        style={inputStyle}
-                                    />
-                                </div>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <Input
+                                    label="USERNAME FIELD"
+                                    type="text"
+                                    value={formData.usernameField}
+                                    onChange={(e) => setFormData({ ...formData, usernameField: e.target.value })}
+                                    placeholder="username"
+                                />
+                                <Input
+                                    label="PASSWORD FIELD"
+                                    type="text"
+                                    value={formData.passwordField}
+                                    onChange={(e) => setFormData({ ...formData, passwordField: e.target.value })}
+                                    placeholder="password"
+                                />
                             </div>
 
-                            <div style={{ marginBottom: "16px" }}>
-                                <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>EXTRA FIELDS (JSON)</label>
+                            <div>
+                                <span className="mb-1.5 block text-sm font-semibold text-text-1">EXTRA FIELDS (JSON)</span>
                                 <textarea
                                     value={formData.extraFields}
                                     onChange={(e) => setFormData({ ...formData, extraFields: e.target.value })}
                                     placeholder='{"key": "value"}'
                                     rows={3}
-                                    style={{ ...inputStyle, fontFamily: "monospace", resize: "vertical" }}
+                                    className="w-full resize-y rounded-control border border-border bg-surface-1 px-3 py-2 font-mono text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                 />
                             </div>
 
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>KATEGORI</label>
-                                    <input
-                                        type="text"
-                                        value={formData.category}
-                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                        style={inputStyle}
-                                    />
-                                </div>
-                                <div style={{ marginBottom: "16px" }}>
-                                    <label style={{ display: "block", color: "var(--text-muted)", fontSize: "12px", fontWeight: 600, marginBottom: "8px" }}>URUTAN</label>
-                                    <input
-                                        type="number"
-                                        value={formData.displayOrder}
-                                        onChange={(e) => setFormData({ ...formData, displayOrder: Number(e.target.value) })}
-                                        style={inputStyle}
-                                    />
-                                </div>
-                                <div style={{ marginBottom: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--text-secondary)", fontSize: "14px" }}>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <Input
+                                    label="KATEGORI"
+                                    type="text"
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                />
+                                <Input
+                                    label="URUTAN"
+                                    type="number"
+                                    value={formData.displayOrder}
+                                    onChange={(e) => setFormData({ ...formData, displayOrder: Number(e.target.value) })}
+                                />
+                                <div className="flex flex-col justify-end gap-2 pb-1">
+                                    <label className="flex items-center gap-2 text-sm text-text-1">
                                         <input
                                             type="checkbox"
                                             checked={formData.isActive}
                                             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                            style={{ accentColor: "var(--brand-red)", width: "18px", height: "18px" }}
+                                            className="h-4 w-4 cursor-pointer accent-accent"
                                         />
                                         Aktif
                                     </label>
-                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--text-secondary)", fontSize: "14px" }}>
+                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-text-1">
                                         <input
                                             type="checkbox"
                                             checked={formData.isPublic}
                                             onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
-                                            style={{ accentColor: "var(--brand-red)", width: "18px", height: "18px" }}
+                                            className="h-4 w-4 cursor-pointer accent-accent"
                                         />
-                                        Publik (berlaku untuk semua pengguna){" "}
-                                        <span style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>
-                                            — kosongkan untuk restricted (hanya user/grup berhak akses)
-                                        </span>
+                                        <span>Publik (berlaku untuk semua pengguna)</span>
                                     </label>
+                                    <span className="text-xs text-text-3">
+                                        — kosongkan untuk restricted (hanya user/grup berhak akses)
+                                    </span>
                                 </div>
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={isSaving}
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px",
-                                    backgroundColor: "var(--brand-red)",
-                                    color: "var(--text-primary)",
-                                    fontSize: "13px",
-                                    fontWeight: 600,
-                                    border: "none",
-                                    cursor: isSaving ? "not-allowed" : "pointer",
-                                    opacity: isSaving ? 0.6 : 1,
-                                }}
-                            >
+                            <Button type="submit" disabled={isSaving} className="w-full">
                                 {isSaving ? "MENYIMPAN..." : "SIMPAN"}
-                            </button>
+                            </Button>
                         </form>
                     </div>
                 </div>
