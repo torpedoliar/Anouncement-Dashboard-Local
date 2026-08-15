@@ -44,7 +44,7 @@ export default function AppCard({ name, slug, description, logoPath, category, c
             )}
 
             {/* Health indicator */}
-            <div className="mt-3 flex items-center gap-1.5 text-xs">
+            <div className="mt-3 flex items-center gap-1 text-xs">
                 {credentialCount > 0 ? (
                     <>
                         <CheckCircle size={16} className="shrink-0 text-success" aria-hidden="true" />
