@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiShield } from "react-icons/fi";
+import { ShieldWarning } from "@phosphor-icons/react";
 
 interface AccessDeniedProps {
     appName: string;
@@ -9,61 +9,20 @@ interface AccessDeniedProps {
 
 export default function AccessDenied({ appName }: AccessDeniedProps) {
     return (
-        <div style={{
-            minHeight: "100vh",
-            backgroundColor: "var(--bg-secondary)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-        }}>
-            <div style={{
-                textAlign: "center",
-                maxWidth: "400px",
-            }}>
-                <div style={{
-                    width: "56px",
-                    height: "56px",
-                    borderRadius: "12px",
-                    backgroundColor: "rgba(220, 38, 38, 0.1)",
-                    border: "1px solid rgba(220, 38, 38, 0.2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 20px",
-                }}>
-                    <FiShield size={24} color="#dc2626" />
+        <div className="flex min-h-screen items-center justify-center bg-surface-0 px-5 py-10">
+            <div className="max-w-[400px] text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-sheet border border-danger/30 bg-danger-subtle">
+                    <ShieldWarning size={24} className="text-danger" aria-hidden="true" />
                 </div>
-                <h1 style={{
-                    fontFamily: "Montserrat, sans-serif",
-                    fontSize: "20px",
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                    margin: "0 0 12px",
-                }}>
+                <h1 className="mt-5 font-display text-xl font-semibold text-text-1">
                     Akses Ditolak
                 </h1>
-                <p style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "14px",
-                    lineHeight: "1.6",
-                    margin: "0 0 24px",
-                }}>
-                    Anda tidak punya akses ke <strong style={{ color: "var(--text-primary)" }}>{appName}</strong>
+                <p className="mt-3 text-sm text-text-2">
+                    Anda tidak punya akses ke <strong className="font-semibold text-text-1">{appName}</strong>
                 </p>
                 <Link
                     href="/portal"
-                    style={{
-                        display: "inline-block",
-                        padding: "10px 24px",
-                        backgroundColor: "var(--border-color)",
-                        color: "var(--text-secondary)",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        textDecoration: "none",
-                        border: "1px solid var(--border-color)",
-                    }}
+                    className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-control border border-border bg-surface-1 px-4 text-sm font-semibold text-text-1 transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                     Kembali ke Portal
                 </Link>

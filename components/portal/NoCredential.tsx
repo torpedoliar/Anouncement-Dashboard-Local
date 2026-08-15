@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiKey } from "react-icons/fi";
+import { WarningCircle } from "@phosphor-icons/react";
 
 interface NoCredentialProps {
     appName: string;
@@ -10,60 +10,20 @@ interface NoCredentialProps {
 
 export default function NoCredential({ appName, appSlug }: NoCredentialProps) {
     return (
-        <div style={{
-            minHeight: "100vh",
-            backgroundColor: "var(--bg-secondary)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-        }}>
-            <div style={{
-                textAlign: "center",
-                maxWidth: "400px",
-            }}>
-                <div style={{
-                    width: "56px",
-                    height: "56px",
-                    borderRadius: "12px",
-                    backgroundColor: "rgba(234, 179, 8, 0.1)",
-                    border: "1px solid rgba(234, 179, 8, 0.2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 20px",
-                }}>
-                    <FiKey size={24} color="#eab308" />
+        <div className="flex min-h-screen items-center justify-center bg-surface-0 px-5 py-10">
+            <div className="max-w-[400px] text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-sheet border border-warning/30 bg-warning-subtle">
+                    <WarningCircle size={24} className="text-warning" aria-hidden="true" />
                 </div>
-                <h1 style={{
-                    fontFamily: "Montserrat, sans-serif",
-                    fontSize: "20px",
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                    margin: "0 0 12px",
-                }}>
+                <h1 className="mt-5 font-display text-xl font-semibold text-text-1">
                     Kredensial Belum Disimpan
                 </h1>
-                <p style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "14px",
-                    lineHeight: "1.6",
-                    margin: "0 0 24px",
-                }}>
-                    Anda belum menyimpan kredensial untuk <strong style={{ color: "var(--text-primary)" }}>{appName}</strong>
+                <p className="mt-3 text-sm text-text-2">
+                    Anda belum menyimpan kredensial untuk <strong className="font-semibold text-text-1">{appName}</strong>
                 </p>
                 <Link
                     href={`/portal/credentials?app=${appSlug}`}
-                    style={{
-                        display: "inline-block",
-                        padding: "10px 24px",
-                        backgroundColor: "var(--brand-red)",
-                        color: "var(--text-primary)",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                    }}
+                    className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                     Simpan Kredensial
                 </Link>

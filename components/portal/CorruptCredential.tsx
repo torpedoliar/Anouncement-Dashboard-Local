@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiAlertTriangle } from "react-icons/fi";
+import { Warning } from "@phosphor-icons/react";
 
 interface CorruptCredentialProps {
     appName: string;
@@ -10,68 +10,23 @@ interface CorruptCredentialProps {
 
 export default function CorruptCredential({ appName, appSlug }: CorruptCredentialProps) {
     return (
-        <div style={{
-            minHeight: "100vh",
-            backgroundColor: "var(--bg-secondary)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-        }}>
-            <div style={{
-                textAlign: "center",
-                maxWidth: "400px",
-            }}>
-                <div style={{
-                    width: "56px",
-                    height: "56px",
-                    borderRadius: "12px",
-                    backgroundColor: "rgba(234, 179, 8, 0.1)",
-                    border: "1px solid rgba(234, 179, 8, 0.2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 20px",
-                }}>
-                    <FiAlertTriangle size={24} color="#eab308" />
+        <div className="flex min-h-screen items-center justify-center bg-surface-0 px-5 py-10">
+            <div className="max-w-[400px] text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-sheet border border-warning/30 bg-warning-subtle">
+                    <Warning size={24} className="text-warning" aria-hidden="true" />
                 </div>
-                <h1 style={{
-                    fontFamily: "Montserrat, sans-serif",
-                    fontSize: "20px",
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                    margin: "0 0 12px",
-                }}>
+                <h1 className="mt-5 font-display text-xl font-semibold text-text-1">
                     Kredensial Rusak
                 </h1>
-                <p style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "14px",
-                    lineHeight: "1.6",
-                    margin: "0 0 8px",
-                }}>
+                <p className="mt-3 text-sm text-text-2">
                     Kredensial rusak. Silakan simpan ulang.
                 </p>
-                <p style={{
-                    color: "var(--text-muted)",
-                    fontSize: "13px",
-                    lineHeight: "1.6",
-                    margin: "0 0 24px",
-                }}>
-                    Kredensial untuk <strong style={{ color: "var(--text-secondary)" }}>{appName}</strong> tidak dapat dibaca. Silakan simpan ulang untuk melanjutkan.
+                <p className="mt-2 text-sm text-text-3">
+                    Kredensial untuk <strong className="font-semibold text-text-1">{appName}</strong> tidak dapat dibaca. Silakan simpan ulang untuk melanjutkan.
                 </p>
                 <Link
                     href={`/portal/credentials?app=${appSlug}`}
-                    style={{
-                        display: "inline-block",
-                        padding: "10px 24px",
-                        backgroundColor: "var(--brand-red)",
-                        color: "var(--text-primary)",
-                        borderRadius: "8px",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                    }}
+                    className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                     Simpan Ulang Kredensial
                 </Link>
