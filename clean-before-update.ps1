@@ -6,8 +6,6 @@
 # Setelah script selesai: jalankan .\update.ps1 (pull + build + migrate + up)
 # ============================================
 
-$ErrorActionPreference = "Stop"
-
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "  Dashboard - Clean Before Update" -ForegroundColor Cyan
@@ -20,10 +18,40 @@ if (-not (Test-Path "docker-compose.yml")) {
     exit 1
 }
 
-# 1. Backup DB dulu (aman: kalau update gagal, ada jalur restore)
+# 0.5. Load secret produksi ke env proses (sama seperti update.ps1)
+# docker-compose baca `.env` default, padahal secret produksi ada di .env.server.
+# Tanpa ini, tiap perintah compose muncul warning "CRON_SECRET not set" dsb,
+# dan (dengan ErrorActionPreference=Stop) bisa mematikan script di tengah jalan.
+Write-Host "[0/5] Memuat secret produksi (.env.server / .env)..." -ForegroundColor Yellow
+$envSource = ".env.server"
+if (-not (Test-Path $envSource)) { $envSource = ".env" }
+foreach ($name in @("CRON_SECRET", "PORTAL_CREDENTIAL_KEY", "NEXTAUTH_SECRET", "PEXELS_API_KEY", "AUTH_TRUST_HOST", "DATABASE_URL")) {
+    $raw = (Get-Content -Path $envSource -ErrorAction SilentlyContinue | Where-Object { $_ -match "^$name=" }) -join "`n"
+    if ($raw) {
+        $val = $raw.Substring($raw.IndexOf("=") + 1).Trim().Trim('"')
+        [Environment]::SetEnvironmentVariable($name, $val)
+        if ($name -ne "DATABASE_URL") { Write-Host "  - OK $name" -ForegroundColor DarkGray }
+    }
+    # PORTAL_CREDENTIAL_KEY wajib — fail fast tanpa membongkar container
+    elseif ($name -eq "PORTAL_CREDENTIAL_KEY") {
+        Write-Host "ERROR: PORTAL_CREDENTIAL_KEY tidak ada di '$envSource'!" -ForegroundColor Red
+        Write-Host "Isi dulu (lihat .env.server.example), lalu jalankan ulang." -ForegroundColor Yellow
+        exit 1
+    }
+}
+Write-Host "OK - Secret termuat ke proses" -ForegroundColor Green
+
+# 1. Backup DB dulu (aman: kalau update gagal, ada jalur restore).
+#    Non-fatal: kalau backup gagal, bersih disarankan tetap lanjut (warning saja).
 Write-Host "[1/5] Backup database (opsional tapi disarankan)..." -ForegroundColor Yellow
 if (Test-Path ".\backup.ps1") {
-    & .\backup.ps1
+    try {
+        & .\backup.ps1
+    }
+    catch {
+        Write-Host "WARN - Backup gagal: $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host "       Lanjut bersihkan cache (container mungkin belum jalan)." -ForegroundColor Yellow
+    }
 } else {
     Write-Host "SKIP - backup.ps1 tidak ada; update.ps1 akan backup saat dijalankan." -ForegroundColor Yellow
 }
@@ -43,7 +71,7 @@ $targets = @(
 )
 foreach ($t in $targets) {
     if (Test-Path $t) {
-        Remove-Item -Recurse -Force $t -Confirm:$false
+        Remove-Item -Recurse -Force $t -Confirm:$false -ErrorAction SilentlyContinue
         Write-Host "  - hapus: $t" -ForegroundColor DarkGray
     }
 }
