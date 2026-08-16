@@ -291,7 +291,7 @@ export default function AnnouncementsList({ announcements, categories }: Announc
 
                 {/* Ledger */}
                 {filtered.length > 0 ? (
-                    <div className="rounded-card border border-border shadow-1 overflow-hidden">
+                    <div className="rounded-card border border-border bg-surface-1 shadow-lvl-1 overflow-hidden">
                         <Table
                             columns={[
                                 { key: "sel", header: (
@@ -376,7 +376,7 @@ export default function AnnouncementsList({ announcements, categories }: Announc
                         />
                     </div>
                 ) : (
-                    <div className="rounded-card border border-border shadow-1 p-12 text-center">
+                    <div className="rounded-card border border-border bg-surface-1 shadow-lvl-1 p-12 text-center">
                         {announcements.length > 0 ? (
                             <>
                                 <p className="text-text-2 mb-3">Tidak ada pengumuman yang cocok dengan filter.</p>

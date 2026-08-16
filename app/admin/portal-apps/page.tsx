@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CaretLeft, CaretRight, GridFour, LockKey, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, GridFour, LockKey, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
+import Modal from "@/components/ui/Modal";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
 import Table, { type TableColumn } from "@/components/ui/Table";
@@ -460,34 +461,18 @@ export default function PortalAppsPage() {
                 </div>
             )}
 
-            {/* Modal */}
-            {showModal && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={editingApp ? "Edit Aplikasi" : "Tambah Aplikasi"}
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) closeModal();
-                    }}
-                >
-                    <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-sheet border border-border bg-surface-1 p-6 shadow-lvl-3">
-                        <div className="mb-6 flex items-center justify-between">
-                            <h2 className="font-display text-xl font-semibold text-text-1">
-                                {editingApp ? "Edit Aplikasi" : "Tambah Aplikasi"}
-                            </h2>
-                            <button
-                                type="button"
-                                onClick={closeModal}
-                                className="cursor-pointer rounded-control p-1 text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
-                                aria-label="Tutup"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
+            {/* Modal — shell (portal, focus trap, Escape, kunci scroll) dari kit */}
+            <Modal
+                open={showModal}
+                onClose={closeModal}
+                title={editingApp ? "Edit Aplikasi" : "Tambah Aplikasi"}
+                size="lg"
+            >
                         {error && (
-                            <div className="mb-4 rounded-control border border-danger-subtle bg-danger-subtle px-3 py-2 text-sm text-danger">
+                            <div
+                                className="mb-4 rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
+                                role="alert"
+                            >
                                 {error}
                             </div>
                         )}
@@ -644,13 +629,22 @@ export default function PortalAppsPage() {
                                 </div>
                             </div>
 
-                            <Button type="submit" disabled={isSaving} className="w-full">
-                                {isSaving ? "MENYIMPAN..." : "SIMPAN"}
-                            </Button>
+                            {/* Aksi tetap di dalam <form> agar type="submit" bekerja. */}
+                            <div className="flex justify-end gap-3 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={closeModal}
+                                    disabled={isSaving}
+                                >
+                                    Batal
+                                </Button>
+                                <Button type="submit" disabled={isSaving}>
+                                    {isSaving ? "Menyimpan..." : "Simpan"}
+                                </Button>
+                            </div>
                         </form>
-                    </div>
-                </div>
-            )}
+            </Modal>
             <ConfirmDialog />
         </div>
     );

@@ -51,8 +51,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className="dark" suppressHydrationWarning>
+      {/*
+        JANGAN pasang `bg-dark-primary text-light-primary` di sini.
+        Keduanya utilitas hex statis (#0A0A0A / #FFFFFF) dengan spesifisitas
+        kelas, jadi menang atas `body { background-color: var(--surface-0) }` di
+        globals.css. Efeknya tema terang (`html.theme-light`) tidak pernah
+        kelihatan: surface ikut terang tapi body tetap hitam dan teks tetap
+        putih. Warna body sekarang murni dari token.
+      */}
       <body
-        className={`${inter.variable} ${montserrat.variable} ${sora.variable} ${mono.variable} font-sans bg-dark-primary text-light-primary antialiased min-h-screen`}
+        className={`${inter.variable} ${montserrat.variable} ${sora.variable} ${mono.variable} font-sans antialiased min-h-screen`}
         suppressHydrationWarning
       >
         <ToastProvider>

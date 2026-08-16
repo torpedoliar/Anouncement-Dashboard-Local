@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FloppyDisk, UploadSimple, X, InstagramLogo, LinkedinLogo, FacebookLogo, TwitterLogo, YoutubeLogo, Info, Database, ArrowClockwise, ArrowSquareOut, CloudArrowUp } from "@phosphor-icons/react";
+import Button, { buttonClasses } from "@/components/ui/Button";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -205,7 +206,7 @@ function VersionInfoSection() {
                 gap: '12px',
                 marginBottom: '24px',
             }}>
-                <Info size={20} color="#3b82f6" />
+                <Info size={20} color="var(--color-info)" />
                 <h2 style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>
                     INFORMASI VERSI
                 </h2>
@@ -213,104 +214,108 @@ function VersionInfoSection() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px', marginBottom: '24px' }}>
                 <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                    <p style={{ color: '#71717a', fontSize: '12px', marginBottom: '4px' }}>Versi Aplikasi</p>
+                    <p style={{ color: 'var(--text-3)', fontSize: '12px', marginBottom: '4px' }}>Versi Aplikasi</p>
                     <p style={{ color: 'var(--text-primary)', fontSize: '24px', fontWeight: 700 }}>v{versionInfo?.version || "..."}</p>
                 </div>
                 <div style={{ padding: '16px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                    <p style={{ color: '#71717a', fontSize: '12px', marginBottom: '4px' }}>Schema Database</p>
+                    <p style={{ color: 'var(--text-3)', fontSize: '12px', marginBottom: '4px' }}>Schema Database</p>
                     <p style={{ color: 'var(--text-primary)', fontSize: '24px', fontWeight: 700 }}>v{versionInfo?.schemaVersion || "..."}</p>
                 </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
-                <button
+                {/*
+                  Tiga tombol aksi ini dulu memakai latar hex gelap
+                  (#1e40af / #14532d / #7c2d12) dengan color: var(--text-primary).
+                  Di tema terang --text-primary jadi gelap, sehingga teksnya
+                  praktis hilang di atas latar gelap. Sekarang memakai kit Button:
+                  kontras aman di kedua tema dan bentuknya sama dengan tombol lain
+                  di seluruh aplikasi.
+                */}
+                <Button
+                    variant="secondary"
                     onClick={checkForUpdates}
                     disabled={isChecking}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        padding: '12px 20px', backgroundColor: '#1e40af', border: 'none',
-                        color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, cursor: isChecking ? 'not-allowed' : 'pointer',
-                        borderRadius: '6px', opacity: isChecking ? 0.7 : 1,
-                    }}
+                    iconLeft={
+                        <ArrowClockwise
+                            size={14}
+                            className={isChecking ? 'animate-spin' : ''}
+                            aria-hidden="true"
+                        />
+                    }
                 >
-                    <ArrowClockwise size={14} className={isChecking ? 'animate-spin' : ''} />
                     {isChecking ? "Mengecek..." : "Cek Update"}
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="secondary"
                     onClick={handleBackup}
                     disabled={isBackingUp}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        padding: '12px 20px', backgroundColor: '#14532d', border: 'none',
-                        color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, cursor: isBackingUp ? 'not-allowed' : 'pointer',
-                        borderRadius: '6px', opacity: isBackingUp ? 0.7 : 1,
-                    }}
+                    iconLeft={<Database size={14} aria-hidden="true" />}
                 >
-                    <Database size={14} />
-                    {isBackingUp ? "Downloading..." : "Backup Database"}
-                </button>
-                <button
+                    {isBackingUp ? "Mengunduh..." : "Backup Database"}
+                </Button>
+                <Button
+                    variant="danger"
                     onClick={handleRestore}
                     disabled={isRestoring}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        padding: '12px 20px', backgroundColor: '#7c2d12', border: 'none',
-                        color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600, cursor: isRestoring ? 'not-allowed' : 'pointer',
-                        borderRadius: '6px', opacity: isRestoring ? 0.7 : 1,
-                    }}
+                    iconLeft={<CloudArrowUp size={14} aria-hidden="true" />}
                 >
-                    <CloudArrowUp size={14} />
-                    {isRestoring ? "Restoring..." : "Restore Database"}
-                </button>
+                    {isRestoring ? "Memulihkan..." : "Restore Database"}
+                </Button>
                 <a
                     href="https://github.com/torpedoliar/Anouncement-Dashboard-Local"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        padding: '12px 20px', backgroundColor: 'var(--border-color)', border: 'none',
-                        color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, textDecoration: 'none',
-                        borderRadius: '6px',
-                    }}
+                    className={buttonClasses({ variant: "ghost" })}
                 >
-                    <ArrowSquareOut size={14} />
+                    <ArrowSquareOut size={14} aria-hidden="true" />
                     GitHub
+                    <span className="sr-only">(buka tab baru)</span>
                 </a>
             </div>
 
             {checkResult && (
+                // Latar/border hex gelap diganti token *-subtle: tetap menandakan
+                // status (info vs sukses) tapi ikut berganti di tema terang.
                 <div style={{
                     padding: '16px',
-                    backgroundColor: checkResult.hasUpdate ? '#1e3a5f' : '#14532d',
-                    border: `1px solid ${checkResult.hasUpdate ? '#3b82f6' : '#22c55e'}`,
-                    borderRadius: '8px',
+                    backgroundColor: checkResult.hasUpdate
+                        ? 'var(--color-info-subtle)'
+                        : 'var(--color-success-subtle)',
+                    border: `1px solid ${checkResult.hasUpdate ? 'var(--color-info)' : 'var(--color-success)'}`,
+                    borderRadius: 'var(--radius-card)',
                 }}>
                     {checkResult.error ? (
-                        <p style={{ color: '#fbbf24' }}>{checkResult.error}</p>
+                        <p style={{ color: 'var(--color-warning)' }}>{checkResult.error}</p>
                     ) : checkResult.hasUpdate ? (
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                                 <p style={{ color: 'var(--color-info)', fontWeight: 600 }}>
                                     Update tersedia: v{checkResult.latestVersion}
                                 </p>
-                                <button
+                                {/* Dulu: teks var(--text-primary) di atas latar
+                                    var(--color-success). Di tema gelap itu teks
+                                    hampir putih di atas hijau terang (~2:1),
+                                    di bawah ambang WCAG. Kit Button memakai
+                                    pasangan warna yang sudah terjamin. */}
+                                <Button
+                                    size="sm"
                                     onClick={performUpdate}
                                     disabled={isUpdating}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '6px',
-                                        padding: '8px 16px', backgroundColor: isUpdating ? '#166534' : 'var(--color-success)', border: 'none',
-                                        color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600,
-                                        cursor: isUpdating ? 'not-allowed' : 'pointer',
-                                        borderRadius: '4px', opacity: isUpdating ? 0.8 : 1,
-                                    }}
+                                    iconLeft={
+                                        <ArrowClockwise
+                                            size={12}
+                                            className={isUpdating ? 'animate-spin' : ''}
+                                            aria-hidden="true"
+                                        />
+                                    }
                                 >
-                                    <ArrowClockwise size={12} className={isUpdating ? 'animate-spin' : ''} />
-                                    {isUpdating ? "Updating..." : "Update Sekarang"}
-                                </button>
+                                    {isUpdating ? "Memperbarui..." : "Update Sekarang"}
+                                </Button>
                             </div>
-                            <p style={{ color: '#94a3b8', fontSize: '13px' }}>{checkResult.releaseNotes}</p>
+                            <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>{checkResult.releaseNotes}</p>
                             {checkResult.hasSchemaUpdate && (
-                                <p style={{ color: '#fbbf24', fontSize: '12px', marginTop: '8px' }}>
+                                <p style={{ color: 'var(--color-warning)', fontSize: '12px', marginTop: '8px' }}>
                                     ⚠️ Update ini memerlukan migrasi database
                                 </p>
                             )}
@@ -322,7 +327,7 @@ function VersionInfoSection() {
                                             <span style={{
                                                 color: p.status === 'success' ? 'var(--color-success)' :
                                                     p.status === 'error' ? 'var(--color-error)' :
-                                                        p.status === 'warning' ? '#fbbf24' : 'var(--color-info)'
+                                                        p.status === 'warning' ? 'var(--color-warning)' : 'var(--color-info)'
                                             }}>
                                                 {p.status === 'success' ? '✓' : p.status === 'error' ? '✗' : p.status === 'running' ? '⏳' : '⚠'}
                                             </span>
@@ -333,7 +338,7 @@ function VersionInfoSection() {
                             )}
                         </div>
                     ) : (
-                        <p style={{ color: '#4ade80' }}>✓ Aplikasi sudah versi terbaru!</p>
+                        <p style={{ color: 'var(--color-success)' }}>✓ Aplikasi sudah versi terbaru!</p>
                     )}
                 </div>
             )}
@@ -347,7 +352,9 @@ function VersionInfoSection() {
                     top: 0, left: 0, right: 0, bottom: 0,
                     backgroundColor: 'rgba(0,0,0,0.8)',
                     alignItems: 'center', justifyContent: 'center',
-                    zIndex: 9999,
+                    // Sejajar dengan `z-modal` pada skala z-index semantik
+                    // (tailwind.config.ts). Dulu 9999 — di atas toast.
+                    zIndex: 600,
                 }}
                 onClick={(e) => {
                     if (e.target === e.currentTarget) {
@@ -367,7 +374,7 @@ function VersionInfoSection() {
                     <h3 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
                         📦 Cara Update Aplikasi
                     </h3>
-                    <p style={{ color: '#fbbf24', marginBottom: '16px', fontSize: '13px', padding: '10px', backgroundColor: 'rgba(251, 191, 36, 0.1)', borderRadius: '6px' }}>
+                    <p style={{ color: 'var(--color-warning)', marginBottom: '16px', fontSize: '13px', padding: '10px', backgroundColor: 'rgba(251, 191, 36, 0.1)', borderRadius: '6px' }}>
                         ⚠️ Jalankan perintah ini di <strong>PowerShell server</strong> tempat aplikasi diinstall
                     </p>
                     <div style={{
@@ -380,13 +387,13 @@ function VersionInfoSection() {
                         lineHeight: 1.8,
                     }}>
                         <p style={{ color: 'var(--color-success)' }}># 1. Masuk ke folder project</p>
-                        <p style={{ color: '#e5e5e5', marginBottom: '12px' }}>cd &quot;E:\Vibe\Dashboard SJA\announcement-dashboard&quot;</p>
+                        <p style={{ color: 'var(--text-1)', marginBottom: '12px' }}>cd &quot;E:\Vibe\Dashboard SJA\announcement-dashboard&quot;</p>
 
                         <p style={{ color: 'var(--color-success)' }}># 2. Download kode terbaru</p>
-                        <p style={{ color: '#e5e5e5', marginBottom: '12px' }}>git pull origin main</p>
+                        <p style={{ color: 'var(--text-1)', marginBottom: '12px' }}>git pull origin main</p>
 
                         <p style={{ color: 'var(--color-success)' }}># 3. Rebuild dan restart (tunggu 3-5 menit)</p>
-                        <p style={{ color: '#e5e5e5' }}>docker-compose down; docker-compose build --no-cache; docker-compose up -d</p>
+                        <p style={{ color: 'var(--text-1)' }}>docker-compose down; docker-compose build --no-cache; docker-compose up -d</p>
                     </div>
                     <div style={{ marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                         <button
@@ -533,19 +540,23 @@ export default function SettingsPage() {
         );
     }
 
+    // Nilai hex mati (#0a0a0a / #262626 / #fff / #737373) diganti token supaya
+    // form ini ikut tema terang. Dengan hex, input tetap hitam berteks putih di
+    // atas kartu putih — praktis tidak terbaca.
     const inputStyle = {
         width: '100%',
         padding: '12px 16px',
-        backgroundColor: '#0a0a0a',
-        border: '1px solid #262626',
-        color: '#fff',
+        backgroundColor: 'var(--surface-1)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-control)',
+        color: 'var(--text-1)',
         fontSize: '14px',
         boxSizing: 'border-box' as const,
     };
 
     const labelStyle = {
         display: 'block',
-        color: '#737373',
+        color: 'var(--text-2)',
         fontSize: '11px',
         fontWeight: 600 as const,
         letterSpacing: '0.1em',

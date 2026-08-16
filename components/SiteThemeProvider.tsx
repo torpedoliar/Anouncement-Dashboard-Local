@@ -13,6 +13,8 @@ interface SiteTheme {
     primaryColorLight: string;
     primaryColorDark: string;
     primaryColorAlpha: string;
+    /** Kanal RGB dipisah spasi ("237 28 36") untuk utilitas Tailwind beralpha. */
+    primaryColorChannels: string;
     textOnPrimary: string;
 }
 
@@ -34,6 +36,7 @@ export function useSiteTheme() {
                 primaryColorLight: "#FF3B42",
                 primaryColorDark: "#C41920",
                 primaryColorAlpha: "rgba(237, 28, 36, 0.1)",
+                primaryColorChannels: "237 28 36",
                 textOnPrimary: "#FFFFFF",
             },
             siteName: "Site",
@@ -77,6 +80,21 @@ function hexToRgba(hex: string, alpha: number): string {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/**
+ * Kanal RGB dipisah spasi, mis. "237 28 36".
+ *
+ * Dipakai Tailwind lewat `rgb(var(--accent-rgb) / <alpha-value>)` supaya
+ * utilitas beralpha seperti `bg-accent/10` bisa dihitung. Tanpa ini, warna
+ * accent tidak punya bentuk yang bisa disuntik alpha dan setiap `accent/N`
+ * hilang dari CSS.
+ */
+function hexToRgbChannels(hex: string): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r} ${g} ${b}`;
+}
+
 export default function SiteThemeProvider({
     children,
     primaryColor,
@@ -90,6 +108,7 @@ export default function SiteThemeProvider({
             primaryColorLight: adjustBrightness(color, 30),
             primaryColorDark: adjustBrightness(color, -20),
             primaryColorAlpha: hexToRgba(color, 0.1),
+            primaryColorChannels: hexToRgbChannels(color),
             textOnPrimary: getContrastColor(color),
         };
     }, [primaryColor]);
@@ -107,11 +126,22 @@ export default function SiteThemeProvider({
                     --site-primary-light: ${theme.primaryColorLight};
                     --site-primary-dark: ${theme.primaryColorDark};
                     --site-primary-alpha: ${theme.primaryColorAlpha};
+                    --site-primary-rgb: ${theme.primaryColorChannels};
                     --site-text-on-primary: ${theme.textOnPrimary};
                 }
 
-                /* Override accent colors across the site */
-                a:hover {
+                /*
+                  Hover tautan "polos" saja.
+
+                  Aturan ini dulu berupa \`a:hover\` tanpa batas. Spesifisitasnya
+                  (0,1,1) mengalahkan utilitas Tailwind (0,1,0), jadi setiap
+                  \`hover:text-*\` pada tautan di seluruh aplikasi — termasuk item
+                  navigasi admin dan portal — ditimpa jadi merah brand. Dibatasi
+                  ke \`a:not([class])\` supaya hanya tautan mentah (konten artikel
+                  hasil HTML) yang terpengaruh, sementara komponen tetap memakai
+                  state hover-nya sendiri.
+                */
+                a:not([class]):hover {
                     color: var(--site-primary);
                 }
 

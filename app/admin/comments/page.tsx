@@ -86,15 +86,6 @@ const STATUS_META: Record<Comment["status"], { tone: "warning" | "success" | "da
 /* --- Comment actions that update a single comment --- */
 type CommentAction = { type: "approve" } | { type: "reject" } | { type: "spam" } | { type: "delete" };
 
-function actionLabel(a: CommentAction): string {
-    switch (a.type) {
-        case "approve": return "Menyetujui";
-        case "reject": return "Menolak";
-        case "spam": return "Menandai spam";
-        case "delete": return "Menghapus";
-    }
-}
-
 /* --- Page --- */
 export default function CommentsPage() {
     const [comments, setComments] = useState<Comment[]>([]);
@@ -104,8 +95,7 @@ export default function CommentsPage() {
     const [statusFilter, setStatusFilter] = useState<string>("");
     const [pendingComment, setPendingComment] = useState<string | null>(null);
     const [pendingAction, setPendingAction] = useState<CommentAction | null>(null);
-    const [modalAction, setModalAction] = useState<CommentAction | null>(null);
-    const [modalCommentId, setModalCommentId] = useState<string | null>(null);
+
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
 
@@ -178,19 +168,48 @@ export default function CommentsPage() {
         }
     };
 
-    /* --- Modal confirm for moderate actions --- */
-    const showConfirmAction = (action: CommentAction, commentId: string) => {
-        setModalAction(action);
-        setModalCommentId(commentId);
+    /* --- Konfirmasi aksi moderasi ---
+       Dulu halaman ini punya shell modal sendiri (state modalAction/
+       modalCommentId + ~45 baris markup ber-style inline) padahal `useConfirm`
+       sudah dipakai di file yang sama untuk hapus. Satu kosakata konfirmasi
+       untuk semua aksi: portal, focus trap, Escape, kunci scroll ikut gratis. */
+    const MODERATE_COPY: Record<
+        "approve" | "reject" | "spam",
+        { title: string; message: string; confirmLabel: string; status: ActionKey }
+    > = {
+        approve: {
+            title: "Setujui Komentar",
+            message: "Komentar akan tampil di halaman publik. Lanjutkan?",
+            confirmLabel: "Setujui",
+            status: "APPROVED",
+        },
+        reject: {
+            title: "Tolak Komentar",
+            message: "Komentar tidak akan ditampilkan di halaman publik. Lanjutkan?",
+            confirmLabel: "Tolak",
+            status: "REJECTED",
+        },
+        spam: {
+            title: "Tandai Sebagai Spam",
+            message: "Komentar akan ditandai spam dan disembunyikan. Lanjutkan?",
+            confirmLabel: "Tandai Spam",
+            status: "SPAM",
+        },
     };
 
-    const handleModalConfirm = async () => {
-        if (!modalAction || !modalCommentId) return;
-        setModalAction(null);
-        setModalCommentId(null);
-        if (modalAction.type === "approve") await handleModerate(modalCommentId, "APPROVED");
-        else if (modalAction.type === "reject") await handleModerate(modalCommentId, "REJECTED");
-        else if (modalAction.type === "spam") await handleModerate(modalCommentId, "SPAM");
+    const showConfirmAction = async (action: CommentAction, commentId: string) => {
+        if (action.type === "delete") return;
+
+        const copy = MODERATE_COPY[action.type];
+        const confirmed = await confirm({
+            title: copy.title,
+            message: copy.message,
+            confirmLabel: copy.confirmLabel,
+            variant: action.type === "approve" ? "default" : "danger",
+        });
+        if (!confirmed) return;
+
+        await handleModerate(commentId, copy.status);
     };
 
     /* --- Helpers --- */
@@ -428,48 +447,8 @@ export default function CommentsPage() {
                 </div>
             )}
 
-            {/* ConfirmDialog for delete */}
+            {/* Satu host dialog untuk hapus maupun moderasi (lihat useConfirm). */}
             <ConfirmDialog />
-
-            {/* ConfirmDialog for moderate actions */}
-            {modalAction && modalCommentId && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => { setModalAction(null); setModalCommentId(null); }}>
-                    <div
-                        className="rounded-lg p-6 max-w-sm w-full mx-4 border shadow-lg"
-                        style={{ backgroundColor: "var(--bg-surface)" }}
-                        onClick={(e) => e.stopPropagation()}
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label={`Konfirmasi ${actionLabel(modalAction)}`}
-                    >
-                        <p className="mb-4 text-sm" style={{ color: "var(--text-primary)" }}>
-                            {modalAction.type === "approve" && "Apakah Anda yakin ingin menyetujui komentar ini?"}
-                            {modalAction.type === "reject" && "Apakah Anda yakin ingin menolak komentar ini?"}
-                            {modalAction.type === "spam" && "Apakah Anda yakin ingin menandai komentar ini sebagai spam?"}
-                        </p>
-                        <div className="flex justify-end gap-2">
-                            <button
-                                onClick={() => { setModalAction(null); setModalCommentId(null); }}
-                                className="rounded-md px-4 py-2 text-sm font-medium border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                                style={{
-                                    backgroundColor: "var(--bg-tertiary)",
-                                    color: "var(--text-primary)",
-                                    borderColor: "var(--border-strong)",
-                                }}
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleModalConfirm}
-                                className="rounded-md px-4 py-2 text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                                style={{ backgroundColor: "var(--brand-red)" }}
-                            >
-                                Konfirmasi
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

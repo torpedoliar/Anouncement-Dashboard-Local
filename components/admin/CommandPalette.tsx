@@ -156,7 +156,7 @@ export default function CommandPalette() {
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm pt-[18vh]">
+        <div className="fixed inset-0 z-modal flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-[18vh]">
             {/* Backdrop click closes */}
             <div className="absolute inset-0" onClick={() => setOpen(false)} aria-hidden="true" />
 

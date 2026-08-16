@@ -14,6 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
 import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 
 interface LocalMedia {
     id: string;
@@ -204,14 +205,19 @@ export default function MediaPickerModal({
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80" onClick={onClose} role="dialog" aria-modal="true" aria-label="Pilih media">
-            <div
-                className="flex h-[85vh] w-[90%] max-w-[900px] flex-col overflow-hidden rounded-card border border-border bg-surface-1 shadow-2"
-                onClick={(e) => e.stopPropagation()}
-            >
+        // `bare` dipakai supaya tata letak internal picker (bar tab tetap di
+        // atas, grid yang men-scroll sendiri) tidak berubah, sekaligus dapat
+        // perilaku dialog dari kit: portal, focus trap, Escape, kunci scroll —
+        // tiga hal yang dulu tidak ada di overlay ini.
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            title="Pilih Media"
+            bare
+            hideCloseButton
+            panelClassName="flex h-[85vh] w-[90vw] max-w-[900px] flex-col overflow-hidden rounded-sheet border border-border bg-surface-1 shadow-lvl-3"
+        >
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border px-5 py-4">
                     <h2 className="text-lg font-semibold text-text-1 m-0">Pilih Media</h2>
@@ -219,9 +225,9 @@ export default function MediaPickerModal({
                         type="button"
                         onClick={onClose}
                         aria-label="Tutup"
-                        className="rounded p-1 text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
+                        className="cursor-pointer rounded-control p-1.5 text-text-2 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                     >
-                        <X size={20} weight="bold" />
+                        <X size={18} weight="bold" aria-hidden="true" />
                     </button>
                 </div>
 
@@ -508,11 +514,10 @@ export default function MediaPickerModal({
                             onClick={handleSelect}
                             disabled={!selectedMedia || downloading}
                         >
-                            {downloading ? "Downloading..." : "Pilih"}
+                            {downloading ? "Mengunduh..." : "Pilih"}
                         </Button>
                     </div>
                 </div>
-            </div>
-        </div>
+        </Modal>
     );
 }

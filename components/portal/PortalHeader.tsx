@@ -24,7 +24,7 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
     const isActive = (href: string) => pathname === href;
 
     return (
-        <header className="sticky top-0 z-40 border-b border-border bg-surface-1">
+        <header className="sticky top-0 z-sticky border-b border-border bg-surface-1">
             <div className="flex h-14 items-center justify-between px-4 sm:px-6">
                 {/* Logo */}
                 <Link href="/portal" className="font-display font-semibold text-text-1">

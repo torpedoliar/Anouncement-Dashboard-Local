@@ -34,6 +34,34 @@
   /* ---- Accent (default brand red, overridden by --site-primary) ---- */
   --accent: var(--site-primary, var(--brand-red));
 
+  /* ---- Kanal RGB pendamping (WAJIB ada untuk tiap warna semantik) ----
+     Kenapa ada dua bentuk untuk warna yang sama:
+
+       --surface-2      -> "#18181B"   dipakai style inline: var(--surface-2)
+       --surface-2-rgb  -> "24 24 27"  dipakai Tailwind lewat
+                                       rgb(var(--surface-2-rgb) / <alpha-value>)
+
+     Tailwind hanya bisa menyuntikkan alpha (`bg-accent/10`,
+     `hover:bg-surface-2/60`, `border-danger/40`) kalau nilai warnanya memuat
+     placeholder <alpha-value>. Selama config memetakan warna ke string opak
+     `var(--surface-2)`, Tailwind TIDAK bisa menghitung varian alpha dan
+     utilitasnya dibuang tanpa peringatan — 36 kelas seperti itu di kode ini
+     tidak pernah menghasilkan CSS.
+
+     Kalau menambah warna semantik baru, tambahkan pasangan -rgb-nya juga,
+     termasuk di blok html.theme-light kalau nilainya berbeda per tema. */
+  --surface-0-rgb: 9 9 11;
+  --surface-1-rgb: 17 17 19;
+  --surface-2-rgb: 24 24 27;
+  --surface-3-rgb: 39 39 42;
+  --border-rgb: 39 39 42;
+  --text-1-rgb: 250 250 250;
+  --text-2-rgb: 161 161 170;
+  --text-3-rgb: 113 113 122;
+  --brand-red-rgb: 237 28 36;
+  /* Disuntikkan runtime oleh SiteThemeProvider; fallback ke merah brand. */
+  --accent-rgb: var(--site-primary-rgb, var(--brand-red-rgb));
+
   /* ---- Semantics / status ---- */
   --color-success: #22c55e;
   --color-success-subtle: rgba(34, 197, 94, 0.12);
@@ -43,12 +71,25 @@
   --color-danger-subtle: rgba(239, 68, 68, 0.12);
   --color-info: #60a5fa;
   --color-info-subtle: rgba(96, 165, 250, 0.12);
+  /* Kanal pendamping — lihat catatan di blok --*-rgb di atas. */
+  --color-success-rgb: 34 197 94;
+  --color-warning-rgb: 234 179 8;
+  --color-danger-rgb: 239 68 68;
+  --color-info-rgb: 96 165 250;
 
   /* ---- Radius scale (spec §3.1) ---- */
   --radius-control: 6px;
   --radius-card: 8px;
   --radius-sheet: 12px;
   --radius-accent: 2px;
+
+  /* ---- Geometri shell admin ----
+     Satu sumber kebenaran untuk lebar sidebar & tinggi topbar. Offset konten
+     dihitung di CSS (lihat blok "Shell admin" di bawah), BUKAN dari state React,
+     supaya paint pertama sudah benar sebelum hydration. */
+  --admin-sidebar-w: 16rem;   /* 256px — sidebar penuh */
+  --admin-rail-w: 4rem;       /* 64px  — mode rail ikon */
+  --admin-topbar-h: 3.5rem;   /* 56px  — harus sama dengan h-14 di AdminTopbar */
 
   /* ---- Shadows tinted to background hue (no pure-black drop shadows in light) ---- */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -93,6 +134,17 @@ html.theme-light {
   --text-2: #57534E;
   --text-3: #8A857E;
   --accent: var(--site-primary, var(--brand-red));
+
+  /* Kanal pendamping edisi paper — harus ikut dioverride, kalau tidak varian
+     alpha (mis. hover:bg-surface-2/60) tetap memakai nilai gelap. */
+  --surface-0-rgb: 247 246 243;
+  --surface-1-rgb: 255 255 255;
+  --surface-2-rgb: 237 235 230;
+  --surface-3-rgb: 228 225 218;
+  --border-rgb: 224 221 213;
+  --text-1-rgb: 28 25 23;
+  --text-2-rgb: 87 83 78;
+  --text-3-rgb: 138 133 126;
   --shadow-1: 0 1px 2px rgba(28, 25, 23, 0.06);
   --shadow-2: 0 4px 12px -2px rgba(28, 25, 23, 0.08);
   --shadow-3: 0 12px 32px -8px rgba(28, 25, 23, 0.12);
@@ -102,6 +154,110 @@ html.theme-light {
 .text-brand { color: var(--brand-red); }
 .bg-brand { background-color: var(--brand-red); }
 .border-brand { border-color: var(--brand-red); }
+
+/* ==========================================================================
+   Shell admin — geometri sidebar/konten murni CSS
+   --------------------------------------------------------------------------
+   Sebelumnya offset konten dihitung di React (`isDesktop ? "ml-64" : "ml-0"`)
+   dengan `isDesktop` default `true`. Akibatnya:
+     - paint pertama di mobile selalu `ml-64` di layar 375px (konten terdorong
+       keluar viewport) sampai effect resize jalan;
+     - `collapsed` dibaca dari localStorage di inisialisasi state → server
+       render `ml-64`, klien render `ml-16` → hydration mismatch + reflow.
+   Sekarang breakpoint 1024px hidup di CSS, dan React hanya menyetel atribut
+   `data-*`. Script pra-paint di app/admin/layout.tsx menulis
+   `data-admin-sidebar` ke <html> sebelum paint, jadi tidak ada kedip.
+   ========================================================================== */
+
+.admin-shell {
+  min-height: 100vh;
+  background-color: var(--surface-0);
+  /* Mobile: sidebar jadi drawer overlay, konten tidak digeser. */
+  --admin-offset: 0px;
+}
+
+.admin-sidebar {
+  width: var(--admin-sidebar-w);
+  transform: translateX(-100%);
+  /* visibility ikut ditransisikan supaya drawer tertutup benar-benar keluar dari
+     urutan tab & accessibility tree — sebelumnya link off-screen masih bisa
+     difokus keyboard di mobile. */
+  visibility: hidden;
+  transition: transform var(--motion-standard) var(--motion-ease),
+    width var(--motion-standard) var(--motion-ease),
+    visibility var(--motion-standard) var(--motion-ease);
+}
+
+/* Drawer terbuka di mobile */
+.admin-shell[data-admin-drawer="open"] .admin-sidebar {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.admin-main {
+  /* min-width:0 wajib: tanpa ini tabel lebar memaksa flex item melebar dan
+     memunculkan scroll horizontal di seluruh halaman. */
+  min-width: 0;
+  flex: 1 1 auto;
+  margin-left: var(--admin-offset);
+  transition: margin-left var(--motion-standard) var(--motion-ease);
+}
+
+/* Target anchor di dalam shell admin berhenti di bawah topbar sticky, bukan
+   tersembunyi di belakangnya. */
+.admin-main :target {
+  scroll-margin-top: calc(var(--admin-topbar-h) + 1rem);
+}
+
+@media (min-width: 1024px) {
+  .admin-shell {
+    --admin-offset: var(--admin-sidebar-w);
+  }
+
+  /* Mode rail: sidebar menyusut ke lebar ikon, konten ikut menyempit. */
+  html[data-admin-sidebar="rail"] .admin-shell {
+    --admin-offset: var(--admin-rail-w);
+  }
+  html[data-admin-sidebar="rail"] .admin-sidebar {
+    width: var(--admin-rail-w);
+  }
+
+  /* Desktop: sidebar selalu tampil, tidak ada drawer. */
+  .admin-sidebar {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  /* Mode rail menyembunyikan label & memusatkan ikon — dikerjakan CSS supaya
+     paint pertama sudah benar (tidak menunggu state React). */
+  html[data-admin-sidebar="rail"] .admin-rail-hide {
+    display: none;
+  }
+  html[data-admin-sidebar="rail"] .admin-rail-center {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Header sidebar menumpuk vertikal di mode rail. Logo (40px) dan tombol
+     ciutkan tidak muat berdampingan di lebar 64px — berdampingan keduanya
+     butuh ~76px, jadi salah satu akan terpotong. */
+  html[data-admin-sidebar="rail"] .admin-rail-stack {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-sidebar,
+  .admin-main {
+    transition: none;
+  }
+}
 
 /* Base Styles */
 html {
@@ -148,11 +304,11 @@ a {
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: var(--surface-1);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333333;
+  background: var(--surface-3);
   border-radius: 4px;
 }
 
@@ -213,6 +369,12 @@ a {
   animation: slideInLeft 0.6s ease-out forwards;
 }
 
+/* Dipakai toast. Keyframes slideInRight sudah ada di bawah tapi tidak pernah
+   punya kelas pemanggil, jadi toast dulu masuk tanpa animasi. */
+.animate-slide-in-right {
+  animation: slideInRight var(--motion-standard) var(--motion-ease) forwards;
+}
+
 /* Skeleton Loading Animation */
 @keyframes pulse {
 
@@ -249,14 +411,16 @@ a {
 
 /* Prose styles for content */
 .prose-santos {
-  color: #d4d4d4;
+  color: var(--text-2);
+  /* Panjang baris prosa dibatasi 65–75ch supaya nyaman dibaca. */
+  max-width: 72ch;
 }
 
 .prose-santos h1,
 .prose-santos h2,
 .prose-santos h3 {
-  color: #ffffff;
-  font-family: var(--font-montserrat), system-ui, sans-serif;
+  color: var(--text-1);
+  font-family: var(--font-sora), var(--font-montserrat), system-ui, sans-serif;
 }
 
 .prose-santos p {
@@ -266,7 +430,7 @@ a {
 }
 
 .prose-santos a {
-  color: var(--brand-red);
+  color: var(--accent);
 }
 
 .prose-santos a:hover {
@@ -274,7 +438,7 @@ a {
 }
 
 .prose-santos strong {
-  color: #ffffff;
+  color: var(--text-1);
 }
 
 .prose-santos ul,
@@ -287,7 +451,7 @@ a {
 }
 
 .prose-santos li::marker {
-  color: var(--brand-red);
+  color: var(--accent);
 }
 
 /* Line clamp utilities */
@@ -336,10 +500,11 @@ a {
   position: absolute;
   top: -40px;
   left: 0;
-  background: var(--brand-red);
-  color: white;
+  background: var(--accent);
+  color: var(--site-text-on-primary);
   padding: 8px 16px;
-  z-index: 10000;
+  /* Di atas semua lapisan (skala z-index semantik berhenti di 800/tooltip). */
+  z-index: 900;
   transition: top 0.3s;
 }
 
@@ -384,6 +549,6 @@ a {
 }
 /* Category Tab Hover */
 .category-tab:hover {
-  border-color: var(--text-muted) !important;
-  color: #ffffff !important;
+  border-color: var(--text-3) !important;
+  color: var(--text-1) !important;
 }

@@ -1,9 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Monitor, DeviceMobile, Trash, ArrowClockwise, User } from "@phosphor-icons/react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+    ArrowClockwise,
+    CaretLeft,
+    CaretRight,
+    DeviceMobile,
+    Monitor,
+    Trash,
+    User,
+} from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import Table, { type TableColumn } from "@/components/ui/Table";
 
 interface UserSession {
     id: string;
@@ -29,6 +41,14 @@ interface Pagination {
     total: number;
     totalPages: number;
 }
+
+const COLUMNS: TableColumn[] = [
+    { key: "user", header: "Pengguna" },
+    { key: "device", header: "Perangkat", hideBelow: "sm" },
+    { key: "lastActive", header: "Terakhir aktif", hideBelow: "md" },
+    { key: "status", header: "Status" },
+    { key: "actions", header: "Aksi", align: "right" },
+];
 
 export default function SessionsPage() {
     const [sessions, setSessions] = useState<UserSession[]>([]);
@@ -58,12 +78,19 @@ export default function SessionsPage() {
     }, [fetchSessions]);
 
     const handleRevoke = async (sessionId: string) => {
-        if (!(await confirm({ title: "Cabut Sesi", message: "Apakah Anda yakin ingin mencabut sesi ini?", variant: "danger" }))) return;
+        if (
+            !(await confirm({
+                title: "Cabut Sesi",
+                message: "Sesi ini akan langsung berakhir dan pengguna harus masuk lagi. Lanjutkan?",
+                confirmLabel: "Cabut",
+                variant: "danger",
+            }))
+        ) {
+            return;
+        }
 
         try {
-            const response = await fetch(`/api/sessions?id=${sessionId}`, {
-                method: "DELETE",
-            });
+            const response = await fetch(`/api/sessions?id=${sessionId}`, { method: "DELETE" });
 
             if (!response.ok) {
                 const data = await response.json();
@@ -71,204 +98,203 @@ export default function SessionsPage() {
                 return;
             }
 
+            showToast("Sesi berhasil dicabut", "success");
             fetchSessions();
         } catch {
             showToast("Terjadi kesalahan", "error");
         }
     };
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString("id-ID", {
+    const formatDate = (dateString: string) =>
+        new Date(dateString).toLocaleDateString("id-ID", {
             day: "numeric",
             month: "short",
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
         });
-    };
 
     const getDeviceIcon = (userAgent: string | null) => {
-        if (!userAgent) return <Monitor size={16} />;
-        const ua = userAgent.toLowerCase();
-        if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) {
-            return <DeviceMobile size={16} />;
-        }
-        return <Monitor size={16} />;
+        const ua = userAgent?.toLowerCase() ?? "";
+        const isMobile =
+            ua.includes("mobile") || ua.includes("android") || ua.includes("iphone");
+        return isMobile ? (
+            <DeviceMobile size={16} aria-hidden="true" />
+        ) : (
+            <Monitor size={16} aria-hidden="true" />
+        );
     };
 
     const isExpired = (expiresAt: string) => new Date(expiresAt) < new Date();
 
-    if (isLoading) {
-        return (
-            <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
-            </div>
-        );
-    }
+    const counts = useMemo(() => {
+        let active = 0;
+        let inactive = 0;
+        for (const session of sessions) {
+            if (session.isRevoked || isExpired(session.expiresAt)) inactive += 1;
+            else active += 1;
+        }
+        return { active, inactive };
+    }, [sessions]);
+
+    const rows = sessions.map((session) => {
+        const expired = isExpired(session.expiresAt);
+        const revoked = session.isRevoked;
+
+        return [
+            <div key="user" className="flex items-center gap-3">
+                <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-surface-2 text-text-3"
+                    aria-hidden="true"
+                >
+                    <User size={16} />
+                </span>
+                <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-text-1">
+                        {session.user.name}
+                    </span>
+                    <span className="block truncate text-xs text-text-3">
+                        {session.user.email}
+                    </span>
+                </span>
+            </div>,
+            <span key="device" className="flex items-center gap-2 text-text-2">
+                {getDeviceIcon(session.userAgent)}
+                <span className="mono text-[13px]">{session.ipAddress || "Tidak diketahui"}</span>
+            </span>,
+            <span key="lastActive" className="mono text-[13px] text-text-2">
+                {formatDate(session.lastActiveAt)}
+            </span>,
+            revoked ? (
+                <Badge key="status" tone="danger">
+                    Dicabut
+                </Badge>
+            ) : expired ? (
+                <Badge key="status" tone="warning">
+                    Kedaluwarsa
+                </Badge>
+            ) : (
+                <Badge key="status" tone="success">
+                    Aktif
+                </Badge>
+            ),
+            <span key="actions" className="flex justify-end">
+                {!revoked && !expired && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRevoke(session.id)}
+                        className="text-danger hover:bg-danger-subtle hover:text-danger"
+                        aria-label={`Cabut sesi ${session.user.name}`}
+                        title="Cabut sesi"
+                    >
+                        <Trash size={14} aria-hidden="true" />
+                    </Button>
+                )}
+            </span>,
+        ];
+    });
 
     return (
-        <div style={{ padding: "32px" }}>
+        <div className="p-6 md:p-8">
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
-                        SESI
+                    <h1 className="font-display text-2xl font-bold text-text-1">Sesi Pengguna</h1>
+                    <p className="mt-1 text-sm text-text-2">
+                        Pantau dan cabut sesi login admin yang sedang berjalan.
                     </p>
-                    <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "28px", fontWeight: 700, color: "var(--text-primary)" }}>
-                        Sesi Pengguna
-                    </h1>
                 </div>
-                <button
+                <Button
+                    variant="secondary"
                     onClick={() => fetchSessions()}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "12px 24px",
-                        backgroundColor: "var(--bg-tertiary)",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        border: "1px solid var(--border-strong)",
-                        cursor: "pointer",
-                    }}
+                    iconLeft={<ArrowClockwise size={16} aria-hidden="true" />}
                 >
-                    <ArrowClockwise size={16} />
-                    Refresh
-                </button>
+                    Muat ulang
+                </Button>
             </div>
 
             {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>TOTAL SESI</p>
-                    <p style={{ color: "var(--text-primary)", fontSize: "24px", fontWeight: 700 }}>{pagination?.total || 0}</p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>SESI AKTIF</p>
-                    <p style={{ color: "var(--color-success)", fontSize: "24px", fontWeight: 700 }}>
-                        {sessions.filter(s => !s.isRevoked && !isExpired(s.expiresAt)).length}
-                    </p>
-                </div>
-                <div style={{ backgroundColor: "var(--bg-secondary)", border: "1px solid var(--border-color)", padding: "20px" }}>
-                    <p style={{ color: "var(--text-muted)", fontSize: "12px", marginBottom: "8px" }}>DICABUT/EXPIRED</p>
-                    <p style={{ color: "var(--color-error)", fontSize: "24px", fontWeight: 700 }}>
-                        {sessions.filter(s => s.isRevoked || isExpired(s.expiresAt)).length}
-                    </p>
-                </div>
+            <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {[
+                    { label: "Total sesi", value: pagination?.total ?? 0, tone: "text-text-1" },
+                    { label: "Sesi aktif", value: counts.active, tone: "text-success" },
+                    { label: "Dicabut / kedaluwarsa", value: counts.inactive, tone: "text-danger" },
+                ].map((stat) => (
+                    <Card key={stat.label} className="p-5">
+                        <p className="text-xs font-medium text-text-3">{stat.label}</p>
+                        <p className={`mono mt-2 text-2xl font-bold ${stat.tone}`}>
+                            {isLoading ? "—" : stat.value}
+                        </p>
+                    </Card>
+                ))}
             </div>
 
-            {/* Sessions Table */}
-            <div style={{ backgroundColor: "var(--bg-secondary)", border: "2px solid var(--border-strong)", borderRadius: "8px", overflow: "hidden" }}>
-                <table style={{ width: "100%", boxSizing: "border-box", borderCollapse: "collapse" }}>
-                    <thead>
-                        <tr style={{ borderBottom: "2px solid var(--border-strong)", backgroundColor: "var(--bg-card)" }}>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>USER</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>DEVICE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>LAST ACTIVE</th>
-                            <th style={{ padding: "20px", textAlign: "left", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>STATUS</th>
-                            <th style={{ padding: "20px", textAlign: "right", color: "var(--text-secondary)", fontSize: "13px", fontWeight: 700 }}>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sessions.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} style={{ padding: "48px", textAlign: "center", color: "var(--text-tertiary)" }}>
-                                    Tidak ada sesi ditemukan
-                                </td>
-                            </tr>
-                        ) : (
-                            sessions.map((session, index) => (
-                                <tr key={session.id} style={{ borderBottom: index < sessions.length - 1 ? "1px solid var(--border-color)" : "none" }}>
-                                    <td style={{ padding: "20px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                            <div style={{
-                                                width: "36px",
-                                                height: "36px",
-                                                backgroundColor: "var(--bg-tertiary)",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                borderRadius: "8px",
-                                            }}>
-                                                <User size={16} color="#737373" />
-                                            </div>
-                                            <div>
-                                                <p style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>{session.user.name}</p>
-                                                <p style={{ color: "var(--text-muted)", fontSize: "12px" }}>{session.user.email}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: "20px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-secondary)" }}>
-                                            {getDeviceIcon(session.userAgent)}
-                                            <span style={{ fontSize: "13px" }}>
-                                                {session.ipAddress || "Unknown"}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td style={{ padding: "20px", color: "#71717a", fontSize: "13px" }}>
-                                        {formatDate(session.lastActiveAt)}
-                                    </td>
-                                    <td style={{ padding: "20px" }}>
-                                        {session.isRevoked ? (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(239, 68, 68, 0.2)", color: "var(--color-error)", fontSize: "11px", fontWeight: 600 }}>
-                                                REVOKED
-                                            </span>
-                                        ) : isExpired(session.expiresAt) ? (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(251, 191, 36, 0.2)", color: "#fbbf24", fontSize: "11px", fontWeight: 600 }}>
-                                                EXPIRED
-                                            </span>
-                                        ) : (
-                                            <span style={{ padding: "4px 12px", backgroundColor: "rgba(34, 197, 94, 0.2)", color: "var(--color-success)", fontSize: "11px", fontWeight: 600 }}>
-                                                ACTIVE
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: "20px", textAlign: "right" }}>
-                                        {!session.isRevoked && !isExpired(session.expiresAt) && (
-                                            <button
-                                                onClick={() => handleRevoke(session.id)}
-                                                style={{
-                                                    padding: "8px",
-                                                    backgroundColor: "transparent",
-                                                    border: "1px solid var(--border-color)",
-                                                    color: "var(--brand-red)",
-                                                    cursor: "pointer",
-                                                }}
-                                                title="Revoke Session"
-                                            >
-                                                <Trash size={14} />
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {/* Tabel */}
+            <Card className="overflow-hidden">
+                {isLoading ? (
+                    // Skeleton, bukan spinner: tinggi baris dipertahankan supaya
+                    // tabel tidak melompat saat data tiba.
+                    <div className="divide-y divide-border" aria-busy="true" aria-live="polite">
+                        <span className="sr-only">Memuat daftar sesi…</span>
+                        {Array.from({ length: 5 }).map((_, index) => (
+                            <div key={index} className="flex items-center gap-3 px-4 py-3.5">
+                                <span className="h-9 w-9 shrink-0 animate-pulse rounded-control bg-surface-2" />
+                                <span className="h-4 w-40 animate-pulse rounded-control bg-surface-2" />
+                                <span className="ml-auto h-4 w-20 animate-pulse rounded-control bg-surface-2" />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <Table
+                        columns={COLUMNS}
+                        rows={rows}
+                        ariaLabel="Daftar sesi pengguna"
+                        emptyState={
+                            <div className="mx-auto max-w-sm">
+                                <p className="text-sm font-medium text-text-1">Belum ada sesi</p>
+                                <p className="mt-1 text-sm text-text-2">
+                                    Sesi akan muncul di sini setelah ada admin yang masuk.
+                                </p>
+                            </div>
+                        }
+                    />
+                )}
+            </Card>
 
-            {/* Pagination */}
+            {/* Pagination — sebelumnya merender satu tombol per halaman, yang
+                meledak jadi puluhan tombol saat sesi banyak. */}
             {pagination && pagination.totalPages > 1 && (
-                <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
-                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-                        <button
-                            key={p}
-                            onClick={() => setPage(p)}
-                            style={{
-                                padding: "8px 16px",
-                                backgroundColor: p === page ? "var(--brand-red)" : "var(--bg-tertiary)",
-                                color: "var(--text-primary)",
-                                border: "none",
-                                cursor: "pointer",
-                            }}
-                        >
-                            {p}
-                        </button>
-                    ))}
-                </div>
+                <nav
+                    className="mt-6 flex items-center justify-center gap-3"
+                    aria-label="Navigasi halaman"
+                >
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setPage((current) => Math.max(1, current - 1))}
+                        disabled={page <= 1}
+                        iconLeft={<CaretLeft size={14} aria-hidden="true" />}
+                    >
+                        Sebelumnya
+                    </Button>
+                    <span className="mono text-sm text-text-2" aria-current="page">
+                        {page} / {pagination.totalPages}
+                    </span>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                            setPage((current) => Math.min(pagination.totalPages, current + 1))
+                        }
+                        disabled={page >= pagination.totalPages}
+                        iconRight={<CaretRight size={14} aria-hidden="true" />}
+                    >
+                        Berikutnya
+                    </Button>
+                </nav>
             )}
+
             <ConfirmDialog />
         </div>
     );

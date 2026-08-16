@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import type { FormEvent, ReactNode } from "react";
-import { Plus, PencilSimple, Trash, X, ShieldCheck, User as UserIcon, Lightning } from "@phosphor-icons/react";
+import { Plus, PencilSimple, Trash, ShieldCheck, User as UserIcon, Lightning } from "@phosphor-icons/react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import Modal from "@/components/ui/Modal";
 import { useToast } from "@/contexts/ToastContext";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import Badge from "@/components/ui/Badge";
@@ -359,34 +360,18 @@ export default function UsersPage() {
                 </div>
             )}
 
-            {/* Modal */}
-            {showModal && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={editingUser ? "Edit User" : "Tambah User"}
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) setShowModal(false);
-                    }}
-                >
-                    <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-sheet border border-border bg-surface-1 p-6 shadow-lvl-3">
-                        <div className="mb-6 flex items-center justify-between">
-                            <h2 className="font-display text-lg font-semibold text-text-1">
-                                {editingUser ? "Edit User" : "Tambah User"}
-                            </h2>
-                            <button
-                                type="button"
-                                onClick={() => setShowModal(false)}
-                                className="cursor-pointer rounded-control p-1.5 text-text-2 hover:bg-surface-2 hover:text-text-1"
-                                aria-label="Tutup"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
+            {/* Modal — shell (portal, focus trap, Escape, kunci scroll) dari kit */}
+            <Modal
+                open={showModal}
+                onClose={() => setShowModal(false)}
+                title={editingUser ? "Edit Pengguna" : "Tambah Pengguna"}
+                size="sm"
+            >
                         {error && (
-                            <div className="mb-4 rounded-control border border-danger-subtle bg-danger-subtle px-3 py-2 text-sm text-danger">
+                            <div
+                                className="mb-4 rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
+                                role="alert"
+                            >
                                 {error}
                             </div>
                         )}
@@ -462,13 +447,24 @@ export default function UsersPage() {
                                 </div>
                             )}
 
-                            <Button type="submit" disabled={isSaving} className="w-full">
-                                {isSaving ? "MENYIMPAN..." : "SIMPAN"}
-                            </Button>
+                            {/* Aksi ikut di dalam <form> supaya type="submit" tetap
+                                memicu submit; itu sebabnya baris ini tidak memakai
+                                prop `footer` milik Modal. */}
+                            <div className="flex justify-end gap-3 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={() => setShowModal(false)}
+                                    disabled={isSaving}
+                                >
+                                    Batal
+                                </Button>
+                                <Button type="submit" disabled={isSaving}>
+                                    {isSaving ? "Menyimpan..." : "Simpan"}
+                                </Button>
+                            </div>
                         </form>
-                    </div>
-                </div>
-            )}
+            </Modal>
 
             <ConfirmDialog
                 open={!!userToDelete}

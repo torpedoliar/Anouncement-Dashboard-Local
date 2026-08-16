@@ -23,10 +23,15 @@ import {
 } from "@phosphor-icons/react";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import { buttonClasses } from "@/components/ui/Button";
 
-/** Kit Button primary visual applied to <Link> — the kit Button renders a <button>, which cannot nest inside an <a>. */
-const BUTTON_PRIMARY =
-    "inline-flex h-10 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+/**
+ * `Button` merender <button> yang tidak boleh disarangkan dalam <a>/<Link>,
+ * jadi di sini tampilannya diambil sebagai string kelas dari kit — bukan
+ * disalin ulang seperti sebelumnya (salinan manual akan menyimpang begitu
+ * tampilan tombol berubah).
+ */
+const BUTTON_PRIMARY = buttonClasses({ variant: "primary" });
 const ACTION_LINK =
     "inline-flex items-center justify-center gap-1.5 rounded-control px-3 py-2 text-[13px] font-medium transition-colors duration-150";
 const ACTION_LINK_SECONDARY = `${ACTION_LINK} border border-border bg-surface-1 text-text-1 hover:bg-surface-2`;

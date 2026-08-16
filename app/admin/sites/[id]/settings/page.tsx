@@ -131,7 +131,7 @@ export default function SiteSettingsPage() {
             {/* Toast Notification */}
             {message && (
                 <div
-                    className={`fixed right-6 top-6 z-[9999] flex items-center gap-2 rounded-card px-5 py-3 text-sm font-medium text-white shadow-lvl-2 ${
+                    className={`fixed right-6 top-6 z-toast flex items-center gap-2 rounded-card px-5 py-3 text-sm font-medium text-white shadow-lvl-2 ${
                         message.type === 'success' ? 'bg-success' : 'bg-danger'
                     }`}
                     role="status"

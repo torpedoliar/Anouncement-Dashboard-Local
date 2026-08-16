@@ -2,48 +2,60 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./contexts/**/*.{js,ts,jsx,tsx,mdx}",
+    "./hooks/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  // Terang/gelap dikendalikan oleh `html.theme-light` (blok var di globals.css),
+  // bukan varian `dark:`. Jangan tambahkan `darkMode` di sini kecuali memang
+  // mulai memakai `dark:` — saat ini tidak ada satu pun di kode.
   theme: {
     extend: {
       colors: {
-        // Semantic surfaces (spec §3.1) — mapped from CSS vars
+        // Warna semantik dipetakan lewat kanal RGB, BUKAN `var(--surface-1)`
+        // langsung. Alasannya: Tailwind hanya bisa menyuntikkan modifier alpha
+        // (`bg-accent/10`, `hover:bg-surface-2/60`, `border-danger/40`) kalau
+        // nilai warnanya memuat placeholder <alpha-value>. Dengan string opak
+        // seperti "var(--surface-1)", setiap utilitas ber-`/N` dibuang tanpa
+        // peringatan. Pasangan `--*-rgb` didefinisikan di app/globals.css.
         surface: {
-          0: "var(--surface-0)",
-          1: "var(--surface-1)",
-          2: "var(--surface-2)",
-          3: "var(--surface-3)",
+          0: "rgb(var(--surface-0-rgb) / <alpha-value>)",
+          1: "rgb(var(--surface-1-rgb) / <alpha-value>)",
+          2: "rgb(var(--surface-2-rgb) / <alpha-value>)",
+          3: "rgb(var(--surface-3-rgb) / <alpha-value>)",
         },
         text: {
-          1: "var(--text-1)",
-          2: "var(--text-2)",
-          3: "var(--text-3)",
+          1: "rgb(var(--text-1-rgb) / <alpha-value>)",
+          2: "rgb(var(--text-2-rgb) / <alpha-value>)",
+          3: "rgb(var(--text-3-rgb) / <alpha-value>)",
         },
         border: {
-          DEFAULT: "var(--border)",
+          DEFAULT: "rgb(var(--border-rgb) / <alpha-value>)",
+          strong: "rgb(var(--surface-3-rgb) / <alpha-value>)",
         },
-        // Masthead accent — follows --site-primary
+        // Masthead accent — mengikuti --site-primary
         accent: {
-          DEFAULT: "var(--accent)",
+          DEFAULT: "rgb(var(--accent-rgb) / <alpha-value>)",
           subtle: "var(--site-primary-alpha)",
         },
         // Semantic status
         success: {
-          DEFAULT: "var(--color-success)",
+          DEFAULT: "rgb(var(--color-success-rgb) / <alpha-value>)",
           subtle: "var(--color-success-subtle)",
         },
         warning: {
-          DEFAULT: "var(--color-warning)",
+          DEFAULT: "rgb(var(--color-warning-rgb) / <alpha-value>)",
           subtle: "var(--color-warning-subtle)",
         },
         danger: {
-          DEFAULT: "var(--color-danger)",
+          DEFAULT: "rgb(var(--color-danger-rgb) / <alpha-value>)",
           subtle: "var(--color-danger-subtle)",
         },
         info: {
-          DEFAULT: "var(--color-info)",
+          DEFAULT: "rgb(var(--color-info-rgb) / <alpha-value>)",
           subtle: "var(--color-info-subtle)",
         },
         // Keep existing palettes for backward compat until migrated
@@ -80,6 +92,21 @@ const config: Config = {
         "lvl-1": "var(--shadow-1)",
         "lvl-2": "var(--shadow-2)",
         "lvl-3": "var(--shadow-3)",
+      },
+      // Skala z-index semantik. Urutan tumpukan: konten < dropdown < topbar
+      // sticky < scrim drawer < sidebar < tombol drawer < scrim modal < modal
+      // < toast < tooltip. Jangan pakai angka bebas (z-[9999]) lagi — pakai
+      // nama di bawah supaya urutan tumpukan bisa dibaca dari kelasnya.
+      zIndex: {
+        dropdown: "100",
+        sticky: "200",
+        scrim: "290",
+        sidebar: "300",
+        "drawer-toggle": "310",
+        "modal-scrim": "500",
+        modal: "600",
+        toast: "700",
+        tooltip: "800",
       },
       animation: {
         "fade-in": "fadeIn 0.5s ease-out",

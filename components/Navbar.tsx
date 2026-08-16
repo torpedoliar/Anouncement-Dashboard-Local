@@ -61,19 +61,15 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
             {/* Skip to Content Link - Accessibility */}
             <a
                 href="#news"
+                /*
+                  Style inline di sini dulu menduplikasi kelas .skip-link di
+                  globals.css — termasuk handler onFocus/onBlur yang meniru
+                  `.skip-link:focus`. Duplikatnya juga memakai --text-primary
+                  sebagai warna teks di atas merah brand, yang di tema terang
+                  jadi teks gelap di atas merah (kontras buruk). Kelas CSS sudah
+                  memakai --site-text-on-primary, jadi cukup pakai kelasnya.
+                */
                 className="skip-link"
-                style={{
-                    position: 'absolute',
-                    top: '-40px',
-                    left: 0,
-                    backgroundColor: 'var(--brand-red)',
-                    color: 'var(--text-primary)',
-                    padding: '8px 16px',
-                    zIndex: 10000,
-                    transition: 'top 0.3s',
-                }}
-                onFocus={(e) => { e.currentTarget.style.top = '0'; }}
-                onBlur={(e) => { e.currentTarget.style.top = '-40px'; }}
             >
                 Langsung ke Konten
             </a>
@@ -83,8 +79,11 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                     top: 0,
                     left: 0,
                     right: 0,
-                    zIndex: 50,
-                    transition: 'all 0.3s ease',
+                    // Sejajar `z-sticky` pada skala z-index semantik.
+                    zIndex: 200,
+                    // `transition: all` memaksa browser mengawasi setiap properti,
+                    // termasuk properti layout. Dibatasi ke yang benar-benar berubah.
+                    transition: 'background-color 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease',
                     backgroundColor: isScrolled ? 'rgba(0, 0, 0, 0.95)' : 'transparent',
                     borderBottom: isScrolled ? '1px solid var(--border-color)' : 'none',
                     backdropFilter: isScrolled ? 'blur(8px)' : 'none',

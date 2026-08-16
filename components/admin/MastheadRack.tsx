@@ -137,7 +137,7 @@ export default function MastheadRack() {
 
             {isOpen && (
                 <div
-                    className="absolute left-0 right-0 top-full z-[60] mt-2 max-h-72 overflow-y-auto rounded-sheet border border-border bg-surface-1 shadow-lvl-3 p-1"
+                    className="absolute left-0 right-0 top-full z-dropdown mt-2 max-h-72 overflow-y-auto rounded-sheet border border-border bg-surface-1 shadow-lvl-3 p-1"
                     role="listbox"
                     aria-label="Daftar site"
                 >

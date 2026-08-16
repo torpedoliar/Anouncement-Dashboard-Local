@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Download, X, ArrowSquareOut, Info, Database } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
-import Button from "@/components/ui/Button";
+import Button, { buttonClasses } from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 
 interface UpdateInfo {
@@ -165,14 +165,21 @@ export default function UpdateBanner() {
                     {isBackingUp ? "Backing up..." : "Backup Dulu"}
                 </Button>
 
+                {/* Tampilan tombol diambil dari kit; <button> tidak boleh
+                    disarangkan di dalam <a>, jadi ini memakai buttonClasses. */}
                 <a
                     href="https://github.com/torpedoliar/Anouncement-Dashboard-Local"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 h-8 px-3 text-[13px] rounded-control font-medium border border-border bg-surface-1 text-info hover:bg-surface-2 transition-colors duration-150"
+                    className={buttonClasses({
+                        variant: "secondary",
+                        size: "sm",
+                        className: "text-info",
+                    })}
                 >
-                    <ArrowSquareOut size={14} />
+                    <ArrowSquareOut size={14} aria-hidden="true" />
                     Lihat di GitHub
+                    <span className="sr-only">(buka tab baru)</span>
                 </a>
 
                 <button

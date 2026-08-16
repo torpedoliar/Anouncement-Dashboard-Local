@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Bell, CaretDown, SignOut, Gear, Sun, Moon } from "@phosphor-icons/react";
+import { Bell, CaretDown, SignOut, Gear, Sun, Moon, List } from "@phosphor-icons/react";
 import { useSiteTheme } from "@/components/SiteThemeProvider";
 import { findActiveAdminItem } from "@/lib/admin-nav";
 import Dropdown from "@/components/ui/Dropdown";
 
-export default function AdminTopbar() {
+interface AdminTopbarProps {
+    drawerOpen: boolean;
+    onToggleDrawer: () => void;
+}
+
+export default function AdminTopbar({ drawerOpen, onToggleDrawer }: AdminTopbarProps) {
     const [currentTime, setCurrentTime] = useState<Date | null>(null);
     const [adminTheme, setAdminTheme] = useState<"light" | "dark" | null>(null);
     const pathname = usePathname();
@@ -24,27 +29,25 @@ export default function AdminTopbar() {
         return () => clearInterval(timer);
     }, []);
 
-    // Theme toggle - read from localStorage after mount to avoid hydration mismatch
+    // Tema sudah diterapkan script pra-paint di app/admin/layout.tsx; di sini
+    // kita cuma menyalin keadaan DOM ke state supaya ikon & aria-pressed cocok.
+    // Tidak ada penulisan class di mount — itu yang dulu menyebabkan kedip
+    // gelap→terang bagi pengguna yang menyimpan tema terang.
     useEffect(() => {
-        const saved = localStorage.getItem("adminTheme") as "light" | "dark" | null;
-        const theme = saved === "light" ? "light" : "dark";
-        setAdminTheme(theme);
-        if (theme === "light") {
-            document.documentElement.classList.add("theme-light");
-        } else {
-            document.documentElement.classList.remove("theme-light");
-        }
+        setAdminTheme(
+            document.documentElement.classList.contains("theme-light") ? "light" : "dark"
+        );
     }, []);
 
     const handleToggleTheme = () => {
         const next = adminTheme === "light" ? "dark" : "light";
         setAdminTheme(next);
-        localStorage.setItem("adminTheme", next);
-        if (next === "light") {
-            document.documentElement.classList.add("theme-light");
-        } else {
-            document.documentElement.classList.remove("theme-light");
+        try {
+            localStorage.setItem("adminTheme", next);
+        } catch {
+            // Storage diblokir: tema tetap berubah untuk sesi ini.
         }
+        document.documentElement.classList.toggle("theme-light", next === "light");
     };
 
     const active = findActiveAdminItem(pathname, undefined, false);
@@ -66,9 +69,23 @@ export default function AdminTopbar() {
     };
 
     return (
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b border-border bg-surface-0 px-4 md:px-6">
-            {/* Left: breadcrumb / page title */}
+        <header className="sticky top-0 z-sticky flex h-14 items-center justify-between gap-4 border-b border-border bg-surface-0 px-4 md:px-6">
+            {/* Left: tombol menu (mobile) + judul halaman */}
             <div className="flex min-w-0 items-center gap-2">
+                {/* Dulu tombol ini mengapung `fixed` di atas konten dan memaksa
+                    `<main>` ber-padding-top 60px, padahal topbar tingginya 56px —
+                    hasilnya pita kosong 60px di atas topbar. Sekarang ikut di
+                    dalam topbar: satu bar, tanpa selisih, tanpa lapisan z-index
+                    tambahan. */}
+                <button
+                    type="button"
+                    onClick={onToggleDrawer}
+                    className="-ml-1 shrink-0 cursor-pointer rounded-control p-2 text-text-2 hover:bg-surface-2 hover:text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent lg:hidden"
+                    aria-label={drawerOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
+                    aria-expanded={drawerOpen}
+                >
+                    <List size={20} aria-hidden="true" />
+                </button>
                 <span className="truncate text-sm font-medium text-text-1 capitalize">
                     {title}
                 </span>
@@ -87,15 +104,20 @@ export default function AdminTopbar() {
 
             {/* Right: monitor clock + notifications + user menu */}
             <div className="flex items-center gap-2">
-                {currentTime && (
-                    <span className="hidden font-mono tabular-nums text-sm text-text-2 sm:inline">
-                        {currentTime.toLocaleTimeString("id-ID", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            second: "2-digit",
-                        })}
-                    </span>
-                )}
+                {/* Placeholder "--:--:--" dipertahankan agar lebar tidak berubah
+                    saat jam pertama kali muncul (menghindari layout shift). */}
+                <span
+                    className="hidden font-mono tabular-nums text-sm text-text-2 sm:inline"
+                    suppressHydrationWarning
+                >
+                    {currentTime
+                        ? currentTime.toLocaleTimeString("id-ID", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                          })
+                        : "--:--:--"}
+                </span>
 
                 {/* Notifications (bell) — placeholder arrival; real center lands Phase 2 */}
                 <button

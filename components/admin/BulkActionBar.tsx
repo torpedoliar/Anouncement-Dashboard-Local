@@ -59,8 +59,11 @@ export default function BulkActionBar({ selectedCount, onClear, selectedIds }: B
 
     if (selectedCount === 0) return null;
 
+    // Skala shadow di tailwind.config.ts bernama lvl-1/lvl-2/lvl-3. Kelas lama
+    // di sini menunjuk kunci yang tidak ada, jadi bar mengapung ini sebelumnya
+    // tampil tanpa shadow sama sekali.
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap items-center gap-3 px-5 py-3 bg-surface-1 border border-border rounded-card shadow-3 z-50">
+        <div className="fixed bottom-6 left-1/2 z-sticky -translate-x-1/2 flex flex-wrap items-center gap-3 px-5 py-3 bg-surface-1 border border-border rounded-card shadow-lvl-3">
             <span className="text-sm font-medium text-text-1 tabular-nums">
                 {selectedCount} dipilih
             </span>

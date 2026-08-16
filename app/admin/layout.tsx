@@ -1,13 +1,37 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import AdminSidebar from "@/components/admin/AdminSidebar";
 import UpdateBanner from "@/components/admin/UpdateBanner";
-import AdminMainContent from "@/components/admin/AdminMainContent";
+import AdminShell from "@/components/admin/AdminShell";
 
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import AdminSiteThemeProvider from "@/components/admin/AdminSiteThemeProvider";
 import CommandPalette from "@/components/admin/CommandPalette";
+
+/**
+ * Script pra-paint: menyalin preferensi tersimpan ke atribut <html> SEBELUM
+ * browser melakukan paint pertama.
+ *
+ * Kenapa perlu: rail sidebar dan tema terang dulu diterapkan di `useEffect`,
+ * jadi pengguna yang menyimpan "rail" atau "terang" selalu melihat satu frame
+ * tampilan penuh/gelap dulu, lalu melompat. Atribut yang ditulis di sini
+ * langsung dibaca CSS (`html[data-admin-sidebar="rail"]`, `html.theme-light`),
+ * sehingga geometri dan warna sudah benar sejak frame pertama.
+ */
+const PREPAINT_SCRIPT = `
+(function () {
+  try {
+    var root = document.documentElement;
+    root.dataset.adminSidebar =
+      localStorage.getItem('adminSidebarCollapsed') === '1' ? 'rail' : 'full';
+    if (localStorage.getItem('adminTheme') === 'light') {
+      root.classList.add('theme-light');
+    }
+  } catch (e) {
+    document.documentElement.dataset.adminSidebar = 'full';
+  }
+})();
+`;
 
 export default async function AdminLayout({
     children,
@@ -22,25 +46,16 @@ export default async function AdminLayout({
 
     return (
         <NextAuthProvider basePath="/api/auth">
+            <script dangerouslySetInnerHTML={{ __html: PREPAINT_SCRIPT }} />
             <AdminSiteThemeProvider>
-            <div style={{
-                minHeight: '100vh',
-                backgroundColor: 'var(--bg-primary)',
-                display: 'flex',
-            }}>
-                {/* Sidebar */}
-                <AdminSidebar
+                <AdminShell
                     userName={session.user?.name}
                     userEmail={session.user?.email}
                     isSuperAdmin={session.user?.isSuperAdmin}
-                />
-
-                {/* Main Content - Uses client component for responsive margin */}
-                <AdminMainContent>
+                >
                     <UpdateBanner />
                     {children}
-                </AdminMainContent>
-            </div>
+                </AdminShell>
             </AdminSiteThemeProvider>
             <CommandPalette />
         </NextAuthProvider>

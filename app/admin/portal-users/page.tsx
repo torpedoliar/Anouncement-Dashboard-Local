@@ -25,6 +25,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Card from "@/components/ui/Card";
+import Modal from "@/components/ui/Modal";
 
 interface PortalApp {
     id: string;
@@ -679,34 +680,18 @@ export default function PortalUsersPage() {
                 </div>
             )}
 
-            {/* Create/Edit Modal */}
-            {showModal && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={editingUser ? "Edit Pengguna" : "Tambah Pengguna"}
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) closeModal();
-                    }}
-                >
-                    <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-sheet border border-border bg-surface-1 p-6 shadow-lvl-3">
-                        <div className="mb-6 flex items-center justify-between">
-                            <h2 className="font-display text-xl font-semibold text-text-1">
-                                {editingUser ? "Edit Pengguna" : "Tambah Pengguna"}
-                            </h2>
-                            <button
-                                type="button"
-                                onClick={closeModal}
-                                className="cursor-pointer rounded-control p-1 text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
-                                aria-label="Tutup"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
+            {/* Create/Edit Modal — shell dari kit (portal, focus trap, Escape, kunci scroll) */}
+            <Modal
+                open={showModal}
+                onClose={closeModal}
+                title={editingUser ? "Edit Pengguna" : "Tambah Pengguna"}
+                size="md"
+            >
                         {error && (
-                            <div className="mb-4 rounded-control border border-danger-subtle bg-danger-subtle px-3 py-2 text-sm text-danger">
+                            <div
+                                className="mb-4 rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
+                                role="alert"
+                            >
                                 {error}
                             </div>
                         )}
@@ -806,58 +791,64 @@ export default function PortalUsersPage() {
                                 </div>
                             </div>
 
-                            <Button type="submit" disabled={isSaving} className="w-full">
-                                {isSaving ? "MENYIMPAN..." : "SIMPAN"}
-                            </Button>
+                            {/* Aksi tetap di dalam <form> agar type="submit" bekerja. */}
+                            <div className="flex justify-end gap-3 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={closeModal}
+                                    disabled={isSaving}
+                                >
+                                    Batal
+                                </Button>
+                                <Button type="submit" disabled={isSaving}>
+                                    {isSaving ? "Menyimpan..." : "Simpan"}
+                                </Button>
+                            </div>
                         </form>
-                    </div>
-                </div>
-            )}
+            </Modal>
 
             {/* Reset Password Modal */}
-            {showResetModal && resetTarget && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Reset Password"
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) { setShowResetModal(false); setResetTarget(null); }
-                    }}
-                >
-                    <div className="w-full max-w-md rounded-sheet border border-border bg-surface-1 p-6 shadow-lvl-3">
-                        <div className="mb-6 flex items-center justify-between">
-                            <h2 className="font-display text-xl font-semibold text-text-1">Reset Password</h2>
-                            <button
-                                type="button"
-                                onClick={() => { setShowResetModal(false); setResetTarget(null); }}
-                                className="cursor-pointer rounded-control p-1 text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1"
-                                aria-label="Tutup"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <p className="mb-4 text-sm text-text-2">
-                            Reset password untuk <strong className="text-text-1">{resetTarget.name}</strong> ({resetTarget.nik})
-                        </p>
-
-                        <div className="mb-6">
-                            <Input
-                                label="PASSWORD BARU"
-                                type="password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Masukkan password baru"
-                            />
-                        </div>
-
-                        <Button type="button" variant="primary" disabled={isResetting || !newPassword} className="w-full" onClick={handleResetPassword}>
-                            {isResetting ? "MERESET..." : "RESET PASSWORD"}
+            <Modal
+                open={showResetModal && !!resetTarget}
+                onClose={() => { setShowResetModal(false); setResetTarget(null); }}
+                title="Reset Password"
+                description={
+                    resetTarget
+                        ? `Untuk ${resetTarget.name} (${resetTarget.nik})`
+                        : undefined
+                }
+                size="sm"
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => { setShowResetModal(false); setResetTarget(null); }}
+                            disabled={isResetting}
+                        >
+                            Batal
                         </Button>
-                    </div>
-                </div>
-            )}
+                        <Button
+                            type="button"
+                            variant="primary"
+                            disabled={isResetting || !newPassword}
+                            onClick={handleResetPassword}
+                        >
+                            {isResetting ? "Mereset..." : "Reset Password"}
+                        </Button>
+                    </>
+                }
+            >
+                <Input
+                    label="Password baru"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Masukkan password baru"
+                    autoComplete="new-password"
+                />
+            </Modal>
             <ConfirmDialog />
         </div>
     );

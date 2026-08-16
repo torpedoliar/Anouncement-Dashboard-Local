@@ -10,8 +10,8 @@ import {
     Image as ImageIcon,
     VideoCamera,
     Eye,
-    X,
 } from "@phosphor-icons/react";
+import Modal from "@/components/ui/Modal";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
 import { formatDistanceToNow } from "date-fns";
@@ -307,30 +307,19 @@ export default function MediaGalleryPage() {
                 </div>
             )}
 
-            {/* Preview Modal */}
-            {previewItem && (
-                <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-6"
-                    onClick={() => setPreviewItem(null)}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={`Preview ${previewItem.filename}`}
-                >
-                    {/* Close button */}
-                    <button
-                        type="button"
-                        onClick={() => setPreviewItem(null)}
-                        aria-label="Tutup preview"
-                        className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-accent"
-                    >
-                        <X size={24} weight="bold" />
-                    </button>
-
-                    {/* Media content */}
-                    <div
-                        className="flex max-h-[85vh] w-full max-w-[90vw] flex-col items-center"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+            {/* Lightbox preview — `bare` memakai perilaku dialog dari kit
+                (portal, focus trap, Escape, kunci scroll) tanpa chrome panel.
+                Sebelumnya overlay ini tidak bisa ditutup dengan Escape, tidak
+                menahan fokus, dan halaman di belakangnya masih bisa di-scroll. */}
+            <Modal
+                open={!!previewItem}
+                onClose={() => setPreviewItem(null)}
+                title={previewItem ? `Pratinjau ${previewItem.filename}` : "Pratinjau media"}
+                bare
+                panelClassName="w-full max-w-[90vw]"
+            >
+                {previewItem && (
+                    <div className="flex max-h-[85vh] w-full flex-col items-center">
                         {isVideo(previewItem.mimeType) ? (
                             <video
                                 src={previewItem.url}
@@ -348,27 +337,30 @@ export default function MediaGalleryPage() {
                             />
                         )}
 
-                        {/* Info bar */}
-                        <div className="mt-4 flex w-full max-w-[90vw] flex-wrap items-center gap-4 rounded-card border border-white/10 bg-white/10 px-5 py-3">
-                            <span className="text-sm font-medium text-white">
+                        {/* Info bar. Latar lightbox selalu gelap terlepas dari
+                            tema, jadi teks di sini memang putih — bukan token
+                            text-*, yang akan jadi gelap di tema terang dan
+                            hilang di atas hitam. */}
+                        <div className="mt-4 flex w-full flex-wrap items-center gap-4 rounded-card border border-white/15 bg-white/10 px-5 py-3">
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">
                                 {previewItem.filename}
                             </span>
-                            <span className="text-sm text-text-2">
+                            <span className="mono text-sm text-white/70">
                                 {formatFileSize(previewItem.size)}
                             </span>
                             <button
                                 type="button"
                                 onClick={() => copyUrl(previewItem.url, previewItem.id)}
                                 aria-label="Salin URL media"
-                                className="inline-flex items-center gap-2 rounded-control bg-accent px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                                className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-control bg-accent px-4 py-2 text-xs font-semibold text-white transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                             >
-                                <Copy size={12} weight="bold" />
-                                Copy URL
+                                <Copy size={12} weight="bold" aria-hidden="true" />
+                                Salin URL
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Modal>
             <ConfirmDialog />
         </div>
     );

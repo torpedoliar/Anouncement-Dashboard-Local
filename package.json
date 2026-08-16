@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "audit:tokens": "node scripts/audit-design-tokens.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "npx tsx prisma/seed.ts"
@@ -14,7 +15,6 @@
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/client": "^5.22.0",
-    "@tailwindcss/postcss": "^4.1.18",
     "@tiptap/extension-bubble-menu": "^3.14.0",
     "@tiptap/extension-image": "^3.14.0",
     "@tiptap/extension-link": "^3.14.0",
@@ -39,7 +39,9 @@
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^10.0.0",
     "recharts": "^3.6.0",
+    "postcss": "^8.5.6",
     "sharp": "^0.34.5",
+    "tailwindcss": "^3.4.19",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -52,9 +54,7 @@
     "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
-    "postcss": "^8",
     "prisma": "^5.22.0",
-    "tailwindcss": "^3.4.1",
     "tsx": "^4.19.4",
     "typescript": "^5"
   }

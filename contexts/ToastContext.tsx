@@ -1,6 +1,21 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+    ReactNode,
+} from "react";
+import {
+    CheckCircle,
+    Info,
+    Warning,
+    WarningCircle,
+    X,
+} from "@phosphor-icons/react";
 
 type ToastType = "success" | "error" | "warning" | "info";
 
@@ -24,40 +39,65 @@ const ToastContext = createContext<ToastContextType>({
 
 export const useToast = () => useContext(ToastContext);
 
+const AUTO_DISMISS_MS = 5000;
+
 export function ToastProvider({ children }: { children: ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
-
-    const showToast = useCallback((message: string, type: ToastType = "info") => {
-        const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const newToast: Toast = { id, message, type };
-
-        setToasts((prev) => [...prev, newToast]);
-
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            setToasts((prev) => prev.filter((t) => t.id !== id));
-        }, 5000);
-    }, []);
+    const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
     const hideToast = useCallback((id: string) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
+        const timer = timers.current.get(id);
+        if (timer) {
+            clearTimeout(timer);
+            timers.current.delete(id);
+        }
+        setToasts((previous) => previous.filter((toast) => toast.id !== id));
+    }, []);
+
+    const showToast = useCallback(
+        (message: string, type: ToastType = "info") => {
+            const id =
+                typeof crypto !== "undefined" && "randomUUID" in crypto
+                    ? crypto.randomUUID()
+                    : `toast-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+
+            setToasts((previous) => [...previous, { id, message, type }]);
+
+            const timer = setTimeout(() => {
+                timers.current.delete(id);
+                setToasts((previous) => previous.filter((toast) => toast.id !== id));
+            }, AUTO_DISMISS_MS);
+            timers.current.set(id, timer);
+        },
+        []
+    );
+
+    // Bersihkan timer yang menggantung saat provider di-unmount.
+    useEffect(() => {
+        const pending = timers.current;
+        return () => {
+            pending.forEach((timer) => clearTimeout(timer));
+            pending.clear();
+        };
     }, []);
 
     return (
         <ToastContext.Provider value={{ toasts, showToast, hideToast }}>
             {children}
-            {/* Toast Container */}
+            {/*
+              Live region dipasang di kontainer, bukan di tiap toast. Screen
+              reader hanya mengumumkan perubahan pada region yang SUDAH ada di
+              DOM; sebelumnya `aria-live` menempel pada elemen toast yang baru
+              disisipkan, sehingga pesan sering tidak terbaca sama sekali.
+
+              pointer-events-none di kontainer supaya area kosong di sekitar
+              toast tidak memblokir klik pada konten di bawahnya.
+            */}
             <div
-                style={{
-                    position: "fixed",
-                    bottom: "24px",
-                    right: "24px",
-                    zIndex: 9999,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                    maxWidth: "400px",
-                }}
+                className="pointer-events-none fixed bottom-6 right-6 z-toast flex w-[min(400px,calc(100vw-3rem))] flex-col gap-3"
+                role="status"
+                aria-live="polite"
+                aria-atomic="false"
             >
                 {toasts.map((toast) => (
                     <ToastItem key={toast.id} toast={toast} onClose={() => hideToast(toast.id)} />
@@ -67,70 +107,53 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     );
 }
 
+const TONE: Record<ToastType, { border: string; icon: string; Icon: typeof Info; label: string }> = {
+    success: {
+        border: "border-success/40",
+        icon: "text-success",
+        Icon: CheckCircle,
+        label: "Berhasil",
+    },
+    error: {
+        border: "border-danger/40",
+        icon: "text-danger",
+        Icon: WarningCircle,
+        label: "Gagal",
+    },
+    warning: {
+        border: "border-warning/40",
+        icon: "text-warning",
+        Icon: Warning,
+        label: "Peringatan",
+    },
+    info: {
+        border: "border-info/40",
+        icon: "text-info",
+        Icon: Info,
+        label: "Informasi",
+    },
+};
+
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
-    const bgColors: Record<ToastType, string> = {
-        success: "#14532d",
-        error: "#7f1d1d",
-        warning: "#78350f",
-        info: "#1e3a5f",
-    };
-
-    const borderColors: Record<ToastType, string> = {
-        success: "#22c55e",
-        error: "#ef4444",
-        warning: "#f59e0b",
-        info: "#3b82f6",
-    };
-
-    const icons: Record<ToastType, string> = {
-        success: "✓",
-        error: "✕",
-        warning: "⚠",
-        info: "ℹ",
-    };
+    const tone = TONE[toast.type];
+    const { Icon } = tone;
 
     return (
         <div
-            style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "12px",
-                padding: "16px",
-                backgroundColor: bgColors[toast.type],
-                border: `1px solid ${borderColors[toast.type]}`,
-                borderRadius: "8px",
-                boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
-                animation: "slideInRight 0.3s ease-out",
-            }}
-            role="alert"
-            aria-live="polite"
+            className={`animate-slide-in-right pointer-events-auto flex items-start gap-3 rounded-card border bg-surface-1 p-4 shadow-lvl-3 ${tone.border}`}
         >
-            <span
-                style={{
-                    fontSize: "16px",
-                    color: borderColors[toast.type],
-                    fontWeight: "bold",
-                }}
-            >
-                {icons[toast.type]}
-            </span>
-            <p style={{ flex: 1, color: "#fff", fontSize: "14px", margin: 0 }}>
+            <Icon size={18} className={`mt-px shrink-0 ${tone.icon}`} aria-hidden="true" />
+            <p className="m-0 min-w-0 flex-1 text-sm text-text-1">
+                <span className="sr-only">{tone.label}: </span>
                 {toast.message}
             </p>
             <button
+                type="button"
                 onClick={onClose}
-                style={{
-                    background: "none",
-                    border: "none",
-                    color: "#a3a3a3",
-                    cursor: "pointer",
-                    fontSize: "18px",
-                    padding: "0",
-                    lineHeight: 1,
-                }}
+                className="-m-1 shrink-0 cursor-pointer rounded-control p-1 text-text-3 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 aria-label="Tutup notifikasi"
             >
-                ×
+                <X size={14} aria-hidden="true" />
             </button>
         </div>
     );

@@ -11,12 +11,14 @@ import Link from "next/link";
 import { ArrowLeft, FloppyDisk, Trash, Users, Check, X } from "@phosphor-icons/react";
 import { use } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
-import Button from "@/components/ui/Button";
+import Button, { buttonClasses } from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 
-/** Kit Button visual applied to <Link> — the kit Button renders a <button>, which cannot nest inside an <a>. */
-const ACTION_LINK_SECONDARY =
-    "inline-flex items-center justify-center gap-2 rounded-control border border-border bg-surface-1 px-4 py-2.5 text-[13px] font-medium text-text-1 transition-colors duration-150 hover:bg-surface-2";
+/**
+ * `Button` merender <button> yang tidak boleh disarangkan dalam <a>/<Link>,
+ * jadi tampilannya diambil sebagai string kelas dari kit alih-alih disalin.
+ */
+const ACTION_LINK_SECONDARY = buttonClasses({ variant: "secondary" });
 
 interface Site {
     id: string;
