@@ -2,6 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getAccessibleSites } from "@/lib/site-access";
+
+/**
+ * Site gate for draft handlers — same check as sibling
+ * /api/announcements/[id]/route.ts (GET/DELETE): the user must have
+ * access to at least one of the announcement's sites.
+ */
+async function findAccessibleAnnouncement(id: string, userId: string) {
+    const announcement = await prisma.announcement.findUnique({
+        where: { id },
+        include: { sites: { select: { siteId: true } } },
+    });
+    if (!announcement) {
+        return { announcement: null, hasAccess: false };
+    }
+    const accessibleIds = (await getAccessibleSites(userId)).map((s) => s.id);
+    return {
+        announcement,
+        hasAccess: announcement.sites.some((s) => accessibleIds.includes(s.siteId)),
+    };
+}
 
 // POST /api/announcements/[id]/draft - Save draft
 export async function POST(
@@ -15,6 +36,19 @@ export async function POST(
         }
 
         const { id } = await params;
+
+        const sessionUserId = (session.user as { id: string }).id;
+        const gate = await findAccessibleAnnouncement(id, sessionUserId);
+        if (!gate.announcement) {
+            return NextResponse.json({ error: "Not found" }, { status: 404 });
+        }
+        if (!gate.hasAccess) {
+            return NextResponse.json(
+                { error: "No access to this announcement" },
+                { status: 403 }
+            );
+        }
+
         const { draftContent } = await request.json();
 
         if (!draftContent) {
@@ -59,15 +93,27 @@ export async function GET(
         const announcement = await prisma.announcement.findUnique({
             where: { id },
             select: {
+                id: true,
                 draftContent: true,
                 draftUpdatedAt: true,
                 content: true,
                 updatedAt: true,
+                sites: { select: { siteId: true } },
             },
         });
 
         if (!announcement) {
             return NextResponse.json({ error: "Announcement not found" }, { status: 404 });
+        }
+
+        const sessionUserId = (session.user as { id: string }).id;
+        const accessibleIds = (await getAccessibleSites(sessionUserId)).map((s) => s.id);
+        const hasAccess = announcement.sites.some((s) => accessibleIds.includes(s.siteId));
+        if (!hasAccess) {
+            return NextResponse.json(
+                { error: "No access to this announcement" },
+                { status: 403 }
+            );
         }
 
         return NextResponse.json({
@@ -95,6 +141,18 @@ export async function DELETE(
         }
 
         const { id } = await params;
+
+        const sessionUserId = (session.user as { id: string }).id;
+        const { announcement, hasAccess } = await findAccessibleAnnouncement(id, sessionUserId);
+        if (!announcement) {
+            return NextResponse.json({ error: "Announcement not found" }, { status: 404 });
+        }
+        if (!hasAccess) {
+            return NextResponse.json(
+                { error: "No access to this announcement" },
+                { status: 403 }
+            );
+        }
 
         await prisma.announcement.update({
             where: { id },

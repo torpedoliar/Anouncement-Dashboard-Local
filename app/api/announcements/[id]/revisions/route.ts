@@ -6,8 +6,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import { getAccessibleSites } from "@/lib/site-access";
 import { getRevisionHistory, restoreRevision } from "@/lib/revision";
 import { validatePagination } from "@/lib/pagination-utils";
+
+/**
+ * Site gate — same check as sibling /api/announcements/[id]/route.ts:
+ * the user must have access to at least one of the announcement's sites
+ * before reading its revision snapshots or restoring them.
+ */
+async function findAccessibleAnnouncement(id: string, userId: string) {
+    const announcement = await prisma.announcement.findUnique({
+        where: { id },
+        include: { sites: { select: { siteId: true } } },
+    });
+    if (!announcement) {
+        return { announcement: null, hasAccess: false };
+    }
+    const accessibleIds = (await getAccessibleSites(userId)).map((s) => s.id);
+    return {
+        announcement,
+        hasAccess: announcement.sites.some((s) => accessibleIds.includes(s.siteId)),
+    };
+}
 
 // GET /api/announcements/[id]/revisions - Get revision history
 export async function GET(
@@ -22,6 +44,19 @@ export async function GET(
 
         const { id } = await params;
         const url = new URL(request.url);
+
+        // Per-site gate before exposing revision snapshots
+        const sessionUserId = (session.user as { id: string }).id;
+        const { announcement, hasAccess } = await findAccessibleAnnouncement(id, sessionUserId);
+        if (!announcement) {
+            return NextResponse.json({ error: "Not found" }, { status: 404 });
+        }
+        if (!hasAccess) {
+            return NextResponse.json(
+                { error: "No access to this announcement" },
+                { status: 403 }
+            );
+        }
 
         // Apply pagination limits
         const pageParam = url.searchParams.get("page");
@@ -75,6 +110,28 @@ export async function POST(
         }
 
         const userId = (session.user as { id: string }).id;
+
+        // The revision must belong to THIS announcement...
+        const revision = await prisma.announcementRevision.findUnique({
+            where: { id: revisionId },
+            select: { announcementId: true },
+        });
+        if (!revision || revision.announcementId !== id) {
+            return NextResponse.json({ error: "Revision not found" }, { status: 404 });
+        }
+
+        // ...and the user must have access to the announcement before restoring
+        const { announcement, hasAccess } = await findAccessibleAnnouncement(revision.announcementId, userId);
+        if (!announcement) {
+            return NextResponse.json({ error: "Announcement not found" }, { status: 404 });
+        }
+        if (!hasAccess) {
+            return NextResponse.json(
+                { error: "No access to this announcement" },
+                { status: 403 }
+            );
+        }
+
         const restored = await restoreRevision(revisionId, userId);
 
         return NextResponse.json({

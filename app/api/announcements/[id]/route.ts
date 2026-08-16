@@ -5,6 +5,11 @@ import { authOptions } from "@/lib/auth";
 import { slugify, generateExcerpt } from "@/lib/utils";
 import { createRevision } from "@/lib/revision";
 import { canEditOnSite } from "@/lib/site-access";
+import {
+    AnnouncementUpdateSchema,
+    validateInput,
+    formatZodErrors,
+} from "@/lib/validation-schemas";
 import { maybeSendNewArticleEmails } from "@/lib/email";
 import { logAudit } from "@/lib/audit";
 
@@ -71,7 +76,17 @@ export async function PUT(
 
         const { id } = await params;
         const body = await request.json();
-        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, allowComments, scheduledAt, takedownAt, siteIds, primarySiteId, sites } = body;
+
+        // Zod validation with XSS sanitization (mirror POST)
+        const validation = validateInput(AnnouncementUpdateSchema, body);
+        if (!validation.success) {
+            return NextResponse.json(
+                { error: "Validation failed", details: formatZodErrors(validation.errors) },
+                { status: 400 }
+            );
+        }
+
+        const { title, content, categoryId, imagePath, videoPath, videoType, youtubeUrl, isHero, isPinned, isPublished, allowComments, scheduledAt, takedownAt, siteIds, primarySiteId, sites } = validation.data;
 
         const existingAnnouncement = await prisma.announcement.findUnique({ where: { id } });
         if (!existingAnnouncement) {
@@ -84,7 +99,7 @@ export async function PUT(
         // Prefer new `sites[]`; fall back to legacy siteIds + global flags.
         let siteAssocs: { siteId: string; isPrimary: boolean; isHero: boolean; isPinned: boolean }[] | null = null;
         if (Array.isArray(sites) && sites.length > 0) {
-            siteAssocs = sites.map((s: { siteId: string; isPrimary?: boolean; isHero?: boolean; isPinned?: boolean }) => ({
+            siteAssocs = sites.map((s) => ({
                 siteId: s.siteId,
                 isPrimary: !!s.isPrimary,
                 isHero: !!s.isHero,
@@ -203,7 +218,7 @@ export async function PUT(
                 entityType: "ANNOUNCEMENT",
                 entityId: id,
                 userId: (session.user as { id: string }).id,
-                changes: JSON.stringify(body),
+                changes: JSON.stringify(validation.data),
             },
         });
 
@@ -215,7 +230,7 @@ export async function PUT(
             action: "UPDATE",
             entityType: "ANNOUNCEMENT",
             entityId: id,
-            changes: body,
+            changes: validation.data,
             request,
         });
 
