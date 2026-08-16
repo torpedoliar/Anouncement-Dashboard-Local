@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiSave, FiUpload, FiX, FiInstagram, FiLinkedin, FiFacebook, FiTwitter, FiYoutube, FiInfo, FiDatabase, FiRefreshCw, FiExternalLink, FiUploadCloud } from "react-icons/fi";
+import { FloppyDisk, UploadSimple, X, InstagramLogo, LinkedinLogo, FacebookLogo, TwitterLogo, YoutubeLogo, Info, Database, ArrowClockwise, ArrowSquareOut, CloudArrowUp } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -205,7 +205,7 @@ function VersionInfoSection() {
                 gap: '12px',
                 marginBottom: '24px',
             }}>
-                <FiInfo size={20} color="#3b82f6" />
+                <Info size={20} color="#3b82f6" />
                 <h2 style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>
                     INFORMASI VERSI
                 </h2>
@@ -233,7 +233,7 @@ function VersionInfoSection() {
                         borderRadius: '6px', opacity: isChecking ? 0.7 : 1,
                     }}
                 >
-                    <FiRefreshCw size={14} className={isChecking ? 'animate-spin' : ''} />
+                    <ArrowClockwise size={14} className={isChecking ? 'animate-spin' : ''} />
                     {isChecking ? "Mengecek..." : "Cek Update"}
                 </button>
                 <button
@@ -246,7 +246,7 @@ function VersionInfoSection() {
                         borderRadius: '6px', opacity: isBackingUp ? 0.7 : 1,
                     }}
                 >
-                    <FiDatabase size={14} />
+                    <Database size={14} />
                     {isBackingUp ? "Downloading..." : "Backup Database"}
                 </button>
                 <button
@@ -259,7 +259,7 @@ function VersionInfoSection() {
                         borderRadius: '6px', opacity: isRestoring ? 0.7 : 1,
                     }}
                 >
-                    <FiUploadCloud size={14} />
+                    <CloudArrowUp size={14} />
                     {isRestoring ? "Restoring..." : "Restore Database"}
                 </button>
                 <a
@@ -273,7 +273,7 @@ function VersionInfoSection() {
                         borderRadius: '6px',
                     }}
                 >
-                    <FiExternalLink size={14} />
+                    <ArrowSquareOut size={14} />
                     GitHub
                 </a>
             </div>
@@ -304,7 +304,7 @@ function VersionInfoSection() {
                                         borderRadius: '4px', opacity: isUpdating ? 0.8 : 1,
                                     }}
                                 >
-                                    <FiRefreshCw size={12} className={isUpdating ? 'animate-spin' : ''} />
+                                    <ArrowClockwise size={12} className={isUpdating ? 'animate-spin' : ''} />
                                     {isUpdating ? "Updating..." : "Update Sekarang"}
                                 </button>
                             </div>
@@ -599,7 +599,7 @@ export default function SettingsPage() {
                         opacity: isSaving ? 0.5 : 1,
                     }}
                 >
-                    <FiSave size={14} />
+                    <FloppyDisk size={14} />
                     {isSaving ? "MENYIMPAN..." : "SIMPAN"}
                 </button>
             </div>
@@ -708,7 +708,7 @@ export default function SettingsPage() {
                                             cursor: 'pointer',
                                         }}
                                     >
-                                        <FiX size={12} />
+                                        <X size={12} />
                                     </button>
                                 </div>
                             ) : (
@@ -720,7 +720,7 @@ export default function SettingsPage() {
                                     border: '1px dashed var(--border-strong)',
                                     cursor: 'pointer',
                                 }}>
-                                    <FiUpload size={20} color="var(--text-muted)" />
+                                    <UploadSimple size={20} color="var(--text-muted)" />
                                     <span style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>Upload Logo</span>
                                     <input
                                         type="file"
@@ -803,7 +803,7 @@ export default function SettingsPage() {
                                             cursor: 'pointer',
                                         }}
                                     >
-                                        <FiX size={12} />
+                                        <X size={12} />
                                     </button>
                                 </div>
                             ) : (
@@ -816,7 +816,7 @@ export default function SettingsPage() {
                                     border: '1px dashed var(--border-strong)',
                                     cursor: 'pointer',
                                 }}>
-                                    <FiUpload size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
+                                    <UploadSimple size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
                                     <span style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>Upload Background</span>
                                     <input
                                         type="file"
@@ -889,7 +889,7 @@ export default function SettingsPage() {
                                 fontWeight: 600,
                                 marginBottom: '8px',
                             }}>
-                                <FiInstagram size={14} /> Instagram URL
+                                <InstagramLogo size={14} /> Instagram URL
                             </label>
                             <input
                                 type="url"
@@ -917,7 +917,7 @@ export default function SettingsPage() {
                                 fontWeight: 600,
                                 marginBottom: '8px',
                             }}>
-                                <FiFacebook size={14} /> Facebook URL
+                                <FacebookLogo size={14} /> Facebook URL
                             </label>
                             <input
                                 type="url"
@@ -945,7 +945,7 @@ export default function SettingsPage() {
                                 fontWeight: 600,
                                 marginBottom: '8px',
                             }}>
-                                <FiTwitter size={14} /> Twitter / X URL
+                                <TwitterLogo size={14} /> Twitter / X URL
                             </label>
                             <input
                                 type="url"
@@ -973,7 +973,7 @@ export default function SettingsPage() {
                                 fontWeight: 600,
                                 marginBottom: '8px',
                             }}>
-                                <FiLinkedin size={14} /> LinkedIn URL
+                                <LinkedinLogo size={14} /> LinkedIn URL
                             </label>
                             <input
                                 type="url"
@@ -1001,7 +1001,7 @@ export default function SettingsPage() {
                                 fontWeight: 600,
                                 marginBottom: '8px',
                             }}>
-                                <FiYoutube size={14} /> YouTube URL
+                                <YoutubeLogo size={14} /> YouTube URL
                             </label>
                             <input
                                 type="url"

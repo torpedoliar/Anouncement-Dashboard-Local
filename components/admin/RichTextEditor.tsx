@@ -9,12 +9,12 @@ import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useCallback, useRef, useState } from "react";
 import {
-    TextB, TextAUnderline, ListBullets, LinkSimple,
+    TextB, TextAUnderline, ListBullets, ListNumbers, LinkSimple,
     ImageSquare, YoutubeLogo, VideoCamera, FolderOpen,
     AlignLeft, TextAlignCenter, AlignRight,
+    TextHOne, TextHTwo, TextHThree,
     Check, Minus, Plus,
 } from "@phosphor-icons/react";
-import { LuHeading1, LuHeading2, LuHeading3, LuListOrdered } from "react-icons/lu";
 import MediaPickerModal from "./MediaPickerModal";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -379,17 +379,17 @@ export default function RichTextEditor({
                 <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                     style={toolbarBtn(editor.isActive("heading", { level: 1 }))} title="Heading 1"
                 >
-                    <LuHeading1 size={16} />
+                    <TextHOne size={16} />
                 </button>
                 <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                     style={toolbarBtn(editor.isActive("heading", { level: 2 }))} title="Heading 2"
                 >
-                    <LuHeading2 size={16} />
+                    <TextHTwo size={16} />
                 </button>
                 <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
                     style={toolbarBtn(editor.isActive("heading", { level: 3 }))} title="Heading 3"
                 >
-                    <LuHeading3 size={16} />
+                    <TextHThree size={16} />
                 </button>
 
                 <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
@@ -422,7 +422,7 @@ export default function RichTextEditor({
                 <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()}
                     style={toolbarBtn(editor.isActive("orderedList"))} title="Numbered List"
                 >
-                    <LuListOrdered size={16} />
+                    <ListNumbers size={16} />
                 </button>
 
                 <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
@@ -560,7 +560,7 @@ export default function RichTextEditor({
                     <div style={{ width: '1px', height: '18px', background: 'var(--border)', margin: '0 4px' }} />
 
                     <button type="button" onClick={deleteImage}
-                        style={{ ...mediaBtn(), background: '#7f1d1d' }} title="Hapus Gambar">
+                        style={{ ...mediaBtn(), background: 'var(--color-danger)' }} title="Hapus Gambar">
                         <Check size={12} weight="bold" /> Hapus
                     </button>
                 </div>
@@ -575,7 +575,7 @@ export default function RichTextEditor({
                         Video:
                     </span>
                     <button type="button" onClick={deleteVideo}
-                        style={{ ...mediaBtn(), background: '#7f1d1d' }} title="Hapus Video">
+                        style={{ ...mediaBtn(), background: 'var(--color-danger)' }} title="Hapus Video">
                         <Check size={12} weight="bold" /> Hapus Video
                     </button>
                 </div>
@@ -648,7 +648,7 @@ export default function RichTextEditor({
                     >
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-1)' }}>
-                                <YoutubeLogo size={18} className="text-[#dc2626]" /> Embed YouTube Video
+                                <YoutubeLogo size={18} className="text-[var(--brand-red)]" /> Embed YouTube Video
                             </h3>
                             <button type="button"
                                 onClick={() => { setShowYoutubeDialog(false); setYoutubeUrl(''); }}

@@ -226,7 +226,7 @@ export default function SiteSyndicationPicker({
 
             {value.length > 1 && (
                 <p className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: "var(--text-3)" }}>
-                    <Star size={10} weight="fill" className="text-[#eab308]" />
+                    <Star size={10} weight="fill" className="text-warning" />
                     Primary site digunakan untuk canonical URL (SEO). Hero &amp; Pin diatur terpisah per site.
                 </p>
             )}

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, use } from "react";
-import { FiClock, FiRotateCcw, FiUser, FiArrowLeft, FiGitCommit } from "react-icons/fi";
+import { Clock, ArrowCounterClockwise, User, ArrowLeft, GitCommit } from "@phosphor-icons/react";
 import Link from "next/link";
+import Badge from "@/components/ui/Badge";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -116,26 +117,15 @@ export default function RevisionsPage({
     };
 
     const getChangeTypeBadge = (changeType: string) => {
-        const styles: Record<string, { bg: string; color: string }> = {
-            CREATE: { bg: "rgba(34, 197, 94, 0.2)", color: "#22c55e" },
-            EDIT: { bg: "rgba(59, 130, 246, 0.2)", color: "#60a5fa" },
-            PUBLISH: { bg: "rgba(168, 85, 247, 0.2)", color: "#a855f7" },
-            UNPUBLISH: { bg: "rgba(251, 191, 36, 0.2)", color: "#fbbf24" },
-            RESTORE: { bg: "rgba(236, 72, 153, 0.2)", color: "#ec4899" },
+        const toneMap: Record<string, "success" | "info" | "warning" | "danger" | "neutral"> = {
+            CREATE: "success",
+            EDIT: "info",
+            PUBLISH: "warning",
+            UNPUBLISH: "danger",
+            RESTORE: "neutral",
         };
-        const style = styles[changeType] || styles.EDIT;
-        return (
-            <span style={{
-                padding: "4px 10px",
-                backgroundColor: style.bg,
-                color: style.color,
-                fontSize: "10px",
-                fontWeight: 700,
-                letterSpacing: "0.05em",
-            }}>
-                {changeType}
-            </span>
-        );
+        const tone = toneMap[changeType] ?? "info";
+        return <Badge tone={tone}>{changeType}</Badge>;
     };
 
     if (isLoading) {
@@ -162,7 +152,7 @@ export default function RevisionsPage({
                         textDecoration: "none",
                     }}
                 >
-                    <FiArrowLeft size={14} />
+                    <ArrowLeft size={14} />
                     Kembali ke Editor
                 </Link>
                 <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
@@ -197,7 +187,7 @@ export default function RevisionsPage({
                         color: "var(--text-tertiary)",
                         marginLeft: "40px",
                     }}>
-                        <FiClock size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
+                        <Clock size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
                         <p>Belum ada riwayat revisi</p>
                     </div>
                 ) : (
@@ -232,20 +222,12 @@ export default function RevisionsPage({
                                         <div>
                                             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
                                                 <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "15px" }}>
-                                                    <FiGitCommit style={{ marginRight: "6px", verticalAlign: "middle" }} />
+                                                    <GitCommit style={{ marginRight: "6px", verticalAlign: "middle" }} />
                                                     v{revision.version}
                                                 </span>
                                                 {getChangeTypeBadge(revision.changeType)}
                                                 {index === 0 && (
-                                                    <span style={{
-                                                        padding: "4px 10px",
-                                                        backgroundColor: "rgba(220, 38, 38, 0.2)",
-                                                        color: "#f87171",
-                                                        fontSize: "10px",
-                                                        fontWeight: 700,
-                                                    }}>
-                                                        CURRENT
-                                                    </span>
+                                                    <Badge tone="danger">CURRENT</Badge>
                                                 )}
                                             </div>
                                             <p style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: 500 }}>
@@ -275,7 +257,7 @@ export default function RevisionsPage({
                                                     opacity: isRestoring ? 0.5 : 1,
                                                 }}
                                             >
-                                                <FiRotateCcw size={12} />
+                                                <ArrowCounterClockwise size={12} />
                                                 {isRestoring === revision.id ? "Restoring..." : "Restore"}
                                             </button>
                                         )}
@@ -283,11 +265,11 @@ export default function RevisionsPage({
 
                                     <div style={{ display: "flex", alignItems: "center", gap: "16px", color: "var(--text-tertiary)", fontSize: "12px" }}>
                                         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                            <FiUser size={12} />
+                                            <User size={12} />
                                             {revision.author.name}
                                         </span>
                                         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                            <FiClock size={12} />
+                                            <Clock size={12} />
                                             {formatDate(revision.createdAt)}
                                         </span>
                                     </div>

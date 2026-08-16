@@ -304,7 +304,7 @@ export default function CommentsPage() {
 
                                     {/* Announcement link */}
                                     <Link
-                                        href={`/sesi/${comment.announcement.sites[0]?.site.slug || "santos-jaya-abadi"}/${comment.announcement.slug}`}
+                                        href={`/site/${comment.announcement.sites[0]?.site.slug || "santos-jaya-abadi"}/${comment.announcement.slug}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-1.5 text-xs mb-2 hover:underline"

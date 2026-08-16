@@ -275,6 +275,7 @@ export async function maybeSendNewArticleEmails(announcementId: string): Promise
     const date = new Date().toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" });
 
     // De-duplicate recipients across syndicated sites
+    const baseUrl = (process.env.NEXTAUTH_URL || "").replace(/\/+$/, "");
     const seen = new Set<string>();
     const emails = subscribers
         .filter((s) => {
@@ -290,12 +291,12 @@ export async function maybeSendNewArticleEmails(announcementId: string): Promise
                 siteName,
                 articleTitle: announcement.title,
                 articleExcerpt: announcement.excerpt || "",
-                articleUrl: `/site/${siteSlug}/${announcement.slug}`,
+                articleUrl: `${baseUrl}/site/${siteSlug}/${announcement.slug}`,
                 categoryName: announcement.category?.name || "",
                 categoryColor: announcement.category?.color || "#dc2626",
                 date,
                 year,
-                unsubscribeUrl: `/api/newsletter?token=${s.unsubscribeToken}`,
+                unsubscribeUrl: `${baseUrl}/api/newsletter?token=${s.unsubscribeToken}`,
             },
         }));
 

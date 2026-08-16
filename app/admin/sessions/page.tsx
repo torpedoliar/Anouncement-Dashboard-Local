@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FiMonitor, FiSmartphone, FiTrash2, FiRefreshCw, FiUser } from "react-icons/fi";
+import { Monitor, DeviceMobile, Trash, ArrowClockwise, User } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -88,12 +88,12 @@ export default function SessionsPage() {
     };
 
     const getDeviceIcon = (userAgent: string | null) => {
-        if (!userAgent) return <FiMonitor size={16} />;
+        if (!userAgent) return <Monitor size={16} />;
         const ua = userAgent.toLowerCase();
         if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) {
-            return <FiSmartphone size={16} />;
+            return <DeviceMobile size={16} />;
         }
-        return <FiMonitor size={16} />;
+        return <Monitor size={16} />;
     };
 
     const isExpired = (expiresAt: string) => new Date(expiresAt) < new Date();
@@ -133,7 +133,7 @@ export default function SessionsPage() {
                         cursor: "pointer",
                     }}
                 >
-                    <FiRefreshCw size={16} />
+                    <ArrowClockwise size={16} />
                     Refresh
                 </button>
             </div>
@@ -191,7 +191,7 @@ export default function SessionsPage() {
                                                 justifyContent: "center",
                                                 borderRadius: "8px",
                                             }}>
-                                                <FiUser size={16} color="#737373" />
+                                                <User size={16} color="#737373" />
                                             </div>
                                             <div>
                                                 <p style={{ color: "var(--text-primary)", fontSize: "14px", fontWeight: 500 }}>{session.user.name}</p>
@@ -238,7 +238,7 @@ export default function SessionsPage() {
                                                 }}
                                                 title="Revoke Session"
                                             >
-                                                <FiTrash2 size={14} />
+                                                <Trash size={14} />
                                             </button>
                                         )}
                                     </td>

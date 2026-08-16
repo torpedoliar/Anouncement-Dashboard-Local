@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FiArrowLeft, FiGlobe, FiCopy, FiCheck } from "react-icons/fi";
+import { ArrowLeft, Globe, Copy, Check } from "@phosphor-icons/react";
 
 interface Site {
     id: string;
@@ -104,7 +104,7 @@ export default function CreateSitePage() {
                         marginBottom: "16px",
                     }}
                 >
-                    <FiArrowLeft size={16} />
+                    <ArrowLeft size={16} />
                     Back to Sites
                 </Link>
                 <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "8px" }}>
@@ -300,9 +300,9 @@ export default function CreateSitePage() {
                             }}
                         >
                             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                                <FiGlobe size={24} color={cloneMode === "blank" ? "#ED1C24" : "#888"} />
+                                <Globe size={24} color={cloneMode === "blank" ? "#ED1C24" : "#888"} />
                                 <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Blank Site</span>
-                                {cloneMode === "blank" && <FiCheck color="#ED1C24" size={18} />}
+                                {cloneMode === "blank" && <Check color="#ED1C24" size={18} />}
                             </div>
                             <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
                                 Start fresh with default settings
@@ -326,9 +326,9 @@ export default function CreateSitePage() {
                             }}
                         >
                             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                                <FiCopy size={24} color={cloneMode === "clone" ? "#ED1C24" : "#888"} />
+                                <Copy size={24} color={cloneMode === "clone" ? "#ED1C24" : "#888"} />
                                 <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Clone Existing</span>
-                                {cloneMode === "clone" && <FiCheck color="#ED1C24" size={18} />}
+                                {cloneMode === "clone" && <Check color="#ED1C24" size={18} />}
                             </div>
                             <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
                                 Copy settings & categories from another site
