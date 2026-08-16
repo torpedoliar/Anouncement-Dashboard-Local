@@ -248,6 +248,10 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
         }
 
         try {
+            // datetime-local inputs yield "YYYY-MM-DDTHH:mm" (no timezone), which
+            // fails the API's Zod .datetime() check — normalize to ISO-8601.
+            const normalizeDateTime = (v: string) => (v ? new Date(v).toISOString() : null);
+
             const url = isEditing
                 ? `/api/announcements/${initialData.id}`
                 : "/api/announcements";
@@ -265,8 +269,8 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                     youtubeUrl: mediaType === "youtube" ? youtubeUrl : null,
                     isPublished,
                     allowComments,
-                    scheduledAt: scheduledAt || null,
-                    takedownAt: takedownAt || null,
+                    scheduledAt: normalizeDateTime(scheduledAt),
+                    takedownAt: normalizeDateTime(takedownAt),
                     sites: siteAssocs,
                 }),
             });
@@ -391,13 +395,13 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         onChange={(e) => setIsPublished(e.target.checked)}
                         className="size-4 accent-[var(--brand-red)]"
                     />
-                    <Eye size={16} weight="fill" className="text-[#22c55e]" />
+                    <Eye size={16} weight="fill" className="text-success" />
                     <span className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Publish</span>
                 </label>
 
                 <div className="flex items-center gap-2">
                     <label htmlFor="scheduledAt" className="text-xs" style={{ color: "var(--text-3)" }}>
-                        <Clock size={12} weight="fill" className="inline mr-1 text-[#22c55e]" />
+                        <Clock size={12} weight="fill" className="inline mr-1 text-success" />
                         Terjadwal
                     </label>
                     <input
@@ -412,7 +416,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
 
                 <div className="flex items-center gap-2">
                     <label htmlFor="takedownAt" className="text-xs" style={{ color: "var(--text-3)" }}>
-                        <Clock size={12} weight="fill" className="inline mr-1 text-[#ef4444]" />
+                        <Clock size={12} weight="fill" className="inline mr-1 text-danger" />
                         Takedown
                     </label>
                     <input
@@ -427,7 +431,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
 
                 {siteAssocs.length > 0 && (
                     <span className="ml-auto text-xs" style={{ color: "var(--text-3)" }}>
-                        <Star size={11} weight="fill" className="inline mr-1 text-[#eab308]" />
+                        <Star size={11} weight="fill" className="inline mr-1 text-warning" />
                         {siteAssocs.some(s => s.isPrimary) && "Primary"} · {siteAssocs.filter(s => s.isHero).length} hero · {siteAssocs.filter(s => s.isPinned).length} pin · {siteAssocs.length} site
                     </span>
                 )}
@@ -485,7 +489,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                 onChange={(e) => setAllowComments(e.target.checked)}
                                 className="size-4 accent-[var(--brand-red)]"
                             />
-                            <ChatCenteredText size={16} weight="fill" className="text-[#60a5fa]" />
+                            <ChatCenteredText size={16} weight="fill" className="text-info" />
                             <span className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Izinkan Komentar</span>
                         </label>
                     </div>
