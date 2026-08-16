@@ -6,7 +6,7 @@ import prisma from "@/lib/prisma";
 import OnboardingWizard from "@/components/portal/OnboardingWizard";
 import GroupedAppGrid, { GridGroup } from "@/components/portal/GroupedAppGrid";
 import Link from "next/link";
-import { SquaresFour } from "@phosphor-icons/react";
+import { SquaresFour } from "@/components/ui/client-icons";
 
 export const dynamic = "force-dynamic";
 

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircle } from "@/components/ui/client-icons";
 
 interface AuthFrameProps {
   eyebrow?: string;

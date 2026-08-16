@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
-import { Files, Eye, PencilSimple, Broadcast } from "@phosphor-icons/react";
+import { Files, Eye, PencilSimple, Broadcast } from "@/components/ui/client-icons";
 import { formatNumber, formatDateShort } from "@/lib/utils";
 import { runScheduler } from "@/lib/scheduler";
 import { resolveAdminSiteId } from "@/lib/site-context";
