@@ -1,12 +1,13 @@
 "use client";
 
-import { ButtonHTMLAttributes, ReactNode } from "react";
+import { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md";
   iconLeft?: ReactNode;
   iconRight?: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 const variants: Record<string, string> = {

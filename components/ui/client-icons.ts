@@ -12,4 +12,5 @@ export {
   Broadcast,
   SquaresFour,
   WarningCircle,
+  X,
 } from "@phosphor-icons/react";

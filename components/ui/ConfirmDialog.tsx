@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { FiAlertTriangle, FiX } from "react-icons/fi";
+import { WarningCircle, X } from "@/components/ui/client-icons";
+import Button from "@/components/ui/Button";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -91,138 +92,54 @@ export default function ConfirmDialog({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 100,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.75)",
-      }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
       onClick={onCancel}
     >
       <div
         ref={dialogRef}
-        style={{
-          backgroundColor: "var(--bg-secondary)",
-          border: "1px solid var(--border-color)",
-          borderRadius: "12px",
-          padding: "24px",
-          maxWidth: "420px",
-          width: "90%",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-        }}
+        className="w-[90%] max-w-[420px] rounded-sheet border border-border bg-surface-1 p-6 text-text-1 shadow-lvl-3"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "16px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             {isDanger && (
-              <div
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  backgroundColor: "rgba(237, 28, 36, 0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <FiAlertTriangle
-                  style={{ color: "var(--brand-red)", width: "20px", height: "20px" }}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-subtle">
+                <WarningCircle
+                  size={20}
+                  weight="fill"
+                  className="text-danger"
+                  aria-hidden="true"
                 />
               </div>
             )}
-            <h2
-              style={{
-                fontSize: "18px",
-                fontWeight: 600,
-                color: "var(--text-primary)",
-                margin: 0,
-              }}
-            >
-              {title}
-            </h2>
+            <h2 className="m-0 text-lg font-semibold text-text-1">{title}</h2>
           </div>
           <button
             onClick={onCancel}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--text-muted)",
-              cursor: "pointer",
-              padding: "4px",
-              borderRadius: "6px",
-              display: "flex",
-              alignItems: "center",
-            }}
+            className="rounded-control p-1 text-text-3 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             aria-label="Tutup"
           >
-            <FiX style={{ width: "20px", height: "20px" }} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
         {/* Message */}
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            fontSize: "14px",
-            lineHeight: "1.6",
-            margin: "0 0 24px 0",
-          }}
-        >
-          {message}
-        </p>
+        <p className="mb-6 text-sm leading-relaxed text-text-2">{message}</p>
 
         {/* Actions */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "12px",
-          }}
-        >
-          <button
-            onClick={onCancel}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "8px",
-              border: "1px solid var(--border-color)",
-              backgroundColor: "transparent",
-              color: "var(--text-secondary)",
-              fontSize: "14px",
-              fontWeight: 500,
-              cursor: "pointer",
-            }}
-          >
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" size="md" onClick={onCancel}>
             {cancelLabel}
-          </button>
-          <button
+          </Button>
+          <Button
             ref={confirmBtnRef}
+            variant={isDanger ? "danger" : "primary"}
+            size="md"
             onClick={onConfirm}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "8px",
-              border: "none",
-              backgroundColor: isDanger ? "var(--brand-red)" : "#2563eb",
-              color: "var(--text-primary)",
-              fontSize: "14px",
-              fontWeight: 500,
-              cursor: "pointer",
-            }}
           >
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,
