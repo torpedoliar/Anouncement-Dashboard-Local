@@ -34,17 +34,10 @@ export default function AdminMainContent({ children }: AdminMainContentProps) {
     }, []);
 
     // Desktop margin follows sidebar rail state; mobile overlays so margin is 0.
-    const marginLeft = isDesktop ? (collapsed ? '64px' : '256px') : '0';
+    const marginLeftClass = isDesktop ? (collapsed ? "ml-16" : "ml-64") : "ml-0";
 
     return (
-        <main style={{
-            flex: 1,
-            minHeight: '100vh',
-            backgroundColor: 'var(--bg-secondary)',
-            marginLeft,
-            paddingTop: isDesktop ? '0' : '60px', // Space for mobile menu button
-
-        }}>
+        <main className={`flex-1 min-h-screen bg-surface-1 ${marginLeftClass} ${isDesktop ? "" : "pt-[60px]"}`}>
             <AdminTopbar />
             {children}
         </main>

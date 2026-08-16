@@ -119,7 +119,7 @@ export default function MastheadRack() {
                         style={{ backgroundColor: currentSite.primaryColor || "var(--site-primary)" }}
                         aria-hidden="true"
                     >
-                        <Globe size={14} color="#fff" weight="bold" />
+                        <Globe size={14} weight="bold" className="shrink-0 text-white" />
                     </span>
                     <span className="min-w-0">
                         <span className="block truncate text-[13px] font-medium text-text-1">
@@ -157,7 +157,7 @@ export default function MastheadRack() {
                                     style={{ backgroundColor: site.primaryColor || "var(--site-primary)" }}
                                     aria-hidden="true"
                                 >
-                                    <Globe size={12} color="#fff" weight="bold" />
+                                    <Globe size={12} weight="bold" className="shrink-0 text-white" />
                                 </span>
                                 <span className="min-w-0 flex-1">
                                     <span className="block truncate text-[13px] text-text-1">{site.name}</span>

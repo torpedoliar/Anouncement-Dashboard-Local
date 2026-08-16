@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Bell, CaretDown, SignOut, Gear, Sun, Moon } from "@phosphor-icons/react";
 import { useSiteTheme } from "@/components/SiteThemeProvider";
 import { findActiveAdminItem } from "@/lib/admin-nav";
@@ -59,7 +60,9 @@ export default function AdminTopbar() {
     const siteSlug = siteTheme.siteSlug;
 
     const handleLogout = async () => {
-        router.push("/admin-login");
+        // End the NextAuth session (clears the JWT cookie), then redirect.
+        // Mirrors AdminSidebar — a bare router.push would leave the session cookie valid.
+        await signOut({ callbackUrl: "/admin-login" });
     };
 
     return (
@@ -105,8 +108,7 @@ export default function AdminTopbar() {
 
                 {/* Light/night theme toggle */}
                 <button
-                    className="rounded-control p-2 text-text-2 hover:bg-surface-2 hover:text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                    style={{ transition: `color var(--motion-standard) var(--motion-ease)` }}
+                    className="rounded-control p-2 text-text-2 hover:bg-surface-2 hover:text-text-1 transition-colors duration-300 ease-[var(--motion-ease)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                     aria-pressed={adminTheme === "light"}
                     aria-label="Beralih tampilan terang/gelap"
                     title={adminTheme === "light" ? "Tampilan gelap" : "Tampilan terang"}
