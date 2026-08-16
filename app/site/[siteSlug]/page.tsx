@@ -8,7 +8,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
-import { FiArrowLeft, FiCalendar, FiEye } from "react-icons/fi";
+import { FiCalendar, FiEye } from "react-icons/fi";
 
 export const dynamic = "force-dynamic";
 
@@ -29,37 +29,51 @@ async function getSiteData(slug: string) {
 
     if (!site) return null;
 
-    // Get announcements for this site, including the per-site placement flags
-    const rawAnnouncements = await prisma.announcement.findMany({
-        where: {
-            isPublished: true,
-            sites: { some: { siteId: site.id } },
+    const announcementInclude = {
+        category: { select: { name: true, color: true, slug: true } },
+        author: { select: { name: true } },
+        sites: {
+            where: { siteId: site.id },
+            select: { isHero: true, isPinned: true },
         },
-        orderBy: [{ createdAt: "desc" }],
-        take: 12,
-        include: {
-            category: { select: { name: true, color: true, slug: true } },
-            author: { select: { name: true } },
-            sites: {
-                where: { siteId: site.id },
-                select: { isHero: true, isPinned: true },
+    };
+
+    // The article grid and hero rail are separate queries. A hero must not vanish
+    // simply because it is older than the twelve most recent grid items.
+    const [rawAnnouncements, rawHeroAnnouncements] = await Promise.all([
+        prisma.announcement.findMany({
+            where: {
+                isPublished: true,
+                sites: { some: { siteId: site.id } },
             },
-        },
+            orderBy: [{ createdAt: "desc" }],
+            take: 12,
+            include: announcementInclude,
+        }),
+        prisma.announcement.findMany({
+            where: {
+                isPublished: true,
+                sites: { some: { siteId: site.id, isHero: true } },
+            },
+            orderBy: [{ createdAt: "desc" }],
+            take: 5,
+            include: announcementInclude,
+        }),
+    ]);
+
+    const withSitePlacement = (announcement: (typeof rawAnnouncements)[number]) => ({
+        ...announcement,
+        isPinned: announcement.sites[0]?.isPinned ?? false,
+        isHeroOnSite: announcement.sites[0]?.isHero ?? false,
     });
 
-    // Flatten per-site flags onto each announcement and sort pinned-first (per this site)
+    // Keep the article feed pinned-first, while the hero rail stays newest-first.
     const announcements = rawAnnouncements
-        .map((a) => ({
-            ...a,
-            isPinned: a.sites[0]?.isPinned ?? false,
-            isHeroOnSite: a.sites[0]?.isHero ?? false,
-        }))
+        .map(withSitePlacement)
         .sort((x, y) => Number(y.isPinned) - Number(x.isPinned));
+    const heroAnnouncements = rawHeroAnnouncements.map(withSitePlacement);
 
-    // Hero announcement is the one flagged hero FOR THIS SITE (via junction)
-    const heroAnnouncement = announcements.find((a) => a.isHeroOnSite) ?? null;
-
-    return { site, announcements, heroAnnouncement };
+    return { site, announcements, heroAnnouncements };
 }
 
 import FullscreenHero from "@/components/FullscreenHero";
@@ -74,13 +88,15 @@ export default async function SiteHomePage({ params }: PageProps) {
         notFound();
     }
 
-    const { site, announcements, heroAnnouncement } = data;
+    const { site, announcements, heroAnnouncements: publishedHeroAnnouncements } = data;
     const settings = site.settings;
 
-    // Prepare hero announcements for fullscreen hero (use hero announcement if exists, otherwise first pinned)
-    const heroAnnouncements = heroAnnouncement
-        ? [heroAnnouncement]
-        : announcements.filter(a => a.isPinned).slice(0, 3);
+    // Every published hero for this site is passed to the rail, newest first.
+    // Pinned articles remain a fallback only when no article has hero placement.
+    const heroAnnouncements = publishedHeroAnnouncements.length > 0
+        ? publishedHeroAnnouncements
+        : announcements.filter((announcement) => announcement.isPinned).slice(0, 3);
+    const heroAnnouncement = heroAnnouncements[0] ?? null;
 
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>

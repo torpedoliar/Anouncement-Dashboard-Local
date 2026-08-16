@@ -1,5 +1,7 @@
 "use client";
 
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { FiChevronLeft, FiChevronRight, FiVolume2, FiVolumeX } from "react-icons/fi";
@@ -74,7 +76,7 @@ export default function HeroSection({
         return (
             <section style={{
                 position: 'relative',
-                height: '100vh',
+                aspectRatio: '16 / 9',
                 background: heroImage ? undefined : 'linear-gradient(135deg, #1a0000 0%, var(--bg-primary) 50%, var(--bg-secondary) 100%)',
                 display: 'flex',
                 alignItems: 'center',
@@ -128,7 +130,7 @@ export default function HeroSection({
         <section
             style={{
                 position: 'relative',
-                height: '100vh',
+                aspectRatio: '16 / 9',
                 overflow: 'hidden',
                 backgroundColor: 'var(--bg-primary)',
             }}
@@ -152,7 +154,6 @@ export default function HeroSection({
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
-                            transform: 'scale(1.05)',
                         }}
                     />
                 ) : /* YouTube Video */
@@ -163,7 +164,7 @@ export default function HeroSection({
                                 position: 'absolute',
                                 top: '50%',
                                 left: '50%',
-                                transform: 'translate(-50%, -50%) scale(1.5)',
+                                transform: 'translate(-50%, -50%)',
                                 width: '100%',
                                 height: '100%',
                                 border: 'none',
@@ -177,7 +178,7 @@ export default function HeroSection({
                                 src={currentAnnouncement.imagePath}
                                 alt={currentAnnouncement.title}
                                 fill
-                                style={{ objectFit: 'cover', transform: 'scale(1.05)' }}
+                                style={{ objectFit: 'cover' }}
                                 priority
                             />
                         ) : heroImage ? (
@@ -185,7 +186,7 @@ export default function HeroSection({
                                 src={heroImage}
                                 alt="Hero Background"
                                 fill
-                                style={{ objectFit: 'cover', transform: 'scale(1.05)' }}
+                                style={{ objectFit: 'cover' }}
                                 priority
                             />
                         ) : (

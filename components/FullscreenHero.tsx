@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FiChevronLeft, FiChevronRight, FiVolume2, FiVolumeX } from "react-icons/fi";
 
@@ -25,275 +27,179 @@ interface FullscreenHeroProps {
     primaryColor: string;
 }
 
+function getYoutubeId(url: string | null) {
+    if (!url) return null;
+
+    const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+    return match?.[1]?.length === 11 ? match[1] : null;
+}
+
 export default function FullscreenHero({ siteSlug, announcements, primaryColor }: FullscreenHeroProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isMuted, setIsMuted] = useState(true);
+    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
 
+    useEffect(() => {
+        if (currentIndex >= announcements.length) {
+            setCurrentIndex(0);
+        }
+    }, [announcements.length, currentIndex]);
+
+    useEffect(() => {
+        if (!isAutoPlaying || announcements.length <= 1) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        const interval = window.setInterval(() => {
+            setCurrentIndex((index) => (index + 1) % announcements.length);
+        }, 6000);
+
+        return () => window.clearInterval(interval);
+    }, [announcements.length, isAutoPlaying]);
+
     const current = announcements[currentIndex];
-
-    // No hero announcements
-    if (!announcements || announcements.length === 0) {
-        return null;
-    }
-
-    const goToPrev = () => {
-        setCurrentIndex((prev) => (prev === 0 ? announcements.length - 1 : prev - 1));
-    };
-
-    const goToNext = () => {
-        setCurrentIndex((prev) => (prev === announcements.length - 1 ? 0 : prev + 1));
-    };
-
-    // Extract YouTube video ID
-    const getYoutubeId = (url: string | null) => {
-        if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return match && match[2].length === 11 ? match[2] : null;
-    };
+    if (!current) return null;
 
     const youtubeId = getYoutubeId(current.youtubeUrl);
+    const hasMultipleAnnouncements = announcements.length > 1;
+    const goToPrevious = () => {
+        setCurrentIndex((index) => (index === 0 ? announcements.length - 1 : index - 1));
+    };
+    const goToNext = () => {
+        setCurrentIndex((index) => (index + 1) % announcements.length);
+    };
 
     return (
-        <div style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden", backgroundColor: "var(--bg-primary)" }}>
-            {/* Background Media */}
+        <section
+            aria-label="Artikel unggulan"
+            onMouseEnter={() => setIsAutoPlaying(false)}
+            onMouseLeave={() => setIsAutoPlaying(true)}
+            style={{
+                position: "relative",
+                width: "100%",
+                aspectRatio: "16 / 9",
+                overflow: "hidden",
+                backgroundColor: "var(--bg-primary)",
+            }}
+        >
             {youtubeId ? (
-                // YouTube Video Background
-                <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-                    <iframe
-                        style={{
-                            width: "100vw",
-                            height: "100vh",
-                            pointerEvents: "none",
-                            transform: "scale(1.2)",
-                            transformOrigin: "center center",
-                        }}
-                        src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&playsinline=1&showinfo=0&rel=0&modestbranding=1`}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                    />
-                </div>
+                <iframe
+                    title={`Video latar ${current.title}`}
+                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&playsinline=1&rel=0&modestbranding=1`}
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                    tabIndex={-1}
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, pointerEvents: "none" }}
+                />
             ) : current.videoPath ? (
-                // Local Video Background
                 <video
                     ref={videoRef}
                     autoPlay
                     loop
                     muted={isMuted}
                     playsInline
-                    style={{ position: "absolute", width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }}
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                 >
                     <source src={current.videoPath} type="video/mp4" />
                 </video>
             ) : current.imagePath ? (
-                // Image Background
                 <div
+                    role="img"
+                    aria-label={current.title}
                     style={{
                         position: "absolute",
                         inset: 0,
                         backgroundImage: `url(${current.imagePath})`,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
-                        zIndex: 0,
                     }}
                 />
             ) : (
-                // Fallback Gradient
                 <div
                     style={{
                         position: "absolute",
                         inset: 0,
-                        background: `linear-gradient(135deg, ${primaryColor}40 0%, #0a0a0a 100%)`,
-                        zIndex: 0,
+                        background: `linear-gradient(135deg, ${primaryColor}40 0%, var(--bg-primary) 100%)`,
                     }}
                 />
             )}
 
-            {/* Dark Overlay */}
+            <div
+                aria-hidden="true"
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.32) 58%, rgba(0,0,0,0.48) 100%)",
+                }}
+            />
+
             <div
                 style={{
                     position: "absolute",
                     inset: 0,
-                    background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.5) 100%)",
                     zIndex: 1,
-                }}
-            />
-
-            {/* Content Overlay */}
-            <div
-                style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    padding: "60px 48px",
-                    zIndex: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    justifyContent: "flex-end",
+                    padding: "clamp(1rem, 4vw, 3.75rem)",
+                    paddingRight: "clamp(1rem, 12vw, 12rem)",
                 }}
             >
-                <p style={{
-                    color: primaryColor,
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    letterSpacing: "2px",
-                    textTransform: "uppercase",
-                    marginBottom: "16px"
-                }}>
-                    PENGUMUMAN TERBARU
+                <p style={{ color: primaryColor, fontSize: "clamp(0.625rem, 1vw, 0.75rem)", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+                    Pengumuman unggulan
                 </p>
-
-                <Link
-                    href={`/site/${siteSlug}/${current.slug}`}
-                    style={{ textDecoration: "none" }}
-                >
-                    <h1
-                        style={{
-                            fontSize: "clamp(32px, 5vw, 56px)",
-                            fontWeight: 900,
-                            color: "var(--text-primary)",
-                            marginBottom: "12px",
-                            textShadow: "0 2px 8px rgba(0,0,0,0.5)",
-                            maxWidth: "800px",
-                        }}
-                    >
+                <Link href={`/site/${siteSlug}/${current.slug}`} style={{ color: "var(--text-primary)", textDecoration: "none", maxWidth: "52rem" }}>
+                    <h1 style={{ fontSize: "clamp(1.25rem, 3.8vw, 3.5rem)", fontWeight: 800, lineHeight: 1.1, marginBottom: "0.75rem", textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
                         {current.title}
                     </h1>
                 </Link>
-
                 {current.excerpt && (
-                    <p
-                        style={{
-                            fontSize: "16px",
-                            color: "rgba(255,255,255,0.8)",
-                            maxWidth: "600px",
-                            lineHeight: 1.6,
-                            marginBottom: "24px",
-                        }}
-                    >
+                    <p style={{ color: "rgba(255,255,255,0.88)", fontSize: "clamp(0.75rem, 1.25vw, 1rem)", lineHeight: 1.55, maxWidth: "38rem", marginBottom: "1rem", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                         {current.excerpt}
                     </p>
                 )}
-
-                <Link
-                    href={`/site/${siteSlug}/${current.slug}`}
-                    style={{
-                        color: primaryColor,
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        textDecoration: "none",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                    }}
-                >
-                    Baca Selengkapnya →
+                <Link href={`/site/${siteSlug}/${current.slug}`} style={{ color: primaryColor, fontSize: "clamp(0.75rem, 1.1vw, 0.875rem)", fontWeight: 700, textDecoration: "none" }}>
+                    Baca selengkapnya <span aria-hidden="true">→</span>
                 </Link>
             </div>
 
-            {/* Navigation Controls */}
-            <div
-                style={{
-                    position: "absolute",
-                    bottom: "80px",
-                    right: "48px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    zIndex: 3,
-                }}
-            >
-                {/* Mute Toggle (for local video) */}
+            <div style={{ position: "absolute", right: "clamp(0.75rem, 2.5vw, 3rem)", bottom: "clamp(0.75rem, 2.5vw, 2.5rem)", zIndex: 2, display: "flex", gap: "0.5rem" }}>
                 {current.videoPath && !youtubeId && (
                     <button
-                        onClick={() => setIsMuted(!isMuted)}
-                        style={{
-                            width: "40px",
-                            height: "40px",
-                            borderRadius: "50%",
-                            backgroundColor: "rgba(255,255,255,0.1)",
-                            border: "1px solid rgba(255,255,255,0.2)",
-                            color: "var(--text-primary)",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
+                        type="button"
+                        onClick={() => setIsMuted((muted) => !muted)}
+                        aria-label={isMuted ? "Aktifkan suara video" : "Bisukan suara video"}
+                        style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.45)", color: "var(--text-primary)", cursor: "pointer", display: "grid", placeItems: "center" }}
                     >
                         {isMuted ? <FiVolumeX size={18} /> : <FiVolume2 size={18} />}
                     </button>
                 )}
-
-                {/* Prev/Next Buttons */}
-                {announcements.length > 1 && (
+                {hasMultipleAnnouncements && (
                     <>
-                        <button
-                            onClick={goToPrev}
-                            style={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                backgroundColor: "rgba(255,255,255,0.1)",
-                                border: "1px solid rgba(255,255,255,0.2)",
-                                color: "var(--text-primary)",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
+                        <button type="button" onClick={goToPrevious} aria-label="Artikel hero sebelumnya" style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.45)", color: "var(--text-primary)", cursor: "pointer", display: "grid", placeItems: "center" }}>
                             <FiChevronLeft size={20} />
                         </button>
-                        <button
-                            onClick={goToNext}
-                            style={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                backgroundColor: "rgba(255,255,255,0.1)",
-                                border: "1px solid rgba(255,255,255,0.2)",
-                                color: "var(--text-primary)",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
+                        <button type="button" onClick={goToNext} aria-label="Artikel hero berikutnya" style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.45)", color: "var(--text-primary)", cursor: "pointer", display: "grid", placeItems: "center" }}>
                             <FiChevronRight size={20} />
                         </button>
                     </>
                 )}
             </div>
 
-            {/* Slide Indicators */}
-            {announcements.length > 1 && (
-                <div
-                    style={{
-                        position: "absolute",
-                        bottom: "40px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        display: "flex",
-                        gap: "8px",
-                        zIndex: 3,
-                    }}
-                >
-                    {announcements.map((_, idx) => (
+            {hasMultipleAnnouncements && (
+                <div aria-label="Pilih artikel hero" style={{ position: "absolute", bottom: "clamp(0.75rem, 2.5vw, 2rem)", left: "50%", transform: "translateX(-50%)", zIndex: 2, display: "flex", gap: "0.5rem" }}>
+                    {announcements.map((announcement, index) => (
                         <button
-                            key={idx}
-                            onClick={() => setCurrentIndex(idx)}
-                            style={{
-                                width: idx === currentIndex ? "32px" : "8px",
-                                height: "4px",
-                                borderRadius: "2px",
-                                backgroundColor: idx === currentIndex ? primaryColor : "rgba(255,255,255,0.3)",
-                                border: "none",
-                                cursor: "pointer",
-                                transition: "all 0.3s ease",
-                            }}
+                            key={announcement.id}
+                            type="button"
+                            onClick={() => setCurrentIndex(index)}
+                            aria-label={`Tampilkan artikel hero ${index + 1}: ${announcement.title}`}
+                            aria-current={index === currentIndex ? "true" : undefined}
+                            style={{ width: index === currentIndex ? "2rem" : "0.5rem", height: "0.25rem", borderRadius: "999px", backgroundColor: index === currentIndex ? primaryColor : "rgba(255,255,255,0.5)", border: 0, cursor: "pointer", transition: "width var(--motion-fast) var(--motion-ease)" }}
                         />
                     ))}
                 </div>
             )}
-        </div>
+        </section>
     );
 }
