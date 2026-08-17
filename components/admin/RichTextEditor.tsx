@@ -118,8 +118,14 @@ const Pdf = Node.create({
     draggable: true,
     addAttributes() {
         return {
-            src: { default: null },
-            filename: { default: null },
+            src: {
+                default: null,
+                parseHTML: element => element.getAttribute('data-src'),
+            },
+            filename: {
+                default: null,
+                parseHTML: element => element.getAttribute('data-filename'),
+            },
             error: {
                 default: false,
                 parseHTML: element => element.hasAttribute('data-pdf-error'),
