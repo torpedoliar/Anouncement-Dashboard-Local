@@ -410,7 +410,7 @@ M1 (1–6.4) shipped; M2 (7–11) current; Phase 11 is next.
 **Goal:** Editor dapat upload & embed PDF di dalam body artikel via RichTextEditor (TipTap extension); pembaca melihat PDF inline (native browser viewer) di halaman artikel tanpa download atau buka tab baru, dengan fallback link download.
 **Requirements**: PDF-01 (PDF-inline; derived from user request 2026-08-17 — see REQUIREMENTS.md)
 **Depends on:** Phase 11
-**Plans:** 3/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 

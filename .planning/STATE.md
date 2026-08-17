@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
-current_phase: 12
-current_phase_name: pdf-reader-inline-di-artikel-upload-dan-embed-pdf-di-richtex
-status: executing
+current_phase: 11
+current_phase_name: Portal & Auth Surfaces (CURRENT — ready to plan)
+status: planning
 stopped_at: Phase 12 context gathered
-last_updated: "2026-08-17T11:15:12.684Z"
+last_updated: "2026-08-17T13:02:05.349Z"
 last_activity: 2026-08-17
 last_activity_desc: Phase 12 execution started
 progress:
   total_phases: 16
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 4
-  percent: 6
+  completed_plans: 7
+  percent: 13
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 ## Current Position
 
-Phase: 12 (pdf-reader-inline-di-artikel-upload-dan-embed-pdf-di-richtex) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 12
-Last activity: 2026-08-17 — Phase 12 execution started
+Phase: 11 — Portal & Auth Surfaces (CURRENT — ready to plan)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-08-17 — Phase 12 complete, transitioned to Phase 11
 
 Progress: [████████░░] 80% (4/5 phases of the active milestone complete; phase-based estimate)
 
@@ -48,6 +48,7 @@ Progress: [████████░░] 80% (4/5 phases of the active milesto
 | 1–6.4 (M1) | shipped | — | — |
 | 7–10 (rework) | shipped | — | — |
 | 11 (current) | TBD | — | — |
+| 12 | 3 | - | - |
 
 ## Accumulated Context
 
