@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { CheckCircle } from "@phosphor-icons/react";
 
 interface SSORerouteSubmitProps {
@@ -18,21 +19,26 @@ interface SSORerouteSubmitProps {
 export default function SSORerouteSubmit({ app, cred, credentialId }: SSORerouteSubmitProps) {
     const formRef = useRef<HTMLFormElement>(null);
     const [status, setStatus] = useState<"preparing" | "submitting">("preparing");
+    const [failed, setFailed] = useState(false);
 
     useEffect(() => {
-        // Beri waktu 1.5 detik agar user bisa melihat proses injection kredensial
-        const timer = setTimeout(() => {
+        const t = setTimeout(() => {
             setStatus("submitting");
-            if (formRef.current) {
-                formRef.current.submit();
-            }
-        }, 1500);
-
-        return () => clearTimeout(timer);
+            if (formRef.current) formRef.current.submit();
+        }, 0);
+        return () => clearTimeout(t);
     }, []);
 
+    useEffect(() => {
+        if (status !== "submitting" || failed) return;
+        const t = setTimeout(() => {
+            if (!document.hidden) setFailed(true);
+        }, 3000);
+        return () => clearTimeout(t);
+    }, [status, failed]);
+
     return (
-        <div className="flex min-h-screen items-center justify-center bg-surface-0 px-5 py-10">
+        <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-surface-0 px-5 py-10">
             <div className="w-full max-w-[400px] rounded-sheet border border-border bg-surface-1 p-8 text-center shadow-lvl-2">
                 {/* Logo */}
                 <div className="flex justify-center">
@@ -49,24 +55,22 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
                     )}
                 </div>
 
-                <h2 className="mt-6 font-display text-xl font-semibold text-text-1">
-                    SSO ke {app.name} (Reroute)
-                </h2>
+                <h1 className="mt-6 font-display text-xl font-semibold text-text-1">
+                    SSO ke {app.name}
+                </h1>
+
+                <p role="status" aria-live="polite" className="sr-only">
+                    {status === "preparing" ? "Menyambungkan..." : "Mengalihkan ke aplikasi eksternal"}
+                </p>
                 <p className="mt-2 text-sm text-text-2">
-                    {status === "preparing" ? "Menyiapkan sesi server-to-server..." : "Mengalihkan..."}
+                    {status === "preparing" ? "Menyambungkan..." : "Mengalihkan..."}
                 </p>
 
-                {/* Visual Feedback of the Form Injection */}
-                <div className="mt-6 rounded-card border border-border bg-surface-2 p-4 text-left">
-                    <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-semibold text-text-3">Username</span>
-                        <span className="font-mono text-sm text-success">{cred.username}</span>
+                {failed ? (
+                    <div className="mt-6 rounded-card border border-warning/30 bg-surface-2 p-4 text-left text-sm text-text-2">
+                        Tidak bisa membuka {app.name} otomatis.
                     </div>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                        <span className="text-xs font-semibold text-text-3">Koneksi Sesi</span>
-                        <span className="text-sm text-success">Connecting</span>
-                    </div>
-                </div>
+                ) : null}
 
                 <div className="mt-6 flex items-center justify-center gap-2">
                     {status === "preparing" ? (
@@ -75,15 +79,32 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
                                 className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent"
                                 aria-hidden="true"
                             />
-                            <span className="text-sm text-text-2">Menghubungi server target...</span>
+                            <span className="text-sm text-text-2">Menghubungkan...</span>
                         </>
+                    ) : failed ? (
+                        <span className="text-sm text-warning">Hubungi admin atau coba lagi.</span>
                     ) : (
                         <>
                             <CheckCircle size={20} className="shrink-0 text-success" aria-hidden="true" />
-                            <span className="text-sm text-success">Selesai!</span>
+                            <span className="text-sm text-success">Mengalihkan...</span>
                         </>
                     )}
                 </div>
+
+                {failed && (
+                    <div className="mt-4 flex flex-col gap-2">
+                        <button
+                            type="submit"
+                            form="sso-reroute-form"
+                            className="inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                        >
+                            Buka {app.name}
+                        </button>
+                        <Link href="/portal" className="inline-flex h-11 items-center justify-center rounded-control border border-border px-4 text-sm font-semibold text-text-1 hover:bg-surface-2">
+                            Kembali ke Portal
+                        </Link>
+                    </div>
+                )}
             </div>
 
             {/* Hidden Auto-Submit Form */}
@@ -92,7 +113,8 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
                 id="sso-reroute-form"
                 method="POST"
                 action="/api/sso/reroute"
-                className="hidden"
+                className="sr-only"
+                aria-hidden={failed ? undefined : "true"}
             >
                 <input type="hidden" name="appSlug" value={app.slug} />
                 {credentialId && <input type="hidden" name="credentialId" value={credentialId} />}

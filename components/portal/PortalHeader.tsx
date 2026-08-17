@@ -40,7 +40,7 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
                                 key={item.href}
                                 href={item.href}
                                 aria-current={isActive(item.href) ? "page" : undefined}
-                                className={`inline-flex items-center gap-2 rounded-control px-4 py-2 text-sm font-semibold transition-colors duration-150 ${
+                                className={`inline-flex min-h-11 items-center gap-2 rounded-control px-4 py-2 text-sm font-semibold transition-colors duration-150 ${
                                     isActive(item.href)
                                         ? "bg-accent-subtle text-accent"
                                         : "text-text-2 hover:bg-surface-2 hover:text-text-1"
@@ -72,7 +72,7 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
                         onClick={() => setMobileOpen(!mobileOpen)}
                         aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
                         aria-expanded={mobileOpen}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-control text-text-2 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1 sm:hidden"
+                        className="inline-flex min-h-11 w-9 items-center justify-center rounded-control text-text-2 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1 sm:hidden"
                     >
                         {mobileOpen ? <X size={16} aria-hidden="true" /> : <List size={16} aria-hidden="true" />}
                     </button>

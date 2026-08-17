@@ -9,7 +9,7 @@ interface AccessDeniedProps {
 
 export default function AccessDenied({ appName }: AccessDeniedProps) {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-surface-0 px-5 py-10">
+        <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-surface-0 px-4 py-10 sm:px-5">
             <div className="max-w-[400px] text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-sheet border border-danger/30 bg-danger-subtle">
                     <ShieldWarning size={24} className="text-danger" aria-hidden="true" />
@@ -22,7 +22,7 @@ export default function AccessDenied({ appName }: AccessDeniedProps) {
                 </p>
                 <Link
                     href="/portal"
-                    className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-control border border-border bg-surface-1 px-4 text-sm font-semibold text-text-1 transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-control border border-border bg-surface-1 px-4 text-sm font-semibold text-text-1 transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                     Kembali ke Portal
                 </Link>

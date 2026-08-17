@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import { useToast } from "@/contexts/ToastContext";
 
 export interface WizardApp {
     id: string;
@@ -33,6 +34,10 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
     const [hiddenGroups, setHiddenGroups] = useState<Set<string>>(() => new Set(initialHiddenGroups));
     const [hiddenApps, setHiddenApps] = useState<Set<string>>(() => new Set(initialHiddenApps));
     const [saving, setSaving] = useState(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const { showToast } = useToast();
+    const computeIndeterminate = (g: WizardGroup) =>
+        g.apps.length > 0 && g.apps.some((a) => hiddenApps.has(a.id)) && g.apps.some((a) => !hiddenApps.has(a.id));
 
     const toggleGroup = (gid: string) => {
         setHiddenGroups((prev) => {
@@ -61,6 +66,7 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
             ? initialHiddenApps.filter((id) => !hiddenApps.has(id))
             : [];
         setSaving(true);
+        setErrorMsg(null);
         try {
             const res = await fetch("/api/portal/visibility", {
                 method: "POST",
@@ -75,33 +81,52 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
             if (res.ok) {
                 window.location.href = "/portal";
             } else {
-                console.error("POST visibility failed", res.status);
+                const body = await res.json().catch(() => null);
+                const msg = body?.error || "Gagal menyimpan. Coba lagi.";
+                setErrorMsg(msg);
+                showToast(msg, "error");
             }
         } catch (e) {
-            console.error("POST visibility error", e);
+            const msg = "Gagal menyimpan. Periksa koneksi lalu coba lagi.";
+            setErrorMsg(msg);
+            showToast(msg, "error");
         } finally {
             setSaving(false);
         }
     };
 
     return (
-        <div className="mx-auto max-w-[900px] p-8">
+        <div className="mx-auto max-w-[900px] p-4 sm:p-8">
+            {mode === "onboarding" && (
+                <div className="mb-6 rounded-card border border-border bg-surface-1 p-4 text-sm text-text-2">
+                    <p className="font-semibold text-text-1">Aplikasi Anda sudah siap.</p>
+                    <p className="mt-1">Matikan aplikasi yang tidak ingin dilihat di beranda, atau langsung Lewati untuk melihat semuanya. Anda bisa ubah lagi nanti di Pengaturan.</p>
+                </div>
+            )}
             <h1 className="font-display text-xl font-semibold text-text-1">
                 {mode === "onboarding" ? "Pilih Aplikasi Anda" : "Pengaturan Aplikasi"}
             </h1>
             <p className="mt-2 text-sm text-text-2">
                 {mode === "onboarding"
-                    ? "Tentukan aplikasi yang ingin ditampilkan di beranda. Semua aktif secara default."
+                    ? "Matikan yang tidak perlu, atau Lewati untuk melihat semua aplikasi."
                     : "Pilih aplikasi yang tampil di beranda Anda, lalu klik Simpan untuk menyimpan."}
             </p>
+            {errorMsg && (
+                <div className="mt-4 rounded-control border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
+                    {errorMsg}
+                </div>
+            )}
 
             <div className="mt-6 flex flex-col gap-4">
                 {groups.map((g) => (
                     <Card key={g.id} className="p-4">
-                        <label className="flex cursor-pointer items-center gap-2 font-semibold text-text-1">
+                        <label className="flex min-h-11 cursor-pointer items-center gap-2 font-semibold text-text-1">
                             <input
+                                ref={(el) => {
+                                    if (el) el.indeterminate = computeIndeterminate(g);
+                                }}
                                 type="checkbox"
-                                className="accent-accent"
+                                className="h-5 w-5 accent-accent"
                                 checked={!hiddenGroups.has(g.id)}
                                 onChange={() => toggleGroup(g.id)}
                             />
@@ -112,10 +137,10 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
                                 <span className="py-1 pl-7 text-xs text-text-3">Tidak ada aplikasi dalam grup ini.</span>
                             ) : (
                                 g.apps.map((a) => (
-                                    <label key={a.id} className="flex cursor-pointer items-center gap-2 py-1 pl-7 text-sm text-text-2">
+                                    <label key={a.id} className="flex min-h-11 cursor-pointer items-center gap-2 py-1 pl-7 text-sm text-text-2">
                                         <input
                                             type="checkbox"
-                                            className="accent-accent"
+                                            className="h-5 w-5 accent-accent"
                                             checked={!hiddenApps.has(a.id)}
                                             onChange={() => toggleApp(a.id)}
                                         />

@@ -15,7 +15,7 @@ export default function Input({ label, error, hint, className = "", ...rest }: I
         <span className="mb-1.5 block text-sm font-medium text-text-1">{label}</span>
       )}
       <input
-        className={`h-10 w-full rounded-control border bg-surface-1 px-3 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50 ${
+        className={`h-11 w-full rounded-control border bg-surface-1 px-3 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50 ${
           error ? "border-danger" : "border-border"
         } ${className}`}
         {...rest}

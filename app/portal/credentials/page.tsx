@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { CaretDown, Key, Plus, Trash } from "@phosphor-icons/react";
+import { CaretDown, Eye, EyeSlash, Key, Plus, Trash } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
@@ -34,6 +34,7 @@ export default function CredentialsPage() {
     // Form per app: label + username + password (klik "Tambah Akun")
     const [formData, setFormData] = useState<Record<string, { label: string; username: string; password: string }>>({});
     const [saving, setSaving] = useState<string | null>(null);
+    const [revealPass, setRevealPass] = useState<Record<string, boolean>>({});
     const [credToDelete, setCredToDelete] = useState<AccountInfo | null>(null);
     const { showToast } = useToast();
 
@@ -126,7 +127,7 @@ export default function CredentialsPage() {
                 <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">PORTAL SSO</p>
                 <h1 className="font-display text-2xl font-semibold text-text-1">Kredensial</h1>
                 <p className="mt-2 text-sm text-text-2">
-                    Simpan satu atau beberapa akun untuk setiap aplikasi. Kredensial disimpan terenkripsi.
+                    Ketik password aplikasi target supaya portal bisa login untuk Anda. Kredensial Anda disimpan terenkripsi.
                 </p>
             </div>
 
@@ -144,6 +145,7 @@ export default function CredentialsPage() {
                     {apps.map((app) => {
                         const isExpanded = expandedApp === app.appId;
                         const data = formData[app.appId] || { label: "", username: "", password: "" };
+                        const showPass = !!revealPass[app.appId];
 
                         return (
                             <Card key={app.appId} className="overflow-hidden">
@@ -194,13 +196,22 @@ export default function CredentialsPage() {
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setCredToDelete(acc); }}
-                                                            aria-label={`Hapus akun ${acc.label}`}
-                                                            className="inline-flex shrink-0 items-center gap-1 rounded-control px-3 py-2 text-xs font-semibold text-danger transition-colors duration-150 hover:bg-danger/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                                                        >
-                                                            <Trash size={16} aria-hidden="true" /> Hapus
-                                                        </button>
+                                                        <div className="flex items-center gap-2">
+                                                            <a
+                                                                href={`/portal/app/${app.appSlug}?credentialId=${acc.id}`}
+                                                                aria-label={`Buka ${app.appName} dengan akun ${acc.label}`}
+                                                                className="inline-flex min-h-11 items-center justify-center rounded-control border border-accent px-3 text-xs font-semibold text-accent hover:bg-accent-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                                                            >
+                                                                Coba Buka
+                                                            </a>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setCredToDelete(acc); }}
+                                                                aria-label={`Hapus akun ${acc.label}`}
+                                                                className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-control px-3 py-2 text-xs font-semibold text-danger transition-colors duration-150 hover:bg-danger/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                                                            >
+                                                                <Trash size={16} aria-hidden="true" /> Hapus
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -228,16 +239,29 @@ export default function CredentialsPage() {
                                                 }))}
                                                 placeholder="Username aplikasi"
                                             />
-                                            <Input
-                                                label="Password"
-                                                type="password"
-                                                value={data.password}
-                                                onChange={(e) => setFormData((prev) => ({
-                                                    ...prev,
-                                                    [app.appId]: { ...prev[app.appId], password: e.target.value },
-                                                }))}
-                                                placeholder="Password aplikasi"
-                                            />
+                                            <div className="flex gap-2">
+                                                <div className="flex-1">
+                                                    <Input
+                                                        label="Password"
+                                                        type={showPass ? "text" : "password"}
+                                                        value={data.password}
+                                                        onChange={(e) => setFormData((prev) => ({
+                                                            ...prev,
+                                                            [app.appId]: { ...prev[app.appId], password: e.target.value },
+                                                        }))}
+                                                        placeholder="Password aplikasi"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setRevealPass((prev) => ({ ...prev, [app.appId]: !prev[app.appId] }))}
+                                                    aria-label={showPass ? "Sembunyikan password" : "Tampilkan password"}
+                                                    aria-pressed={showPass}
+                                                    className="mt-6 inline-flex min-h-11 items-center justify-center rounded-control border border-border px-4 text-sm font-semibold text-text-1 hover:bg-surface-2"
+                                                >
+                                                    {showPass ? <EyeSlash size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
                                             <div>
                                                 <Button
                                                     variant="primary"

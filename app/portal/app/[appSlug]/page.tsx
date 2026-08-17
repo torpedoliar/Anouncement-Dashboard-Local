@@ -168,8 +168,9 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
             httpMethod: app.httpMethod,
             usernameField: app.usernameField,
             passwordField: app.passwordField,
-        }} 
-        cred={cred} 
-        extraFields={extraFields} 
+            logoPath: app.logoPath,
+        }}
+        cred={cred}
+        extraFields={extraFields}
     />;
 }
