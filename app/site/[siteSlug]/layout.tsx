@@ -68,7 +68,7 @@ export default async function SiteLayout({
                     customLinks={customLinks}
                 />
 
-                <main style={{ flex: 1 }}>
+                <main id="main-content" style={{ flex: 1, scrollMarginTop: "80px" }}>
                     {children}
                 </main>
 

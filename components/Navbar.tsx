@@ -60,7 +60,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
         <>
             {/* Skip to Content Link - Accessibility */}
             <a
-                href="#news"
+                href="#main-content"
                 /*
                   Style inline di sini dulu menduplikasi kelas .skip-link di
                   globals.css — termasuk handler onFocus/onBlur yang meniru
@@ -68,6 +68,8 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                   sebagai warna teks di atas merah brand, yang di tema terang
                   jadi teks gelap di atas merah (kontras buruk). Kelas CSS sudah
                   memakai --site-text-on-primary, jadi cukup pakai kelasnya.
+                  Target #main-content ada di <main> layout site (T2.5); #news
+                  lama hilang setelah app/page.tsx dihapus di T1.
                 */
                 className="skip-link"
             >

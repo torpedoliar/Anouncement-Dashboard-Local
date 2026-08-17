@@ -4,7 +4,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { FiChevronLeft, FiChevronRight, FiVolume2, FiVolumeX } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiVolume2, FiVolumeX, FiPause, FiPlay } from "react-icons/fi";
 
 interface HeroAnnouncement {
     id: string;
@@ -74,6 +74,8 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
             aria-label="Artikel unggulan"
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
+            onFocus={() => setIsAutoPlaying(false)}
+            onBlur={() => setIsAutoPlaying(true)}
             style={{
                 position: "relative",
                 width: "100%",
@@ -103,8 +105,7 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                 </video>
             ) : current.imagePath ? (
                 <div
-                    role="img"
-                    aria-label={current.title}
+                    aria-hidden="true"
                     style={{
                         position: "absolute",
                         inset: 0,
@@ -164,6 +165,17 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
             </div>
 
             <div style={{ position: "absolute", right: "clamp(0.75rem, 2.5vw, 3rem)", bottom: "clamp(0.75rem, 2.5vw, 2.5rem)", zIndex: 2, display: "flex", gap: "0.5rem" }}>
+                {hasMultipleAnnouncements && (
+                    <button
+                        type="button"
+                        onClick={() => setIsAutoPlaying((playing) => !playing)}
+                        aria-label={isAutoPlaying ? "Jeda rotasi artikel hero" : "Putar rotasi artikel hero"}
+                        aria-pressed={!isAutoPlaying}
+                        style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.45)", color: "var(--text-primary)", cursor: "pointer", display: "grid", placeItems: "center" }}
+                    >
+                        {isAutoPlaying ? <FiPause size={18} /> : <FiPlay size={18} />}
+                    </button>
+                )}
                 {current.videoPath && !youtubeId && (
                     <button
                         type="button"
@@ -187,17 +199,37 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
             </div>
 
             {hasMultipleAnnouncements && (
-                <div aria-label="Pilih artikel hero" style={{ position: "absolute", bottom: "clamp(0.75rem, 2.5vw, 2rem)", left: "50%", transform: "translateX(-50%)", zIndex: 2, display: "flex", gap: "0.5rem" }}>
-                    {announcements.map((announcement, index) => (
-                        <button
-                            key={announcement.id}
-                            type="button"
-                            onClick={() => setCurrentIndex(index)}
-                            aria-label={`Tampilkan artikel hero ${index + 1}: ${announcement.title}`}
-                            aria-current={index === currentIndex ? "true" : undefined}
-                            style={{ width: index === currentIndex ? "2rem" : "0.5rem", height: "0.25rem", borderRadius: "999px", backgroundColor: index === currentIndex ? primaryColor : "rgba(255,255,255,0.5)", border: 0, cursor: "pointer", transition: "width var(--motion-fast) var(--motion-ease)" }}
-                        />
-                    ))}
+                <div aria-label="Pilih artikel hero" style={{ position: "absolute", bottom: "clamp(0.75rem, 2.5vw, 2rem)", left: "50%", transform: "translateX(-50%)", zIndex: 2, display: "flex", gap: "0.25rem" }}>
+                    {announcements.map((announcement, index) => {
+                        const active = index === currentIndex;
+                        return (
+                            <button
+                                key={announcement.id}
+                                type="button"
+                                onClick={() => setCurrentIndex(index)}
+                                aria-label={`Tampilkan artikel hero ${index + 1}: ${announcement.title}`}
+                                aria-current={active ? "true" : undefined}
+                                // Area sentuh 44x44; bar visual tetap 4px di dalamnya.
+                                style={{ width: "2.75rem", minHeight: "2.75rem", padding: 0, background: "transparent", border: 0, cursor: "pointer", display: "grid", placeItems: "center" }}
+                            >
+                                <span
+                                    aria-hidden="true"
+                                    style={{
+                                        // Bar fixed 0.5rem; aktif di-scale lebar transform
+                                        // (bukan width) supaya tidak memicu layout (T2.6).
+                                        display: "block",
+                                        width: "0.5rem",
+                                        height: "0.25rem",
+                                        borderRadius: "999px",
+                                        backgroundColor: active ? primaryColor : "rgba(255,255,255,0.5)",
+                                        transform: active ? "scaleX(4)" : "scaleX(1)",
+                                        transformOrigin: "center",
+                                        transition: "transform var(--motion-fast) var(--motion-ease)",
+                                    }}
+                                />
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </section>

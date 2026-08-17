@@ -423,18 +423,32 @@ a {
   font-family: var(--font-sora), var(--font-montserrat), system-ui, sans-serif;
 }
 
+/* Heading global (h1..h6) tidak punya margin atas, jadi heading artikel
+   menempel ke paragraf di atasnya. Beri ritme yang berbeda dari paragraf. */
+.prose-santos h2 {
+  margin-top: 2em;
+}
+.prose-santos h3,
+.prose-santos h4 {
+  margin-top: 1.5em;
+}
+
 .prose-santos p {
   margin-bottom: 1.5em;
   line-height: 1.8;
   text-wrap: pretty;
 }
 
+/* Link harus terlihat sebagai link tanpa mengandalkan hover — di layar sentuh
+   hover tidak pernah terjadi, dan WCAG 1.4.1 melarang perbedaan hanya lewat
+   warna. Garis bawah default; hover menggeser warna saja. */
 .prose-santos a {
   color: var(--accent);
+  text-decoration: underline;
 }
 
 .prose-santos a:hover {
-  text-decoration: underline;
+  color: var(--text-1);
 }
 
 .prose-santos strong {

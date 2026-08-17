@@ -8,7 +8,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { FiArrowLeft, FiCalendar, FiUser, FiEye, FiClock, FiPlay } from "react-icons/fi";
+import { FiPlay } from "react-icons/fi";
 
 function extractYoutubeId(url: string | null | undefined): string | null {
     if (!url) return null;
@@ -112,36 +112,9 @@ export default async function ArticlePage({ params }: PageProps) {
             )}
 
             {/* Navbar */}
-            <nav
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "16px 24px",
-                    borderBottom: "1px solid rgba(255,255,255,0.1)",
-                    position: "sticky",
-                    top: 0,
-                    backgroundColor: "rgba(10,10,10,0.9)",
-                    backdropFilter: "blur(10px)",
-                    zIndex: 100,
-                }}
-            >
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <Link
-                        href={`/site/${siteSlug}`}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            color: "#888",
-                            textDecoration: "none",
-                        }}
-                    >
-                        <FiArrowLeft size={18} />
-                        <span>Kembali ke {site.name}</span>
-                    </Link>
-                </div>
-            </nav>
+            {/* Back link kini ditangani ArticleHero (lihat T2.2); blok <nav> lokal
+                yang tertimbun di bawah Navbar fixed (zIndex 200 vs sticky 100)
+                sudah dihapus agar tidak ada dua landmark <nav> per halaman. */}
 
             {/* Hero Section */}
             <ArticleHero
@@ -155,6 +128,8 @@ export default async function ArticlePage({ params }: PageProps) {
                 videoPath={announcement.videoPath}
                 youtubeUrl={announcement.youtubeUrl}
                 siteSlug={siteSlug}
+                backHref={`/site/${siteSlug}`}
+                backLabel={`Kembali ke ${site.name}`}
             />
 
             {/* Article Content Container */}
@@ -163,12 +138,7 @@ export default async function ArticlePage({ params }: PageProps) {
 
                 {/* Content */}
                 <div
-                    className="article-content"
-                    style={{
-                        fontSize: "17px",
-                        lineHeight: 1.8,
-                        color: "#e0e0e0",
-                    }}
+                    className="prose-santos"
                     dangerouslySetInnerHTML={{ __html: announcement.content }}
                 />
 

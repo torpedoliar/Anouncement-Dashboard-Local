@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { FiCalendar, FiUser, FiEye, FiClock, FiVolume2, FiVolumeX } from "react-icons/fi";
+import { FiCalendar, FiUser, FiEye, FiClock, FiVolume2, FiVolumeX, FiArrowLeft } from "react-icons/fi";
 import Link from "next/link";
 
 interface ArticleHeroProps {
@@ -17,6 +17,8 @@ interface ArticleHeroProps {
     videoPath?: string | null;
     youtubeUrl?: string | null;
     siteSlug: string;
+    backHref?: string;
+    backLabel?: string;
 }
 
 export default function ArticleHero({
@@ -29,7 +31,9 @@ export default function ArticleHero({
     imagePath,
     videoPath,
     youtubeUrl,
-    siteSlug
+    siteSlug,
+    backHref,
+    backLabel
 }: ArticleHeroProps) {
     const [isMuted, setIsMuted] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -57,8 +61,10 @@ export default function ArticleHero({
             style={{
                 position: "relative",
                 width: "100%",
-                height: "85vh", // Large cover height
-                minHeight: "600px",
+                // 85vh+600px memakan 94% viewport mobile (floor 600px menang di
+                // 360x640). Turunkan ke min(55vh, 420px) supaya dua baris pertama
+                // isi artikel terlihat tanpa scroll. (T2.4)
+                height: "min(55vh, 420px)",
                 overflow: "hidden",
                 display: "flex",
                 alignItems: "flex-end", // Align content to bottom
@@ -76,6 +82,8 @@ export default function ArticleHero({
                             muted={isMuted}
                             loop
                             playsInline
+                            preload="none"
+                            poster={imagePath || undefined}
                             style={{
                                 width: "100%",
                                 height: "100%",
@@ -167,6 +175,28 @@ export default function ArticleHero({
                     padding: "0 24px 64px 24px"
                 }}
             >
+                {/* Back Link — satu pemilik (T2.2), mendasar di atas badge kategori.
+                    Token-native, tinggi sentuh 44px. Tidak pakai mutasi DOM hover. */}
+                {backHref && backLabel && (
+                    <Link
+                        href={backHref}
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            minHeight: "44px",
+                            color: "var(--text-2)",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            textDecoration: "none",
+                            marginBottom: "16px",
+                        }}
+                    >
+                        <FiArrowLeft size={16} aria-hidden="true" />
+                        {backLabel}
+                    </Link>
+                )}
+
                 {/* Category Badge */}
                 <Link
                     href={`/site/${siteSlug}?category=${category.slug}`}

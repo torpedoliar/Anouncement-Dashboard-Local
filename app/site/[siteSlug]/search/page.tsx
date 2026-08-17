@@ -8,7 +8,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
-import { FiArrowLeft, FiSearch, FiCalendar, FiEye, FiPlay } from "react-icons/fi";
+import { FiSearch, FiCalendar, FiEye, FiPlay } from "react-icons/fi";
 
 function extractYoutubeId(url: string | null | undefined): string | null {
     if (!url) return null;
@@ -81,28 +81,9 @@ export default async function SiteSearchPage({ params, searchParams }: PageProps
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
             {/* Navbar */}
-            <nav style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "16px 24px",
-                borderBottom: "1px solid rgba(255,255,255,0.1)",
-                position: "sticky",
-                top: 0,
-                backgroundColor: "rgba(10,10,10,0.9)",
-                backdropFilter: "blur(10px)",
-                zIndex: 100,
-            }}>
-                <Link href={`/site/${siteSlug}`} style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    color: "#888",
-                    textDecoration: "none",
-                }}>
-                    <FiArrowLeft size={18} />
-                    <span>Back to {site.name}</span>
-                </Link>
-            </nav>
+            {/* Navbar */}
+            {/* Blok <nav> lokal yang tertimbun di bawah Navbar fixed sudah dihapus
+                (T2.2). Halaman search sudah dapat Navbar dari site layout. */}
 
             {/* Search Header */}
             <div style={{
@@ -187,7 +168,7 @@ export default async function SiteSearchPage({ params, searchParams }: PageProps
                 {announcements.length > 0 ? (
                     <div style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
                         gap: "24px",
                     }}>
                         {announcements.map((a) => (
