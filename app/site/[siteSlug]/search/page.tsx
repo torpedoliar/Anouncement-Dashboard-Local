@@ -8,7 +8,18 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
-import { FiArrowLeft, FiSearch, FiCalendar, FiEye } from "react-icons/fi";
+import { FiArrowLeft, FiSearch, FiCalendar, FiEye, FiPlay } from "react-icons/fi";
+
+function extractYoutubeId(url: string | null | undefined): string | null {
+    if (!url) return null;
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+    return m?.[1] ?? null;
+}
+function getThumbnailUrl(a: { imagePath: string | null; videoPath: string | null; videoType: string | null; youtubeUrl: string | null }): string | null {
+    const yId = extractYoutubeId(a.youtubeUrl);
+    if (a.videoType === "youtube" && yId) return `https://img.youtube.com/vi/${yId}/hqdefault.jpg`;
+    return a.imagePath;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -188,14 +199,32 @@ export default async function SiteSearchPage({ params, searchParams }: PageProps
                                 border: "1px solid rgba(255,255,255,0.1)",
                                 overflow: "hidden",
                             }}>
-                                {a.imagePath && (
-                                    <div style={{
-                                        height: "180px",
-                                        backgroundImage: `url(${a.imagePath})`,
-                                        backgroundSize: "cover",
-                                        backgroundPosition: "center",
-                                    }} />
-                                )}
+                                {(() => {
+                                    const thumb = getThumbnailUrl(a);
+                                    const hasVideo = !!a.videoPath || a.videoType === "youtube";
+                                    if (thumb) {
+                                        return (
+                                            <div style={{ height: "180px", backgroundImage: `url(${thumb})`, backgroundSize: "cover", backgroundPosition: "center", position: "relative" }}>
+                                                {hasVideo && (
+                                                    <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 32, height: 32, borderRadius: "50%", backgroundColor: "rgba(220,38,38,0.9)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                        <FiPlay size={14} color="#fff" style={{ marginLeft: 2 }} />
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+                                    if (a.videoPath) {
+                                        return (
+                                            <div style={{ height: "180px", position: "relative", overflow: "hidden", backgroundColor: "#111" }}>
+                                                <video src={a.videoPath} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                                <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 32, height: 32, borderRadius: "50%", backgroundColor: "rgba(220,38,38,0.9)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                    <FiPlay size={14} color="#fff" style={{ marginLeft: 2 }} />
+                                                </span>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
                                 <div style={{ padding: "20px" }}>
                                     <span style={{
                                         display: "inline-block",
