@@ -86,3 +86,6 @@ Resume file: .planning/phases/11-portal-auth-surfaces-current-ready-to-plan/11-E
 
 ---
 *Next action: `/gsd-plan-phase 11` (Portal & Auth Surfaces) — run at TOP LEVEL (Agent tool required for researcher/planner/checker spawns)*
+
+### Roadmap Evolution
+- Phase 12 added: PDF Reader Inline di Artikel — upload dan embed PDF di RichTextEditor, tampil inline tanpa download/tab baru (2026-08-17, graphify audit pre-check)

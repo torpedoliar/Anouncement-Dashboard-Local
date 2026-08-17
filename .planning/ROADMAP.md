@@ -405,5 +405,16 @@ M1 (1–6.4) shipped; M2 (7–11) current; Phase 11 is next.
 
 > Dates approx. from plan-document dates (M1 + rework P0–P3 shipped before the GSD tracker existed). Complete = requirements verified shipped in repo by the 2026-08-15 code scan; STATE.md carries the detailed evidence.
 
+### Phase 12: PDF Reader Inline di Artikel
+
+**Goal:** Editor dapat upload & embed PDF di dalam body artikel via RichTextEditor (TipTap extension); pembaca melihat PDF inline (native browser viewer) di halaman artikel tanpa download atau buka tab baru, dengan fallback link download.
+**Requirements**: TBD (PDF-inline; derived from user request 2026-08-17)
+**Depends on:** Phase 11
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 12 to break down)
+
 ---
 *Last updated: 2026-08-15 after new-project-from-ingest (36 docs, 25 SPECs; 6 conflicting variants preserved as OPD-1..6)*
