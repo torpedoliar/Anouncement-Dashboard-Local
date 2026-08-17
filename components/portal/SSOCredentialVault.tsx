@@ -109,7 +109,7 @@ export default function SSOCredentialVault({ app, cred }: SSOCredentialVaultProp
                             readOnly
                             value={cred.username}
                             onFocus={(e) => e.currentTarget.select()}
-                            className="h-10 flex-1 rounded-control border border-border bg-surface-0 px-3 font-mono text-sm tabular-nums text-text-1 focus:outline-none"
+                            className="h-10 flex-1 rounded-control border border-border bg-surface-0 px-3 font-mono text-sm tabular-nums text-text-1"
                         />
                         <button
                             onClick={() => handleCopy(cred.username, "user")}
@@ -137,7 +137,7 @@ export default function SSOCredentialVault({ app, cred }: SSOCredentialVaultProp
                             type={reveal ? "text" : "password"}
                             value={cred.password}
                             onFocus={(e) => e.currentTarget.select()}
-                            className={`h-10 flex-1 rounded-control border border-border bg-surface-0 px-3 font-mono text-sm tabular-nums text-text-1 focus:outline-none ${
+                            className={`h-10 flex-1 rounded-control border border-border bg-surface-0 px-3 font-mono text-sm tabular-nums text-text-1 ${
                                 reveal ? "" : "tracking-[2px]"
                             }`}
                         />

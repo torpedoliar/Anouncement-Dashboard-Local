@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatDateShort } from "@/lib/utils";
 import { FiClock, FiPlay, FiYoutube } from "react-icons/fi";
+import { getContrastColor } from "@/components/SiteThemeProvider";
 
 interface AnnouncementCardProps {
     id: string;
@@ -167,12 +168,14 @@ export default function AnnouncementCard({
                 }}>
                     {/* Urutan baca: kategori -> judul -> excerpt -> tanggal.
                         Meta dulu di atas judul; kategori pindah ke atas judul
-                        supaya kedekatan mengikat label ke objeknya. */}
+                        supaya kedekatan mengikat label ke objeknya. T7: teks
+                        badge dipilih runtime lewat getContrastColor agar kontras
+                        lolos AA juga di kategori kuning/cerah. */}
                     <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                         <span style={{
                             padding: '4px 10px',
                             backgroundColor: category.color,
-                            color: 'var(--site-text-on-primary)',
+                            color: getContrastColor(category.color),
                             fontSize: '10px',
                             fontWeight: 700,
                             letterSpacing: '0.1em',

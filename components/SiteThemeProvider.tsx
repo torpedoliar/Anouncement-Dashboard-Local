@@ -63,13 +63,19 @@ function adjustBrightness(hex: string, percent: number): string {
     return `#${((1 << 24) | (R << 16) | (G << 8) | B).toString(16).slice(1)}`;
 }
 
-// Calculate if text should be light or dark based on background
-function getContrastColor(hexColor: string): string {
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.5 ? "#000000" : "#FFFFFF";
+// Pilih warna teks di atas warna background acak (mis. category.color atau
+// site.primaryColor yang diedit admin) berdasarkan kontras WCAG, bukan
+// perceived brightness. Sebelumnya memakai (0.299r+0.587g+0.114b)/255 > 0.5
+// yang memberi keputusan salah pada merah brand (dianggap "terang" → teks
+// hitam, padahal putih yang benar). Threshold 0.179: pada luminansi itu, putih
+// dan hitam sama-sama ~4.5:1 — di bawahnya teks putih, di atasnya hitam. (T7)
+export function getContrastColor(hexColor: string): string {
+    const r = parseInt(hexColor.slice(1, 3), 16) / 255;
+    const g = parseInt(hexColor.slice(3, 5), 16) / 255;
+    const b = parseInt(hexColor.slice(5, 7), 16) / 255;
+    const linearize = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    const L = 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+    return L < 0.179 ? "#FFFFFF" : "#000000";
 }
 
 // Convert hex to rgba

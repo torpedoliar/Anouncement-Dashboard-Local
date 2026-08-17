@@ -26,10 +26,12 @@
   --surface-3: #27272A;
   --border: #27272A;
 
-  /* ---- Text (NIGHT) ---- */
+  /* ---- Text (NIGHT) ----
+     --text-3 dinaikkan dari #71717A (3.93:1 di --surface-1) ke ~#8A8A93
+     (≈4.6:1) supaya label tersier lolos WCAG AA pada 12px (T7). */
   --text-1: #FAFAFA;
   --text-2: #A1A1AA;
-  --text-3: #71717A;
+  --text-3: #8A8A93;
 
   /* ---- Accent (default brand red, overridden by --site-primary) ---- */
   --accent: var(--site-primary, var(--brand-red));
@@ -57,7 +59,7 @@
   --border-rgb: 39 39 42;
   --text-1-rgb: 250 250 250;
   --text-2-rgb: 161 161 170;
-  --text-3-rgb: 113 113 122;
+  --text-3-rgb: 138 138 147;
   --brand-red-rgb: 237 28 36;
   /* Disuntikkan runtime oleh SiteThemeProvider; fallback ke merah brand. */
   --accent-rgb: var(--site-primary-rgb, var(--brand-red-rgb));
@@ -132,7 +134,8 @@ html.theme-light {
   --border: #E0DDD5;
   --text-1: #1C1917;
   --text-2: #57534E;
-  --text-3: #8A857E;
+  /* Dinaikkan dari #8A857E (≈3.7:1 di putih) ke #6B675F (≈5.0:1) — AA 12px (T7). */
+  --text-3: #6B675F;
   --accent: var(--site-primary, var(--brand-red));
 
   /* Kanal pendamping edisi paper — harus ikut dioverride, kalau tidak varian
@@ -144,7 +147,7 @@ html.theme-light {
   --border-rgb: 224 221 213;
   --text-1-rgb: 28 25 23;
   --text-2-rgb: 87 83 78;
-  --text-3-rgb: 138 133 126;
+  --text-3-rgb: 107 103 95;
   --shadow-1: 0 1px 2px rgba(28, 25, 23, 0.06);
   --shadow-2: 0 4px 12px -2px rgba(28, 25, 23, 0.08);
   --shadow-3: 0 12px 32px -8px rgba(28, 25, 23, 0.12);

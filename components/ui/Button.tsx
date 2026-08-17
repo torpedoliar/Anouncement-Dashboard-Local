@@ -17,7 +17,10 @@ const BASE =
   "inline-flex items-center justify-center gap-2 rounded-control font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50 disabled:cursor-not-allowed";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-white hover:opacity-90",
+  // primary memakai --brand-red-dark (#C41920), bukan --accent (#ED1C24): teks
+  // putih di #ED1C24 hanya 4.38:1 (gagal AA 14px); di #C41920 ≈6.0:1. --accent
+  // tetap untuk aksen non-teks (border, ikon). (T7)
+  primary: "bg-santos-red-dark text-white hover:opacity-90",
   secondary: "border border-border bg-surface-1 text-text-1 hover:bg-surface-2",
   ghost: "text-text-2 hover:bg-surface-2 hover:text-text-1",
   danger: "bg-danger text-white hover:opacity-90",
