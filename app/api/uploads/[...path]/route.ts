@@ -18,6 +18,8 @@ const MIME_TYPES: Record<string, string> = {
     "webm": "video/webm",
     "ogg": "video/ogg",
     "mov": "video/quicktime",
+    // Documents
+    "pdf": "application/pdf",
 };
 
 export async function GET(

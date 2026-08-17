@@ -31,6 +31,9 @@ export function sanitizeHTML(html: string): string {
         ALLOWED_ATTR: [
             'href', 'target', 'rel', 'src', 'alt', 'title', 'width', 'height',
             'class', 'id', 'style', 'frameborder', 'allowfullscreen', 'allow',
+            // PDF inline placeholder markers (whitelisted individually; the
+            // generic data-* wildcard stays disabled)
+            'data-pdf', 'data-src', 'data-filename',
         ],
         ALLOW_DATA_ATTR: false,
     });
