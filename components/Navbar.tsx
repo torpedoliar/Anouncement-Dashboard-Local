@@ -19,41 +19,29 @@ interface NavbarProps {
 export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", customLinks }: NavbarProps) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isDesktop, setIsDesktop] = useState(false);
-    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        // Mark as mounted to enable client-side rendering
-        setMounted(true);
-
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 50);
         };
 
-        const handleResize = () => {
-            setIsDesktop(window.innerWidth >= 1024);
-        };
-
         // Initial check
         handleScroll();
-        handleResize();
 
         window.addEventListener("scroll", handleScroll);
-        window.addEventListener("resize", handleResize);
         return () => {
             window.removeEventListener("scroll", handleScroll);
-            window.removeEventListener("resize", handleResize);
         };
     }, []);
 
-    // Use defaults during SSR to prevent hydration mismatch
-    const showDesktopNav = mounted ? isDesktop : true;
-    const showMobileMenu = mounted ? !isDesktop : false;
+    // Navbar lalu memakai state isDesktop + guard mounted yang default-true di SSR,
+    // jadi mobile melukis layout desktop (7 item pada gap 40px di container 312px)
+    // sebelum hydration lalu snap ke hamburger. Kedua cabang kini dirender tanpa
+    // syarat dan diatur lewat breakpoint CSS (hidden lg:flex / lg:hidden). Lihat
+    // globals.css untuk catatan panjang tentang bug isDesktop-default-true yang sama.
 
     const navLinks = customLinks || [
-        { href: "/", label: "BERANDA" },
-        { href: "/#news", label: "BERITA" },
-        { href: "/search", label: "PENCARIAN" },
+        { href: "/site", label: "BERANDA" },
     ];
 
     return (
@@ -130,57 +118,47 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                         </Link>
 
                         {/* Desktop Navigation */}
-                        {showDesktopNav && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-                                {navLinks.map((link) => (
-                                    <Link
-                                        key={link.href}
-                                        href={link.href}
-                                        style={{
-                                            color: 'var(--text-secondary)',
-                                            fontSize: '12px',
-                                            fontWeight: 600,
-                                            letterSpacing: '0.15em',
-                                            textTransform: 'uppercase',
-                                            transition: 'color 0.3s',
-                                            padding: '8px 0',
-                                            borderBottom: '2px solid transparent',
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.currentTarget.style.color = '#fff';
-                                            e.currentTarget.style.borderBottomColor = '#dc2626';
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.currentTarget.style.color = '#a3a3a3';
-                                            e.currentTarget.style.borderBottomColor = 'transparent';
-                                        }}
-                                    >
-                                        {link.label}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
+                        <div className="hidden lg:flex" style={{ alignItems: 'center', gap: '40px' }}>
+                            {navLinks.map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className="nav-link"
+                                    style={{
+                                        fontSize: '12px',
+                                        fontWeight: 600,
+                                        letterSpacing: '0.15em',
+                                        textTransform: 'uppercase',
+                                        padding: '8px 0',
+                                        borderBottom: '2px solid transparent',
+                                    }}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                        </div>
 
                         {/* Mobile Menu Button */}
-                        {showMobileMenu && (
-                            <button
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                style={{
-                                    padding: '8px',
-                                    color: 'var(--text-primary)',
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-                            </button>
-                        )}
+                        <button
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            aria-label={isMobileMenuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
+                            aria-expanded={isMobileMenuOpen}
+                            className="lg:hidden"
+                            style={{
+                                padding: '8px',
+                                color: 'var(--text-primary)',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+                        </button>
                     </div>
 
                     {/* Mobile Menu */}
-                    {showMobileMenu && isMobileMenuOpen && (
-                        <div style={{
+                    {isMobileMenuOpen && (
+                        <div className="lg:hidden" style={{
                             padding: '16px 0',
                             borderTop: '1px solid var(--border-color)',
                             backgroundColor: 'rgba(0, 0, 0, 0.95)',

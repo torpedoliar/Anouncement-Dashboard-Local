@@ -117,25 +117,14 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         title={social.label}
+                                        aria-label={social.label}
+                                        className="footer-social"
                                         style={{
                                             width: '40px',
                                             height: '40px',
-                                            border: '1px solid var(--border-strong)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            color: 'var(--text-muted)',
-                                            transition: 'all 0.3s',
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.currentTarget.style.borderColor = '#dc2626';
-                                            e.currentTarget.style.backgroundColor = '#dc2626';
-                                            e.currentTarget.style.color = '#fff';
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.currentTarget.style.borderColor = '#333';
-                                            e.currentTarget.style.backgroundColor = 'transparent';
-                                            e.currentTarget.style.color = '#737373';
                                         }}
                                     >
                                         <social.icon size={16} />
@@ -147,7 +136,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
 
                     {/* Quick Links */}
                     <div>
-                        <h4 style={{
+                        <h2 style={{
                             color: 'var(--brand-red)',
                             fontSize: '11px',
                             fontWeight: 600,
@@ -156,7 +145,7 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                             marginBottom: '24px',
                         }}>
                             TAUTAN
-                        </h4>
+                        </h2>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                             {[
                                 { href: "/", label: "Beranda" },
@@ -166,13 +155,10 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                                 <li key={link.href} style={{ marginBottom: '12px' }}>
                                     <Link
                                         href={link.href}
+                                        className="footer-link"
                                         style={{
-                                            color: 'var(--text-muted)',
                                             fontSize: '14px',
-                                            transition: 'color 0.3s',
                                         }}
-                                        onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-                                        onMouseOut={(e) => e.currentTarget.style.color = '#737373'}
                                     >
                                         {link.label}
                                     </Link>

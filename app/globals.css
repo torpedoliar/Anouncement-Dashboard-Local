@@ -496,6 +496,68 @@ a {
   outline-offset: 2px;
 }
 
+/*
+  Komponen chrome publik (Navbar/Footer/SitePickerCard) dulu memakai
+  mutasi DOM onMouseOver/onMouseOut dengan hex (#dc2626, #a3a3a3, #fff) —
+  inline style tak bisa menyatakan :hover/:focus/media query, jadi hover-nya
+  tidak punya padanan keyboard dan memutus elemen dari token setelah hover
+  pertama. Kelas-kelas ini menggantikannya: hover dan focus-visible punya
+  perilaku identik, warna dari token, bukan hex. (T3)
+*/
+
+/* Tautan navigasi atas (Navbar desktop + mobile) */
+.nav-link {
+  color: var(--text-secondary);
+  transition: color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease);
+}
+.nav-link:hover,
+.nav-link:focus-visible {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+
+/* Tautan cepat Footer */
+.footer-link {
+  color: var(--text-muted);
+  transition: color var(--motion-fast) var(--motion-ease);
+}
+.footer-link:hover,
+.footer-link:focus-visible {
+  color: var(--text-primary);
+}
+
+/* Tombol ikon sosial Footer */
+.footer-social {
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+  background-color: transparent;
+  transition: color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) var(--motion-ease);
+}
+.footer-social:hover,
+.footer-social:focus-visible {
+  color: var(--site-text-on-primary);
+  border-color: var(--accent);
+  background-color: var(--accent);
+}
+
+/* Kartu pemilih site — border/transform/shadow memakai --site-primary
+   per-site (dipancarkan SiteThemeProvider), jadi hover & focus twin. */
+.site-picker-card {
+  border: 1px solid var(--border);
+  transition: transform var(--motion-standard) var(--motion-ease),
+    border-color var(--motion-standard) var(--motion-ease),
+    box-shadow var(--motion-standard) var(--motion-ease);
+}
+.site-picker-card:hover,
+.site-picker-card:focus-visible {
+  border-color: var(--site-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 40px rgb(var(--site-primary-rgb) / 0.19);
+}
+
 /* Screen Reader Only */
 .sr-only {
   position: absolute;

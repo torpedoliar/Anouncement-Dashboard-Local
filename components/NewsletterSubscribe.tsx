@@ -166,7 +166,7 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
     // Inline variant (for footer)
     return (
         <div>
-            <h4 style={{
+            <h2 style={{
                 color: "var(--brand-red)",
                 fontSize: "11px",
                 fontWeight: 600,
@@ -175,7 +175,7 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                 marginBottom: "16px",
             }}>
                 NEWSLETTER
-            </h4>
+            </h2>
             <p style={{
                 color: "var(--text-muted)",
                 fontSize: "14px",

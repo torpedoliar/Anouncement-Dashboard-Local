@@ -31,26 +31,15 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
     return (
         <Link
             href={`/site/${site.slug}`}
+            className="site-picker-card"
             style={{
                 display: "block",
                 backgroundColor: "var(--bg-card)",
-                border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: "16px",
                 padding: "28px",
                 textDecoration: "none",
-                transition: "all 0.3s ease",
                 position: "relative",
                 overflow: "hidden",
-            }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = site.primaryColor;
-                e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.boxShadow = `0 10px 40px ${site.primaryColor}30`;
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "none";
             }}
         >
             {/* Gradient accent at top */}
