@@ -13,8 +13,10 @@ import sharp from "sharp";
 // File type configurations
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const VIDEO_TYPES = ["video/mp4"];
+const PDF_TYPES = ["application/pdf"];
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB (before compression)
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+const MAX_PDF_SIZE = 50 * 1024 * 1024; // 50MB
 
 // Compression settings
 const MAX_WIDTH = 1920;
@@ -120,24 +122,28 @@ export async function POST(request: NextRequest) {
         const isImage = IMAGE_TYPES.includes(file.type);
         const isVideo = VIDEO_TYPES.includes(file.type);
         const isGif = file.type === "image/gif";
+        // PDF: double validation per SPEC — accept only when the claimed MIME
+        // AND the submitted filename extension both say PDF (never trust MIME alone).
+        const isPdf = PDF_TYPES.includes(file.type) && file.name.toLowerCase().endsWith(".pdf");
 
-        if (!isImage && !isVideo) {
+        if (!isImage && !isVideo && !isPdf) {
             return NextResponse.json({
-                error: `Format tidak didukung. Gunakan: ${IMAGE_TYPES.join(", ")}, ${VIDEO_TYPES.join(", ")}`
+                error: `Format tidak didukung. Gunakan: ${IMAGE_TYPES.join(", ")}, ${VIDEO_TYPES.join(", ")}, ${PDF_TYPES.join(", ")}`
             }, { status: 400 });
         }
 
         // Check file size
-        const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+        const maxSize = isPdf ? MAX_PDF_SIZE : (isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE);
         if (file.size > maxSize) {
             const maxMB = maxSize / (1024 * 1024);
+            const typeLabel = isPdf ? 'PDF' : (isVideo ? 'video' : 'gambar');
             return NextResponse.json({
-                error: `Ukuran file terlalu besar. Maksimal ${maxMB}MB untuk ${isVideo ? 'video' : 'gambar'}`
+                error: `Ukuran file terlalu besar. Maksimal ${maxMB}MB untuk ${typeLabel}`
             }, { status: 400 });
         }
 
         // Determine folder
-        const folder = isVideo ? "videos" : "images";
+        const folder = isPdf ? "documents" : (isVideo ? "videos" : "images");
         const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
 
         // Create directory if not exists
@@ -153,7 +159,12 @@ export async function POST(request: NextRequest) {
         let filename: string;
         let finalMimeType: string;
 
-        if (isVideo) {
+        if (isPdf) {
+            // PDF - raw buffer stored unmodified (sharp must not run for PDFs)
+            filename = `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.pdf`;
+            finalBuffer = buffer;
+            finalMimeType = "application/pdf";
+        } else if (isVideo) {
             // Video - no compression (would need ffmpeg)
             filename = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp4`;
             finalBuffer = buffer;
@@ -180,14 +191,15 @@ export async function POST(request: NextRequest) {
         const filepath = path.join(uploadDir, filename);
         await writeFile(filepath, finalBuffer);
 
-        // Save to database (siteId: null = shared/global media)
+        // Save to database (siteId: null = shared/global media; PDF alt falls
+        // back to the submitted file name so the embed can show a friendly label)
         const media = await prisma.mediaLibrary.create({
             data: {
                 filename,
                 url: `/api/uploads/${folder}/${filename}`,
                 mimeType: finalMimeType,
                 size: finalBuffer.length,
-                alt: alt || null,
+                alt: isPdf ? (alt || file.name) : (alt || null),
                 siteId: siteId || null, // null = shared, otherwise site-specific
             },
         });
