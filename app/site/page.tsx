@@ -48,12 +48,13 @@ export default async function SitePickerPage() {
                 color: "#fff",
             }}
         >
-            {/* Hero Section */}
+            {/* Masthead Kapal Api Committed (T9) — blok merah penuh teks putih,
+                bukan gradient-clipped. Skala di clamp supaya proporsional. */}
             <div
                 style={{
-                    padding: "80px 24px",
+                    padding: "64px 24px 48px",
                     textAlign: "center",
-                    background: "linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)",
+                    backgroundColor: "var(--brand-red)",
                 }}
             >
                 {settings?.logoPath ? (
@@ -71,24 +72,22 @@ export default async function SitePickerPage() {
                             width: "80px",
                             height: "80px",
                             borderRadius: "20px",
-                            backgroundColor: settings?.primaryColor || "#ED1C24",
+                            backgroundColor: "#fff",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             margin: "0 auto 24px",
                         }}
                     >
-                        <FiGlobe size={40} color="#fff" />
+                        <FiGlobe size={40} color="#ED1C24" />
                     </div>
                 )}
                 <h1
                     style={{
-                        fontSize: "48px",
+                        fontSize: "clamp(28px, 5vw, 48px)",
                         fontWeight: 800,
                         marginBottom: "16px",
-                        background: "linear-gradient(135deg, #fff 0%, #888 100%)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
+                        color: "var(--site-text-on-primary, #fff)",
                     }}
                 >
                     Pilih Site
@@ -96,7 +95,7 @@ export default async function SitePickerPage() {
                 <p
                     style={{
                         fontSize: "18px",
-                        color: "#888",
+                        color: "rgba(255,255,255,0.9)",
                         maxWidth: "600px",
                         margin: "0 auto",
                     }}
@@ -130,17 +129,16 @@ export default async function SitePickerPage() {
                         style={{
                             textAlign: "center",
                             padding: "60px 20px",
-                            backgroundColor: "#1a1a1a",
-                            borderRadius: "16px",
-                            border: "1px solid rgba(255,255,255,0.1)",
                         }}
                     >
-                        <FiGlobe size={48} color="#666" style={{ marginBottom: "16px" }} />
-                        <h3 style={{ fontSize: "18px", marginBottom: "8px", color: "#fff" }}>
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-card border border-accent/30 bg-accent-subtle">
+                            <FiGlobe size={24} className="text-accent" aria-hidden="true" />
+                        </div>
+                        <h2 className="mt-4 font-display text-lg font-semibold text-text-1">
                             Belum Ada Site
-                        </h3>
-                        <p style={{ color: "#888" }}>
-                            Site sedang dalam pengembangan. Silakan kembali lagi nanti.
+                        </h2>
+                        <p className="mx-auto mt-3 max-w-[420px] text-sm text-text-2">
+                            Belum ada site yang aktif. Hubungi admin untuk menyiapkan site pertama.
                         </p>
                     </div>
                 )}

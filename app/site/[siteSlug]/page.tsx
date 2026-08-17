@@ -259,12 +259,23 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
                         style={{
                             textAlign: "center",
                             padding: "60px 20px",
-                            backgroundColor: "#1a1a1a",
-                            borderRadius: "12px",
-                            border: "1px solid rgba(255,255,255,0.1)",
                         }}
                     >
-                        <p style={{ color: "#888" }}>Belum ada artikel untuk site ini.</p>
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-card border border-accent/30 bg-accent-subtle">
+                            <span className="text-xl font-semibold text-accent">SJA</span>
+                        </div>
+                        <h2 className="mt-4 font-display text-lg font-semibold text-text-1">
+                            Belum ada artikel untuk {site.name}
+                        </h2>
+                        <p className="mx-auto mt-3 max-w-[420px] text-sm text-text-2">
+                            Setelah artikel dipublikasikan, entri akan muncul di sini.
+                        </p>
+                        <Link
+                            href="/site"
+                            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-control border border-border px-4 text-sm font-semibold text-text-1 transition-colors duration-150 hover:bg-surface-2"
+                        >
+                            Pilih site lain
+                        </Link>
                     </div>
                 )}
             </div>
