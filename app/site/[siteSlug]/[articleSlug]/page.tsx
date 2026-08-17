@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ArticleHero from "@/components/site/ArticleHero";
+import ArticleContent from "@/components/site/ArticleContent";
 import AnnouncementCard from "@/components/AnnouncementCard";
 import CommentSection from "@/components/CommentSection";
 
@@ -127,10 +128,7 @@ export default async function ArticlePage({ params }: PageProps) {
                 {/* Hero Media moved up */}
 
                 {/* Content */}
-                <div
-                    className="prose-santos"
-                    dangerouslySetInnerHTML={{ __html: announcement.content }}
-                />
+                <ArticleContent html={announcement.content} />
 
                 {/* Syndication notice */}
                 {announcement.sites.length > 1 && (
