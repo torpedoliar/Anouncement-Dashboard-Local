@@ -6,22 +6,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { FiPlay } from "react-icons/fi";
-
-function extractYoutubeId(url: string | null | undefined): string | null {
-    if (!url) return null;
-    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
-    return m?.[1] ?? null;
-}
-function getThumbnailUrl(a: { imagePath: string | null; videoPath: string | null; videoType: string | null; youtubeUrl: string | null }): string | null {
-    const yId = extractYoutubeId(a.youtubeUrl);
-    if (a.videoType === "youtube" && yId) return `https://img.youtube.com/vi/${yId}/hqdefault.jpg`;
-    return a.imagePath;
-}
 import ArticleHero from "@/components/site/ArticleHero";
+import AnnouncementCard from "@/components/AnnouncementCard";
 import CommentSection from "@/components/CommentSection";
+
+// Thumbnail/reading helpers sekarang hidup di dalam AnnouncementCard (T4) —
+// helper lokal extractYoutubeId/getThumbnailUrl dihapus.
 
 export const dynamic = "force-dynamic";
 
@@ -197,76 +187,26 @@ export default async function ArticlePage({ params }: PageProps) {
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
                             gap: "20px",
                         }}
                     >
                         {relatedArticles.map((article) => (
-                            <Link
+                            <AnnouncementCard
                                 key={article.id}
-                                href={`/site/${siteSlug}/${article.slug}`}
-                                style={{
-                                    display: "block",
-                                    textDecoration: "none",
-                                    backgroundColor: "#1a1a1a",
-                                    borderRadius: "10px",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    overflow: "hidden",
-                                }}
-                            >
-                                {(() => {
-                                    const thumb = getThumbnailUrl(article);
-                                    const hasVideo = !!article.videoPath || article.videoType === "youtube";
-                                    if (thumb) {
-                                        return (
-                                            <div style={{ height: "140px", backgroundImage: `url(${thumb})`, backgroundSize: "cover", backgroundPosition: "center", position: "relative" }}>
-                                                {hasVideo && (
-                                                    <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 28, height: 28, borderRadius: "50%", backgroundColor: "rgba(220,38,38,0.9)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                        <FiPlay size={12} color="#fff" style={{ marginLeft: 2 }} />
-                                                    </span>
-                                                )}
-                                            </div>
-                                        );
-                                    }
-                                    if (article.videoPath) {
-                                        return (
-                                            <div style={{ height: "140px", position: "relative", overflow: "hidden", backgroundColor: "#111" }}>
-                                                <video src={article.videoPath} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                                <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 28, height: 28, borderRadius: "50%", backgroundColor: "rgba(220,38,38,0.9)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                    <FiPlay size={12} color="#fff" style={{ marginLeft: 2 }} />
-                                                </span>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })()}
-                                <div style={{ padding: "16px" }}>
-                                    <span
-                                        style={{
-                                            display: "inline-block",
-                                            padding: "3px 8px",
-                                            backgroundColor: article.category.color,
-                                            color: "#fff",
-                                            borderRadius: "4px",
-                                            fontSize: "10px",
-                                            fontWeight: 600,
-                                            marginBottom: "10px",
-                                        }}
-                                    >
-                                        {article.category.name}
-                                    </span>
-                                    <h3
-                                        style={{
-                                            fontSize: "16px",
-                                            fontWeight: 600,
-                                            color: "#fff",
-                                            lineHeight: 1.4,
-                                        }}
-                                    >
-                                        {article.title}
-                                    </h3>
-                                </div>
-                            </Link>
+                                id={article.id}
+                                title={article.title}
+                                excerpt={article.excerpt || undefined}
+                                slug={article.slug}
+                                siteSlug={siteSlug}
+                                imagePath={article.imagePath || undefined}
+                                videoPath={article.videoPath}
+                                videoType={article.videoType}
+                                youtubeUrl={article.youtubeUrl}
+                                category={article.category}
+                                createdAt={article.createdAt}
+                                isPinned={article.isPinned}
+                            />
                         ))}
                     </div>
                 </div>

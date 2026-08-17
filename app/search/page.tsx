@@ -128,7 +128,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                             youtubeUrl={announcement.youtubeUrl}
                                             category={announcement.category}
                                             createdAt={announcement.createdAt}
-                                            viewCount={announcement.viewCount}
                                             isPinned={announcement.isPinned}
                                         />
                                     </div>

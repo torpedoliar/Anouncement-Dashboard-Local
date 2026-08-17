@@ -6,20 +6,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { formatDistanceToNow } from "date-fns";
-import { id } from "date-fns/locale";
-import { FiSearch, FiCalendar, FiEye, FiPlay } from "react-icons/fi";
+import { FiSearch } from "react-icons/fi";
+import AnnouncementCard from "@/components/AnnouncementCard";
 
-function extractYoutubeId(url: string | null | undefined): string | null {
-    if (!url) return null;
-    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
-    return m?.[1] ?? null;
-}
-function getThumbnailUrl(a: { imagePath: string | null; videoPath: string | null; videoType: string | null; youtubeUrl: string | null }): string | null {
-    const yId = extractYoutubeId(a.youtubeUrl);
-    if (a.videoType === "youtube" && yId) return `https://img.youtube.com/vi/${yId}/hqdefault.jpg`;
-    return a.imagePath;
-}
+// Thumbnail/reading helpers sekarang hidup di dalam AnnouncementCard (T4).
 
 export const dynamic = "force-dynamic";
 
@@ -172,72 +162,22 @@ export default async function SiteSearchPage({ params, searchParams }: PageProps
                         gap: "24px",
                     }}>
                         {announcements.map((a) => (
-                            <Link key={a.id} href={`/site/${siteSlug}/${a.slug}`} style={{
-                                display: "block",
-                                textDecoration: "none",
-                                backgroundColor: "#1a1a1a",
-                                borderRadius: "12px",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                overflow: "hidden",
-                            }}>
-                                {(() => {
-                                    const thumb = getThumbnailUrl(a);
-                                    const hasVideo = !!a.videoPath || a.videoType === "youtube";
-                                    if (thumb) {
-                                        return (
-                                            <div style={{ height: "180px", backgroundImage: `url(${thumb})`, backgroundSize: "cover", backgroundPosition: "center", position: "relative" }}>
-                                                {hasVideo && (
-                                                    <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 32, height: 32, borderRadius: "50%", backgroundColor: "rgba(220,38,38,0.9)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                        <FiPlay size={14} color="#fff" style={{ marginLeft: 2 }} />
-                                                    </span>
-                                                )}
-                                            </div>
-                                        );
-                                    }
-                                    if (a.videoPath) {
-                                        return (
-                                            <div style={{ height: "180px", position: "relative", overflow: "hidden", backgroundColor: "#111" }}>
-                                                <video src={a.videoPath} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                                <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 32, height: 32, borderRadius: "50%", backgroundColor: "rgba(220,38,38,0.9)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                    <FiPlay size={14} color="#fff" style={{ marginLeft: 2 }} />
-                                                </span>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })()}
-                                <div style={{ padding: "20px" }}>
-                                    <span style={{
-                                        display: "inline-block",
-                                        padding: "3px 10px",
-                                        backgroundColor: a.category.color,
-                                        color: "#fff",
-                                        borderRadius: "4px",
-                                        fontSize: "11px",
-                                        fontWeight: 600,
-                                        marginBottom: "12px",
-                                    }}>
-                                        {a.category.name}
-                                    </span>
-                                    <h3 style={{ fontSize: "18px", fontWeight: 600, color: "#fff", marginBottom: "8px" }}>
-                                        {a.title}
-                                    </h3>
-                                    <p style={{ color: "#888", fontSize: "14px", marginBottom: "16px" }}>
-                                        {a.excerpt}
-                                    </p>
-                                    <div style={{ display: "flex", gap: "16px", color: "#666", fontSize: "12px" }}>
-                                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                            <FiCalendar size={12} />
-                                            {formatDistanceToNow(new Date(a.createdAt), { addSuffix: true, locale: id })}
-                                        </span>
-                                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                            <FiEye size={12} />
-                                            {a.viewCount}
-                                        </span>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
+                                <AnnouncementCard
+                                    key={a.id}
+                                    id={a.id}
+                                    title={a.title}
+                                    excerpt={a.excerpt || undefined}
+                                    slug={a.slug}
+                                    siteSlug={siteSlug}
+                                    imagePath={a.imagePath || undefined}
+                                    videoPath={a.videoPath}
+                                    videoType={a.videoType}
+                                    youtubeUrl={a.youtubeUrl}
+                                    category={a.category}
+                                    createdAt={a.createdAt}
+                                    isPinned={a.isPinned}
+                                />
+                            ))}
                     </div>
                 ) : (
                     <div style={{

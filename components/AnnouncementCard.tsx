@@ -3,13 +3,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import { formatDateShort } from "@/lib/utils";
-import { FiEye, FiClock, FiPlay, FiYoutube } from "react-icons/fi";
+import { FiClock, FiPlay, FiYoutube } from "react-icons/fi";
 
 interface AnnouncementCardProps {
     id: string;
     title: string;
     excerpt?: string;
     slug: string;
+    // Site-scoped href (/site/${siteSlug}/${slug}). Opsional: setelah T6 menghapus
+    // app/search/page.tsx (pemanggil lintas-site terakhir), ini jadi wajib.
+    // Sementara absen -> fallback ke /${slug} (hop redirect lewat app/[slug]).
+    siteSlug?: string;
     imagePath?: string;
     videoPath?: string | null;
     videoType?: string | null;
@@ -19,7 +23,6 @@ interface AnnouncementCardProps {
         color: string;
     };
     createdAt: Date | string;
-    viewCount: number;
     isPinned?: boolean;
 }
 
@@ -40,95 +43,85 @@ export default function AnnouncementCard({
     title,
     excerpt,
     slug,
+    siteSlug,
     imagePath,
     videoPath,
     videoType,
     youtubeUrl,
     category,
     createdAt,
-    viewCount,
     isPinned,
 }: AnnouncementCardProps) {
-    const hasVideo = videoPath || videoType === 'youtube';
     const youtubeId = youtubeUrl ? extractYoutubeId(youtubeUrl) : null;
-    const thumbnailUrl = videoType === 'youtube' && youtubeId
+    // Thumbnail YouTube (img.youtube.com) jika ada; kalau ada imagePath pakai itu.
+    // Elemen <video> hanya untuk kartu dengan videoPath dan TANPA imagePath
+    // (tanpa metadata untuk ambil frame, andalkan poster/preview statis).
+    const youtubeThumb = videoType === 'youtube' && youtubeId
         ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`
-        : imagePath;
+        : null;
+    const imageThumb = imagePath || null;
+    const showVideoFrame = !!videoPath && !imageThumb && !youtubeThumb;
+    const hasVideo = videoPath || videoType === 'youtube';
+
+    const href = siteSlug ? `/site/${siteSlug}/${slug}` : `/${slug}`;
     return (
-        <Link href={`/${slug}`} style={{ display: 'block' }}>
+        <Link href={href} style={{ display: 'block', textDecoration: 'none' }}>
             <article style={{
                 backgroundColor: 'var(--bg-secondary)',
                 border: '1px solid var(--border-color)',
                 overflow: 'hidden',
-                transition: 'all 0.3s ease',
+                transition: 'transform var(--motion-standard) var(--motion-ease), border-color var(--motion-standard) var(--motion-ease)',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
             }}
-                className="group hover:border-red-600 hover:-translate-y-2"
+                className="group hover:border-accent hover:-translate-y-2"
             >
-                {/* Media - Image or Video Thumbnail */}
+                {/* Media - Image, YouTube thumbnail, or Video frame */}
                 <div style={{
                     position: 'relative',
                     aspectRatio: '16/10',
                     overflow: 'hidden',
                     backgroundColor: 'var(--bg-card)',
                 }}>
-                    {thumbnailUrl || videoPath ? (
-                        <>
-                            {videoPath && (!videoType || videoType === 'upload') ? (
-                                <video
-                                    src={`${videoPath}#t=0.1`}
-                                    muted
-                                    playsInline
-                                    preload="metadata"
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
-                                    className="group-hover:scale-110"
-                                    onLoadedMetadata={(e) => {
-                                        // Seek to 0.1s to ensure frame is loaded
-                                        const video = e.currentTarget;
-                                        video.currentTime = 0.1;
-                                    }}
-                                />
-                            ) : thumbnailUrl ? (
-                                <Image
-                                    src={thumbnailUrl}
-                                    alt={title}
-                                    fill
-                                    style={{ objectFit: 'cover', transition: 'transform 0.5s' }}
-                                    className="group-hover:scale-110"
-                                />
-                            ) : null}
-                            {hasVideo && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '50%',
-                                    left: '50%',
-                                    transform: 'translate(-50%, -50%)',
-                                    width: '48px',
-                                    height: '48px',
-                                    borderRadius: '50%',
-                                    backgroundColor: 'rgba(220, 38, 38, 0.9)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    zIndex: 5,
-                                }}>
-                                    {videoType === 'youtube' ? <FiYoutube size={24} color="#fff" /> : <FiPlay size={24} color="#fff" />}
-                                </div>
-                            )}
-                        </>
+                    {imageThumb ? (
+                        <Image
+                            src={imageThumb}
+                            alt={title}
+                            fill
+                            style={{ objectFit: 'cover', transition: 'transform 0.5s' }}
+                            className="group-hover:scale-110"
+                        />
+                    ) : youtubeThumb ? (
+                        <Image
+                            src={youtubeThumb}
+                            alt={title}
+                            fill
+                            style={{ objectFit: 'cover', transition: 'transform 0.5s' }}
+                            className="group-hover:scale-110"
+                            // YouTube hqdefault ditarik dari host eksternal.
+                            unoptimized
+                        />
+                    ) : showVideoFrame ? (
+                        <video
+                            src={`${videoPath}#t=0.1`}
+                            muted
+                            playsInline
+                            preload="none"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
+                            className="group-hover:scale-110"
+                            onLoadedMetadata={(e) => {
+                                const video = e.currentTarget;
+                                video.currentTime = 0.1;
+                            }}
+                        />
                     ) : (
+                        // Placeholder bertoken tanpa teks — bukan literal "SJA".
                         <div style={{
                             width: '100%',
                             height: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%)',
-                        }}>
-                            <span style={{ color: 'var(--border-strong)', fontSize: '32px', fontWeight: 'bold' }}>SJA</span>
-                        </div>
+                            backgroundColor: 'var(--bg-tertiary)',
+                        }} />
                     )}
 
                     {/* Overlay */}
@@ -137,41 +130,30 @@ export default function AnnouncementCard({
                         inset: 0,
                         background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%)',
                         opacity: 0.6,
+                        pointerEvents: 'none',
                     }} />
 
-                    {/* Category Badge */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '16px',
-                        left: '16px',
-                        display: 'flex',
-                        gap: '8px',
-                    }}>
-                        <span style={{
-                            padding: '6px 12px',
-                            backgroundColor: category.color,
-                            color: 'var(--text-primary)',
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            letterSpacing: '0.1em',
-                            textTransform: 'uppercase',
+                    {/* Badge play untuk kartu video */}
+                    {hasVideo && (imageThumb || youtubeThumb || showVideoFrame) && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--accent)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 5,
                         }}>
-                            {category.name}
-                        </span>
-                        {isPinned && (
-                            <span style={{
-                                padding: '6px 12px',
-                                backgroundColor: 'var(--brand-red)',
-                                color: 'var(--text-primary)',
-                                fontSize: '10px',
-                                fontWeight: 700,
-                                letterSpacing: '0.1em',
-                                textTransform: 'uppercase',
-                            }}>
-                                PINNED
-                            </span>
-                        )}
-                    </div>
+                            {videoType === 'youtube'
+                                ? <FiYoutube size={24} style={{ color: 'var(--site-text-on-primary)' }} />
+                                : <FiPlay size={24} style={{ color: 'var(--site-text-on-primary)' }} />}
+                        </div>
+                    )}
                 </div>
 
                 {/* Content */}
@@ -183,23 +165,34 @@ export default function AnnouncementCard({
                     backgroundColor: 'var(--bg-primary)',
                     borderTop: '1px solid var(--bg-tertiary)',
                 }}>
-                    {/* Meta */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px',
-                        color: 'var(--text-tertiary)',
-                        fontSize: '12px',
-                        marginBottom: '12px',
-                    }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <FiClock size={12} />
-                            {formatDateShort(createdAt)}
+                    {/* Urutan baca: kategori -> judul -> excerpt -> tanggal.
+                        Meta dulu di atas judul; kategori pindah ke atas judul
+                        supaya kedekatan mengikat label ke objeknya. */}
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                        <span style={{
+                            padding: '4px 10px',
+                            backgroundColor: category.color,
+                            color: 'var(--site-text-on-primary)',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase',
+                        }}>
+                            {category.name}
                         </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <FiEye size={12} />
-                            {viewCount} views
-                        </span>
+                        {isPinned && (
+                            <span style={{
+                                padding: '4px 10px',
+                                backgroundColor: 'var(--brand-red)',
+                                color: 'var(--site-text-on-primary)',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase',
+                            }}>
+                                PINNED
+                            </span>
+                        )}
                     </div>
 
                     {/* Title */}
@@ -210,7 +203,7 @@ export default function AnnouncementCard({
                         fontSize: '16px',
                         marginBottom: '12px',
                         lineHeight: 1.4,
-                    }} className="line-clamp-2 group-hover:text-red-500 transition-colors">
+                    }} className="line-clamp-2 group-hover:text-accent transition-colors">
                         {title}
                     </h3>
 
@@ -227,19 +220,21 @@ export default function AnnouncementCard({
                         </p>
                     )}
 
-                    {/* Read More */}
-                    <span style={{
-                        color: 'var(--brand-red)',
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        display: 'inline-flex',
+                    {/* Meta — di bawah excerpt. viewCount dibuang (popularitas
+                        internal bukan info yang dipakai pembaca memutuskan). */}
+                    <div style={{
+                        display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
+                        gap: '8px',
+                        color: 'var(--text-tertiary)',
+                        fontSize: '12px',
                         marginTop: 'auto',
                     }}>
-                        Baca Selengkapnya
-                        <span className="transition-transform group-hover:translate-x-1">&gt;&gt;</span>
-                    </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <FiClock size={12} />
+                            {formatDateShort(createdAt)}
+                        </span>
+                    </div>
                 </div>
             </article>
         </Link>
