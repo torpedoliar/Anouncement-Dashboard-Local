@@ -58,7 +58,12 @@
 
 ## v2 Requirements
 
-Deferred to future release. Tracked but not in current roadmap.
+### PDF inline (Phase 12 — PDF-01, derived from user request 2026-08-17)
+
+- [ ] **PDF-01 — PDF inline embedding for articles (upload + URL, inline viewer, lampiran)**: Editor can upload (application/pdf, <=50MB, `documents/` folder + MediaLibrary row) or paste an external https `.pdf` URL and embed one/many PDFs as block atoms in the article body via RichTextEditor (TipTap Pdf node: draggable, removable, optimistic upload with on-201 src update, no hard cap); saved content persists each PDF as a URL in `announcement.content` only (sanitizeHTML whitelists exactly `div[data-pdf]` + `data-src` + `data-filename`; generic media/embed tags stay forbidden; no schema/migration change — optional MediaLibrary row for uploads only); the public article page renders each PDF inline via a native viewer (`components/site/PdfInline.tsx`: object + iframe fallback + fallback link, responsive height clamp(320,55vh,600)px as the accepted D-07 override of fixed 600/480, Download + Fullscreen toolbar, no auto tab/popup); a dedup "Lampiran" list (href = inline `data-src`, one source) renders below content; `/api/uploads` serves .pdf as application/pdf under the existing traversal guard; PDF access follows the article's `isPublished` (public when published; no separate auth this phase).
+  **Acceptance (PASS):** upload `sample.pdf` (<50MB, application/pdf) via the toolbar => 201 + url `/api/uploads/documents/*.pdf` + MediaLibrary(mimeType=application/pdf); wrong-MIME / non-.pdf / >50MB => 400; editor shows an optimistic named PDF block and supports drag/reorder/delete, multiple PDFs, while save keeps `div[data-pdf]` markup in content through sanitizeHTML; embedding `https://.../*.pdf` inserts a block without creating a MediaLibrary row; an anonymous reader of a published article sees each PDF inline without a click at responsive height with Download + Fullscreen (staying on the page); CORS/X-Frame-blocked sources show a fallback download link — never an automatic tab; Lampiran dedups by src (first-occurrence) with href identical to the inline src; an article without PDF shows no Lampiran section and no viewer; XSS payloads (`<img onerror=...>`, generic media tags carrying javascript data) are stripped after save+render; `npx tsc --noEmit` + scoped eslint green. *(source: 12-SPEC.md + 12-CONTEXT.md)*
+
+The following are deferred to future release. Tracked but not in current roadmap.
 
 | ID | Requirement | Deferred reason |
 |----|-------------|-----------------|
@@ -107,10 +112,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | UIUX-03 | Phase 9 | Complete |
 | UIUX-04 | Phase 10 | Complete |
 | UIUX-05 | Phase 11 | Pending |
+| PDF-01 | Phase 12 | Pending |
 
 **Coverage:**
 - v1 requirements: 20 total
-- Mapped to phases: 20
+- Phase 12 capability (PDF-01): 1 (PDF-inline embedding, see v2 Requirements section)
+- Mapped to phases: 21
 - Unmapped: 0 ✓
 
 ---
