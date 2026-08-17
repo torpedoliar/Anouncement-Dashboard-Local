@@ -7,6 +7,43 @@
 
 import { useEffect, useState } from "react";
 import DOMPurify from "isomorphic-dompurify";
+import { FilePdf } from "@phosphor-icons/react";
+
+// The three marker attributes the 12-01 sanitizer whitelists for PDF
+// placeholders. Kept EXPLICIT here so the preview can never silently drop
+// them. ADD_ATTR is the right knob: it extends the html profile, whereas a
+// plain ALLOWED_ATTR array is wiped by USE_PROFILES (which replaces the list
+// wholesale). No generic media tag is added — onerror/js payloads stay stripped.
+const PDF_MARKER_ATTRS: string[] = ["data-pdf", "data-src", "data-filename"];
+
+interface PdfBlock {
+    src: string;
+    filename: string;
+}
+
+const fileBasename = (url: string): string => {
+    const path = url.split("?")[0];
+    return path.split("/").filter(Boolean).pop() || url;
+};
+
+// Derive the placeholder list from the SANITIZED html: one row per unique
+// data-src. Empty src (still-uploading optimistic block) is skipped so the
+// preview never renders a broken row and never crashes.
+const extractPdfBlocks = (html: string): PdfBlock[] => {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const seen = new Set<string>();
+    const blocks: PdfBlock[] = [];
+    doc.querySelectorAll("div[data-pdf]").forEach((el) => {
+        const src = el.getAttribute("data-src") || "";
+        if (!src || seen.has(src)) return;
+        seen.add(src);
+        blocks.push({
+            src,
+            filename: el.getAttribute("data-filename") || fileBasename(src),
+        });
+    });
+    return blocks;
+};
 
 interface MediaImage {
     type: "image";
@@ -40,12 +77,19 @@ export default function AnnouncementPreview({
     primaryColor,
 }: AnnouncementPreviewProps) {
     const [safeContent, setSafeContent] = useState("");
+    const [pdfBlocks, setPdfBlocks] = useState<PdfBlock[]>([]);
 
     useEffect(() => {
         if (content) {
-            setSafeContent(DOMPurify.sanitize(content, { USE_PROFILES: { html: true } }));
+            const sanitized = DOMPurify.sanitize(content, {
+                USE_PROFILES: { html: true },
+                ADD_ATTR: PDF_MARKER_ATTRS,
+            });
+            setSafeContent(sanitized);
+            setPdfBlocks(extractPdfBlocks(sanitized));
         } else {
             setSafeContent("");
+            setPdfBlocks([]);
         }
     }, [content]);
 
@@ -158,6 +202,32 @@ export default function AnnouncementPreview({
                             />
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* PDF placeholders (data-pdf markup preserved, XSS still stripped) */}
+            {pdfBlocks.length > 0 && (
+                <div className="flex flex-col gap-2 px-5">
+                    {pdfBlocks.map((block) => (
+                        <div
+                            key={block.src}
+                            className="flex items-center gap-3 rounded-control border px-3 py-2.5"
+                            style={{
+                                background: "var(--surface-2)",
+                                borderColor: "var(--border)",
+                            }}
+                        >
+                            <FilePdf size={22} weight="fill" style={{ color: "var(--brand-red)", flexShrink: 0 }} />
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate" style={{ margin: 0, color: "var(--text-1)", fontSize: "13px", fontWeight: 600 }}>
+                                    {block.filename}
+                                </p>
+                                <p style={{ margin: 0, color: "var(--text-3)", fontSize: "12px" }}>
+                                    PDF — pratinjau di halaman artikel
+                                </p>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 
