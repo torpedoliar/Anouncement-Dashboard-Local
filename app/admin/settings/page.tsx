@@ -495,7 +495,7 @@ export default function SettingsPage() {
 
     const handleImageUpload = async (
         e: React.ChangeEvent<HTMLInputElement>,
-        field: "logoPath" | "heroImage"
+        field: "logoPath"
     ) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -745,101 +745,9 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                {/* Hero Settings */}
-                <div style={{
-                    backgroundColor: 'var(--bg-primary)',
-                    border: '1px solid var(--bg-tertiary)',
-                    padding: '24px',
-                }}>
-                    <p style={{
-                        color: 'var(--brand-red)',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        letterSpacing: '0.2em',
-                        marginBottom: '4px',
-                    }}>HERO</p>
-                    <h2 style={{
-                        fontFamily: 'Montserrat, sans-serif',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        marginBottom: '24px',
-                    }}>
-                        Hero Section
-                    </h2>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div>
-                            <label style={labelStyle}>Judul Hero</label>
-                            <input
-                                type="text"
-                                value={settings.heroTitle}
-                                onChange={(e) => setSettings((prev) => ({ ...prev, heroTitle: e.target.value }))}
-                                style={inputStyle}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={labelStyle}>Subjudul Hero</label>
-                            <input
-                                type="text"
-                                value={settings.heroSubtitle}
-                                onChange={(e) => setSettings((prev) => ({ ...prev, heroSubtitle: e.target.value }))}
-                                style={inputStyle}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={labelStyle}>Background Hero</label>
-                            {settings.heroImage ? (
-                                <div style={{ position: 'relative' }}>
-                                    <img
-                                        src={settings.heroImage}
-                                        alt="Hero"
-                                        style={{
-                                            width: '100%',
-                                            height: '128px',
-                                            objectFit: 'cover',
-                                        }}
-                                    />
-                                    <button
-                                        onClick={() => setSettings((prev) => ({ ...prev, heroImage: null }))}
-                                        style={{
-                                            position: 'absolute',
-                                            top: '8px',
-                                            right: '8px',
-                                            padding: '4px',
-                                            backgroundColor: 'var(--brand-red)',
-                                            color: 'var(--text-primary)',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                </div>
-                            ) : (
-                                <label style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    height: '128px',
-                                    border: '1px dashed var(--border-strong)',
-                                    cursor: 'pointer',
-                                }}>
-                                    <UploadSimple size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
-                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '14px' }}>Upload Background</span>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleImageUpload(e, "heroImage")}
-                                        style={{ display: 'none' }}
-                                    />
-                                </label>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                {/* Kolom hero global (heroTitle/heroSubtitle/heroImage) sengaja tidak dipakai di sini:
+                    konsumen tunggalnya (app/page.tsx + HeroSection) sudah dihapus. Halaman per-site
+                    memakai SiteSettings.hero* sendiri. Kolom DB tetap, tanpa migration. */}
 
                 {/* About Text Section */}
                 <div style={{
