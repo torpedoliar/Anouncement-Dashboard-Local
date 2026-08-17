@@ -4,9 +4,11 @@
  */
 
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import FullscreenHero from "@/components/FullscreenHero";
 import AnnouncementCard from "@/components/AnnouncementCard";
+import Pagination from "@/components/Pagination";
 
 // Thumbnail/reading helpers sekarang hidup di dalam AnnouncementCard (T4) —
 // helper lokal extractYoutubeId/getThumbnailUrl dihapus.
@@ -15,9 +17,12 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
     params: Promise<{ siteSlug: string }>;
+    searchParams: Promise<{ page?: string; category?: string }>;
 }
 
-async function getSiteData(slug: string) {
+const FEED_PER_PAGE = 12;
+
+async function getSiteData(slug: string, page: number, categorySlug?: string) {
     const site = await prisma.site.findUnique({
         where: { slug, isActive: true },
         include: {
@@ -39,16 +44,22 @@ async function getSiteData(slug: string) {
         },
     };
 
-    // The article grid and hero rail are separate queries. A hero must not vanish
-    // simply because it is older than the twelve most recent grid items.
-    const [rawAnnouncements, rawHeroAnnouncements] = await Promise.all([
+    // Feed dan hero rail adalah query terpisah. Hero tak boleh hilang hanya
+    // karena lebih tua dari 12 artikel terbaru. Filter kategori HANYA ke feed,
+    // bukan hero (T5.B) — hero tetap newest-first lintas kategori.
+    const feedWhere = {
+        isPublished: true,
+        sites: { some: { siteId: site.id } },
+        ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+    };
+    const skip = (page - 1) * FEED_PER_PAGE;
+
+    const [rawAnnouncements, rawHeroAnnouncements, totalAnnouncements] = await Promise.all([
         prisma.announcement.findMany({
-            where: {
-                isPublished: true,
-                sites: { some: { siteId: site.id } },
-            },
+            where: feedWhere,
             orderBy: [{ createdAt: "desc" }],
-            take: 12,
+            skip,
+            take: FEED_PER_PAGE,
             include: announcementInclude,
         }),
         prisma.announcement.findMany({
@@ -56,10 +67,11 @@ async function getSiteData(slug: string) {
                 isPublished: true,
                 sites: { some: { siteId: site.id, isHero: true } },
             },
-            orderBy: [{ createdAt: "desc" }],
+            orderBy: { createdAt: "desc" },
             take: 5,
             include: announcementInclude,
         }),
+        prisma.announcement.count({ where: feedWhere }),
     ]);
 
     const withSitePlacement = (announcement: (typeof rawAnnouncements)[number]) => ({
@@ -68,24 +80,27 @@ async function getSiteData(slug: string) {
         isHeroOnSite: announcement.sites[0]?.isHero ?? false,
     });
 
-    // Keep the article feed pinned-first, while the hero rail stays newest-first.
+    // Feed pinned-first; hero rail newest-first.
     const announcements = rawAnnouncements
         .map(withSitePlacement)
         .sort((x, y) => Number(y.isPinned) - Number(x.isPinned));
     const heroAnnouncements = rawHeroAnnouncements.map(withSitePlacement);
+    const totalPages = Math.ceil(totalAnnouncements / FEED_PER_PAGE);
 
-    return { site, announcements, heroAnnouncements };
+    return { site, announcements, heroAnnouncements, totalPages };
 }
 
-export default async function SiteHomePage({ params }: PageProps) {
+export default async function SiteHomePage({ params, searchParams }: PageProps) {
     const { siteSlug } = await params;
-    const data = await getSiteData(siteSlug);
+    const { page: pageParam, category: categorySlug } = await searchParams;
+    const currentPage = Math.max(1, parseInt(pageParam || "1") || 1);
+    const data = await getSiteData(siteSlug, currentPage, categorySlug);
 
     if (!data) {
         notFound();
     }
 
-    const { site, announcements, heroAnnouncements: publishedHeroAnnouncements } = data;
+    const { site, announcements, heroAnnouncements: publishedHeroAnnouncements, totalPages } = data;
     const settings = site.settings;
 
     // Every published hero for this site is passed to the rail, newest first.
@@ -94,6 +109,24 @@ export default async function SiteHomePage({ params }: PageProps) {
         ? publishedHeroAnnouncements
         : announcements.filter((announcement) => announcement.isPinned).slice(0, 3);
     const heroAnnouncement = heroAnnouncements[0] ?? null;
+
+    // Pinned di-render sebagai baris lebar penuh di atas grid kronologis (T5.C).
+    // Saat filter kategori aktif, pinned juga difilter agar konsisten dengan feed.
+    const pinnedFeedItems = announcements.filter((a) => a.isPinned && a.id !== heroAnnouncement?.id);
+    const chronologicalFeed = announcements.filter((a) => !a.isPinned && a.id !== heroAnnouncement?.id);
+
+    // Parameter pagination meneruskan kategori aktif supaya pindah halaman tak
+    // mereset filter (T5.B).
+    const paginationParams: Record<string, string> = {};
+    if (categorySlug) paginationParams.category = categorySlug;
+
+    // Chip kategori aktif (T5.B) — link navigasi, aria-pressed menyatakan state.
+    const buildCategoryUrl = (slug: string | null) => {
+        const params = new URLSearchParams();
+        if (slug) params.set("category", slug);
+        // Reset ke halaman 1 saat ganti kategori.
+        return `/site/${siteSlug}${params.toString() ? `?${params.toString()}` : ""}`;
+    };
 
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
@@ -135,38 +168,92 @@ export default async function SiteHomePage({ params }: PageProps) {
 
             {/* Announcements Grid */}
             <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px 80px" }}>
+                {/* Category chips (T5.B) — di halaman ini sendiri, bukan hanya
+                    link navbar yang runtuh jadi hamburger di mobile. */}
+                <nav aria-label="Filter kategori" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "24px" }}>
+                    <Link
+                        href={buildCategoryUrl(null)}
+                        aria-pressed={!categorySlug}
+                        style={chipStyle(!categorySlug)}
+                    >
+                        Semua
+                    </Link>
+                    {site.categories.map((cat) => (
+                        <Link
+                            key={cat.id}
+                            href={buildCategoryUrl(cat.slug)}
+                            aria-pressed={categorySlug === cat.slug}
+                            style={chipStyle(categorySlug === cat.slug)}
+                        >
+                            {cat.name}
+                        </Link>
+                    ))}
+                </nav>
+
                 <h2 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}>
                     Artikel Terbaru
                 </h2>
 
                 {announcements.length > 0 ? (
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
-                            gap: "24px",
-                        }}
-                    >
-                        {announcements
-                            .filter((a) => a.id !== heroAnnouncement?.id)
-                            .map((announcement) => (
-                                <AnnouncementCard
-                                    key={announcement.id}
-                                    id={announcement.id}
-                                    title={announcement.title}
-                                    excerpt={announcement.excerpt || undefined}
-                                    slug={announcement.slug}
-                                    siteSlug={siteSlug}
-                                    imagePath={announcement.imagePath || undefined}
-                                    videoPath={announcement.videoPath}
-                                    videoType={announcement.videoType}
-                                    youtubeUrl={announcement.youtubeUrl}
-                                    category={announcement.category}
-                                    createdAt={announcement.createdAt}
-                                    isPinned={announcement.isPinned}
-                                />
-                            ))}
-                    </div>
+                    <>
+                        {/* Pinned row (T5.C) — lebar penuh di atas grid kronologis */}
+                        {pinnedFeedItems.length > 0 && (
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "24px", marginBottom: "32px" }}>
+                                {pinnedFeedItems.map((announcement) => (
+                                    <AnnouncementCard
+                                        key={announcement.id}
+                                        id={announcement.id}
+                                        title={announcement.title}
+                                        excerpt={announcement.excerpt || undefined}
+                                        slug={announcement.slug}
+                                        siteSlug={siteSlug}
+                                        imagePath={announcement.imagePath || undefined}
+                                        videoPath={announcement.videoPath}
+                                        videoType={announcement.videoType}
+                                        youtubeUrl={announcement.youtubeUrl}
+                                        category={announcement.category}
+                                        createdAt={announcement.createdAt}
+                                        isPinned={announcement.isPinned}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Grid kronologis murni */}
+                        {chronologicalFeed.length > 0 && (
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
+                                    gap: "24px",
+                                }}
+                            >
+                                {chronologicalFeed.map((announcement) => (
+                                    <AnnouncementCard
+                                        key={announcement.id}
+                                        id={announcement.id}
+                                        title={announcement.title}
+                                        excerpt={announcement.excerpt || undefined}
+                                        slug={announcement.slug}
+                                        siteSlug={siteSlug}
+                                        imagePath={announcement.imagePath || undefined}
+                                        videoPath={announcement.videoPath}
+                                        videoType={announcement.videoType}
+                                        youtubeUrl={announcement.youtubeUrl}
+                                        category={announcement.category}
+                                        createdAt={announcement.createdAt}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            baseUrl={`/site/${siteSlug}`}
+                            searchParams={paginationParams}
+                        />
+                    </>
                 ) : (
                     <div
                         style={{
@@ -185,4 +272,20 @@ export default async function SiteHomePage({ params }: PageProps) {
             {/* Footer removed - handled by layout */}
         </div>
     );
+}
+
+function chipStyle(active: boolean): React.CSSProperties {
+    return {
+        display: "inline-flex",
+        alignItems: "center",
+        minHeight: "36px",
+        padding: "6px 14px",
+        fontSize: "13px",
+        fontWeight: 600,
+        borderRadius: "999px",
+        textDecoration: "none",
+        border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+        backgroundColor: active ? "var(--accent-subtle)" : "transparent",
+        color: active ? "var(--accent)" : "var(--text-2)",
+    };
 }

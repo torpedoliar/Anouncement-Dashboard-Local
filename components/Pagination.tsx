@@ -52,18 +52,19 @@ export default function Pagination({
         padding: "0 12px",
         fontSize: "14px",
         fontWeight: 500,
-        border: "1px solid #262626",
-        backgroundColor: "#0a0a0a",
-        color: "#a3a3a3",
+        border: "1px solid var(--border)",
+        backgroundColor: "var(--surface-1)",
+        color: "var(--text-2)",
         cursor: "pointer",
-        transition: "all 0.2s",
+        transition: "color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease)",
+        textDecoration: "none",
     };
 
     const activeStyle = {
         ...buttonStyle,
-        backgroundColor: "#dc2626",
-        borderColor: "#dc2626",
-        color: "#fff",
+        backgroundColor: "var(--accent)",
+        borderColor: "var(--accent)",
+        color: "var(--site-text-on-primary)",
     };
 
     const disabledStyle = {
