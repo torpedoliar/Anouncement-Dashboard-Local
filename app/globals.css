@@ -471,6 +471,30 @@ a {
   color: var(--accent);
 }
 
+/* PDF viewer inline (Phase 12-03).
+   BREAKOUT dari .prose-santos max-width:72ch: viewer harus selebar kolom
+   penuh, tidak boleh terpotong oleh panjang baris prosa. Additive — baris
+   Track A di atas TIDAK diubah. Tinggi responsif per D-07. */
+.pdf-viewer {
+  width: 100%;
+  max-width: none;
+  height: clamp(320px, 55vh, 600px);
+  margin: 1.5em 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-viewer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  border: 0;
+}
+
 /* Line clamp utilities */
 .line-clamp-1 {
   display: -webkit-box;
