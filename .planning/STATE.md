@@ -5,16 +5,16 @@ milestone_name: milestone
 current_phase: 11
 current_phase_name: Portal & Auth Surfaces
 status: planning
-stopped_at: "Phase 11 EXECUTED + reviewed (SDD): 4 plans, 15 commits, final review with fixes closed"
-last_updated: "2026-08-15T19:21:33.703Z"
+stopped_at: Phase 12 context gathered
+last_updated: "2026-08-17T09:32:34.250Z"
 last_activity: 2026-08-15
 last_activity_desc: plan-phase 11 attempted at subagent level; stopped at the CONTEXT gate + Agent-tool gap (see Blockers). Needs a top-level run.
 progress:
-  total_phases: 15
+  total_phases: 16
   completed_phases: 1
   total_plans: 4
   completed_plans: 4
-  percent: 7
+  percent: 6
 ---
 
 # Project State
@@ -80,12 +80,13 @@ None (capture via /gsd-add-todo when ideas arise).
 
 ## Session Continuity
 
-Last session: 2026-08-15T19:21:33.692Z
-Stopped at: Phase 11 EXECUTED + reviewed (SDD): 4 plans, 15 commits, final review with fixes closed
-Resume file: .planning/phases/11-portal-auth-surfaces-current-ready-to-plan/11-E2E-CHECKLIST.md
+Last session: 2026-08-17T09:32:34.238Z
+Stopped at: Phase 12 context gathered
+Resume file: .planning/phases/12-pdf-reader-inline-di-artikel-upload-dan-embed-pdf-di-richtex/12-CONTEXT.md
 
 ---
 *Next action: `/gsd-plan-phase 11` (Portal & Auth Surfaces) — run at TOP LEVEL (Agent tool required for researcher/planner/checker spawns)*
 
 ### Roadmap Evolution
+
 - Phase 12 added: PDF Reader Inline di Artikel — upload dan embed PDF di RichTextEditor, tampil inline tanpa download/tab baru (2026-08-17, graphify audit pre-check)
