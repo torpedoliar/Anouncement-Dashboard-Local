@@ -410,17 +410,18 @@ M1 (1–6.4) shipped; M2 (7–11) current; Phase 11 is next.
 **Goal:** Editor dapat upload & embed PDF di dalam body artikel via RichTextEditor (TipTap extension); pembaca melihat PDF inline (native browser viewer) di halaman artikel tanpa download atau buka tab baru, dengan fallback link download.
 **Requirements**: PDF-01 (PDF-inline; derived from user request 2026-08-17 — see REQUIREMENTS.md)
 **Depends on:** Phase 11
-**Plans:** 3 plans
+**Plans:** 3/3 plans executed
 
 Plans:
 
 **Wave 1**
 
-- [ ] 12-01-PLAN.md — Data-path foundation (sanitizeHTML div[data-pdf], /api/uploads pdf MIME, /api/media PDF upload, self-check harness)
+- [x] 12-01-PLAN.md — Data-path foundation (sanitizeHTML div[data-pdf], /api/uploads pdf MIME, /api/media PDF upload, self-check harness)
+
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 12-02-PLAN.md — Editor PDF (TipTap Pdf block + FilePdf toolbar, upload/URL, preview placeholder)
-- [ ] 12-03-PLAN.md — Reader PDF (PdfInline viewer + toolbar, ArticleContent hydrator + Lampiran, .pdf-viewer breakout)
+- [x] 12-02-PLAN.md — Editor PDF (TipTap Pdf block + FilePdf toolbar, upload/URL, preview placeholder)
+- [x] 12-03-PLAN.md — Reader PDF (PdfInline viewer + toolbar, ArticleContent hydrator + Lampiran, .pdf-viewer breakout)
 
 ---
 *Last updated: 2026-08-15 after new-project-from-ingest (36 docs, 25 SPECs; 6 conflicting variants preserved as OPD-1..6)*

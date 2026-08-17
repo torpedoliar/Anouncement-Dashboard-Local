@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
-current_phase: 11
-current_phase_name: Portal & Auth Surfaces
-status: planning
+current_phase: 12
+current_phase_name: pdf-reader-inline-di-artikel-upload-dan-embed-pdf-di-richtex
+status: executing
 stopped_at: Phase 12 context gathered
-last_updated: "2026-08-17T10:50:14.419Z"
-last_activity: 2026-08-15
-last_activity_desc: plan-phase 11 attempted at subagent level; stopped at the CONTEXT gate + Agent-tool gap (see Blockers). Needs a top-level run.
+last_updated: "2026-08-17T11:15:12.684Z"
+last_activity: 2026-08-17
+last_activity_desc: Phase 12 execution started
 progress:
   total_phases: 16
   completed_phases: 1
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-15)
 
 **Core value:** Multi-tenant announcement CMS keeps working — same routes, same API contracts, same portal SSO behavior — while its entire admin and portal surface is rebuilt token-native with zero regressions.
-**Current focus:** Phase 11 — Portal & Auth Surfaces (UI/UX rework P4, the last phase of M2)
+**Current focus:** Phase 12 — pdf-reader-inline-di-artikel-upload-dan-embed-pdf-di-richtex
 
 ## Current Position
 
-Phase: 11 of 11 (Portal & Auth Surfaces)
-Plan: 0 of TBD (not planned yet)
-Status: Approved — ready to plan
-Last activity: 2026-08-15 — plan-phase 11 attempted at subagent level; stopped at the CONTEXT gate + Agent-tool gap (see Blockers). Needs a top-level run.
+Phase: 12 (pdf-reader-inline-di-artikel-upload-dan-embed-pdf-di-richtex) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 12
+Last activity: 2026-08-17 — Phase 12 execution started
 
 Progress: [████████░░] 80% (4/5 phases of the active milestone complete; phase-based estimate)
 
