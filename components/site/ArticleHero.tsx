@@ -176,7 +176,8 @@ export default function ArticleHero({
                 }}
             >
                 {/* Back Link — satu pemilik (T2.2), mendasar di atas badge kategori.
-                    Token-native, tinggi sentuh 44px. Tidak pakai mutasi DOM hover. */}
+                    Token-native, tinggi sentuh 44px. Gap ke badge diperkecil supaya
+                    tidak menabrak bila back label panjang / wrap. */}
                 {backHref && backLabel && (
                     <Link
                         href={backHref}
@@ -185,15 +186,15 @@ export default function ArticleHero({
                             alignItems: "center",
                             gap: "8px",
                             minHeight: "44px",
-                            color: "var(--text-2)",
+                            color: "rgba(255,255,255,0.92)",
                             fontSize: "13px",
                             fontWeight: 600,
                             textDecoration: "none",
-                            marginBottom: "16px",
+                            marginBottom: "12px",
                         }}
                     >
                         <FiArrowLeft size={16} aria-hidden="true" />
-                        {backLabel}
+                        <span style={{ lineHeight: 1.35 }}>{backLabel}</span>
                     </Link>
                 )}
 
@@ -204,14 +205,16 @@ export default function ArticleHero({
                         display: "inline-block",
                         padding: "6px 14px",
                         backgroundColor: category.color,
-                        color: "var(--text-primary)",
-                        borderRadius: "4px",
-                        fontSize: "12px",
+                        color: "var(--site-text-on-primary, #fff)",
+                        borderRadius: "999px",
+                        fontSize: "11px",
                         fontWeight: 700,
                         textDecoration: "none",
-                        marginBottom: "16px",
+                        marginBottom: "14px",
                         textTransform: "uppercase",
-                        letterSpacing: "0.5px"
+                        letterSpacing: "0.06em",
+                        lineHeight: 1,
+                        boxShadow: "0 1px 8px rgba(0,0,0,0.18)",
                     }}
                 >
                     {category.name}

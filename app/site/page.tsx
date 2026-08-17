@@ -48,17 +48,18 @@ export default async function SitePickerPage() {
                 color: "#fff",
             }}
         >
-            {/* Masthead Kapal Api Committed (T9) — blok merah penuh teks putih,
-                bukan gradient-clipped. Skala di clamp supaya proporsional. */}
+            {/* Masthead Kapal Api — versi kalem (revisi): merah tidak lagi flat
+                menyala; tinggi dipangkas dan diberi napas sebelum grid. */}
             <div
                 style={{
-                    padding: "64px 24px 48px",
+                    padding: "36px 24px 32px",
                     textAlign: "center",
-                    backgroundColor: "var(--brand-red)",
+                    background: "linear-gradient(135deg, var(--brand-red-dark, #C41920) 0%, var(--brand-red) 55%, #D52027 100%)",
+                    borderBottom: "1px solid rgba(0,0,0,0.12)",
                 }}
             >
                 {settings?.logoPath ? (
-                    <div style={{ position: 'relative', width: '120px', height: '120px', margin: "0 auto 24px" }}>
+                    <div style={{ position: 'relative', width: '88px', height: '88px', margin: "0 auto 16px", filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.18))" }}>
                         <Image
                             src={settings.logoPath}
                             alt="Logo"
@@ -69,34 +70,38 @@ export default async function SitePickerPage() {
                 ) : (
                     <div
                         style={{
-                            width: "80px",
-                            height: "80px",
-                            borderRadius: "20px",
+                            width: "64px",
+                            height: "64px",
+                            borderRadius: "16px",
                             backgroundColor: "#fff",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            margin: "0 auto 24px",
+                            margin: "0 auto 16px",
+                            boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
                         }}
                     >
-                        <FiGlobe size={40} color="#ED1C24" />
+                        <FiGlobe size={32} color="#C41920" />
                     </div>
                 )}
                 <h1
                     style={{
-                        fontSize: "clamp(28px, 5vw, 48px)",
+                        fontSize: "clamp(24px, 4vw, 38px)",
                         fontWeight: 800,
-                        marginBottom: "16px",
-                        color: "var(--site-text-on-primary, #fff)",
+                        lineHeight: 1.15,
+                        marginBottom: "10px",
+                        color: "#fff",
+                        textWrap: "balance",
                     }}
                 >
                     Pilih Site
                 </h1>
                 <p
                     style={{
-                        fontSize: "18px",
-                        color: "rgba(255,255,255,0.9)",
-                        maxWidth: "600px",
+                        fontSize: "15px",
+                        lineHeight: 1.6,
+                        color: "rgba(255,255,255,0.88)",
+                        maxWidth: "560px",
                         margin: "0 auto",
                     }}
                 >
@@ -104,12 +109,12 @@ export default async function SitePickerPage() {
                 </p>
             </div>
 
-            {/* Sites Grid */}
+            {/* Sites Grid — diberi napas atas supaya tidak menabrak masthead */}
             <div
                 style={{
                     maxWidth: "1200px",
                     margin: "0 auto",
-                    padding: "0 24px 80px",
+                    padding: "32px 24px 80px",
                 }}
             >
                 {sites.length > 0 ? (

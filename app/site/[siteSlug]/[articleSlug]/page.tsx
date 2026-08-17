@@ -124,7 +124,7 @@ export default async function ArticlePage({ params }: PageProps) {
             />
 
             {/* Article Content Container */}
-            <article style={{ maxWidth: "800px", margin: "0 auto", padding: "48px 24px" }}>
+            <article style={{ maxWidth: "800px", margin: "0 auto", padding: "32px 24px 48px" }}>
                 {/* Hero Media moved up */}
 
                 {/* Content */}
