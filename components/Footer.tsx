@@ -147,10 +147,10 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                             TAUTAN
                         </h2>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                            {/* Tautan global. Berita/Pencarian adalah per-site (lihat
+                                navbar site), jadi hanya Beranda ke site picker. */}
                             {[
-                                { href: "/", label: "Beranda" },
-                                { href: "/#news", label: "Berita" },
-                                { href: "/search", label: "Pencarian" },
+                                { href: "/site", label: "Beranda" },
                             ].map((link) => (
                                 <li key={link.href} style={{ marginBottom: '12px' }}>
                                     <Link

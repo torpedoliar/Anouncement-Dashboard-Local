@@ -23,6 +23,12 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/site', request.url));
     }
 
+    // /search global (lintas-site) sudah dihapus (T6) — arahkan ke site picker
+    // supaya tautan lama tidak 404. Pencarian per-site ada di /site/[slug]/search.
+    if (path === '/search') {
+        return NextResponse.redirect(new URL('/site', request.url));
+    }
+
     // Add security headers to all responses
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('X-Frame-Options', 'SAMEORIGIN');
@@ -73,6 +79,7 @@ export function middleware(request: NextRequest) {
 export const config = {
     matcher: [
         '/',
+        '/search',
         '/api/:path*',
         '/admin/:path*',
         '/site/:path*',
