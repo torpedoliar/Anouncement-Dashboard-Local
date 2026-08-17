@@ -13,7 +13,7 @@ import {
     ImageSquare, YoutubeLogo, VideoCamera, FolderOpen,
     AlignLeft, TextAlignCenter, AlignRight,
     TextHOne, TextHTwo, TextHThree,
-    Check, Minus, Plus,
+    Check, Minus, Plus, FilePdf, UploadSimple,
 } from "@phosphor-icons/react";
 import MediaPickerModal from "./MediaPickerModal";
 import { useToast } from "@/contexts/ToastContext";
@@ -106,6 +106,41 @@ const Video = Node.create({
     },
 });
 
+// PDF embed extension for uploaded PDFs or external .pdf URLs.
+// renderHTML emits EXACTLY div + data-pdf/data-src/data-filename (the 12-01
+// sanitizer whitelist) in the steady state. A transient data-pdf-error is
+// emitted only while an upload is failing; the server sanitizer strips it at
+// save so persisted markup never carries it.
+const Pdf = Node.create({
+    name: 'pdf',
+    group: 'block',
+    atom: true,
+    draggable: true,
+    addAttributes() {
+        return {
+            src: { default: null },
+            filename: { default: null },
+            error: {
+                default: false,
+                parseHTML: element => element.hasAttribute('data-pdf-error'),
+                renderHTML: attributes => (attributes.error ? { 'data-pdf-error': '' } : {}),
+            },
+        };
+    },
+    parseHTML() {
+        return [{
+            tag: 'div[data-pdf]',
+        }];
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['div', mergeAttributes({
+            'data-pdf': '',
+            'data-src': HTMLAttributes.src,
+            'data-filename': HTMLAttributes.filename || '',
+        })];
+    },
+});
+
 export default function RichTextEditor({
     content,
     onChange,
@@ -120,7 +155,14 @@ export default function RichTextEditor({
     const [youtubeUrl, setYoutubeUrl] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
+    const pdfInputRef = useRef<HTMLInputElement>(null);
     const [showMediaPicker, setShowMediaPicker] = useState(false);
+    const [isPdfUploading, setIsPdfUploading] = useState(false);
+    const [isPdfSelected, setIsPdfSelected] = useState(false);
+    const [selectedPdfFilename, setSelectedPdfFilename] = useState('');
+    const [showPdfMenu, setShowPdfMenu] = useState(false);
+    const [showPdfUrlDialog, setShowPdfUrlDialog] = useState(false);
+    const [pdfUrl, setPdfUrl] = useState('');
     const { showToast } = useToast();
 
     const editor = useEditor({
@@ -153,6 +195,7 @@ export default function RichTextEditor({
             }),
             YouTube,
             Video,
+            Pdf,
         ],
         content,
         onUpdate: ({ editor }) => {
@@ -161,8 +204,14 @@ export default function RichTextEditor({
         onSelectionUpdate: ({ editor }) => {
             const isImage = editor.isActive('image');
             const isVideo = editor.isActive('video') || editor.isActive('youtube');
+            const isPdf = editor.isActive('pdf');
             setIsImageSelected(isImage);
             setIsVideoSelected(isVideo);
+            setIsPdfSelected(isPdf);
+            if (isPdf) {
+                const attrs = editor.getAttributes('pdf');
+                setSelectedPdfFilename(attrs.filename || '');
+            }
             if (isImage) {
                 const attrs = editor.getAttributes('image');
                 if (attrs.width) setSelectedImageSize(attrs.width);
@@ -171,8 +220,10 @@ export default function RichTextEditor({
         onTransaction: ({ editor }) => {
             const isImage = editor.isActive('image');
             const isVideo = editor.isActive('video') || editor.isActive('youtube');
+            const isPdf = editor.isActive('pdf');
             if (isImage !== isImageSelected) setIsImageSelected(isImage);
             if (isVideo !== isVideoSelected) setIsVideoSelected(isVideo);
+            if (isPdf !== isPdfSelected) setIsPdfSelected(isPdf);
         },
         editorProps: {
             attributes: {
@@ -258,6 +309,119 @@ export default function RichTextEditor({
     const handleVideoClick = () => {
         videoInputRef.current?.click();
     };
+
+    // ── PDF helpers ────────────────────────────────────────────────
+    // Locate the pdf node just inserted for `filename` (optimistic block).
+    // Primary: it sits immediately before the cursor after insertContent.
+    // Fallback: scan for the last pdf node with this filename that has no src yet.
+    const findInsertedPdfNodePos = useCallback((filename: string): number => {
+        if (!editor) return -1;
+        const doc = editor.state.doc;
+        const guess = editor.state.selection.from - 1;
+        const node = guess >= 0 ? doc.nodeAt(guess) : null;
+        if (node && node.type.name === 'pdf' && node.attrs.filename === filename) {
+            return guess;
+        }
+        let found = -1;
+        doc.descendants((n, pos) => {
+            if (found === -1 && n.type.name === 'pdf' && n.attrs.filename === filename && !n.attrs.src) {
+                found = pos;
+            }
+        });
+        return found;
+    }, [editor]);
+
+    // Update attributes of the optimistic pdf block (src on success / error on failure).
+    const markPdfBlock = useCallback((pos: number, attrs: { src?: string; error?: boolean }) => {
+        if (!editor) return;
+        const node = pos >= 0 ? editor.state.doc.nodeAt(pos) : null;
+        if (!node || node.type.name !== 'pdf') return;
+        editor.chain().focus().setNodeSelection(pos).updateAttributes('pdf', attrs).run();
+    }, [editor]);
+
+    const handlePdfUpload = useCallback(async (file: File) => {
+        if (!editor) return;
+        if (file.type !== 'application/pdf' || !file.name.toLowerCase().endsWith('.pdf')) {
+            showToast('Format file tidak valid. Hanya PDF yang diperbolehkan.', 'error');
+            return;
+        }
+        if (file.size > 50 * 1024 * 1024) {
+            showToast('Ukuran file terlalu besar. Maksimal 50MB untuk PDF.', 'error');
+            return;
+        }
+        setIsPdfUploading(true);
+        let insertPos = -1;
+        try {
+            // Optimistic block FIRST: named placeholder appears immediately (D-02).
+            editor.chain().focus().insertContent({
+                type: 'pdf',
+                attrs: { src: '', filename: file.name },
+            }).run();
+            insertPos = findInsertedPdfNodePos(file.name);
+            const formData = new FormData();
+            formData.append("file", file);
+            const response = await fetch("/api/media", {
+                method: "POST",
+                body: formData,
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error || "Gagal mengunggah PDF");
+            }
+            const data = await response.json();
+            // Update the SAME block's src in place (no new node). Filename kept.
+            markPdfBlock(insertPos, { src: data.url });
+        } catch (error) {
+            // Red block + message (D-02). Transient data-pdf-error is stripped
+            // by the server sanitizer at save — never persisted.
+            markPdfBlock(insertPos, { error: true });
+            const message = error instanceof Error ? error.message : "Gagal mengunggah PDF";
+            showToast(message, "error");
+        } finally {
+            setIsPdfUploading(false);
+        }
+    }, [editor, findInsertedPdfNodePos, markPdfBlock, showToast]);
+
+    const handlePdfClick = () => {
+        setShowPdfMenu(false);
+        pdfInputRef.current?.click();
+    };
+
+    const parsePdfUrl = (rawUrl: string): URL | null => {
+        let parsed: URL;
+        try {
+            parsed = new URL(rawUrl.trim());
+        } catch {
+            return null;
+        }
+        // Reject javascript:/data:/file: and any non-http(s) scheme (T-12-02-URLSCHEME).
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+        if (!parsed.pathname.toLowerCase().endsWith('.pdf')) return null;
+        return parsed;
+    };
+
+    const insertPdfUrl = useCallback(() => {
+        if (!editor || !pdfUrl) return;
+        const parsed = parsePdfUrl(pdfUrl);
+        if (!parsed) {
+            showToast('URL PDF tidak valid. Gunakan https://.../*.pdf', 'error');
+            return;
+        }
+        const filename = parsed.pathname.split('/').filter(Boolean).pop() || parsed.hostname;
+        // External .pdf URL: insert block directly, no upload, no MediaLibrary row (R3).
+        editor.chain().focus().insertContent({
+            type: 'pdf',
+            attrs: { src: parsed.href, filename },
+        }).run();
+        setPdfUrl('');
+        setShowPdfUrlDialog(false);
+    }, [editor, pdfUrl, showToast]);
+
+    const deletePdf = useCallback(() => {
+        if (!editor) return;
+        editor.chain().focus().deleteSelection().run();
+        setIsPdfSelected(false);
+    }, [editor]);
 
     const extractYoutubeId = (url: string): string | null => {
         const patterns = [
@@ -357,6 +521,15 @@ export default function RichTextEditor({
         background: isActive ? 'var(--brand-red)' : 'var(--surface-3)',
         color: '#fff',
     });
+
+    // PDF dropdown menu item style
+    const pdfMenuItem = {
+        display: 'flex', alignItems: 'center', gap: '8px',
+        width: '100%', padding: '8px 10px',
+        border: 'none', borderRadius: '6px', background: 'transparent',
+        color: 'var(--text-1)', fontSize: '12.5px', cursor: 'pointer',
+        transition: 'background 0.15s ease',
+    };
 
     return (
         <div
@@ -484,6 +657,48 @@ export default function RichTextEditor({
 
                 {isVideoUploading && <span className="text-xs" style={{ color: 'var(--text-3)' }}>Uploading video...</span>}
 
+                {/* PDF: one FilePdf button with Upload vs URL dropdown (D-01) */}
+                <div style={{ position: 'relative' }}>
+                    <button type="button" onClick={() => setShowPdfMenu((v) => !v)}
+                        disabled={isPdfUploading}
+                        style={{ ...toolbarBtn(), opacity: isPdfUploading ? 0.5 : 1 }}
+                        title="Sisipkan PDF"
+                    >
+                        <FilePdf size={16} />
+                    </button>
+
+                    {showPdfMenu && (
+                        <>
+                            <div style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                                onClick={() => setShowPdfMenu(false)}
+                            />
+                            <div
+                                className="rounded-card"
+                                style={{
+                                    position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50,
+                                    background: 'var(--surface-3)',
+                                    border: '1px solid var(--border)',
+                                    boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                                    padding: '4px',
+                                    minWidth: '190px',
+                                }}
+                            >
+                                <button type="button" onClick={handlePdfClick}
+                                    className="rich-editor-pdf-menu-item" style={pdfMenuItem}>
+                                    <UploadSimple size={16} style={{ color: 'var(--brand-red)' }} /> Upload PDF
+                                </button>
+                                <button type="button"
+                                    onClick={() => { setShowPdfMenu(false); setShowPdfUrlDialog(true); }}
+                                    className="rich-editor-pdf-menu-item" style={pdfMenuItem}>
+                                    <LinkSimple size={16} style={{ color: 'var(--brand-red)' }} /> Sisipkan via URL
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {isPdfUploading && <span className="text-xs" style={{ color: 'var(--text-3)' }}>Uploading PDF...</span>}
+
                 {/* Spacer */}
                 <span className="ml-auto text-xs" style={{ color: 'var(--text-3)' }}>
                     ? Klik gambar untuk resize
@@ -581,6 +796,25 @@ export default function RichTextEditor({
                 </div>
             )}
 
+            {/* ── PDF toolbar ── */}
+            {isPdfSelected && (
+                <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b"
+                    style={{ borderBottomColor: "var(--border)", background: "var(--surface-3)" }}
+                >
+                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--text-2)" }}>
+                        <FilePdf size={14} style={{ color: 'var(--brand-red)' }} /> PDF:
+                    </span>
+                    <span className="max-w-[280px] truncate text-xs" style={{ color: "var(--text-1)", fontWeight: 500 }}>
+                        {selectedPdfFilename}
+                    </span>
+                    <div style={{ width: '1px', height: '18px', background: 'var(--border)', margin: '0 4px' }} />
+                    <button type="button" onClick={deletePdf}
+                        style={{ ...mediaBtn(), background: 'var(--color-danger)' }} title="Hapus PDF">
+                        <Check size={12} weight="bold" /> Hapus PDF
+                    </button>
+                </div>
+            )}
+
             {/* ── Editor content ── */}
             <div className="flex-1 overflow-y-auto" style={{ minHeight: '300px' }}>
                 <EditorContent editor={editor} />
@@ -595,6 +829,16 @@ export default function RichTextEditor({
                 onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) { handleVideoUpload(file); e.target.value = ''; }
+                }}
+                className="hidden"
+            />
+            <input
+                ref={pdfInputRef}
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) { handlePdfUpload(file); e.target.value = ''; }
                 }}
                 className="hidden"
             />
@@ -631,6 +875,43 @@ export default function RichTextEditor({
                     content: attr(data-placeholder);
                     float: left; color: var(--text-muted);
                     pointer-events: none; height: 0;
+                }
+                /* PDF placeholder block: token-native dashed token, name via CSS
+                   content so the node collapses to exactly the saved markup. */
+                .tiptap div[data-pdf] {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin: 14px 0;
+                    padding: 14px 18px;
+                    border: 1.5px dashed var(--border);
+                    border-radius: 8px;
+                    background: var(--surface-2);
+                    color: var(--text-1);
+                    font-size: 13px;
+                    line-height: 1.5;
+                }
+                .tiptap div[data-pdf]::before {
+                    content: "PDF — " attr(data-filename);
+                    font-weight: 600;
+                    color: var(--text-1);
+                }
+                /* Transient failed-upload state: red border + red message.
+                   The data-pdf-error attr never survives server sanitization. */
+                .tiptap div[data-pdf][data-pdf-error] {
+                    border-color: var(--color-danger);
+                    border-style: solid;
+                }
+                .tiptap div[data-pdf][data-pdf-error]::before {
+                    content: "Gagal unggah: " attr(data-filename);
+                    color: var(--color-danger);
+                }
+                .tiptap div[data-pdf].ProseMirror-selectednode {
+                    outline: 2px solid var(--brand-red);
+                    outline-offset: 2px;
+                }
+                .rich-editor-pdf-menu-item:hover {
+                    background: var(--surface-2);
                 }
             `}</style>
 
@@ -697,6 +978,75 @@ export default function RichTextEditor({
                                 }}
                             >
                                 Embed
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── PDF URL dialog ── */}
+            {showPdfUrlDialog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center"
+                    style={{ background: 'rgba(0,0,0,0.7)' }}
+                >
+                    <div className="w-full max-w-sm rounded-card p-6"
+                        style={{
+                            background: 'var(--surface-3)',
+                            border: '1px solid var(--border)',
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-1)' }}>
+                                <FilePdf size={18} className="text-[var(--brand-red)]" /> Sisipkan PDF via URL
+                            </h3>
+                            <button type="button"
+                                onClick={() => { setShowPdfUrlDialog(false); setPdfUrl(''); }}
+                                className="cursor-pointer p-1" style={{ color: 'var(--text-3)' }}
+                                aria-label="Tutup"
+                            >
+                                <Minus size={18} weight="bold" />
+                            </button>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Paste URL PDF (https://.../*.pdf)"
+                            value={pdfUrl}
+                            onChange={(e) => setPdfUrl(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && insertPdfUrl()}
+                            className="w-full rounded-control border px-3 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
+                            style={{
+                                background: 'var(--surface-2)',
+                                borderColor: 'var(--border)',
+                                color: 'var(--text-1)',
+                                marginBottom: '8px',
+                            }}
+                            autoFocus
+                        />
+                        <p className="text-xs mb-4" style={{ color: 'var(--text-3)' }}>
+                            Format: https://domain.com/berkas/contoh.pdf (hanya http/https yang diizinkan)
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                            <button type="button"
+                                onClick={() => { setShowPdfUrlDialog(false); setPdfUrl(''); }}
+                                className="rounded-control border px-4 py-2 text-sm cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-2)]"
+                                style={{
+                                    background: 'transparent',
+                                    borderColor: 'var(--border)',
+                                    color: 'var(--text-2)',
+                                }}
+                            >
+                                Batal
+                            </button>
+                            <button type="button" onClick={insertPdfUrl} disabled={!pdfUrl}
+                                className="rounded-control px-4 py-2 text-sm font-semibold cursor-pointer transition-opacity duration-150"
+                                style={{
+                                    background: 'var(--brand-red)',
+                                    color: 'var(--text-1)',
+                                    opacity: pdfUrl ? 1 : 0.5,
+                                }}
+                            >
+                                Sisipkan
                             </button>
                         </div>
                     </div>
