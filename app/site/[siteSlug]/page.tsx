@@ -65,10 +65,14 @@ async function getSiteData(slug: string, page: number, categorySlug?: string) {
         prisma.announcement.findMany({
             where: {
                 isPublished: true,
-                sites: { some: { siteId: site.id, isHero: true } },
+                sites: { some: { siteId: site.id } },
+                OR: [
+                    { sites: { some: { siteId: site.id, isHero: true } } },
+                    { isHero: true },
+                ],
             },
             orderBy: { createdAt: "desc" },
-            take: 5,
+            take: 10,
             include: announcementInclude,
         }),
         prisma.announcement.count({ where: feedWhere }),

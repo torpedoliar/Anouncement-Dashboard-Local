@@ -1,10 +1,16 @@
 "use client";
 
-"use client";
-
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { FiChevronLeft, FiChevronRight, FiVolume2, FiVolumeX, FiPause, FiPlay } from "react-icons/fi";
+import {
+    CaretLeft,
+    CaretRight,
+    SpeakerHigh,
+    SpeakerSlash,
+    Pause,
+    Play,
+    ArrowRight,
+} from "@phosphor-icons/react";
 
 interface HeroAnnouncement {
     id: string;
@@ -29,7 +35,6 @@ interface FullscreenHeroProps {
 
 function getYoutubeId(url: string | null) {
     if (!url) return null;
-
     const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
     return match?.[1]?.length === 11 ? match[1] : null;
 }
@@ -40,34 +45,40 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
     const [isAutoPlaying, setIsAutoPlaying] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
 
+    const count = announcements.length;
+    const hasMultiple = count > 1;
+
+    // Reset index if out of bounds
     useEffect(() => {
-        if (currentIndex >= announcements.length) {
+        if (currentIndex >= count && count > 0) {
             setCurrentIndex(0);
         }
-    }, [announcements.length, currentIndex]);
+    }, [count, currentIndex]);
 
+    // Auto-advance interval (5 detik), mereset timer setiap kali index berganti
     useEffect(() => {
-        if (!isAutoPlaying || announcements.length <= 1) return;
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        if (!isAutoPlaying || count <= 1) return;
+        if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-        const interval = window.setInterval(() => {
-            setCurrentIndex((index) => (index + 1) % announcements.length);
-        }, 6000);
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % count);
+        }, 5000);
 
-        return () => window.clearInterval(interval);
-    }, [announcements.length, isAutoPlaying]);
+        return () => clearInterval(interval);
+    }, [count, isAutoPlaying, currentIndex]);
 
-    const current = announcements[currentIndex];
-    if (!current) return null;
+    const goToPrevious = useCallback(() => {
+        setCurrentIndex((prev) => (prev === 0 ? count - 1 : prev - 1));
+    }, [count]);
 
+    const goToNext = useCallback(() => {
+        setCurrentIndex((prev) => (prev + 1) % count);
+    }, [count]);
+
+    if (!announcements || count === 0) return null;
+
+    const current = announcements[currentIndex] || announcements[0];
     const youtubeId = getYoutubeId(current.youtubeUrl);
-    const hasMultipleAnnouncements = announcements.length > 1;
-    const goToPrevious = () => {
-        setCurrentIndex((index) => (index === 0 ? announcements.length - 1 : index - 1));
-    };
-    const goToNext = () => {
-        setCurrentIndex((index) => (index + 1) % announcements.length);
-    };
 
     return (
         <section
@@ -76,155 +87,185 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
             onMouseLeave={() => setIsAutoPlaying(true)}
             onFocus={() => setIsAutoPlaying(false)}
             onBlur={() => setIsAutoPlaying(true)}
+            className="relative w-full overflow-hidden bg-surface-0"
             style={{
-                position: "relative",
-                width: "100%",
                 aspectRatio: "16 / 9",
-                overflow: "hidden",
-                backgroundColor: "var(--bg-primary)",
+                minHeight: "360px",
+                maxHeight: "720px",
             }}
         >
-            {youtubeId ? (
-                <iframe
-                    title={`Video latar ${current.title}`}
-                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&playsinline=1&rel=0&modestbranding=1`}
-                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                    tabIndex={-1}
-                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, pointerEvents: "none" }}
-                />
-            ) : current.videoPath ? (
-                <video
-                    ref={videoRef}
-                    autoPlay
-                    loop
-                    muted={isMuted}
-                    playsInline
-                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                >
-                    <source src={current.videoPath} type="video/mp4" />
-                </video>
-            ) : current.imagePath ? (
-                <div
-                    aria-hidden="true"
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        backgroundImage: `url(${current.imagePath})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                    }}
-                />
-            ) : (
-                <div
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        background: `linear-gradient(135deg, ${primaryColor}40 0%, var(--bg-primary) 100%)`,
-                    }}
-                />
-            )}
+            {/* Slide Layers with smooth crossfade */}
+            {announcements.map((item, idx) => {
+                const isActive = idx === currentIndex;
+                const itemYoutubeId = getYoutubeId(item.youtubeUrl);
 
+                return (
+                    <div
+                        key={item.id}
+                        aria-hidden={!isActive}
+                        className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                            isActive ? "opacity-100 z-0 pointer-events-auto" : "opacity-0 -z-10 pointer-events-none"
+                        }`}
+                    >
+                        {itemYoutubeId && isActive ? (
+                            <iframe
+                                title={`Video latar ${item.title}`}
+                                src={`https://www.youtube.com/embed/${itemYoutubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${itemYoutubeId}&playsinline=1&rel=0&modestbranding=1`}
+                                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                                tabIndex={-1}
+                                className="absolute inset-0 h-full w-full border-0 pointer-events-none object-cover"
+                            />
+                        ) : item.videoPath && isActive ? (
+                            <video
+                                ref={isActive ? videoRef : undefined}
+                                autoPlay
+                                loop
+                                muted={isMuted}
+                                playsInline
+                                className="absolute inset-0 h-full w-full object-cover"
+                            >
+                                <source src={item.videoPath} type="video/mp4" />
+                            </video>
+                        ) : item.imagePath ? (
+                            <div
+                                className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out"
+                                style={{
+                                    backgroundImage: `url(${item.imagePath})`,
+                                    transform: isActive ? "scale(1.02)" : "scale(1)",
+                                }}
+                            />
+                        ) : (
+                            <div
+                                className="absolute inset-0"
+                                style={{
+                                    background: `linear-gradient(135deg, ${primaryColor}35 0%, var(--surface-0) 100%)`,
+                                }}
+                            />
+                        )}
+                    </div>
+                );
+            })}
+
+            {/* Gradient Overlay for Readability */}
             <div
                 aria-hidden="true"
-                style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.32) 58%, rgba(0,0,0,0.48) 100%)",
-                }}
+                className="absolute inset-0 z-[1] bg-gradient-to-t from-black/90 via-black/40 to-black/50"
             />
 
-            <div
-                style={{
-                    position: "absolute",
-                    inset: 0,
-                    zIndex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-start",
-                    justifyContent: "flex-end",
-                    padding: "clamp(1rem, 4vw, 3.75rem)",
-                    paddingRight: "clamp(1rem, 12vw, 12rem)",
-                }}
-            >
-                <p style={{ color: primaryColor, fontSize: "clamp(0.625rem, 1vw, 0.75rem)", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
-                    Pengumuman unggulan
-                </p>
-                <Link href={`/site/${siteSlug}/${current.slug}`} style={{ color: "var(--text-primary)", textDecoration: "none", maxWidth: "52rem" }}>
-                    <h1 style={{ fontSize: "clamp(1.25rem, 3.8vw, 3.5rem)", fontWeight: 800, lineHeight: 1.1, marginBottom: "0.75rem", textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
-                        {current.title}
-                    </h1>
-                </Link>
-                {current.excerpt && (
-                    <p style={{ color: "rgba(255,255,255,0.88)", fontSize: "clamp(0.75rem, 1.25vw, 1rem)", lineHeight: 1.55, maxWidth: "38rem", marginBottom: "1rem", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                        {current.excerpt}
-                    </p>
-                )}
-                <Link href={`/site/${siteSlug}/${current.slug}`} style={{ color: primaryColor, fontSize: "clamp(0.75rem, 1.1vw, 0.875rem)", fontWeight: 700, textDecoration: "none" }}>
-                    Baca selengkapnya <span aria-hidden="true">→</span>
-                </Link>
+            {/* Active Content Caption */}
+            <div className="absolute inset-0 z-[2] flex flex-col justify-end p-6 md:p-12 lg:p-16 pr-16 md:pr-32">
+                <div className="max-w-4xl space-y-2 md:space-y-3">
+                    <div className="flex items-center gap-2.5">
+                        <span
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider text-white shadow-sm"
+                            style={{ backgroundColor: current.category?.color || primaryColor }}
+                        >
+                            {current.category?.name || "Pengumuman Unggulan"}
+                        </span>
+                        {hasMultiple && (
+                            <span className="font-mono text-xs text-white/70">
+                                {currentIndex + 1} / {count}
+                            </span>
+                        )}
+                    </div>
+
+                    <Link
+                        href={`/site/${siteSlug}/${current.slug}`}
+                        className="group block"
+                    >
+                        <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight text-white drop-shadow-md transition-colors group-hover:text-white/90">
+                            {current.title}
+                        </h1>
+                    </Link>
+
+                    {current.excerpt && (
+                        <p className="line-clamp-2 max-w-2xl text-sm sm:text-base text-white/85 leading-relaxed">
+                            {current.excerpt}
+                        </p>
+                    )}
+
+                    <div className="pt-2">
+                        <Link
+                            href={`/site/${siteSlug}/${current.slug}`}
+                            className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-white transition-transform duration-150 hover:translate-x-1"
+                            style={{ color: primaryColor }}
+                        >
+                            <span>Baca selengkapnya</span>
+                            <ArrowRight size={16} weight="bold" />
+                        </Link>
+                    </div>
+                </div>
             </div>
 
-            <div style={{ position: "absolute", right: "clamp(0.75rem, 2.5vw, 3rem)", bottom: "clamp(0.75rem, 2.5vw, 2.5rem)", zIndex: 2, display: "flex", gap: "0.5rem" }}>
-                {hasMultipleAnnouncements && (
+            {/* Right-Bottom Controls */}
+            <div className="absolute bottom-6 right-6 z-[3] flex items-center gap-2">
+                {hasMultiple && (
                     <button
                         type="button"
-                        onClick={() => setIsAutoPlaying((playing) => !playing)}
-                        aria-label={isAutoPlaying ? "Jeda rotasi artikel hero" : "Putar rotasi artikel hero"}
+                        onClick={() => setIsAutoPlaying((p) => !p)}
+                        aria-label={isAutoPlaying ? "Jeda rotasi otomatis" : "Putar rotasi otomatis"}
                         aria-pressed={!isAutoPlaying}
-                        style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.45)", color: "var(--text-primary)", cursor: "pointer", display: "grid", placeItems: "center" }}
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:bg-black/80 active:scale-95 focus-visible:outline-2 focus-visible:outline-white"
                     >
-                        {isAutoPlaying ? <FiPause size={18} /> : <FiPlay size={18} />}
+                        {isAutoPlaying ? <Pause size={18} weight="bold" /> : <Play size={18} weight="bold" />}
                     </button>
                 )}
+
                 {current.videoPath && !youtubeId && (
                     <button
                         type="button"
-                        onClick={() => setIsMuted((muted) => !muted)}
+                        onClick={() => setIsMuted((m) => !m)}
                         aria-label={isMuted ? "Aktifkan suara video" : "Bisukan suara video"}
-                        style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.45)", color: "var(--text-primary)", cursor: "pointer", display: "grid", placeItems: "center" }}
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:bg-black/80 active:scale-95 focus-visible:outline-2 focus-visible:outline-white"
                     >
-                        {isMuted ? <FiVolumeX size={18} /> : <FiVolume2 size={18} />}
+                        {isMuted ? <SpeakerSlash size={18} /> : <SpeakerHigh size={18} />}
                     </button>
                 )}
-                {hasMultipleAnnouncements && (
+
+                {hasMultiple && (
                     <>
-                        <button type="button" onClick={goToPrevious} aria-label="Artikel hero sebelumnya" style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.45)", color: "var(--text-primary)", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                            <FiChevronLeft size={20} />
+                        <button
+                            type="button"
+                            onClick={goToPrevious}
+                            aria-label="Artikel hero sebelumnya"
+                            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:bg-black/80 active:scale-95 focus-visible:outline-2 focus-visible:outline-white"
+                        >
+                            <CaretLeft size={20} weight="bold" />
                         </button>
-                        <button type="button" onClick={goToNext} aria-label="Artikel hero berikutnya" style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.45)", color: "var(--text-primary)", cursor: "pointer", display: "grid", placeItems: "center" }}>
-                            <FiChevronRight size={20} />
+                        <button
+                            type="button"
+                            onClick={goToNext}
+                            aria-label="Artikel hero berikutnya"
+                            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:bg-black/80 active:scale-95 focus-visible:outline-2 focus-visible:outline-white"
+                        >
+                            <CaretRight size={20} weight="bold" />
                         </button>
                     </>
                 )}
             </div>
 
-            {hasMultipleAnnouncements && (
-                <div aria-label="Pilih artikel hero" style={{ position: "absolute", bottom: "clamp(0.75rem, 2.5vw, 2rem)", left: "50%", transform: "translateX(-50%)", zIndex: 2, display: "flex", gap: "0.25rem" }}>
-                    {announcements.map((announcement, index) => {
-                        const active = index === currentIndex;
+            {/* Bottom Indicators */}
+            {hasMultiple && (
+                <div
+                    aria-label="Pilih artikel hero"
+                    className="absolute bottom-6 left-1/2 z-[3] flex -translate-x-1/2 items-center gap-1.5"
+                >
+                    {announcements.map((item, idx) => {
+                        const isActive = idx === currentIndex;
                         return (
                             <button
-                                key={announcement.id}
+                                key={item.id}
                                 type="button"
-                                onClick={() => setCurrentIndex(index)}
-                                aria-label={`Tampilkan artikel hero ${index + 1}: ${announcement.title}`}
-                                aria-current={active ? "true" : undefined}
-                                // Area sentuh 44x44; bar visual tetap 4px di dalamnya.
-                                style={{ width: "2.75rem", minHeight: "2.75rem", padding: 0, background: "transparent", border: 0, cursor: "pointer", display: "grid", placeItems: "center" }}
+                                onClick={() => setCurrentIndex(idx)}
+                                aria-label={`Tampilkan artikel hero ${idx + 1}: ${item.title}`}
+                                aria-current={isActive ? "true" : undefined}
+                                className="group flex h-8 items-center px-1.5 focus:outline-none"
                             >
                                 <span
-                                    aria-hidden="true"
+                                    className="block h-1 rounded-full transition-all duration-300 ease-out"
                                     style={{
-                                        // Bar fixed 0.5rem; aktif di-scale lebar transform
-                                        // (bukan width) supaya tidak memicu layout (T2.6).
-                                        display: "block",
-                                        width: "0.5rem",
-                                        height: "0.25rem",
-                                        borderRadius: "999px",
-                                        backgroundColor: active ? primaryColor : "rgba(255,255,255,0.5)",
-                                        transform: active ? "scaleX(4)" : "scaleX(1)",
-                                        transformOrigin: "center",
-                                        transition: "transform var(--motion-fast) var(--motion-ease)",
+                                        width: isActive ? "28px" : "8px",
+                                        backgroundColor: isActive ? primaryColor : "rgba(255, 255, 255, 0.4)",
                                     }}
                                 />
                             </button>
