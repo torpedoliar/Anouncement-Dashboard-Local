@@ -1,21 +1,18 @@
 import { parse } from "parse5";
 import type { DefaultTreeAdapterMap } from "parse5";
 
-// ponytail: parse5 tree walker manual (bukan cheerio/jsdom) — lapisan terendah yang cukup.
-// Jika tipe DefaultTreeAdapterMap menyulitkan, fallback `type Node = any; type Element = any;`.
 type Node = DefaultTreeAdapterMap["node"];
 type Element = DefaultTreeAdapterMap["element"];
+type TextNode = DefaultTreeAdapterMap["textNode"];
 
 export interface DetectedFields {
     usernameField: string | null;
     passwordField: string | null;
+    httpMethod?: string;
+    formAction?: string | null;
     extraFields: Record<string, string>;
+    confidence?: number;
 }
-
-const USERNAME_KEYWORDS = [
-    "user", "login", "email", "account", "nik", "pegawai", "karyawan",
-    "nip", "member", "identity", "phone", "nama", "usr", "userid", "uname"
-];
 
 interface FieldInfo {
     name: string | null;
@@ -24,12 +21,34 @@ interface FieldInfo {
     autocomplete: string | null;
     placeholder: string | null;
     ariaLabel: string | null;
+    title: string | null;
+    labelText: string | null;
     value: string;
+    isDisabled: boolean;
+    isReadOnly: boolean;
+    formIndex: number;
+    formMethod: string | null;
+    formAction: string | null;
 }
 
 function isElement(n: Node): n is Element {
+    if (!n) return false;
     if (n.nodeName === "#text" || n.nodeName === "#comment" || n.nodeName === "#documentType") return false;
     return "tagName" in n;
+}
+
+function isTextNode(n: Node): n is TextNode {
+    return n && n.nodeName === "#text" && "value" in n;
+}
+
+function extractText(node: Node): string {
+    if (isTextNode(node)) return node.value || "";
+    if (!isElement(node)) return "";
+    let text = "";
+    for (const child of node.childNodes || []) {
+        text += extractText(child) + " ";
+    }
+    return text.trim();
 }
 
 function elementName(el: Element): string | null {
@@ -40,110 +59,380 @@ function elementAttr(el: Element, attr: string): string | null {
     return el.attrs.find((a) => a.name.toLowerCase() === attr.toLowerCase())?.value ?? null;
 }
 
-function collectInputs(el: Element, acc: FieldInfo[]): void {
-    const tag = el.tagName.toLowerCase();
-    if (tag === "input") {
-        const type = (elementAttr(el, "type") ?? "text").toLowerCase();
-        acc.push({
-            name: elementName(el),
-            id: elementAttr(el, "id"),
-            type,
-            autocomplete: firstAutocompleteWord(elementAttr(el, "autocomplete")),
-            placeholder: elementAttr(el, "placeholder"),
-            ariaLabel: elementAttr(el, "aria-label"),
-            value: elementAttr(el, "value") ?? "",
-        });
-    }
-    if (el.childNodes) {
-        for (const child of el.childNodes) {
-            if (isElement(child)) collectInputs(child, acc);
-        }
-    }
+function hasAttr(el: Element, attr: string): boolean {
+    return el.attrs.some((a) => a.name.toLowerCase() === attr.toLowerCase());
 }
 
-// autocomplete bisa "username" atau "username something" → ambil kata pertama
 function firstAutocompleteWord(raw: string | null): string | null {
     if (!raw) return null;
     return raw.toLowerCase().split(/\s+/)[0] ?? null;
 }
 
-function usernameScore(f: FieldInfo): number {
-    if (f.type !== "text" && f.type !== "email" && f.type !== "tel" && f.type !== "search" && f.type !== "number") return -1;
-    if (f.autocomplete === "username" || f.autocomplete === "email") return 100;
-    const hay = `${f.name ?? ""} ${f.id ?? ""} ${f.placeholder ?? ""} ${f.ariaLabel ?? ""}`.toLowerCase();
-    if (USERNAME_KEYWORDS.some((k) => hay.includes(k))) return 70;
-    if (f.type === "email") return 50;
-    return 10;
+/**
+ * Ekstrak nama kontrol terminal (mis. "txtNikHris" dari "ctl00$ContentPlaceHolder1$txtNikHris"
+ * atau "ctl00_ContentPlaceHolder1_txtPassword")
+ */
+function getTerminalControlName(identifier: string | null): string {
+    if (!identifier) return "";
+    const parts = identifier.split(/[$_.:]/);
+    return parts[parts.length - 1] || identifier;
+}
+
+/**
+ * Heuristik deteksi username / identity field
+ */
+function scoreUsername(f: FieldInfo): number {
+    if (f.isDisabled || f.isReadOnly) return -500;
+    if (f.type === "password" || f.type === "hidden" || f.type === "submit" || f.type === "button" || f.type === "checkbox" || f.type === "radio") {
+        return -500;
+    }
+
+    const rawName = (f.name ?? "").toLowerCase();
+    const rawId = (f.id ?? "").toLowerCase();
+    const terminalName = getTerminalControlName(f.name).toLowerCase();
+    const terminalId = getTerminalControlName(f.id).toLowerCase();
+
+    const placeholder = (f.placeholder ?? "").toLowerCase();
+    const aria = (f.ariaLabel ?? "").toLowerCase();
+    const title = (f.title ?? "").toLowerCase();
+    const label = (f.labelText ?? "").toLowerCase();
+
+    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label}`.toLowerCase();
+
+    // 1. Filter out search / query / captcha / OTP boxes
+    if (/\b(?:search|cari|filter|query|keyword|find|pencarian|q)\b/i.test(fullHaystack) || /^q$/i.test(rawName)) {
+        return -500;
+    }
+    if (/(?:captcha|recaptcha|seccode|security_code|otp_token|kode_keamanan)/i.test(fullHaystack)) {
+        return -300;
+    }
+
+    let score = 0;
+
+    // 2. Autocomplete standard (HTML5)
+    if (f.autocomplete === "username" || f.autocomplete === "email") {
+        score += 350;
+    }
+
+    // 3. Priority Tier 1: Indonesian Enterprise HRIS / SJA Specific Patterns
+    // Examples: txtNikHris, txtNik, nikhris, ctl00$ContentPlaceHolder1$txtNikHris, txtPegawai, txtKaryawan
+    if (/(?:nikhris|txtnik|nik_hris|_nik|nik$)/i.test(terminalName) || /(?:nikhris|txtnik|nik_hris|_nik|nik$)/i.test(terminalId)) {
+        score += 320;
+    } else if (/\bnik\b/i.test(fullHaystack) || /nomor\s*induk/i.test(fullHaystack)) {
+        score += 280;
+    } else if (/(?:hris|pegawai|karyawan|nip|nrp|badge|pin_user|empid|emp_id)/i.test(terminalName) || /(?:hris|pegawai|karyawan|nip|nrp)/i.test(terminalId)) {
+        score += 260;
+    }
+
+    // 4. Priority Tier 2: Standard Username keywords
+    if (/(?:username|user_name|user_id|userid|txtusername|txtuser|txtlogin|uname|login_id|auth_user|account_id)/i.test(terminalName) ||
+        /(?:username|user_name|user_id|userid|txtusername|txtuser|txtlogin|uname)/i.test(terminalId)) {
+        score += 240;
+    } else if (/(?:email|e_mail|mail_address|txtemail)/i.test(terminalName) || /(?:email|e_mail)/i.test(terminalId)) {
+        score += 200;
+    } else if (/(?:user|login|akun|member|identity|operator|usr)/i.test(terminalName) || /(?:user|login|akun|member)/i.test(terminalId)) {
+        score += 160;
+    }
+
+    // 5. Label, Placeholder, or Aria semantic clues
+    if (/(?:nik|username|user id|id pengguna|email|nomor induk|nama pengguna|login|akun)/i.test(label) ||
+        /(?:nik|username|user id|id pengguna|email|nomor induk|nama pengguna|login|akun)/i.test(placeholder) ||
+        /(?:nik|username|user id|id pengguna|email|nomor induk|nama pengguna|login|akun)/i.test(aria)) {
+        score += 220;
+    }
+
+    // 6. Generic control pattern penalty (e.g. ASPxTextBox1, TextBox1, input1, field_1)
+    // If the control name is generic auto-generated without semantic hints, heavily penalize it!
+    if (/^(?:aspxtextbox|textbox|ctl\d+|input|field|text|val)\d+$/i.test(terminalName) ||
+        /^(?:aspxtextbox|textbox|ctl\d+|input|field|text|val)\d+$/i.test(terminalId)) {
+        // Only apply penalty if no strong label/placeholder exists
+        if (!/(?:nik|username|user|email|login|nip|pegawai|karyawan)/i.test(label + placeholder + aria)) {
+            score -= 220;
+        }
+    }
+
+    // 7. Input type bonus
+    if (f.type === "email") score += 80;
+    if (f.type === "text" || f.type === "tel" || f.type === "number") score += 20;
+
+    return score;
+}
+
+/**
+ * Heuristik deteksi password field
+ */
+function scorePassword(f: FieldInfo): number {
+    if (f.isDisabled || f.isReadOnly) return -500;
+    if (f.type !== "password" && f.type !== "text" && f.type !== "") return -500;
+
+    const rawName = (f.name ?? "").toLowerCase();
+    const rawId = (f.id ?? "").toLowerCase();
+    const terminalName = getTerminalControlName(f.name).toLowerCase();
+    const terminalId = getTerminalControlName(f.id).toLowerCase();
+
+    const placeholder = (f.placeholder ?? "").toLowerCase();
+    const aria = (f.ariaLabel ?? "").toLowerCase();
+    const title = (f.title ?? "").toLowerCase();
+    const label = (f.labelText ?? "").toLowerCase();
+
+    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label}`.toLowerCase();
+
+    // Confirm password penalty
+    if (/(?:confirm|repeat|ulang|retype|konfirmasi|verifikasi|second)/i.test(fullHaystack)) {
+        return -300;
+    }
+
+    let score = 0;
+
+    // 1. type="password" is the strongest baseline indicator
+    if (f.type === "password") {
+        score += 350;
+    }
+
+    // 2. Autocomplete standard
+    if (f.autocomplete === "current-password" || f.autocomplete === "password") {
+        score += 300;
+    }
+
+    // 3. Specific ASP.NET / HRIS / Enterprise password patterns
+    // e.g. ctl00$ContentPlaceHolder1$txtPassword, txtPassword, txtPass, txtPwd, txtKataSandi
+    if (/(?:txtpassword|txtpass|txtpwd|txtkatasandi|txt_password)/i.test(terminalName) ||
+        /(?:txtpassword|txtpass|txtpwd|txtkatasandi|txt_password)/i.test(terminalId)) {
+        score += 280;
+    } else if (/(?:password|passwd|passcode|katasandi|kata_sandi|passwort)/i.test(terminalName) ||
+               /(?:password|passwd|passcode|katasandi|kata_sandi)/i.test(terminalId)) {
+        score += 240;
+    } else if (/(?:pass|pwd|sandi|pin)/i.test(terminalName) || /(?:pass|pwd|sandi)/i.test(terminalId)) {
+        score += 150;
+    }
+
+    // 4. Label / Placeholder / Aria clues
+    if (/(?:password|kata sandi|sandi|passcode|pin|pwd)/i.test(label) ||
+        /(?:password|kata sandi|sandi|passcode|pin|pwd)/i.test(placeholder) ||
+        /(?:password|kata sandi|sandi|passcode|pin|pwd)/i.test(aria)) {
+        score += 200;
+    }
+
+    // 5. Generic penalty (e.g. ASPxTextBox2, TextBox2)
+    if (/^(?:aspxtextbox|textbox|ctl\d+|input|field|text|val)\d+$/i.test(terminalName) ||
+        /^(?:aspxtextbox|textbox|ctl\d+|input|field|text|val)\d+$/i.test(terminalId)) {
+        if (!/(?:password|kata sandi|sandi|pwd|pass)/i.test(label + placeholder + aria)) {
+            score -= 150;
+        }
+    }
+
+    return score;
 }
 
 export function detectLoginFields(html: string): DetectedFields {
     const doc = parse(html);
-    let usernameField: string | null = null;
-    let passwordField: string | null = null;
+
+    // Map: id -> label text
+    const labelMap = new Map<string, string>();
+    // Collect all forms and all inputs
+    const allInputs: FieldInfo[] = [];
     const extraFields: Record<string, string> = {};
-    const allDocInputs: FieldInfo[] = [];
 
-    function processInputs(inputs: FieldInfo[]): boolean {
-        const passwordInput = inputs.find((f) => f.type === "password");
-        if (passwordInput) {
-            for (const f of inputs) {
-                if (f.name && f.type === "hidden" && f.value) {
-                    extraFields[f.name] = f.value;
+    let currentFormIndex = -1;
+    let currentFormMethod: string | null = null;
+    let currentFormAction: string | null = null;
+
+    // First pass: collect labels and hidden tokens
+    function collectLabelsAndStructure(node: Node, currentLabelTarget: string | null = null): void {
+        if (!node) return;
+
+        if (isElement(node)) {
+            const tag = node.tagName.toLowerCase();
+
+            if (tag === "label") {
+                const forAttr = elementAttr(node, "for");
+                const text = extractText(node);
+                if (forAttr && text) {
+                    labelMap.set(forAttr.toLowerCase(), text);
                 }
             }
-            let bestIdx = -1;
-            let bestScore = -1;
-            for (let i = 0; i < inputs.length; i++) {
-                const s = usernameScore(inputs[i]);
-                if (s > bestScore) {
-                    bestScore = s;
-                    bestIdx = i;
+
+            // ASP.NET ViewState & Security hidden tokens
+            if (tag === "input") {
+                const type = (elementAttr(node, "type") ?? "text").toLowerCase();
+                const name = elementName(node);
+                const value = elementAttr(node, "value") ?? "";
+                if (type === "hidden" && name && value) {
+                    // Keep ASP.NET and CSRF tokens
+                    if (/^(?:__VIEWSTATE|__VIEWSTATEGENERATOR|__EVENTVALIDATION|__EVENTTARGET|__EVENTARGUMENT|__RequestVerificationToken|_csrf|csrf_token|_token)/i.test(name)) {
+                        extraFields[name] = value;
+                    } else if (Object.keys(extraFields).length < 15 && value.length < 500) {
+                        extraFields[name] = value;
+                    }
                 }
             }
-            if (bestIdx >= 0) {
-                usernameField = inputs[bestIdx].name ?? inputs[bestIdx].id;
+        }
+
+        if ("childNodes" in node && Array.isArray(node.childNodes)) {
+            const isLbl = isElement(node) && node.tagName.toLowerCase() === "label";
+            for (const child of node.childNodes) {
+                collectLabelsAndStructure(child, isLbl ? elementAttr(node, "for") : currentLabelTarget);
             }
-            passwordField = passwordInput.name ?? passwordInput.id;
-            return true;
         }
-        return false;
     }
 
-    function visit(node: Node): void {
-        if (!isElement(node)) return;
-        const tag = node.tagName.toLowerCase();
-        if (tag === "input") {
-            const type = (elementAttr(node, "type") ?? "text").toLowerCase();
-            allDocInputs.push({
-                name: elementName(node),
-                id: elementAttr(node, "id"),
-                type,
-                autocomplete: firstAutocompleteWord(elementAttr(node, "autocomplete")),
-                placeholder: elementAttr(node, "placeholder"),
-                ariaLabel: elementAttr(node, "aria-label"),
-                value: elementAttr(node, "value") ?? "",
-            });
-        }
-        if (tag === "form" && !passwordField) {
-            const formInputs: FieldInfo[] = [];
-            for (const child of node.childNodes ?? []) {
-                if (isElement(child)) collectInputs(child, formInputs);
+    collectLabelsAndStructure(doc);
+
+    // Second pass: collect form inputs with contextual metadata
+    function walkDom(node: Node): void {
+        if (!node) return;
+
+        let enteredForm = false;
+        if (isElement(node)) {
+            const tag = node.tagName.toLowerCase();
+
+            if (tag === "form") {
+                currentFormIndex++;
+                currentFormMethod = (elementAttr(node, "method") ?? "POST").toUpperCase();
+                currentFormAction = elementAttr(node, "action");
+                enteredForm = true;
             }
-            processInputs(formInputs);
+
+            if (tag === "input") {
+                const type = (elementAttr(node, "type") ?? "text").toLowerCase();
+                const name = elementName(node);
+                const id = elementAttr(node, "id");
+                const placeholder = elementAttr(node, "placeholder");
+                const ariaLabel = elementAttr(node, "aria-label");
+                const title = elementAttr(node, "title");
+                const autocomplete = firstAutocompleteWord(elementAttr(node, "autocomplete"));
+                const isDisabled = hasAttr(node, "disabled") || elementAttr(node, "aria-disabled") === "true";
+                const isReadOnly = hasAttr(node, "readonly") || elementAttr(node, "aria-readonly") === "true";
+                const value = elementAttr(node, "value") ?? "";
+
+                // Associate label text
+                let labelText: string | null = null;
+                if (id && labelMap.has(id.toLowerCase())) {
+                    labelText = labelMap.get(id.toLowerCase())!;
+                }
+
+                allInputs.push({
+                    name,
+                    id,
+                    type,
+                    autocomplete,
+                    placeholder,
+                    ariaLabel,
+                    title,
+                    labelText,
+                    value,
+                    isDisabled,
+                    isReadOnly,
+                    formIndex: currentFormIndex,
+                    formMethod: currentFormMethod,
+                    formAction: currentFormAction,
+                });
+            }
         }
-        for (const child of node.childNodes ?? []) {
-            if (isElement(child)) visit(child);
+
+        if ("childNodes" in node && Array.isArray(node.childNodes)) {
+            for (const child of node.childNodes) {
+                walkDom(child);
+            }
         }
     }
 
-    for (const child of doc.childNodes) {
-        if (isElement(child)) visit(child);
+    walkDom(doc);
+
+    // Group inputs by formIndex (-1 is non-form/SPA inputs)
+    const formGroups = new Map<number, FieldInfo[]>();
+    for (const input of allInputs) {
+        const group = formGroups.get(input.formIndex) || [];
+        group.push(input);
+        formGroups.set(input.formIndex, group);
     }
 
-    // Jika form tag tidak ada atau tidak membungkus password input, scan seluruh input dokumen
-    if (!passwordField && allDocInputs.length > 0) {
-        processInputs(allDocInputs);
+    let bestUsernameField: string | null = null;
+    let bestPasswordField: string | null = null;
+    let bestMethod = "POST";
+    let bestAction: string | null = null;
+    let highestPairScore = -1;
+
+    // Evaluate each form group
+    for (const [formIdx, inputs] of formGroups.entries()) {
+        let formBestUser: FieldInfo | null = null;
+        let formBestUserScore = -1;
+
+        let formBestPass: FieldInfo | null = null;
+        let formBestPassScore = -1;
+
+        for (const input of inputs) {
+            const uScore = scoreUsername(input);
+            if (uScore > formBestUserScore) {
+                formBestUserScore = uScore;
+                formBestUser = input;
+            }
+
+            const pScore = scorePassword(input);
+            if (pScore > formBestPassScore) {
+                formBestPassScore = pScore;
+                formBestPass = input;
+            }
+        }
+
+        // Calculate combined score
+        let pairScore = 0;
+        if (formBestPass && formBestPassScore > 0) {
+            pairScore += formBestPassScore;
+            if (formBestUser && formBestUserScore > 0) {
+                pairScore += formBestUserScore + 500; // Co-location bonus
+            }
+            if (formIdx >= 0) {
+                pairScore += 100; // Standard <form> wrapper bonus
+            }
+        }
+
+        if (pairScore > highestPairScore && formBestPass) {
+            highestPairScore = pairScore;
+            // Prefer name attribute for form submission, fallback to id
+            bestPasswordField = formBestPass.name ?? formBestPass.id;
+            bestUsernameField = formBestUser ? (formBestUser.name ?? formBestUser.id) : null;
+            bestMethod = formBestPass.formMethod || "POST";
+            bestAction = formBestPass.formAction;
+        }
     }
 
-    return { usernameField, passwordField, extraFields };
+    // Fallback: if no form group matched well, evaluate globally across all inputs
+    if (!bestPasswordField && allInputs.length > 0) {
+        let globalBestUser: FieldInfo | null = null;
+        let globalBestUserScore = -1;
+
+        let globalBestPass: FieldInfo | null = null;
+        let globalBestPassScore = -1;
+
+        for (const input of allInputs) {
+            const uScore = scoreUsername(input);
+            if (uScore > globalBestUserScore) {
+                globalBestUserScore = uScore;
+                globalBestUser = input;
+            }
+
+            const pScore = scorePassword(input);
+            if (pScore > globalBestPassScore) {
+                globalBestPassScore = pScore;
+                globalBestPass = input;
+            }
+        }
+
+        if (globalBestPass) {
+            bestPasswordField = globalBestPass.name ?? globalBestPass.id;
+            bestUsernameField = globalBestUser ? (globalBestUser.name ?? globalBestUser.id) : null;
+            bestMethod = globalBestPass.formMethod || "POST";
+            bestAction = globalBestPass.formAction;
+        }
+    }
+
+    return {
+        usernameField: bestUsernameField,
+        passwordField: bestPasswordField,
+        httpMethod: bestMethod,
+        formAction: bestAction,
+        extraFields,
+        confidence: highestPairScore > 0 ? highestPairScore : 0,
+    };
 }

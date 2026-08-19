@@ -178,11 +178,16 @@ export default function PortalAppsPage() {
                 ...prev,
                 usernameField: data.usernameField ?? prev.usernameField,
                 passwordField: data.passwordField ?? prev.passwordField,
+                httpMethod: data.httpMethod ?? prev.httpMethod,
                 extraFields: Object.keys(data.extraFields || {}).length
                     ? JSON.stringify(data.extraFields, null, 2)
                     : prev.extraFields,
             }));
-            setDetectMsg({ type: "ok", text: "Field terdeteksi. Review sebelum simpan." });
+            const detectedInfo = [
+                data.usernameField ? `User: ${data.usernameField}` : null,
+                data.passwordField ? `Pass: ${data.passwordField}` : null,
+            ].filter(Boolean).join(" | ");
+            setDetectMsg({ type: "ok", text: `Berhasil terdeteksi: ${detectedInfo}` });
         } catch {
             setDetectMsg({ type: "err", text: "Terjadi kesalahan saat deteksi." });
         } finally {
