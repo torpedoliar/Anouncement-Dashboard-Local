@@ -5,6 +5,7 @@ import UpdateBanner from "@/components/admin/UpdateBanner";
 import AdminShell from "@/components/admin/AdminShell";
 
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
+import SessionExpiryWatcher from "@/components/providers/SessionExpiryWatcher";
 import AdminSiteThemeProvider from "@/components/admin/AdminSiteThemeProvider";
 import CommandPalette from "@/components/admin/CommandPalette";
 
@@ -40,12 +41,13 @@ export default async function AdminLayout({
 }) {
     const session = await getServerSession(authOptions);
 
-    if (!session) {
-        redirect("/admin-login");
+    if (!session || !session.user?.id) {
+        redirect("/admin-login?error=SessionExpired");
     }
 
     return (
         <NextAuthProvider basePath="/api/auth">
+            <SessionExpiryWatcher />
             <script dangerouslySetInnerHTML={{ __html: PREPAINT_SCRIPT }} />
             <AdminSiteThemeProvider>
                 <AdminShell

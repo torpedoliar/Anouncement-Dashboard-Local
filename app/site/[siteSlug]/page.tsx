@@ -107,11 +107,18 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
     const { site, announcements, heroAnnouncements: publishedHeroAnnouncements, totalPages } = data;
     const settings = site.settings;
 
-    // Every published hero for this site is passed to the rail, newest first.
-    // Pinned articles remain a fallback only when no article has hero placement.
-    const heroAnnouncements = publishedHeroAnnouncements.length > 0
-        ? publishedHeroAnnouncements
-        : announcements.filter((announcement) => announcement.isPinned).slice(0, 3);
+    // Prioritaskan artikel hero; jika kurang dari 5, lengkapi dengan artikel terbaru/pinned
+    // agar hero carousel selalu memiliki konten rotasi otomatis (hingga 5 artikel).
+    const heroMap = new Map<string, (typeof announcements)[number]>();
+    publishedHeroAnnouncements.forEach((a) => heroMap.set(a.id, a));
+    if (heroMap.size < 5) {
+        announcements.forEach((a) => {
+            if (heroMap.size < 5 && !heroMap.has(a.id)) {
+                heroMap.set(a.id, a);
+            }
+        });
+    }
+    const heroAnnouncements = Array.from(heroMap.values());
     const heroAnnouncement = heroAnnouncements[0] ?? null;
 
     // Pinned di-render sebagai baris lebar penuh di atas grid kronologis (T5.C).

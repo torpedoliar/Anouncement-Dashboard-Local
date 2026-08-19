@@ -54,3 +54,6 @@ next-env.d.ts
 # Docker compose is now tracked (secrets moved to server-side .env via env_file).
 # Keep docker-compose.override.yml ignored (dev-only, may contain local secrets).
 
+# graphify cache
+graphify-out/cache/
+

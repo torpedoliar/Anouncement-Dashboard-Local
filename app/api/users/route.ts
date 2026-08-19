@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         const currentUser = await prisma.user.findUnique({
             where: { id: (session.user as { id: string }).id },
         });
-        if (currentUser?.role !== "ADMIN") {
+        if (currentUser?.role !== "ADMIN" && !currentUser?.isSuperAdmin) {
             return NextResponse.json({ error: "Admin access required" }, { status: 403 });
         }
 

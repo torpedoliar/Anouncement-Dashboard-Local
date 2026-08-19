@@ -39,18 +39,23 @@ export async function GET(
         }
 
         // Verify user has access to at least one of the announcement's sites
-        const sessionUserId = (session.user as { id: string }).id;
-        const { getAccessibleSites } = await import("@/lib/site-access");
-        const accessible = await getAccessibleSites(sessionUserId);
-        const accessibleIds = accessible.map((s) => s.id);
-        const hasAccess = announcement.sites.some((s) =>
-            accessibleIds.includes(s.siteId)
-        );
-        if (!hasAccess) {
-            return NextResponse.json(
-                { error: "No access to this announcement" },
-                { status: 403 }
+        const sessionUser = session.user as { id: string; role?: string; isSuperAdmin?: boolean };
+        const sessionUserId = sessionUser.id;
+        const isAdmin = sessionUser.isSuperAdmin || sessionUser.role === "ADMIN";
+
+        if (!isAdmin && announcement.sites.length > 0) {
+            const { getAccessibleSites } = await import("@/lib/site-access");
+            const accessible = await getAccessibleSites(sessionUserId);
+            const accessibleIds = accessible.map((s) => s.id);
+            const hasAccess = announcement.sites.some((s) =>
+                accessibleIds.includes(s.siteId)
             );
+            if (!hasAccess) {
+                return NextResponse.json(
+                    { error: "No access to this announcement" },
+                    { status: 403 }
+                );
+            }
         }
 
         return NextResponse.json(announcement);

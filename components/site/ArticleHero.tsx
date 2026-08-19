@@ -52,8 +52,15 @@ export default function ArticleHero({
 
     // Determine what media to show
     // Priority: Video > YouTube > Image
+    const extractYoutubeId = (url?: string | null) => {
+        if (!url) return null;
+        const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+        return match?.[1]?.length === 11 ? match[1] : null;
+    };
+
+    const youtubeId = extractYoutubeId(youtubeUrl);
     const hasVideo = !!videoPath;
-    const hasYoutube = !!youtubeUrl && !hasVideo;
+    const hasYoutube = !!youtubeId && !hasVideo;
     const hasImage = !!imagePath && !hasVideo && !hasYoutube;
 
     return (
@@ -122,7 +129,7 @@ export default function ArticleHero({
 
                 {hasYoutube && (
                     <iframe
-                        src={`${youtubeUrl!.replace("watch?v=", "embed/")}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeUrl!.split('v=')[1]}`}
+                        src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&playsinline=1&rel=0&modestbranding=1`}
                         style={{
                             width: "100%",
                             height: "100%",

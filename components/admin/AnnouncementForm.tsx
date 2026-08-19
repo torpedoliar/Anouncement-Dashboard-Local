@@ -249,8 +249,14 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
 
         try {
             // datetime-local inputs yield "YYYY-MM-DDTHH:mm" (no timezone), which
-            // fails the API's Zod .datetime() check — normalize to ISO-8601.
-            const normalizeDateTime = (v: string) => (v ? new Date(v).toISOString() : null);
+            // fails the API's Zod .datetime() check — normalize to ISO-8601 safely.
+            const normalizeDateTime = (v: string) => {
+                if (!v || !v.trim()) return null;
+                const d = new Date(v);
+                return isNaN(d.getTime()) ? null : d.toISOString();
+            };
+
+            const cleanString = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
 
             const url = isEditing
                 ? `/api/announcements/${initialData.id}`
@@ -260,13 +266,13 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                 method: isEditing ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    title,
+                    title: title.trim(),
                     content,
                     categoryId,
-                    imagePath: mediaType === "image" ? imagePath : null,
-                    videoPath: mediaType === "video" ? videoPath : null,
+                    imagePath: mediaType === "image" ? cleanString(imagePath) : null,
+                    videoPath: mediaType === "video" ? cleanString(videoPath) : null,
                     videoType: mediaType === "youtube" ? "youtube" : (mediaType === "video" ? "upload" : null),
-                    youtubeUrl: mediaType === "youtube" ? youtubeUrl : null,
+                    youtubeUrl: mediaType === "youtube" ? cleanString(youtubeUrl) : null,
                     isPublished,
                     allowComments,
                     scheduledAt: normalizeDateTime(scheduledAt),

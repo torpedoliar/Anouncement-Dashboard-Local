@@ -66,23 +66,44 @@ export const AnnouncementCreateSchema = z.object({
         .min(10, 'Content must be at least 10 characters')
         .max(100000, 'Content too long')
         .transform(sanitizeHTML),
-    categoryId: z.string().cuid('Invalid category ID'),
-    imagePath: z.string().nullable().optional(),
-    videoPath: z.string().nullable().optional(),
-    videoType: z.enum(['upload', 'youtube']).nullable().optional(),
-    youtubeUrl: z.string().url('Invalid YouTube URL').nullable().optional(),
+    categoryId: z.string().min(1, 'Invalid category ID'),
+    imagePath: z.preprocess(
+        (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+        z.string().nullable().optional()
+    ),
+    videoPath: z.preprocess(
+        (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+        z.string().nullable().optional()
+    ),
+    videoType: z.preprocess(
+        (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+        z.enum(['upload', 'youtube']).nullable().optional()
+    ),
+    youtubeUrl: z.preprocess(
+        (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+        z.string().url('Invalid YouTube URL').nullable().optional()
+    ),
     isHero: z.boolean().default(false),
     isPinned: z.boolean().default(false),
     isPublished: z.boolean().default(false),
     allowComments: z.boolean().default(true),
-    scheduledAt: z.string().datetime().nullable().optional(),
-    takedownAt: z.string().datetime().nullable().optional(),
+    scheduledAt: z.preprocess(
+        (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+        z.string().datetime().nullable().optional()
+    ),
+    takedownAt: z.preprocess(
+        (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+        z.string().datetime().nullable().optional()
+    ),
     // Legacy site fields (kept for backward compatibility during transition)
-    siteIds: z.array(z.string().cuid()).optional(),
-    primarySiteId: z.string().cuid().nullable().optional(),
+    siteIds: z.array(z.string().min(1)).optional(),
+    primarySiteId: z.preprocess(
+        (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+        z.string().min(1).nullable().optional()
+    ),
     // Per-site syndication with hero/pin placement flags (preferred)
     sites: z.array(z.object({
-        siteId: z.string().cuid(),
+        siteId: z.string().min(1),
         isPrimary: z.boolean().default(false),
         isHero: z.boolean().default(false),
         isPinned: z.boolean().default(false),

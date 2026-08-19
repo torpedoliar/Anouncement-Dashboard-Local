@@ -65,6 +65,7 @@ export async function canAccessSite(userId: string, siteId: string): Promise<boo
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
+            role: true,
             isSuperAdmin: true,
             siteAccess: {
                 where: { siteId },
@@ -74,7 +75,7 @@ export async function canAccessSite(userId: string, siteId: string): Promise<boo
     });
 
     if (!user) return false;
-    if (user.isSuperAdmin) return true;
+    if (user.isSuperAdmin || user.role === "ADMIN") return true;
     return user.siteAccess.length > 0;
 }
 
@@ -98,6 +99,7 @@ export async function getUserSiteRole(userId: string, siteId: string): Promise<S
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
+            role: true,
             isSuperAdmin: true,
             siteAccess: {
                 where: { siteId },
@@ -108,6 +110,7 @@ export async function getUserSiteRole(userId: string, siteId: string): Promise<S
 
     if (!user) return null;
     if (user.isSuperAdmin) return 'SUPERADMIN';
+    if (user.role === 'ADMIN') return 'SITE_ADMIN';
     if (user.siteAccess.length === 0) return null;
     return user.siteAccess[0].role;
 }
@@ -137,6 +140,7 @@ export async function getAccessibleSites(userId: string): Promise<{ id: string; 
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
+            role: true,
             isSuperAdmin: true,
             siteAccess: {
                 include: {
@@ -155,8 +159,8 @@ export async function getAccessibleSites(userId: string): Promise<{ id: string; 
 
     if (!user) return [];
 
-    // SuperAdmin can access all active sites
-    if (user.isSuperAdmin) {
+    // SuperAdmin and ADMIN can access all active sites
+    if (user.isSuperAdmin || user.role === "ADMIN") {
         const allSites = await prisma.site.findMany({
             where: { isActive: true },
             select: { id: true, name: true, slug: true },

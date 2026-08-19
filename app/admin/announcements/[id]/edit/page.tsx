@@ -5,19 +5,39 @@ import { resolveAdminSiteId } from "@/lib/site-context";
 
 export const dynamic = "force-dynamic";
 
+function toLocalDatetimeString(date: Date | null | undefined): string | null {
+    if (!date) return null;
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return null;
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const YYYY = d.getFullYear();
+    const MM = pad(d.getMonth() + 1);
+    const DD = pad(d.getDate());
+    const hh = pad(d.getHours());
+    const mm = pad(d.getMinutes());
+    return `${YYYY}-${MM}-${DD}T${hh}:${mm}`;
+}
+
 async function getAnnouncement(id: string) {
     return prisma.announcement.findUnique({
         where: { id },
         include: {
             sites: true,
+            category: true,
         },
     });
 }
 
-async function getCategories(siteId: string | null) {
-    if (!siteId) return [];
+async function getCategories(siteIds: string[]) {
+    if (siteIds.length > 0) {
+        const cats = await prisma.category.findMany({
+            where: { siteId: { in: siteIds } },
+            orderBy: { order: "asc" },
+        });
+        if (cats.length > 0) return cats;
+    }
+    // Fallback: fetch all categories if none found for specific siteIds
     return prisma.category.findMany({
-        where: { siteId },
         orderBy: { order: "asc" },
     });
 }
@@ -29,15 +49,22 @@ export default async function EditAnnouncementPage({
 }) {
     const { id } = await params;
 
-    const siteId = await resolveAdminSiteId();
-    const [announcement, categories] = await Promise.all([
-        getAnnouncement(id),
-        getCategories(siteId),
-    ]);
+    const currentSiteId = await resolveAdminSiteId();
+    const announcement = await getAnnouncement(id);
 
     if (!announcement) {
         notFound();
     }
+
+    const relevantSiteIds = Array.from(
+        new Set([
+            currentSiteId,
+            ...announcement.sites.map((s) => s.siteId),
+            announcement.category?.siteId,
+        ].filter(Boolean) as string[])
+    );
+
+    const categories = await getCategories(relevantSiteIds);
 
     return (
         <div style={{ padding: '32px' }}>
@@ -68,6 +95,7 @@ export default async function EditAnnouncementPage({
             {/* Form */}
             <AnnouncementForm
                 categories={categories}
+                defaultSiteId={currentSiteId}
                 initialData={{
                     id: announcement.id,
                     title: announcement.title,
@@ -78,8 +106,9 @@ export default async function EditAnnouncementPage({
                     videoType: announcement.videoType,
                     youtubeUrl: announcement.youtubeUrl,
                     isPublished: announcement.isPublished,
-                    scheduledAt: announcement.scheduledAt?.toISOString().slice(0, 16) || null,
-                    takedownAt: announcement.takedownAt?.toISOString().slice(0, 16) || null,
+                    allowComments: announcement.allowComments,
+                    scheduledAt: toLocalDatetimeString(announcement.scheduledAt),
+                    takedownAt: toLocalDatetimeString(announcement.takedownAt),
                     sites: announcement.sites.map(site => ({
                         siteId: site.siteId,
                         isPrimary: site.isPrimary,

@@ -42,7 +42,8 @@ function getYoutubeId(url: string | null) {
 export default function FullscreenHero({ siteSlug, announcements, primaryColor }: FullscreenHeroProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isMuted, setIsMuted] = useState(true);
-    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+    const [isPausedByUser, setIsPausedByUser] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const count = announcements.length;
@@ -55,9 +56,9 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
         }
     }, [count, currentIndex]);
 
-    // Auto-advance interval (5 detik), mereset timer setiap kali index berganti
+    // Auto-advance interval (5 detik), berjalan selama tidak di-pause manual dan tidak di-hover
     useEffect(() => {
-        if (!isAutoPlaying || count <= 1) return;
+        if (isPausedByUser || isHovered || count <= 1) return;
         if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
         const interval = setInterval(() => {
@@ -65,7 +66,7 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
         }, 5000);
 
         return () => clearInterval(interval);
-    }, [count, isAutoPlaying, currentIndex]);
+    }, [count, isPausedByUser, isHovered, currentIndex]);
 
     const goToPrevious = useCallback(() => {
         setCurrentIndex((prev) => (prev === 0 ? count - 1 : prev - 1));
@@ -83,10 +84,8 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
     return (
         <section
             aria-label="Artikel unggulan"
-            onMouseEnter={() => setIsAutoPlaying(false)}
-            onMouseLeave={() => setIsAutoPlaying(true)}
-            onFocus={() => setIsAutoPlaying(false)}
-            onBlur={() => setIsAutoPlaying(true)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             className="relative w-full overflow-hidden bg-surface-0"
             style={{
                 aspectRatio: "16 / 9",
@@ -202,12 +201,12 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                 {hasMultiple && (
                     <button
                         type="button"
-                        onClick={() => setIsAutoPlaying((p) => !p)}
-                        aria-label={isAutoPlaying ? "Jeda rotasi otomatis" : "Putar rotasi otomatis"}
-                        aria-pressed={!isAutoPlaying}
+                        onClick={() => setIsPausedByUser((p) => !p)}
+                        aria-label={!isPausedByUser ? "Jeda rotasi otomatis" : "Putar rotasi otomatis"}
+                        aria-pressed={isPausedByUser}
                         className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-md transition-all hover:bg-black/80 active:scale-95 focus-visible:outline-2 focus-visible:outline-white"
                     >
-                        {isAutoPlaying ? <Pause size={18} weight="bold" /> : <Play size={18} weight="bold" />}
+                        {!isPausedByUser ? <Pause size={18} weight="bold" /> : <Play size={18} weight="bold" />}
                     </button>
                 )}
 

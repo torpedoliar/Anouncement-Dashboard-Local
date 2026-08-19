@@ -6,12 +6,20 @@ import { existsSync } from "fs";
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
 
 const MIME_TYPES: Record<string, string> = {
+    // Images
     "jpg": "image/jpeg",
     "jpeg": "image/jpeg",
     "png": "image/png",
     "gif": "image/gif",
     "webp": "image/webp",
     "svg": "image/svg+xml",
+    // Videos
+    "mp4": "video/mp4",
+    "webm": "video/webm",
+    "ogg": "video/ogg",
+    "mov": "video/quicktime",
+    // Documents
+    "pdf": "application/pdf",
 };
 
 export async function GET(

@@ -1,20 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, EnvelopeSimple, LockKey } from "@phosphor-icons/react";
 import AuthFrame from "@/components/auth/AuthFrame";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "SessionExpired" || errorParam === "SessionRequired") {
+      setError("Sesi Anda telah berakhir. Silakan masuk kembali untuk melanjutkan.");
+    } else if (errorParam === "Unauthorized" || errorParam === "AccessDenied") {
+      setError("Akses ditolak. Silakan login dengan akun yang memiliki hak akses.");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +41,8 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Kredensial tidak valid");
       } else {
-        router.push("/admin");
+        const callbackUrl = searchParams.get("callbackUrl") || "/admin";
+        router.push(callbackUrl);
       }
     } catch {
       setError("Terjadi kesalahan. Silakan coba lagi.");
@@ -40,6 +51,71 @@ export default function LoginPage() {
     }
   };
 
+  return (
+    <AuthFrame
+      title="Masuk ke Admin"
+      subtitle="Gunakan kredensial admin untuk mengakses dashboard"
+      error={error}
+      footer="© 2024 PT. Santos Jaya Abadi"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label
+            htmlFor="email"
+            className="mb-2 block text-xs font-semibold text-text-2"
+          >
+            Email
+          </label>
+          <div className="relative">
+            <EnvelopeSimple
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3"
+            />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@example.com"
+              required
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="password"
+            className="mb-2 block text-xs font-semibold text-text-2"
+          >
+            Password
+          </label>
+          <div className="relative">
+            <LockKey
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3"
+            />
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <Button type="submit" disabled={isLoading} className="w-full">
+          {isLoading ? "Masuk..." : "Masuk"}
+        </Button>
+      </form>
+    </AuthFrame>
+  );
+}
+
+export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-0 px-5 py-10">
       <div className="w-full max-w-[400px]">
@@ -51,66 +127,9 @@ export default function LoginPage() {
           Kembali ke Beranda
         </Link>
 
-        <AuthFrame
-          title="Masuk ke Admin"
-          subtitle="Gunakan kredensial admin untuk mengakses dashboard"
-          error={error}
-          footer="© 2024 PT. Santos Jaya Abadi"
-        >
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-xs font-semibold text-text-2"
-              >
-                Email
-              </label>
-              <div className="relative">
-                <EnvelopeSimple
-                  size={16}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3"
-                />
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@example.com"
-                  required
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-xs font-semibold text-text-2"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <LockKey
-                  size={16}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-3"
-                />
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? "Masuk..." : "Masuk"}
-            </Button>
-          </form>
-        </AuthFrame>
+        <Suspense fallback={<div>Memuat...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

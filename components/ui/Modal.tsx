@@ -92,11 +92,17 @@ export default function Modal({
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
+    // Jaga referensi onClose terbaru agar handleKeyDown tidak perlu dibuat ulang tiap render
+    const onCloseRef = useRef(onClose);
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
+
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
             if (event.key === "Escape") {
                 event.preventDefault();
-                onClose();
+                onCloseRef.current?.();
                 return;
             }
 
@@ -124,7 +130,7 @@ export default function Modal({
                 first.focus();
             }
         },
-        [onClose]
+        []
     );
 
     useEffect(() => {
@@ -133,9 +139,12 @@ export default function Modal({
         previousFocusRef.current = document.activeElement as HTMLElement | null;
 
         const frame = requestAnimationFrame(() => {
-            const target =
-                initialFocusRef?.current ?? closeButtonRef.current ?? panelRef.current;
-            target?.focus();
+            // Hanya fokuskan target awal saat modal terbuka jika fokus belum berada di dalam panel modal
+            if (!panelRef.current?.contains(document.activeElement)) {
+                const target =
+                    initialFocusRef?.current ?? closeButtonRef.current ?? panelRef.current;
+                target?.focus();
+            }
         });
 
         document.addEventListener("keydown", handleKeyDown);
@@ -159,7 +168,7 @@ export default function Modal({
             onMouseDown={(event) => {
                 // mousedown, bukan click: klik yang DIMULAI di dalam panel lalu
                 // dilepas di backdrop (mis. seleksi teks) tidak ikut menutup.
-                if (closeOnBackdrop && event.target === event.currentTarget) onClose();
+                if (closeOnBackdrop && event.target === event.currentTarget) onCloseRef.current?.();
             }}
         >
             <div

@@ -7,7 +7,7 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     TextB, TextAUnderline, ListBullets, ListNumbers, LinkSimple,
     ImageSquare, YoutubeLogo, VideoCamera, FolderOpen,
@@ -243,6 +243,13 @@ export default function RichTextEditor({
             },
         },
     });
+
+    // Sinkronisasi konten editor jika prop content diperbarui dari luar (mis. restore draft)
+    useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            editor.commands.setContent(content || "", { emitUpdate: false });
+        }
+    }, [content, editor]);
 
     const handleImageUpload = useCallback(async (file: File) => {
         if (!editor) return;

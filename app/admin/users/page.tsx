@@ -63,18 +63,6 @@ export default function UsersPage() {
         fetchSites();
     }, []);
 
-    useEffect(() => {
-        if (!showModal) return;
-        const handleModalKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                e.preventDefault();
-                setShowModal(false);
-            }
-        };
-        document.addEventListener("keydown", handleModalKeyDown);
-        return () => document.removeEventListener("keydown", handleModalKeyDown);
-    }, [showModal]);
-
     const fetchUsers = async () => {
         try {
             const response = await fetch("/api/users");
@@ -162,6 +150,10 @@ export default function UsersPage() {
             }
 
             setShowModal(false);
+            showToast(
+                editingUser ? "User berhasil diperbarui" : "User berhasil ditambahkan",
+                "success"
+            );
             setEditingUser(null);
             setFormData({ name: "", email: "", password: "", role: "EDITOR", siteIds: [] });
             fetchUsers();
@@ -193,6 +185,7 @@ export default function UsersPage() {
 
     const openEditModal = (user: User) => {
         setEditingUser(user);
+        setError("");
         setFormData({
             name: user.name,
             email: user.email,
@@ -205,6 +198,7 @@ export default function UsersPage() {
 
     const openAddModal = () => {
         setEditingUser(null);
+        setError("");
         setFormData({ name: "", email: "", password: "", role: "EDITOR", siteIds: [] });
         setShowModal(true);
     };

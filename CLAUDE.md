@@ -77,3 +77,17 @@ Import the singleton from `lib/prisma.ts` (`import prisma from "@/lib/prisma"`) 
 
 ### Other relations to know
 `AnnouncementRevision` (version history, restore), `ApprovalRequest` (content approval workflow), `Comment` (self-referential threading via `parentId`, moderation `status`), `EmailTemplate`/`EmailLog`/`EmailSettings` + newsletter (nodemailer/handlebars). `wordCount` on `Announcement` drives reading-time display.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in GitHub Issues (`gh` CLI), repo `torpedoliar/Anouncement-Dashboard-Local`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage labels are used as-is: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.

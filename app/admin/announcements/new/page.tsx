@@ -5,11 +5,14 @@ import { resolveAdminSiteId } from "@/lib/site-context";
 export const dynamic = "force-dynamic";
 
 async function getCategories(siteId: string | null) {
-    // Only this site's categories; never every site's (prevents picking a
-    // category that belongs to another tenant).
-    if (!siteId) return [];
+    if (siteId) {
+        const cats = await prisma.category.findMany({
+            where: { siteId },
+            orderBy: { order: "asc" },
+        });
+        if (cats.length > 0) return cats;
+    }
     return prisma.category.findMany({
-        where: { siteId },
         orderBy: { order: "asc" },
     });
 }

@@ -140,18 +140,6 @@ export default function PortalUsersPage() {
         fetchGroups();
     }, [fetchUsers]);
 
-    useEffect(() => {
-        if (!showModal) return;
-        const handleModalKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                e.preventDefault();
-                closeModal();
-            }
-        };
-        document.addEventListener("keydown", handleModalKeyDown);
-        return () => document.removeEventListener("keydown", handleModalKeyDown);
-    }, [showModal]);
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");

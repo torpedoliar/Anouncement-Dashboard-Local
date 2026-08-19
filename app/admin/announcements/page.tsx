@@ -5,10 +5,10 @@ import { resolveAdminSiteId } from "@/lib/site-context";
 export const dynamic = "force-dynamic";
 
 async function getAnnouncements(siteId: string | null) {
-    if (!siteId) return [];
+    const where = siteId ? { sites: { some: { siteId } } } : {};
 
     const announcements = await prisma.announcement.findMany({
-        where: { sites: { some: { siteId } } },
+        where,
         orderBy: [{ createdAt: "desc" }],
         include: {
             category: { select: { name: true, color: true } },
@@ -23,7 +23,7 @@ async function getAnnouncements(siteId: string | null) {
 
     return announcements
         .map((a) => {
-            const here = a.sites.find((s) => s.siteId === siteId);
+            const here = siteId ? a.sites.find((s) => s.siteId === siteId) : null;
             return {
                 ...a,
                 isPinned: here?.isPinned ?? a.isPinned,
@@ -31,7 +31,7 @@ async function getAnnouncements(siteId: string | null) {
                 primarySite: ((): { name: string; slug: string } | null => {
                     const primary = a.sites.find((s) => s.isPrimary);
                     if (primary) return primary.site;
-                    const scoped = a.sites.find((s) => s.siteId === siteId);
+                    const scoped = siteId ? a.sites.find((s) => s.siteId === siteId) : null;
                     if (scoped) return scoped.site;
                     const first = a.sites[0];
                     if (first) return first.site;
@@ -43,9 +43,9 @@ async function getAnnouncements(siteId: string | null) {
 }
 
 async function getCategories(siteId: string | null) {
-    if (!siteId) return [];
+    const where = siteId ? { siteId } : {};
     return prisma.category.findMany({
-        where: { siteId },
+        where,
         orderBy: { order: "asc" },
     });
 }
