@@ -6,16 +6,12 @@ import {
     ArrowCounterClockwise,
     Clock,
     DownloadSimple,
-    ShieldCheck,
     ShieldWarning,
     Users,
     WarningCircle,
     MagnifyingGlass,
     CheckCircle,
-    XCircle,
-    Funnel,
     Buildings,
-    Key,
     ArrowsClockwise,
     Heartbeat,
     Warning,
@@ -24,8 +20,6 @@ import {
 } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import Badge from "@/components/ui/Badge";
-import Card from "@/components/ui/Card";
 import { useToast } from "@/contexts/ToastContext";
 
 export default function PortalAuditPage() {
@@ -128,7 +122,7 @@ export default function PortalAuditPage() {
         const table = document.getElementById(tableId);
         if (!table) return;
 
-        let csv = [];
+        const csv: string[] = [];
         const rows = table.querySelectorAll("tr");
         for (let i = 0; i < rows.length; i++) {
             const row = [];
@@ -256,7 +250,7 @@ export default function PortalAuditPage() {
         );
     }
 
-    const { summary, trends, sharedAccounts, dormantAccounts, accessMatrix, historicalRevokes, downtimeIncidents, apps } = data || {};
+    const { summary, trends, sharedAccounts, dormantAccounts, apps } = data || {};
 
     const TAB_DEFS = [
         { key: "dashboard", label: "Ringkasan & KPI", icon: <Pulse size={16} aria-hidden="true" /> },

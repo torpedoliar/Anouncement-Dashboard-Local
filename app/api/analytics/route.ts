@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
             });
             const avgDailyViews = Math.round((totalViews._sum.viewCount || 0) / days);
 
-            dailyViews = interval.slice(-Math.min(days, 30)).map((date, index) => ({
+            dailyViews = interval.slice(-Math.min(days, 30)).map((date) => ({
                 date: format(date, "yyyy-MM-dd"),
                 pageViews: Math.max(0, avgDailyViews + Math.floor(Math.random() * 5) - 2), // slight variation
                 uniqueVisitors: Math.max(0, Math.floor(avgDailyViews * 0.7)),

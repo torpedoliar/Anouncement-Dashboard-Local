@@ -5,7 +5,7 @@
  * Displays health metrics for a site
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Heartbeat, FileText, Users, Tag, Image, ArrowsClockwise } from '@phosphor-icons/react';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
@@ -35,14 +35,13 @@ interface SiteHealthCardProps {
 export default function SiteHealthCard({
     siteId,
     siteName,
-    primaryColor = '#ED1C24',
     compact = false,
 }: SiteHealthCardProps) {
     const [metrics, setMetrics] = useState<HealthMetrics | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchHealth = async () => {
+    const fetchHealth = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
@@ -59,11 +58,11 @@ export default function SiteHealthCard({
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [siteId]);
 
     useEffect(() => {
         fetchHealth();
-    }, [siteId]);
+    }, [fetchHealth]);
 
     if (isLoading) {
         return (

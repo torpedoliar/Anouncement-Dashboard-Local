@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { detectLoginFields } from "@/lib/portal-login-detect";
 
-const MAX_BODY = 64 * 1024; // 64KB cap
-
 // SSRF harden: cegah target non-routable / AWS/GCP metadata service
 function isBlockedHost(hostname: string): boolean {
     const h = hostname.toLowerCase().trim();

@@ -9,6 +9,8 @@ import AuthFrame from "@/components/auth/AuthFrame";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
+export const dynamic = "force-dynamic";
+
 function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();

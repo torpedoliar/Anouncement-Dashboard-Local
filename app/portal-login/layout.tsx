@@ -1,5 +1,7 @@
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
 
+export const dynamic = "force-dynamic";
+
 export default function PortalLoginLayout({
     children,
 }: {

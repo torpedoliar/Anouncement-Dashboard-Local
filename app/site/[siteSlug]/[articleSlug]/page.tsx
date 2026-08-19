@@ -80,11 +80,6 @@ async function getArticleData(siteSlug: string, articleSlug: string) {
     return { site, announcement, relatedArticles, canonicalUrl };
 }
 
-function calculateReadingTime(wordCount: number): string {
-    const minutes = Math.ceil(wordCount / 200);
-    return `${minutes} menit baca`;
-}
-
 export default async function ArticlePage({ params }: PageProps) {
     const { siteSlug, articleSlug } = await params;
     const data = await getArticleData(siteSlug, articleSlug);

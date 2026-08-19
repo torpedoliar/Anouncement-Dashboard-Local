@@ -37,12 +37,12 @@ export async function POST() {
         // Step 1: Backup database
         try {
             steps.push({ step: "Backup database", status: "running" });
-            const backupResult = await execAsync(
+            await execAsync(
                 'docker exec announcement-dashboard-db-1 pg_dump -U postgres announcement_db > /tmp/backup_before_update.sql',
                 { timeout: 60000 }
             );
             steps[steps.length - 1] = { step: "Backup database", status: "success", output: "Backup created" };
-        } catch (backupError) {
+        } catch {
             steps[steps.length - 1] = { step: "Backup database", status: "warning", output: "Backup skipped (non-critical)" };
         }
 
@@ -75,9 +75,9 @@ export async function POST() {
         // Step 3: Run Prisma migrations
         try {
             steps.push({ step: "Updating database schema", status: "running" });
-            const prismaResult = await execAsync('npx prisma migrate deploy', { timeout: 120000 });
+            await execAsync('npx prisma migrate deploy', { timeout: 120000 });
             steps[steps.length - 1] = { step: "Updating database schema", status: "success", output: "Schema updated" };
-        } catch (prismaError: unknown) {
+        } catch {
             steps[steps.length - 1] = { step: "Updating database schema", status: "warning", output: "Migration skipped" };
         }
 
@@ -126,7 +126,7 @@ export async function GET() {
                 ? "Auto-update diaktifkan"
                 : "Auto-update tidak diaktifkan. Set ENABLE_AUTO_UPDATE=true di docker-compose.yml",
         });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: "Failed to check status" }, { status: 500 });
     }
 }

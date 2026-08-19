@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { validatePagination, getPaginationMeta } from "@/lib/pagination-utils";
+import { validatePagination } from "@/lib/pagination-utils";
 import { resolveAdminSiteId } from "@/lib/site-context";
 import { getAccessibleSites } from "@/lib/site-access";
 

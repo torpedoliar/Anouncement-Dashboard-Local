@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { ArrowLeft, FloppyDisk, Layout, ShareNetwork, ChatCircleText, Check, X, UploadSimple } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
@@ -29,7 +28,6 @@ interface SiteSettings {
 export default function SiteSettingsPage() {
     const params = useParams();
     const router = useRouter();
-    const { data: session } = useSession();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [activeTab, setActiveTab] = useState<'general' | 'social' | 'comments'>('general');

@@ -62,7 +62,7 @@ export async function checkAppHealth(app: {
                 },
                 redirect: "follow",
             });
-        } catch (headErr: any) {
+        } catch {
             // Jika server menolak method HEAD (mis. 405 Method Not Allowed), coba fallback GET
             response = await fetch(targetUrl, {
                 method: "GET",

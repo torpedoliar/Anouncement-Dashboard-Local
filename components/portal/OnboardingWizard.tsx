@@ -86,7 +86,7 @@ export default function OnboardingWizard({ groups, mode = "onboarding", initialH
                 setErrorMsg(msg);
                 showToast(msg, "error");
             }
-        } catch (e) {
+        } catch {
             const msg = "Gagal menyimpan. Periksa koneksi lalu coba lagi.";
             setErrorMsg(msg);
             showToast(msg, "error");

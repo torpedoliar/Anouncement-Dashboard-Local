@@ -63,7 +63,7 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
                     {status === "preparing" ? "Menyambungkan..." : "Mengalihkan ke aplikasi eksternal"}
                 </p>
                 <p className="mt-2 text-sm text-text-2">
-                    {status === "preparing" ? "Menyambungkan..." : "Mengalihkan..."}
+                    {status === "preparing" ? `Menyambungkan sebagai ${cred.username}...` : "Mengalihkan..."}
                 </p>
 
                 {failed ? (

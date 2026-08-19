@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { FiCalendar, FiUser, FiEye, FiClock, FiVolume2, FiVolumeX, FiArrowLeft } from "react-icons/fi";

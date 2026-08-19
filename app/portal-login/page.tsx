@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeSlash, LockKey } from "@phosphor-icons/react";
+import { Eye, EyeSlash } from "@phosphor-icons/react";
 import AuthFrame from "@/components/auth/AuthFrame";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+
+export const dynamic = "force-dynamic";
 
 // Pesan server dari lib/portal-auth.ts — diteruskan verbatim (kontrak copy 11-UI-SPEC §1)
 const SERVER_MESSAGE_PREFIXES = [

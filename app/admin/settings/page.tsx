@@ -58,6 +58,30 @@ function VersionInfoSection() {
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
 
+    const performUpdate = async () => {
+        if (!(await confirm({ title: 'Konfirmasi Update', message: 'Apakah Anda yakin ingin memperbarui aplikasi ke versi terbaru?', variant: 'default' }))) {
+            return;
+        }
+
+        setIsUpdating(true);
+        setUpdateProgress([{ step: 'Memulai proses update...', status: 'running' }]);
+        try {
+            const res = await fetch('/api/update', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                if (data.steps) setUpdateProgress(data.steps);
+                showToast(data.message || 'Update berhasil dimulai!', 'success');
+            } else {
+                showToast(data.message || 'Gagal menjalankan update', 'error');
+                if (data.steps) setUpdateProgress(data.steps);
+            }
+        } catch {
+            showToast('Gagal menghubungi server untuk update', 'error');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     useEffect(() => {
         fetchVersion();
     }, []);
@@ -184,12 +208,6 @@ function VersionInfoSection() {
         };
 
         input.click();
-    };
-
-    const performUpdate = () => {
-        // Show the update modal with instructions
-        const modal = document.getElementById('update-modal');
-        if (modal) modal.style.display = 'flex';
     };
 
     return (

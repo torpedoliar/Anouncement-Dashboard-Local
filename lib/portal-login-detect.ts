@@ -282,7 +282,6 @@ export function detectLoginFields(html: string): DetectedFields {
     function walkDom(node: Node): void {
         if (!node) return;
 
-        let enteredForm = false;
         if (isElement(node)) {
             const tag = node.tagName.toLowerCase();
 
@@ -290,7 +289,6 @@ export function detectLoginFields(html: string): DetectedFields {
                 currentFormIndex++;
                 currentFormMethod = (elementAttr(node, "method") ?? "POST").toUpperCase();
                 currentFormAction = elementAttr(node, "action");
-                enteredForm = true;
             }
 
             if (tag === "input") {
