@@ -23,13 +23,13 @@ export async function GET() {
         // Get credential status (jumlah akun + daftar akun + last used per app)
         const creds = await prisma.portalUserAppCredential.findMany({
             where: { portalUserId: userId },
-            select: { id: true, appId: true, label: true, lastUsedAt: true },
+            select: { id: true, appId: true, label: true, appUsername: true, lastUsedAt: true },
             orderBy: { createdAt: "asc" },
         });
-        const credByApp = new Map<string, Array<{ id: string; label: string; lastUsedAt: Date | null }>>();
+        const credByApp = new Map<string, Array<{ id: string; label: string; username: string; lastUsedAt: Date | null }>>();
         for (const c of creds) {
             const arr = credByApp.get(c.appId) ?? [];
-            arr.push({ id: c.id, label: c.label, lastUsedAt: c.lastUsedAt });
+            arr.push({ id: c.id, label: c.label, username: c.appUsername || "-", lastUsedAt: c.lastUsedAt });
             credByApp.set(c.appId, arr);
         }
 
@@ -43,7 +43,12 @@ export async function GET() {
                 appSlug: app.slug,
                 credentialCount: accounts.length,
                 lastUsedAt: accounts.reduce((acc, a) => (a.lastUsedAt && (!acc || a.lastUsedAt > acc) ? a.lastUsedAt : acc), null as Date | null),
-                accounts: accounts.map((a) => ({ id: a.id, label: a.label, lastUsedAt: a.lastUsedAt })),
+                accounts: accounts.map((a) => ({
+                    id: a.id,
+                    label: a.label,
+                    username: a.username,
+                    lastUsedAt: a.lastUsedAt,
+                })),
             };
         });
 
@@ -51,6 +56,82 @@ export async function GET() {
     } catch (error) {
         console.error("Error fetching credentials:", error);
         return NextResponse.json({ error: "Failed to fetch credentials" }, { status: 500 });
+    }
+}
+
+// PUT /api/portal/credentials - Update existing credential
+export async function PUT(request: NextRequest) {
+    try {
+        const session = await getServerSession(portalAuthOptions);
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const userId = session.user.id;
+        const body = await request.json().catch(() => null);
+        const { credentialId, label, username, password, extra } = body || {};
+
+        if (!credentialId || typeof credentialId !== "string") {
+            return NextResponse.json({ error: "credentialId diperlukan" }, { status: 400 });
+        }
+
+        if (!label || !username) {
+            return NextResponse.json({ error: "Label dan username harus diisi" }, { status: 400 });
+        }
+
+        const existing = await prisma.portalUserAppCredential.findFirst({
+            where: { id: credentialId, portalUserId: userId },
+            include: { app: { select: { name: true } } },
+        });
+
+        if (!existing) {
+            return NextResponse.json({ error: "Kredensial tidak ditemukan" }, { status: 404 });
+        }
+
+        // Check if label conflicts with another account on same app
+        if (label !== existing.label) {
+            const labelConflict = await prisma.portalUserAppCredential.findFirst({
+                where: {
+                    portalUserId: userId,
+                    appId: existing.appId,
+                    label,
+                    id: { not: credentialId },
+                },
+            });
+            if (labelConflict) {
+                return NextResponse.json({ error: "Label akun sudah dipakai untuk aplikasi ini" }, { status: 409 });
+            }
+        }
+
+        let newBlob = existing.credentialBlob;
+        if (password && password.trim()) {
+            newBlob = encryptCredential({ username, password, extra });
+        }
+
+        const updated = await prisma.portalUserAppCredential.update({
+            where: { id: credentialId },
+            data: {
+                label,
+                appUsername: username,
+                credentialBlob: newBlob,
+            },
+        });
+
+        await logAudit({
+            actorType: "PORTAL_USER",
+            actorId: userId,
+            category: "SECURITY",
+            action: "CREDENTIAL_UPDATED",
+            entityType: "PORTAL_CREDENTIAL",
+            entityId: updated.id,
+            changes: { appId: existing.appId, label, passwordChanged: !!(password && password.trim()) },
+            request,
+        }).catch((err) => console.error("Audit log error:", err));
+
+        return NextResponse.json({ message: "Kredensial berhasil diperbarui", data: { id: updated.id, label: updated.label, username: updated.appUsername } });
+    } catch (error) {
+        console.error("Error updating credential:", error);
+        return NextResponse.json({ error: "Gagal memperbarui kredensial" }, { status: 500 });
     }
 }
 
