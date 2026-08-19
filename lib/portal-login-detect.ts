@@ -96,8 +96,9 @@ function scoreUsername(f: FieldInfo): number {
     const aria = (f.ariaLabel ?? "").toLowerCase();
     const title = (f.title ?? "").toLowerCase();
     const label = (f.labelText ?? "").toLowerCase();
+    const value = (f.value ?? "").toLowerCase();
 
-    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label}`.toLowerCase();
+    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label} ${value}`.toLowerCase();
 
     // 1. Filter out search / query / captcha / OTP boxes
     if (/\b(?:search|cari|filter|query|keyword|find|pencarian|q)\b/i.test(fullHaystack) || /^q$/i.test(rawName)) {
@@ -107,7 +108,8 @@ function scoreUsername(f: FieldInfo): number {
         return -300;
     }
 
-    let score = 0;
+    // Baseline score for any valid text input in a login form
+    let score = 100;
 
     // 2. Autocomplete standard (HTML5)
     if (f.autocomplete === "username" || f.autocomplete === "email") {
@@ -117,38 +119,36 @@ function scoreUsername(f: FieldInfo): number {
     // 3. Priority Tier 1: Indonesian Enterprise HRIS / SJA Specific Patterns
     // Examples: txtNikHris, txtNik, nikhris, ctl00$ContentPlaceHolder1$txtNikHris, txtPegawai, txtKaryawan
     if (/(?:nikhris|txtnik|nik_hris|_nik|nik$)/i.test(terminalName) || /(?:nikhris|txtnik|nik_hris|_nik|nik$)/i.test(terminalId)) {
-        score += 320;
+        score += 350;
     } else if (/\bnik\b/i.test(fullHaystack) || /nomor\s*induk/i.test(fullHaystack)) {
-        score += 280;
+        score += 300;
     } else if (/(?:hris|pegawai|karyawan|nip|nrp|badge|pin_user|empid|emp_id)/i.test(terminalName) || /(?:hris|pegawai|karyawan|nip|nrp)/i.test(terminalId)) {
-        score += 260;
+        score += 280;
     }
 
     // 4. Priority Tier 2: Standard Username keywords
     if (/(?:username|user_name|user_id|userid|txtusername|txtuser|txtlogin|uname|login_id|auth_user|account_id)/i.test(terminalName) ||
         /(?:username|user_name|user_id|userid|txtusername|txtuser|txtlogin|uname)/i.test(terminalId)) {
-        score += 240;
+        score += 260;
     } else if (/(?:email|e_mail|mail_address|txtemail)/i.test(terminalName) || /(?:email|e_mail)/i.test(terminalId)) {
-        score += 200;
+        score += 240;
     } else if (/(?:user|login|akun|member|identity|operator|usr)/i.test(terminalName) || /(?:user|login|akun|member)/i.test(terminalId)) {
-        score += 160;
+        score += 200;
     }
 
-    // 5. Label, Placeholder, or Aria semantic clues
-    if (/(?:nik|username|user id|id pengguna|email|nomor induk|nama pengguna|login|akun)/i.test(label) ||
-        /(?:nik|username|user id|id pengguna|email|nomor induk|nama pengguna|login|akun)/i.test(placeholder) ||
+    // 5. DevExpress / ASP.NET canonical primary control pattern
+    // Examples: ASPxTextBox1, TextBox1, txt1, ctl00$ContentPlaceHolder1$ASPxTextBox1
+    if (/^(?:aspxtextbox1|textbox1|txt1|input1)$/i.test(terminalName) ||
+        /^(?:aspxtextbox1_i|aspxtextbox1|textbox1|txt1)$/i.test(terminalId)) {
+        score += 250;
+    }
+
+    // 6. Label, Placeholder, Value, or Aria semantic clues
+    if (/(?:nik|username|user id|id pengguna|email|nomor induk|nama pengguna|login|akun|masukan email|masukan nik|masukan user)/i.test(label) ||
+        /(?:nik|username|user id|id pengguna|email|nomor induk|nama pengguna|login|akun|masukan email|masukan nik|masukan user)/i.test(placeholder) ||
+        /(?:nik|username|user id|id pengguna|email|nomor induk|nama pengguna|login|akun|masukan email|masukan nik|masukan user)/i.test(value) ||
         /(?:nik|username|user id|id pengguna|email|nomor induk|nama pengguna|login|akun)/i.test(aria)) {
         score += 220;
-    }
-
-    // 6. Generic control pattern penalty (e.g. ASPxTextBox1, TextBox1, input1, field_1)
-    // If the control name is generic auto-generated without semantic hints, heavily penalize it!
-    if (/^(?:aspxtextbox|textbox|ctl\d+|input|field|text|val)\d+$/i.test(terminalName) ||
-        /^(?:aspxtextbox|textbox|ctl\d+|input|field|text|val)\d+$/i.test(terminalId)) {
-        // Only apply penalty if no strong label/placeholder exists
-        if (!/(?:nik|username|user|email|login|nip|pegawai|karyawan)/i.test(label + placeholder + aria)) {
-            score -= 220;
-        }
     }
 
     // 7. Input type bonus
@@ -174,8 +174,9 @@ function scorePassword(f: FieldInfo): number {
     const aria = (f.ariaLabel ?? "").toLowerCase();
     const title = (f.title ?? "").toLowerCase();
     const label = (f.labelText ?? "").toLowerCase();
+    const value = (f.value ?? "").toLowerCase();
 
-    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label}`.toLowerCase();
+    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label} ${value}`.toLowerCase();
 
     // Confirm password penalty
     if (/(?:confirm|repeat|ulang|retype|konfirmasi|verifikasi|second)/i.test(fullHaystack)) {
@@ -198,27 +199,26 @@ function scorePassword(f: FieldInfo): number {
     // e.g. ctl00$ContentPlaceHolder1$txtPassword, txtPassword, txtPass, txtPwd, txtKataSandi
     if (/(?:txtpassword|txtpass|txtpwd|txtkatasandi|txt_password)/i.test(terminalName) ||
         /(?:txtpassword|txtpass|txtpwd|txtkatasandi|txt_password)/i.test(terminalId)) {
-        score += 280;
+        score += 300;
     } else if (/(?:password|passwd|passcode|katasandi|kata_sandi|passwort)/i.test(terminalName) ||
                /(?:password|passwd|passcode|katasandi|kata_sandi)/i.test(terminalId)) {
-        score += 240;
+        score += 260;
     } else if (/(?:pass|pwd|sandi|pin)/i.test(terminalName) || /(?:pass|pwd|sandi)/i.test(terminalId)) {
-        score += 150;
+        score += 180;
     }
 
-    // 4. Label / Placeholder / Aria clues
-    if (/(?:password|kata sandi|sandi|passcode|pin|pwd)/i.test(label) ||
-        /(?:password|kata sandi|sandi|passcode|pin|pwd)/i.test(placeholder) ||
+    // 4. DevExpress / ASP.NET canonical password control pattern
+    // Examples: ASPxTextBox2, TextBox2, txt2, ctl00$ContentPlaceHolder1$ASPxTextBox2
+    if (/^(?:aspxtextbox2|textbox2|txt2|input2)$/i.test(terminalName) ||
+        /^(?:aspxtextbox2_i|aspxtextbox2|textbox2|txt2)$/i.test(terminalId)) {
+        score += 260;
+    }
+
+    // 5. Label / Placeholder / Aria clues
+    if (/(?:password|kata sandi|sandi|passcode|pin|pwd|masukan password|masukan kata sandi)/i.test(label) ||
+        /(?:password|kata sandi|sandi|passcode|pin|pwd|masukan password|masukan kata sandi)/i.test(placeholder) ||
         /(?:password|kata sandi|sandi|passcode|pin|pwd)/i.test(aria)) {
         score += 200;
-    }
-
-    // 5. Generic penalty (e.g. ASPxTextBox2, TextBox2)
-    if (/^(?:aspxtextbox|textbox|ctl\d+|input|field|text|val)\d+$/i.test(terminalName) ||
-        /^(?:aspxtextbox|textbox|ctl\d+|input|field|text|val)\d+$/i.test(terminalId)) {
-        if (!/(?:password|kata sandi|sandi|pwd|pass)/i.test(label + placeholder + aria)) {
-            score -= 150;
-        }
     }
 
     return score;

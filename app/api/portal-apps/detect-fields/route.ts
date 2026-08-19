@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { detectLoginFields } from "@/lib/portal-login-detect";
 
+import https from "https";
+
 // SSRF harden: cegah target non-routable / AWS/GCP metadata service
 function isBlockedHost(hostname: string): boolean {
     const h = hostname.toLowerCase().trim();
@@ -28,9 +30,8 @@ async function fetchHtml(url: string): Promise<string> {
         throw new FetchError("Host tidak diizinkan", 400);
     }
 
-    let res: Response;
     try {
-        res = await fetch(url, {
+        const res = await fetch(url, {
             redirect: "follow",
             signal: AbortSignal.timeout(10000),
             headers: {
@@ -39,20 +40,54 @@ async function fetchHtml(url: string): Promise<string> {
             },
             cache: "no-store",
         });
-    } catch (err) {
+
+        if (!res.ok) throw new FetchError(`Halaman login mengembalikan HTTP ${res.status} (${res.statusText})`, 422);
+        const ct = res.headers.get("content-type") ?? "";
+        if (ct && !ct.includes("text/html") && !ct.includes("application/xhtml") && !ct.includes("text/plain")) {
+            throw new FetchError("Respons bukan halaman web / HTML", 422);
+        }
+
+        const text = await res.text();
+        return text.substring(0, 512 * 1024); // 512KB cap
+    } catch (err: unknown) {
+        // Fallback for internal corporate HTTPS with self-signed / private CA certs
+        if (parsed.protocol === "https:") {
+            try {
+                return await new Promise<string>((resolve, reject) => {
+                    const req = https.get(url, {
+                        rejectUnauthorized: false,
+                        timeout: 10000,
+                        headers: {
+                            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 PortalDetect/1.0",
+                            accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                        },
+                    }, (res) => {
+                        if (res.statusCode && res.statusCode >= 400) {
+                            return reject(new FetchError(`Halaman login mengembalikan HTTP ${res.statusCode}`, 422));
+                        }
+                        let data = "";
+                        res.setEncoding("utf8");
+                        res.on("data", (chunk) => {
+                            data += chunk;
+                            if (data.length > 512 * 1024) req.destroy();
+                        });
+                        res.on("end", () => resolve(data.substring(0, 512 * 1024)));
+                    });
+                    req.on("error", (e) => reject(new FetchError(`Gagal mengakses target URL (${e.message})`, 422)));
+                    req.on("timeout", () => {
+                        req.destroy();
+                        reject(new FetchError("Waktu pengambilan halaman habis (timeout)", 422));
+                    });
+                });
+            } catch (fallbackErr: unknown) {
+                if (fallbackErr instanceof FetchError) throw fallbackErr;
+            }
+        }
+
         const timedOut = err instanceof Error && err.name === "TimeoutError";
         const msg = err instanceof Error ? err.message : "Gagal mengakses halaman login";
         throw new FetchError(timedOut ? "Waktu pengambilan halaman habis (timeout)" : `Gagal mengakses target URL (${msg})`, 422);
     }
-
-    if (!res.ok) throw new FetchError(`Halaman login mengembalikan HTTP ${res.status} (${res.statusText})`, 422);
-    const ct = res.headers.get("content-type") ?? "";
-    if (ct && !ct.includes("text/html") && !ct.includes("application/xhtml") && !ct.includes("text/plain")) {
-        throw new FetchError("Respons bukan halaman web / HTML", 422);
-    }
-
-    const text = await res.text();
-    return text.substring(0, 512 * 1024); // 512KB cap
 }
 
 // POST /api/portal-apps/detect-fields — SuperAdmin & ADMIN. Body { url }
