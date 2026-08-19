@@ -5,21 +5,10 @@ import { detectLoginFields } from "@/lib/portal-login-detect";
 
 const MAX_BODY = 64 * 1024; // 64KB cap
 
-// SSRF harden dasar — tolak host internal/link-local
+// SSRF harden: cegah target non-routable / AWS/GCP metadata service
 function isBlockedHost(hostname: string): boolean {
-    const h = hostname.toLowerCase();
-    if (h === "localhost" || h === "0.0.0.0" || h.endsWith(".localhost")) return true;
-    // IPv4 privat / loopback / link-local / multicast
-    const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
-    if (ipv4) {
-        const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
-        if (a === 10) return true;
-        if (a === 172 && b >= 16 && b <= 31) return true;
-        if (a === 192 && b === 168) return true;
-        if (a === 127) return true;
-        if (a === 169 && b === 254) return true;
-        if (a >= 224) return true; // multicast/unspecified
-    }
+    const h = hostname.toLowerCase().trim();
+    if (h === "0.0.0.0" || h === "169.254.169.254" || h === "metadata.google.internal") return true;
     return false;
 }
 
@@ -35,7 +24,7 @@ class FetchError extends Error {
 async function fetchHtml(url: string): Promise<string> {
     const parsed = new URL(url);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        throw new FetchError("URL harus http/https", 400);
+        throw new FetchError("URL harus menggunakan http:// atau https://", 400);
     }
     if (isBlockedHost(parsed.hostname)) {
         throw new FetchError("Host tidak diizinkan", 400);
@@ -45,51 +34,36 @@ async function fetchHtml(url: string): Promise<string> {
     try {
         res = await fetch(url, {
             redirect: "follow",
-            signal: AbortSignal.timeout(8000),
-            headers: { "user-agent": "PortalDetect/1.0", accept: "text/html,application/xhtml+xml" },
+            signal: AbortSignal.timeout(10000),
+            headers: {
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 PortalDetect/1.0",
+                accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
             cache: "no-store",
         });
     } catch (err) {
         const timedOut = err instanceof Error && err.name === "TimeoutError";
-        throw new FetchError(timedOut ? "Waktu pengambilan habis" : "Gagal mengakses halaman login", 422);
+        const msg = err instanceof Error ? err.message : "Gagal mengakses halaman login";
+        throw new FetchError(timedOut ? "Waktu pengambilan halaman habis (timeout)" : `Gagal mengakses target URL (${msg})`, 422);
     }
 
-    if (!res.ok) throw new FetchError(`Halaman login mengembalikan HTTP ${res.status}`, 422);
+    if (!res.ok) throw new FetchError(`Halaman login mengembalikan HTTP ${res.status} (${res.statusText})`, 422);
     const ct = res.headers.get("content-type") ?? "";
-    if (ct && !ct.includes("text/html") && !ct.includes("application/xhtml")) {
-        throw new FetchError("Respons bukan halaman HTML", 422);
+    if (ct && !ct.includes("text/html") && !ct.includes("application/xhtml") && !ct.includes("text/plain")) {
+        throw new FetchError("Respons bukan halaman web / HTML", 422);
     }
 
-    // Cap body 64KB — hindari res.text() penuh
-    const reader = res.body?.getReader();
-    if (!reader) {
-        const text = await res.text();
-        return text.substring(0, MAX_BODY);
-    }
-    const buffer = new Uint8Array(MAX_BODY);
-    let offset = 0;
-    for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = value ?? new Uint8Array(0);
-        const remaining = MAX_BODY - offset;
-        if (chunk.length >= remaining) {
-            buffer.set(chunk.subarray(0, remaining), offset);
-            offset += remaining;
-            break;
-        }
-        buffer.set(chunk, offset);
-        offset += chunk.length;
-    }
-    return new TextDecoder().decode(buffer.subarray(0, offset));
+    const text = await res.text();
+    return text.substring(0, 512 * 1024); // 512KB cap
 }
 
-// POST /api/portal-apps/detect-fields — SuperAdmin only. Body { url }
+// POST /api/portal-apps/detect-fields — SuperAdmin & ADMIN. Body { url }
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user?.isSuperAdmin) {
-            return NextResponse.json({ error: "Forbidden: SuperAdmin only" }, { status: 403 });
+        const user = session?.user as { isSuperAdmin?: boolean; role?: string } | undefined;
+        if (!user || (!user.isSuperAdmin && user.role !== "ADMIN")) {
+            return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
         }
 
         const body = await request.json().catch(() => null);
@@ -100,9 +74,9 @@ export async function POST(request: NextRequest) {
 
         let parsed: URL;
         try {
-            parsed = new URL(url);
+            parsed = new URL(url.trim());
         } catch {
-            return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+            return NextResponse.json({ error: "Format URL tidak valid" }, { status: 400 });
         }
 
         const html = await fetchHtml(parsed.href);
