@@ -1,0 +1,6 @@
+E:\Vibe\Dashboard SJA\announcement-dashboard\docs\agents\triage-labels.md
+E:\Vibe\Dashboard SJA\announcement-dashboard\docs\superpowers\plans\2026-08-12-ui-ux-rework-phase0-design-system.md
+E:\Vibe\Dashboard SJA\announcement-dashboard\docs\superpowers\plans\2026-08-13-ui-ux-rework-phase1-shell.md
+E:\Vibe\Dashboard SJA\announcement-dashboard\docs\superpowers\plans\2026-08-13-ui-ux-rework-phase2-content-desk.md
+E:\Vibe\Dashboard SJA\announcement-dashboard\docs\superpowers\plans\2026-08-14-ui-ux-rework-phase3-data-surfaces.md
+E:\Vibe\Dashboard SJA\announcement-dashboard\docs\superpowers\specs\2026-08-12-ui-ux-rework-design.md
