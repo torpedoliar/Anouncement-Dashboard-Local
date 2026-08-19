@@ -6,12 +6,13 @@ import { validatePagination } from "@/lib/pagination-utils";
 import { PortalAppCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
 
-// GET /api/portal-apps - List portal apps (SuperAdmin only)
+// GET /api/portal-apps - List portal apps (Admin & SuperAdmin)
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user?.isSuperAdmin) {
-            return NextResponse.json({ error: "Forbidden: SuperAdmin only" }, { status: 403 });
+        const user = session?.user as { isSuperAdmin?: boolean; role?: string } | undefined;
+        if (!user || (!user.isSuperAdmin && user.role !== "ADMIN")) {
+            return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
         }
 
         const { searchParams } = new URL(request.url);

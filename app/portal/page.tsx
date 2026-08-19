@@ -42,7 +42,17 @@ export default async function PortalPage() {
             name: g.name,
             apps: g.apps
                 .filter((a) => appById.has(a.id))
-                .map((a) => ({ ...a, credentialCount: credCountMap.get(a.id) ?? 0 })),
+                .map((a) => {
+                    const fullApp = appById.get(a.id);
+                    return {
+                        ...a,
+                        credentialCount: credCountMap.get(a.id) ?? 0,
+                        healthStatus: fullApp?.healthStatus ?? "ONLINE",
+                        healthLatencyMs: fullApp?.healthLatencyMs ?? null,
+                        healthError: fullApp?.healthError ?? null,
+                        healthCheckedAt: fullApp?.healthCheckedAt ?? null,
+                    };
+                }),
         }))
         .filter((g) => g.apps.length > 0);
 

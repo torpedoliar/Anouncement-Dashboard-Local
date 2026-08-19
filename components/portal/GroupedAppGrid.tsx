@@ -13,6 +13,10 @@ export interface GridApp {
     logoPath?: string | null;
     category?: string | null;
     credentialCount: number;
+    healthStatus?: string | null;
+    healthLatencyMs?: number | null;
+    healthCheckedAt?: Date | string | null;
+    healthError?: string | null;
 }
 
 export interface GridGroup {

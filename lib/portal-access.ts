@@ -9,6 +9,10 @@ const APP_SELECT = {
     url: true,
     category: true,
     displayOrder: true,
+    healthStatus: true,
+    healthLatencyMs: true,
+    healthError: true,
+    healthCheckedAt: true,
 } as const;
 
 /**

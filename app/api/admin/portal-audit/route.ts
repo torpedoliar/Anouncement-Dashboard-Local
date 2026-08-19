@@ -17,13 +17,37 @@ export async function GET() {
 
         // 1. All Portal Apps
         const apps = await prisma.portalApp.findMany({
-            select: { id: true, name: true, slug: true, logoPath: true, isPublic: true, isActive: true, category: true },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                url: true,
+                loginUrl: true,
+                logoPath: true,
+                isPublic: true,
+                isActive: true,
+                category: true,
+                healthStatus: true,
+                healthStatusCode: true,
+                healthLatencyMs: true,
+                healthCheckedAt: true,
+                healthError: true,
+            },
             orderBy: { displayOrder: "asc" },
         });
         const appsMap = new Map(apps.map((a) => [a.id, a]));
 
         // Total active portal users count
         const totalPortalUsers = await prisma.portalUser.count({ where: { isActive: true } });
+
+        // Health & Uptime Metrics
+        const onlineApps = apps.filter((a) => a.healthStatus === "ONLINE");
+        const degradedApps = apps.filter((a) => a.healthStatus === "DEGRADED");
+        const offlineApps = apps.filter((a) => a.healthStatus === "OFFLINE");
+        const totalLatency = apps.reduce((sum, a) => sum + (a.healthLatencyMs || 0), 0);
+        const countWithLatency = apps.filter((a) => (a.healthLatencyMs || 0) > 0).length;
+        const averageLatencyMs = countWithLatency > 0 ? Math.round(totalLatency / countWithLatency) : 0;
+        const globalUptimePercent = apps.length > 0 ? Math.round(((onlineApps.length + degradedApps.length) / apps.length) * 1000) / 10 : 100;
 
         // 2. App Usage Trends & Total SSO Launch in 30 days
         const trendsRaw = await prisma.auditLog.groupBy({
@@ -310,6 +334,35 @@ export async function GET() {
             };
         });
 
+        // 6. Downtime Incidents (Logs in last 90 days)
+        const downtimeAuditLogs = await prisma.auditLog.findMany({
+            where: {
+                category: "SYSTEM",
+                action: { in: ["APP_DOWNTIME_DETECTED", "APP_RECOVERED"] },
+                createdAt: { gte: ninetyDaysAgo },
+            },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+        });
+
+        const downtimeIncidents = downtimeAuditLogs.map((log) => {
+            const changes = (log.changes as any) || {};
+            const targetApp = log.appId ? appsMap.get(log.appId) : null;
+            return {
+                id: log.id,
+                action: log.action,
+                actionLabel: log.action === "APP_DOWNTIME_DETECTED" ? "Gangguan Server (Downtime)" : "Server Pulih Normal",
+                severity: log.severity,
+                appId: log.appId || changes.appId,
+                appName: changes.appName || targetApp?.name || "Aplikasi",
+                url: changes.url || targetApp?.url || "",
+                statusCode: changes.statusCode ?? null,
+                latencyMs: changes.latencyMs ?? null,
+                errorMessage: changes.error || log.errorMessage || "-",
+                createdAt: log.createdAt,
+            };
+        });
+
         const summary = {
             totalPortalUsers,
             totalApps: apps.length,
@@ -317,6 +370,11 @@ export async function GET() {
             totalDormantAccounts: dormantAccounts.length,
             totalHistoricalRevokes: historicalRevokes.length,
             totalSsoLaunches30d,
+            totalOnlineApps: onlineApps.length,
+            totalDegradedApps: degradedApps.length,
+            totalOfflineApps: offlineApps.length,
+            averageLatencyMs,
+            globalUptimePercent,
         };
 
         return NextResponse.json({
@@ -326,6 +384,7 @@ export async function GET() {
             dormantAccounts,
             accessMatrix,
             historicalRevokes,
+            downtimeIncidents,
             apps,
         });
     } catch (error) {

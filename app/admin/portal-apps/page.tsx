@@ -28,6 +28,11 @@ interface PortalApp {
     isActive: boolean;
     isPublic: boolean;
     displayOrder: number;
+    healthStatus?: string | null;
+    healthStatusCode?: number | null;
+    healthLatencyMs?: number | null;
+    healthCheckedAt?: string | null;
+    healthError?: string | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -320,6 +325,7 @@ export default function PortalAppsPage() {
     const columns: TableColumn[] = [
         { key: "name", header: "NAMA" },
         { key: "slug", header: "SLUG" },
+        { key: "health", header: "SERVER HEALTH" },
         { key: "category", header: "KATEGORI" },
         { key: "ssoMode", header: "SSO MODE" },
         { key: "visibility", header: "VISIBILITAS" },
@@ -341,6 +347,29 @@ export default function PortalAppsPage() {
             </div>
         </div>,
         <span key="slug" className="font-mono text-xs tabular-nums text-text-2">{app.slug}</span>,
+        <div key="health" className="flex items-center gap-1.5 text-xs">
+            {app.healthStatus === "ONLINE" && (
+                <span className="inline-flex items-center gap-1 rounded bg-success/15 px-2 py-0.5 font-semibold text-success border border-success/30">
+                    <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                    Online{app.healthLatencyMs ? ` (${app.healthLatencyMs}ms)` : ""}
+                </span>
+            )}
+            {app.healthStatus === "DEGRADED" && (
+                <span className="inline-flex items-center gap-1 rounded bg-warning/15 px-2 py-0.5 font-semibold text-warning border border-warning/30">
+                    <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+                    Lambat{app.healthLatencyMs ? ` (${app.healthLatencyMs}ms)` : ""}
+                </span>
+            )}
+            {app.healthStatus === "OFFLINE" && (
+                <span className="inline-flex items-center gap-1 rounded bg-danger px-2 py-0.5 font-bold text-white shadow-sm">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+                    Gangguan
+                </span>
+            )}
+            {(!app.healthStatus || app.healthStatus === "UNKNOWN") && (
+                <span className="text-text-3 text-xs">-</span>
+            )}
+        </div>,
         app.category ? (
             <Badge key="category" tone="info">{app.category}</Badge>
         ) : (

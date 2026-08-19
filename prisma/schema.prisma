@@ -622,14 +622,23 @@ model PortalApp {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  // Health & Monitoring
+  healthStatus     String?   @default("UNKNOWN") // "ONLINE" | "DEGRADED" | "OFFLINE" | "UNKNOWN"
+  healthStatusCode Int?
+  healthLatencyMs  Int?
+  healthCheckedAt  DateTime?
+  healthError      String?
+
   userAccess    PortalUserAppAccess[]
   credentials   PortalUserAppCredential[]
   groupApps     PortalGroupApp[]
   visibility    PortalUserAppVisibility[]
+  healthLogs    PortalAppHealthLog[]
 
   @@index([isActive])
   @@index([category])
   @@index([displayOrder])
+  @@index([healthStatus])
   @@map("portal_apps")
 }
 
@@ -798,3 +807,21 @@ model AuditLog {
   @@index([severity])
   @@map("audit_logs")
 }
+
+model PortalAppHealthLog {
+  id           String     @id @default(cuid())
+  appId        String
+  status       String     // "ONLINE" | "DEGRADED" | "OFFLINE"
+  statusCode   Int?
+  latencyMs    Int
+  errorMessage String?
+  checkedAt    DateTime   @default(now())
+
+  app          PortalApp  @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId, checkedAt])
+  @@index([status])
+  @@index([checkedAt])
+  @@map("portal_app_health_logs")
+}
+
