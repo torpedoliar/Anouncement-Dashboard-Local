@@ -25,7 +25,7 @@ if (-not (Test-Path "docker-compose.yml")) {
 Write-Host "[0/5] Memuat secret produksi (.env.server / .env)..." -ForegroundColor Yellow
 $envSource = ".env.server"
 if (-not (Test-Path $envSource)) { $envSource = ".env" }
-foreach ($name in @("CRON_SECRET", "PORTAL_CREDENTIAL_KEY", "NEXTAUTH_SECRET", "PEXELS_API_KEY", "AUTH_TRUST_HOST", "DATABASE_URL")) {
+foreach ($name in @("CRON_SECRET", "PORTAL_CREDENTIAL_KEY", "NEXTAUTH_SECRET", "PEXELS_API_KEY", "AUTH_TRUST_HOST", "DATABASE_URL", "PORTAL_SESSION_MAX_AGE")) {
     $raw = (Get-Content -Path $envSource -ErrorAction SilentlyContinue | Where-Object { $_ -match "^$name=" }) -join "`n"
     if ($raw) {
         $val = $raw.Substring($raw.IndexOf("=") + 1).Trim().Trim('"')

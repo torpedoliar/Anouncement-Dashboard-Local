@@ -58,6 +58,7 @@ if ([string]::IsNullOrWhiteSpace($naSecret) -or $naSecret -eq "super-secret-key-
 # Ambil juga secret lain (biar compose ${...} terisi)
 Get-SecFromEnv "CRON_SECRET" $envSource | Out-Null
 Get-SecFromEnv "PEXELS_API_KEY" $envSource | Out-Null
+Get-SecFromEnv "PORTAL_SESSION_MAX_AGE" $envSource | Out-Null
 
 # Pastikan AUTH_TRUST_HOST (dari .env.production ter-commit) ikut env proses,
 # supaya docker compose interpolasi + runtime dapat nilai yang benar.
