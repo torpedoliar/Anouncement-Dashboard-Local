@@ -106,6 +106,19 @@ export async function fetchLoginPage(url: string): Promise<FetchedPage> {
 
         const timedOut = err instanceof Error && err.name === "TimeoutError";
         const msg = err instanceof Error ? err.message : "Gagal mengakses halaman login";
+
+        // Loop redirect: khas endpoint SSO federasi yang dibuka tanpa parameter
+        // WS-Federation/SAML (mis. K2 `https://host` polos memantul tanpa henti).
+        // Pesan generik "fetch failed" tidak memberi petunjuk apa pun ke admin.
+        if (/redirect|too many|ERR_TOO_MANY_REDIRECTS/i.test(msg)) {
+            throw new FetchError(
+                "Halaman login memantul dalam loop pengalihan tanpa henti. Ini pola khas endpoint SSO federasi " +
+                    "(WS-Federation/SAML) yang dibuka tanpa parameter query yang diperlukan. Salin URL login LENGKAP " +
+                    "dari address bar browser, atau gunakan SSO Mode VAULT untuk aplikasi ini.",
+                422
+            );
+        }
+
         throw new FetchError(
             timedOut ? "Waktu pengambilan halaman habis (timeout)" : `Gagal mengakses target URL (${msg})`,
             422

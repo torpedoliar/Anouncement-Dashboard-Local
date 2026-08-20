@@ -7,7 +7,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
+import Button, { buttonClasses } from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Card from "@/components/ui/Card";
@@ -19,6 +19,7 @@ interface PortalApp {
     description: string | null;
     url: string;
     loginUrl: string | null;
+    logoPath?: string | null;
     ssoMode: string;
     httpMethod: string;
     usernameField: string | null;
@@ -50,6 +51,7 @@ const emptyForm = {
     description: "",
     url: "",
     loginUrl: "",
+    logoPath: "",
     ssoMode: "FORM",
     httpMethod: "POST",
     usernameField: "username",
@@ -73,6 +75,8 @@ export default function PortalAppsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [detecting, setDetecting] = useState(false);
     const [detectMsg, setDetectMsg] = useState<{ type: "ok" | "err"; text: string; warnings?: string[] } | null>(null);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+    const [logoError, setLogoError] = useState("");
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
 
@@ -122,6 +126,7 @@ export default function PortalAppsPage() {
                 description: formData.description || null,
                 url: formData.url,
                 loginUrl: formData.loginUrl || null,
+                logoPath: formData.logoPath || null,
                 ssoMode: formData.ssoMode,
                 httpMethod: formData.httpMethod,
                 usernameField: formData.usernameField || "username",
@@ -160,6 +165,36 @@ export default function PortalAppsPage() {
         }
     };
 
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        // Reset agar memilih berkas yang sama dua kali tetap memicu onChange.
+        e.target.value = "";
+        if (!file) return;
+
+        setLogoError("");
+        setUploadingLogo(true);
+        try {
+            const fd = new FormData();
+            fd.append("file", file);
+            const res = await fetch("/api/upload", { method: "POST", body: fd });
+            const data = await res.json();
+            if (!res.ok) {
+                setLogoError(data.error || "Gagal mengunggah gambar");
+                return;
+            }
+            const path = data.url || data.path || data.filePath;
+            if (!path) {
+                setLogoError("Unggahan berhasil tetapi path gambar tidak diterima");
+                return;
+            }
+            setFormData((p) => ({ ...p, logoPath: path }));
+        } catch {
+            setLogoError("Terjadi kesalahan jaringan saat mengunggah");
+        } finally {
+            setUploadingLogo(false);
+        }
+    };
+
     const handleDetect = async () => {
         const target = (formData.loginUrl || "").trim();
         if (!target) {
@@ -176,16 +211,32 @@ export default function PortalAppsPage() {
             });
             const data = await res.json();
             if (!res.ok) {
-                setDetectMsg({ type: "err", text: data.error || "Deteksi gagal" });
+                // Deteksi gagal pun tetap membawa rekomendasi mode (mis. K2 → VAULT).
+                if (data.recommendedMode) {
+                    setFormData((prev) => ({ ...prev, ssoMode: data.recommendedMode }));
+                }
+                setDetectMsg({
+                    type: "err",
+                    text: data.error || "Deteksi gagal",
+                    warnings: data.recommendationReason
+                        ? [`Mode SSO otomatis diubah ke ${data.recommendedMode}. ${data.recommendationReason}`]
+                        : undefined,
+                });
                 return;
             }
+
+            // Mode yang disarankan menang atas pilihan admin bila berbeda —
+            // rekomendasi berbasis bukti dari halaman, bukan tebakan.
+            const modeChanged =
+                data.recommendedMode && data.recommendedMode !== formData.ssoMode;
+
             setFormData((prev) => ({
                 ...prev,
                 loginUrl: data.finalUrl || prev.loginUrl,
                 usernameField: data.usernameField ?? prev.usernameField,
                 passwordField: data.passwordField ?? prev.passwordField,
                 httpMethod: data.httpMethod ?? prev.httpMethod,
-                ssoMode: data.cookiePaired ? "VAULT" : prev.ssoMode,
+                ssoMode: data.recommendedMode ?? prev.ssoMode,
                 extraFields: Object.keys(data.extraFields || {}).length
                     ? JSON.stringify(data.extraFields, null, 2)
                     : prev.extraFields,
@@ -194,10 +245,18 @@ export default function PortalAppsPage() {
                 data.usernameField ? `User: ${data.usernameField}` : null,
                 data.passwordField ? `Pass: ${data.passwordField}` : null,
             ].filter(Boolean).join(" | ");
+
+            const allWarnings = [...(data.warnings ?? [])];
+            if (modeChanged) {
+                allWarnings.unshift(
+                    `SSO Mode diubah dari ${formData.ssoMode} ke ${data.recommendedMode}. ${data.recommendationReason ?? ""}`.trim()
+                );
+            }
+
             setDetectMsg({
                 type: "ok",
                 text: `Berhasil terdeteksi: ${detectedInfo}`,
-                warnings: data.warnings,
+                warnings: allWarnings.length ? allWarnings : undefined,
             });
         } catch {
             setDetectMsg({ type: "err", text: "Terjadi kesalahan saat deteksi." });
@@ -251,6 +310,7 @@ export default function PortalAppsPage() {
             description: app.description || "",
             url: app.url,
             loginUrl: app.loginUrl || "",
+            logoPath: app.logoPath || "",
             ssoMode: app.ssoMode,
             httpMethod: app.httpMethod,
             usernameField: app.usernameField || "",
@@ -541,6 +601,57 @@ export default function PortalAppsPage() {
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             />
+
+                            {/* Logo aplikasi — membantu user mengenali app dan tidak salah masuk halaman */}
+                            <div>
+                                <span className="mb-2 block text-sm font-semibold text-text-1">LOGO APLIKASI</span>
+                                <div className="flex items-center gap-4">
+                                    {formData.logoPath ? (
+                                        <img
+                                            src={formData.logoPath}
+                                            alt="Pratinjau logo"
+                                            className="h-16 w-16 shrink-0 rounded-card border border-border object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-card border border-dashed border-border bg-surface-2 text-xl font-bold text-text-3">
+                                            {formData.name.charAt(0).toUpperCase() || "?"}
+                                        </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex flex-wrap gap-2">
+                                            <label
+                                                className={`${buttonClasses({ variant: "secondary", size: "sm" })} cursor-pointer`}
+                                            >
+                                                {uploadingLogo ? "Mengunggah..." : "Pilih Gambar"}
+                                                <input
+                                                    type="file"
+                                                    accept="image/png,image/jpeg,image/webp,image/gif"
+                                                    className="hidden"
+                                                    disabled={uploadingLogo}
+                                                    onChange={handleLogoUpload}
+                                                />
+                                            </label>
+                                            {formData.logoPath && (
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() => setFormData((p) => ({ ...p, logoPath: "" }))}
+                                                >
+                                                    Hapus
+                                                </Button>
+                                            )}
+                                        </div>
+                                        {logoError ? (
+                                            <p className="mt-2 text-xs text-danger">{logoError}</p>
+                                        ) : (
+                                            <p className="mt-2 text-xs text-text-3">
+                                                PNG, JPG, WebP, atau GIF. Maks 10MB.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
 
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <Input

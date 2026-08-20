@@ -655,3 +655,27 @@ a {
   border-color: var(--text-3) !important;
   color: var(--text-1) !important;
 }
+
+/* Banner berjalan (notice bar) — strip top halaman site */
+.marquee-wrap {
+  overflow: hidden;
+  background: var(--accent);
+  color: var(--site-text-on-primary, #fff);
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+}
+.marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  padding-left: 2rem;
+  animation: marquee-scroll 30s linear infinite;
+  will-change: transform;
+}
+.marquee-item {
+  margin-right: 3rem;
+}
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.333%); }
+}

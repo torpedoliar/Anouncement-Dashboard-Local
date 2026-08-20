@@ -93,6 +93,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             youtubeUrl,
             commentAutoApprove,
             commentRequireEmail,
+            bannerText,
+            bannerEnabled,
         } = body;
 
         // Transaction to update both Site and SiteSettings
@@ -126,6 +128,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                     youtubeUrl,
                     commentAutoApprove,
                     commentRequireEmail,
+                    bannerText,
+                    bannerEnabled,
                 },
                 update: {
                     heroTitle,
@@ -142,6 +146,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                     youtubeUrl,
                     commentAutoApprove,
                     commentRequireEmail,
+                    bannerText,
+                    bannerEnabled,
                 },
             });
 

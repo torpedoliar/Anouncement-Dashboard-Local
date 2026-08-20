@@ -23,6 +23,8 @@ interface SiteSettings {
     youtubeUrl: string | null;
     commentAutoApprove: boolean;
     commentRequireEmail: boolean;
+    bannerText: string | null;
+    bannerEnabled: boolean;
 }
 
 export default function SiteSettingsPage() {
@@ -294,6 +296,35 @@ export default function SiteSettingsPage() {
                                     className="w-full rounded-control border border-border bg-surface-1 px-3 py-3 text-sm text-text-1 placeholder:text-text-3"
                                 />
                             </div>
+                        </div>
+
+                        {/* Banner berjalan — teks informatif di halaman utama */}
+                        <div className="rounded-card border border-border bg-surface-2/50 p-4">
+                            <div className="mb-2 flex items-center gap-2">
+                                <label className="text-[13px] font-semibold text-text-1">
+                                    Banner Berjalan
+                                </label>
+                                <label className="flex items-center gap-2 text-[13px] text-text-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.bannerEnabled}
+                                        onChange={(e) => setSettings({ ...settings, bannerEnabled: e.target.checked })}
+                                        className="h-4 w-4 rounded border-border accent-accent"
+                                    />
+                                    Aktif
+                                </label>
+                            </div>
+                            <input
+                                type="text"
+                                value={settings.bannerText || ''}
+                                onChange={(e) => setSettings({ ...settings, bannerText: e.target.value })}
+                                placeholder="Misal: Baiveranu! Pemeliharan menjadwal Senin 08:00–12:00"
+                                maxLength={300}
+                                className="w-full rounded-control border border-border bg-surface-1 px-3 py-3 text-sm text-text-1 placeholder:text-text-3"
+                            />
+                            <p className="mt-1 text-[12px] text-text-3">
+                                Teks berjalan kecil di puncak halaman utama. Satu baris, menhulinan tanpa henti.
+                            </p>
                         </div>
 
                         <div>

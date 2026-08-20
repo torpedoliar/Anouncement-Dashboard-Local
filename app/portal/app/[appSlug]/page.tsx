@@ -116,6 +116,8 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
         action: "SSO_LAUNCH",
         entityType: "PORTAL_APP",
         entityId: app.id,
+        // Wajib: KPI & tren di /admin/portal-audit memfilter appId, bukan entityId.
+        appId: app.id,
         outcome: "SUCCESS",
         metadata: { appSlug: app.slug, appName: app.name, targetUsername: cred.username },
     }).catch(() => {});

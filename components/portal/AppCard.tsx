@@ -41,58 +41,59 @@ export default function AppCard({
             isOffline ? "border-danger/40 bg-surface-1/90" : ""
         }`}>
             <div>
-                {/* Header & Status Indicator */}
-                <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                        {logoPath ? (
-                            <img
-                                src={logoPath}
-                                alt={name}
-                                className="h-10 w-10 shrink-0 rounded-card object-cover border border-border"
-                            />
-                        ) : (
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-surface-3 text-base font-bold text-text-2 border border-border">
-                                {name.charAt(0).toUpperCase()}
-                            </div>
-                        )}
-                        <div className="min-w-0">
-                            <h3 className="truncate text-sm font-bold text-text-1">{name}</h3>
-                            {category && (
-                                <span className="text-xs text-text-3">{category}</span>
-                            )}
+                {/* Header: logo + nama. Nama dapat lebar penuh — badge status
+                    dipindah ke baris meta di bawah agar tidak memangkas nama. */}
+                <div className="flex items-center gap-3 min-w-0">
+                    {logoPath ? (
+                        <img
+                            src={logoPath}
+                            alt={name}
+                            className="h-10 w-10 shrink-0 rounded-card object-cover border border-border"
+                        />
+                    ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-surface-3 text-base font-bold text-text-2 border border-border">
+                            {name.charAt(0).toUpperCase()}
                         </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-bold text-text-1 leading-snug break-words" title={name}>
+                            {name}
+                        </h3>
+                        {category && (
+                            <span className="text-xs text-text-3">{category}</span>
+                        )}
                     </div>
+                </div>
 
-                    {/* Real-time Health Status Badge */}
-                    <div className="shrink-0">
-                        {isOnline && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success border border-success/20">
-                                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-                                Online{healthLatencyMs ? ` (${healthLatencyMs}ms)` : ""}
-                            </span>
-                        )}
-                        {isUnknown && (
-                            <span
-                                title="Status server belum diperiksa"
-                                className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-2 py-0.5 text-[11px] font-semibold text-text-3 border border-border"
-                            >
-                                <span className="h-1.5 w-1.5 rounded-full bg-text-3" />
-                                Belum dicek
-                            </span>
-                        )}
-                        {isDegraded && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning border border-warning/20">
-                                <span className="h-1.5 w-1.5 rounded-full bg-warning" />
-                                Lambat{healthLatencyMs ? ` (${healthLatencyMs}ms)` : ""}
-                            </span>
-                        )}
-                        {isOffline && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-danger/15 px-2 py-0.5 text-[11px] font-bold text-danger border border-danger/30">
-                                <span className="h-1.5 w-1.5 rounded-full bg-danger animate-ping" />
-                                Gangguan
-                            </span>
-                        )}
-                    </div>
+                {/* Baris status — lebar penuh, tidak bersaing ruang dengan nama */}
+                <div className="mt-3">
+                    {isOnline && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success border border-success/20">
+                            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                            Online{healthLatencyMs ? ` (${healthLatencyMs}ms)` : ""}
+                        </span>
+                    )}
+                    {isUnknown && (
+                        <span
+                            title="Status server belum diperiksa"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-2 py-0.5 text-[11px] font-semibold text-text-3 border border-border"
+                        >
+                            <span className="h-1.5 w-1.5 rounded-full bg-text-3" />
+                            Belum dicek
+                        </span>
+                    )}
+                    {isDegraded && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning border border-warning/20">
+                            <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+                            Lambat{healthLatencyMs ? ` (${healthLatencyMs}ms)` : ""}
+                        </span>
+                    )}
+                    {isOffline && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-danger/15 px-2 py-0.5 text-[11px] font-bold text-danger border border-danger/30">
+                            <span className="h-1.5 w-1.5 rounded-full bg-danger animate-ping" />
+                            Gangguan
+                        </span>
+                    )}
                 </div>
 
                 {/* Offline Warning Notice if server is down */}

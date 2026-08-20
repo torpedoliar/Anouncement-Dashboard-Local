@@ -178,11 +178,15 @@ export default function PortalAuditPage() {
         if (!data?.accessMatrix) return [];
         if (!matrixSearch) return data.accessMatrix;
         const q = matrixSearch.toLowerCase();
-        return data.accessMatrix.filter((item: any) =>
-            item.user.name.toLowerCase().includes(q) ||
-            item.user.nik.toLowerCase().includes(q) ||
-            item.user.groups.some((g: string) => g.toLowerCase().includes(q))
-        );
+        return data.accessMatrix.filter((item: any) => {
+            const u = item?.user;
+            if (!u) return false;
+            return (
+                (u.name?.toLowerCase().includes(q) ?? false) ||
+                (u.nik?.toLowerCase().includes(q) ?? false) ||
+                (u.groups ?? []).some((g: string) => g.toLowerCase().includes(q))
+            );
+        });
     }, [data?.accessMatrix, matrixSearch]);
 
     const filteredHistory = useMemo(() => {

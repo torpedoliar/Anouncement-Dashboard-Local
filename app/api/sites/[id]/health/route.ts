@@ -22,13 +22,29 @@ interface HealthMetrics {
     totalCategories: number;
     totalSubscribers: number;
     lastActivityAt: string | null;
+    lastPublishedAt: string | null;
     publishedAnnouncements: number;
     totalViews: number;
     totalUsers: number;
 }
 
+interface HealthReason {
+    /** Ringkas, tampil di daftar alasan */
+    label: string;
+    /** Tingkat kontribusi terhadap status akhir */
+    level: 'warning' | 'critical';
+    /** Angka pendukung supaya admin tahu dasar penilaiannya */
+    detail: string;
+    /** Saran tindakan konkret */
+    action: string;
+}
+
 interface HealthResponse {
     status: 'good' | 'warning' | 'critical';
+    /** Alasan kenapa status seperti itu — kosong berarti sehat */
+    reasons: HealthReason[];
+    /** Ringkasan satu kalimat untuk ditampilkan langsung */
+    summary: string;
     metrics: HealthMetrics;
 }
 
@@ -141,6 +157,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             select: { createdAt: true },
         });
 
+        // Tanggal terbit artikel terakhir — sinyal basi konten yang reliabel.
+        // ActivityLog tidak dipakai untuk ini karena mayoritas penulisannya tidak mengisi siteId.
+        const lastPublished = await prisma.announcementSite.findFirst({
+            where: {
+                siteId: id,
+                announcement: { isPublished: true },
+            },
+            orderBy: { announcement: { createdAt: 'desc' } },
+            select: { announcement: { select: { createdAt: true } } },
+        });
+        const lastPublishedAt = lastPublished?.announcement.createdAt ?? null;
+
         const metrics: HealthMetrics = {
             viewsLast7d,
             draftCount,
@@ -153,30 +181,80 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             totalSubscribers,
             totalUsers,
             lastActivityAt: lastActivity?.createdAt.toISOString() || null,
+            lastPublishedAt: lastPublishedAt?.toISOString() || null,
         };
 
-        // Determine health status
-        let status: 'good' | 'warning' | 'critical' = 'good';
+        // Tentukan status kesehatan + alasannya.
+        //
+        // Aturan lama menandai site "kritis" hanya karena ActivityLog terakhir >14 hari.
+        // Itu menyesatkan: dari 20 penulisan ActivityLog di repo ini hanya 2 yang mengisi
+        // siteId, jadi ketiadaan log TIDAK berarti site menganggur — sinyalnya memang tidak
+        // terekam. Site tanpa log sama sekali (mis. baru dibuat) juga ikut jadi "kritis"
+        // padahal tidak ada yang salah. Sekarang basi-nya konten hanya berstatus 'warning',
+        // dan hanya dihitung bila site memang punya konten terbit.
+        const reasons: HealthReason[] = [];
 
-        if (draftCount > 10 || pendingComments > 20) {
-            status = 'critical';
-        } else if (draftCount > 5 || pendingComments > 10) {
-            status = 'warning';
+        if (draftCount > 10) {
+            reasons.push({
+                label: 'Draf menumpuk',
+                level: 'critical',
+                detail: `${draftCount} artikel masih berstatus draf (batas wajar 10).`,
+                action: 'Tinjau dan terbitkan atau hapus draf yang sudah tidak relevan.',
+            });
+        } else if (draftCount > 5) {
+            reasons.push({
+                label: 'Draf mulai menumpuk',
+                level: 'warning',
+                detail: `${draftCount} artikel masih berstatus draf (batas wajar 5).`,
+                action: 'Selesaikan draf yang tertunda agar tidak menumpuk.',
+            });
         }
 
-        // Check last activity
-        if (lastActivity) {
-            const daysSinceActivity = Math.floor(
-                (Date.now() - lastActivity.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+        if (pendingComments > 20) {
+            reasons.push({
+                label: 'Komentar menunggu moderasi',
+                level: 'critical',
+                detail: `${pendingComments} komentar belum dimoderasi (batas wajar 20).`,
+                action: 'Buka halaman moderasi komentar dan proses antrean.',
+            });
+        } else if (pendingComments > 10) {
+            reasons.push({
+                label: 'Antrean moderasi bertambah',
+                level: 'warning',
+                detail: `${pendingComments} komentar belum dimoderasi (batas wajar 10).`,
+                action: 'Moderasi komentar yang tertunda.',
+            });
+        }
+
+        // Basi konten: pakai tanggal terbit artikel, bukan ActivityLog yang tidak reliabel.
+        // Hanya relevan untuk site yang memang sudah pernah menerbitkan konten.
+        if (publishedAnnouncements > 0 && lastPublishedAt) {
+            const daysSincePublish = Math.floor(
+                (Date.now() - lastPublishedAt.getTime()) / (1000 * 60 * 60 * 24)
             );
-            if (daysSinceActivity > 14) {
-                status = 'critical';
-            } else if (daysSinceActivity > 7 && status === 'good') {
-                status = 'warning';
+            if (daysSincePublish > 30) {
+                reasons.push({
+                    label: 'Belum ada konten baru',
+                    level: 'warning',
+                    detail: `Artikel terbit terakhir ${daysSincePublish} hari lalu.`,
+                    action: 'Terbitkan konten baru bila site ini masih aktif digunakan.',
+                });
             }
         }
 
-        const response: HealthResponse = { status, metrics };
+        const hasCritical = reasons.some((r) => r.level === 'critical');
+        const status: 'good' | 'warning' | 'critical' = hasCritical
+            ? 'critical'
+            : reasons.length > 0
+              ? 'warning'
+              : 'good';
+
+        const summary =
+            status === 'good'
+                ? 'Tidak ada masalah terdeteksi.'
+                : reasons.map((r) => r.label).join(' · ');
+
+        const response: HealthResponse = { status, reasons, summary, metrics };
         return NextResponse.json(response);
     } catch (error) {
         console.error('Error fetching site health:', error);

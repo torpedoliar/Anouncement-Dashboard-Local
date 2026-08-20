@@ -23,6 +23,7 @@ import {
 } from "@phosphor-icons/react";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import Modal from "@/components/ui/Modal";
 import { buttonClasses } from "@/components/ui/Button";
 
 /**
@@ -57,13 +58,23 @@ interface Site {
 
 type HealthStatusKey = "good" | "warning" | "critical";
 
+interface HealthReason {
+    label: string;
+    level: "warning" | "critical";
+    detail: string;
+    action: string;
+}
+
 interface HealthStatus {
     status: HealthStatusKey;
+    reasons?: HealthReason[];
+    summary?: string;
     metrics: {
         viewsLast7d: number;
         draftCount: number;
         pendingComments: number;
         scheduledPosts: number;
+        lastPublishedAt?: string | null;
     };
 }
 
@@ -73,10 +84,17 @@ const HEALTH_META: Record<HealthStatusKey, { tone: "success" | "warning" | "dang
     critical: { tone: "danger", label: "Kritis", icon: <WarningCircle size={14} weight="fill" /> },
 };
 
+/** Label status untuk judul dialog; aman dipanggil sebelum health selesai dimuat. */
+function healthLabel(status?: HealthStatusKey): string {
+    return status ? HEALTH_META[status].label : "Memuat";
+}
+
 export default function SitesPage() {
     const [sites, setSites] = useState<Site[]>([]);
     const [healthMap, setHealthMap] = useState<Record<string, HealthStatus>>({});
     const [isLoading, setIsLoading] = useState(true);
+    // Site yang alasan kesehatannya sedang dibuka
+    const [reasonSite, setReasonSite] = useState<Site | null>(null);
 
     useEffect(() => {
         fetchSites();
@@ -184,10 +202,29 @@ export default function SitesPage() {
                                     </div>
                                 </div>
                                 {healthMeta ? (
-                                    <Badge tone={healthMeta.tone} className="shrink-0">
-                                        {healthMeta.icon}
-                                        {healthMeta.label}
-                                    </Badge>
+                                    health.status === "good" ? (
+                                        <Badge tone={healthMeta.tone} className="shrink-0">
+                                            {healthMeta.icon}
+                                            {healthMeta.label}
+                                        </Badge>
+                                    ) : (
+                                        /* Status bermasalah bisa diklik untuk melihat alasannya */
+                                        <button
+                                            type="button"
+                                            onClick={() => setReasonSite(site)}
+                                            title={health.summary || "Lihat alasan"}
+                                            aria-label={`Status ${healthMeta.label} untuk ${site.name}. Klik untuk lihat alasan.`}
+                                            className="shrink-0 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                                        >
+                                            <Badge tone={healthMeta.tone} className="cursor-pointer">
+                                                {healthMeta.icon}
+                                                {healthMeta.label}
+                                                <span aria-hidden="true" className="ml-0.5 opacity-70">
+                                                    &#9432;
+                                                </span>
+                                            </Badge>
+                                        </button>
+                                    )
                                 ) : (
                                     <Badge tone="neutral" className="shrink-0">
                                         Memuat...
@@ -290,6 +327,65 @@ export default function SitesPage() {
                     </Link>
                 </div>
             )}
+
+            {/* Penjelasan status kesehatan site */}
+            <Modal
+                open={reasonSite !== null}
+                onClose={() => setReasonSite(null)}
+                title={reasonSite ? `Status: ${healthLabel(healthMap[reasonSite.id]?.status)}` : "Status"}
+                description={reasonSite?.name}
+                size="md"
+            >
+                {reasonSite && (() => {
+                    const h = healthMap[reasonSite.id];
+                    const reasons = h?.reasons ?? [];
+                    return (
+                        <div className="space-y-4">
+                            {reasons.length === 0 ? (
+                                <p className="text-sm text-text-2">
+                                    Tidak ada alasan yang tercatat untuk status ini.
+                                </p>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-text-2">
+                                        Status ditentukan dari pemeriksaan berikut:
+                                    </p>
+                                    <ul className="space-y-3">
+                                        {reasons.map((r, i) => (
+                                            <li
+                                                key={i}
+                                                className={`rounded-card border p-4 ${
+                                                    r.level === "critical"
+                                                        ? "border-danger/30 bg-danger-subtle/20"
+                                                        : "border-warning/30 bg-warning/5"
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {r.level === "critical" ? (
+                                                        <WarningCircle size={16} weight="fill" className="shrink-0 text-danger" />
+                                                    ) : (
+                                                        <Warning size={16} weight="fill" className="shrink-0 text-warning" />
+                                                    )}
+                                                    <span className="text-sm font-semibold text-text-1">{r.label}</span>
+                                                </div>
+                                                <p className="mt-2 text-sm text-text-2">{r.detail}</p>
+                                                <p className="mt-2 text-xs text-text-3">
+                                                    <span className="font-semibold">Saran:</span> {r.action}
+                                                </p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+
+                            <div className="rounded-card border border-border bg-surface-2/50 p-3 text-xs text-text-3">
+                                Status dihitung dari jumlah draf, antrean moderasi komentar, dan
+                                jarak waktu sejak artikel terakhir terbit.
+                            </div>
+                        </div>
+                    );
+                })()}
+            </Modal>
         </div>
     );
 }

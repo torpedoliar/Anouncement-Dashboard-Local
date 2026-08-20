@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
                 action: "SSO_LAUNCH",
                 entityType: "PORTAL_APP",
                 entityId: app.id,
+                appId: app.id, // KPI /admin/portal-audit memfilter appId
                 outcome: "FAILURE",
                 errorMessage: `Oracle login rejected credentials (${errorCode})`,
                 metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" }
@@ -183,6 +184,7 @@ export async function POST(request: NextRequest) {
             action: "SSO_LAUNCH",
             entityType: "PORTAL_APP",
             entityId: app.id,
+            appId: app.id, // KPI /admin/portal-audit memfilter appId
             outcome: "SUCCESS",
             metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" }
         }).catch(() => {});

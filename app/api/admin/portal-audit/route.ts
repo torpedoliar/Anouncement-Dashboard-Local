@@ -50,17 +50,30 @@ export async function GET() {
         const globalUptimePercent = apps.length > 0 ? Math.round(((onlineApps.length + degradedApps.length) / apps.length) * 1000) / 10 : 100;
 
         // 2. App Usage Trends & Total SSO Launch in 30 days
-        const trendsRaw = await prisma.auditLog.groupBy({
-            by: ["appId"],
+        //
+        // Baris SSO_LAUNCH lama hanya mengisi entityId (appId null), sehingga filter
+        // `appId: { not: null }` membuat seluruh KPI tampil nol. Sekarang appId ikut
+        // ditulis, tapi data historis tetap dibaca lewat entityId agar tidak hilang.
+        const launchRows = await prisma.auditLog.findMany({
             where: {
                 action: "SSO_LAUNCH",
                 category: "SECURITY",
                 createdAt: { gte: thirtyDaysAgo },
-                appId: { not: null },
+                OR: [{ appId: { not: null } }, { entityType: "PORTAL_APP", entityId: { not: null } }],
             },
-            _count: { id: true },
-            orderBy: { _count: { id: "desc" } },
+            select: { appId: true, entityId: true },
         });
+
+        const launchCountByApp = new Map<string, number>();
+        for (const row of launchRows) {
+            const key = row.appId ?? row.entityId;
+            if (!key) continue;
+            launchCountByApp.set(key, (launchCountByApp.get(key) ?? 0) + 1);
+        }
+
+        const trendsRaw = Array.from(launchCountByApp.entries())
+            .map(([appId, count]) => ({ appId, _count: { id: count } }))
+            .sort((a, b) => b._count.id - a._count.id);
 
         const totalSsoLaunches30d = trendsRaw.reduce((sum, t) => sum + t._count.id, 0);
 
@@ -224,7 +237,19 @@ export async function GET() {
                 userCredsMap.set(cred.appId, existing);
             }
 
-            const appStatuses = apps.map((app) => {
+            // Frontend meng-indeks per appId (item.apps[app.id]), bukan mencari di array.
+            const appStatuses: Record<string, {
+                appId: string;
+                appName: string;
+                hasAccess: boolean;
+                accessType: "PUBLIC" | "DIRECT" | "GROUP" | "ADMIN" | "NONE";
+                groupNames: string[];
+                hasCredential: boolean;
+                credentialsCount: number;
+                username: string | null;
+            }> = {};
+
+            for (const app of apps) {
                 const hasDirect = userAppAccessMap.has(app.id);
                 const groupNames = userGroupAppsMap.get(app.id) || [];
                 const hasGroup = groupNames.length > 0;
@@ -242,24 +267,29 @@ export async function GET() {
                     else if (app.isPublic) accessType = "PUBLIC";
                 }
 
-                return {
+                appStatuses[app.id] = {
                     appId: app.id,
                     appName: app.name,
-                    isAllowed,
+                    hasAccess: isAllowed,
                     accessType,
                     groupNames,
                     hasCredential,
                     credentialsCount: creds.length,
-                    primaryUsername: creds[0]?.appUsername || null,
+                    // Tampilkan label akun kalau username plaintext tidak disimpan
+                    // (appUsername opsional; hanya diisi untuk audit ISO27001).
+                    username: creds[0]?.appUsername || creds[0]?.label || null,
                 };
-            });
+            }
 
+            // Bentuk { user, apps }: frontend membaca item.user.name / item.user.nik / item.user.groups.
             return {
-                id: u.id,
-                name: u.name,
-                nik: u.nik,
-                role: u.role,
-                groups: u.groups.map((g) => g.group.name),
+                user: {
+                    id: u.id,
+                    name: u.name,
+                    nik: u.nik,
+                    role: u.role,
+                    groups: u.groups.map((g) => g.group.name),
+                },
                 apps: appStatuses,
             };
         });

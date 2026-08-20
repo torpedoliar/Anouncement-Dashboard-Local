@@ -184,15 +184,24 @@ export default function AnnouncementCard({
                             {category.name}
                         </span>
                         {isPinned && (
+                            /* Badge PINNED sebelumnya memakai --brand-red polos sehingga
+                               menyatu dengan badge kategori yang warnanya mirip merah.
+                               Sekarang dibedakan lewat outline + latar netral, bukan
+                               mengandalkan warna isian yang bisa bertabrakan. */
                             <span style={{
-                                padding: '4px 10px',
-                                backgroundColor: 'var(--brand-red)',
-                                color: 'var(--site-text-on-primary)',
+                                padding: '3px 9px',
+                                backgroundColor: 'transparent',
+                                color: 'var(--brand-red)',
+                                border: '1.5px solid var(--brand-red)',
                                 fontSize: '10px',
                                 fontWeight: 700,
                                 letterSpacing: '0.1em',
                                 textTransform: 'uppercase',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
                             }}>
+                                <span aria-hidden="true">📌</span>
                                 PINNED
                             </span>
                         )}

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import SiteThemeProvider from "@/components/SiteThemeProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import MarqueeBanner from "@/components/MarqueeBanner";
 
 export const dynamic = 'force-dynamic';
 
@@ -62,6 +63,9 @@ export default async function SiteLayout({
             siteSlug={site.slug}
         >
             <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                {site.settings?.bannerEnabled && site.settings?.bannerText ? (
+                    <MarqueeBanner text={site.settings.bannerText} />
+                ) : null}
                 <Navbar
                     logoPath={site.logoPath || globalSettings?.logoPath}
                     siteName={site.name}
