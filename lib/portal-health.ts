@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
+import { fetchLoginPage, FetchError } from "@/lib/portal-fetch-html";
 
 export interface HealthCheckResult {
     appId: string;
@@ -48,57 +49,53 @@ export async function checkAppHealth(app: {
             throw new Error(`Protokol URL tidak didukung: ${urlObj.protocol}`);
         }
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        let response: Response;
-        try {
-            // Coba HTTP HEAD terlebih dahulu untuk efisiensi token & bandwidth
-            response = await fetch(targetUrl, {
-                method: "HEAD",
-                signal: controller.signal,
-                headers: {
-                    "User-Agent": "SJA-Portal-HealthCheck/1.0",
-                },
-                redirect: "follow",
-            });
-        } catch {
-            // Jika server menolak method HEAD (mis. 405 Method Not Allowed), coba fallback GET
-            response = await fetch(targetUrl, {
-                method: "GET",
-                signal: controller.signal,
-                headers: {
-                    "User-Agent": "SJA-Portal-HealthCheck/1.0",
-                },
-                redirect: "follow",
-            });
-        } finally {
-            clearTimeout(timeoutId);
-        }
+        // Pakai fetchLoginPage (bukan fetch polos) agar health check mewarisi pola yang
+        // sama dengan deteksi & SSO: fallback TLS self-signed (khas internal seperti K2),
+        // redirect manual dengan batas hop + deteksi loop.
+        // Fetch polos memakai redirect:"follow" → loop redirect K2 menghabiskan batas,
+        // TLS self-signed pun ikut melempar → server hidup dilaporkan OFFLINE.
+        const page = await fetchLoginPage(targetUrl);
 
         const endTime = performance.now();
         latencyMs = Math.round(endTime - startTime);
-        statusCode = response.status;
+        statusCode = page.statusCode;
 
-        if (response.ok || (response.status >= 200 && response.status < 400)) {
-            // HTTP 200..399 dianggap online
-            if (latencyMs >= 2500) {
-                status = "DEGRADED"; // Respon lambat
-                errorMessage = `Latensi server lambat (${latencyMs}ms)`;
-            } else {
-                status = "ONLINE";
-            }
-        } else if (response.status === 401 || response.status === 403) {
-            // Status 401/403 menandakan server web hidup dan form auth aktif
+        if (page.loopDetected) {
             status = latencyMs >= 2500 ? "DEGRADED" : "ONLINE";
+            errorMessage =
+                "Server merespon tapi URL berputar dalam loop redirect — host hidup, URL mungkin tidak menuju form login.";
+        } else if (statusCode !== null && statusCode >= 200 && statusCode < 300) {
+            status = latencyMs >= 2500 ? "DEGRADED" : "ONLINE";
+            if (latencyMs >= 2500) errorMessage = `Latensi server lambat (${latencyMs}ms)`;
+        } else if (statusCode !== null && statusCode >= 401 && statusCode <= 403) {
+            // 401/403 = server web hidup dan form auth aktif
+            status = latencyMs >= 2500 ? "DEGRADED" : "ONLINE";
+        } else if (statusCode !== null) {
+            // 3xx lain / 4xx / 5xx: server merespons tapi responnya bermasalah.
+            status = "DEGRADED";
+            errorMessage = `HTTP ${statusCode} — server hidup tapi respon tidak normal`;
         } else {
-            status = "OFFLINE";
-            errorMessage = `HTTP ${response.status} ${response.statusText || "Server Error"}`;
+            // Kode null tanpa loop = kasus aneh, aman anggap hidup bila halaman terbaca.
+            status = latencyMs >= 2500 ? "DEGRADED" : "ONLINE";
         }
     } catch (err: any) {
         const endTime = performance.now();
         latencyMs = Math.round(endTime - startTime);
-        status = "OFFLINE";
+
+        // FetchError bisa berarti dua hal yang harus dibedakan:
+        // - "mengembalikan HTTP nnn" / "Respons bukan halaman web" → server menjawab
+        //   (memberi 4xx/5xx atau respons berbeda dari HTML) → DIGRADED
+        // - "Gagal mengakses" / timeout → server tidak terjawab → OFFLINE
+        const serverResponded =
+            err instanceof FetchError &&
+            (/\bmengembalikan HTTP \d{3}\b/.test(err.message) || /Respons bukan halaman web/i.test(err.message));
+        if (serverResponded) {
+            status = "DEGRADED";
+            statusCode = err.status && err.status >= 400 ? err.status : null;
+            errorMessage = `Server menjawab namun respons bermasalah: ${err.message}`;
+        } else {
+            status = "OFFLINE";
+        }
 
         if (err.name === "AbortError" || latencyMs >= 5000) {
             errorMessage = "Koneksi Timeout (> 5000ms)";

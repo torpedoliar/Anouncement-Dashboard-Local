@@ -708,6 +708,7 @@ export default function PortalAppsPage() {
                                         { value: "TOKEN", label: "TOKEN" },
                                         { value: "REROUTE", label: "REROUTE" },
                                         { value: "VAULT", label: "VAULT" },
+                                        { value: "POST", label: "POST (relay server)" },
                                     ]}
                                 />
                                 <Select

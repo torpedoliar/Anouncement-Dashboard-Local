@@ -26,11 +26,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Format URL tidak valid" }, { status: 400 });
         }
 
-        const { html, finalUrl, setCookies } = await fetchLoginPage(parsed.href);
-        const redirected = finalUrl !== parsed.href;
+        const { html, finalUrl, setCookies, redirected, loopDetected } = await fetchLoginPage(parsed.href);
 
-        // Token antiforgery yang dipasangkan dengan cookie (ASP.NET MVC, Django, Rails)
-        // tidak bisa diteruskan lewat SSO FORM: browser pengguna tidak punya cookie pasangannya.
+        // Token antiforgery yang dipasangkan dengan cookie (ASP.NET MVC, Django, Rails).
+        // SSO FORM tidak bisa menghandle ini (browser pengguna tidak punya cookie pasangannya),
+        // tapi SSO POST bisa: portal mengambil token + cookie sendiri lewat relay server-side.
         const cookiePaired = setCookies.some((c) =>
             /^(?:__RequestVerificationToken|csrftoken|_csrf|XSRF-TOKEN)/i.test(c.split("=")[0].trim())
         );
@@ -38,48 +38,58 @@ export async function POST(request: NextRequest) {
         const result = detectLoginFields(html);
 
         if (!result.passwordField) {
-            // Gagal menemukan form. Tetap beri rekomendasi mode, jangan hanya menolak —
-            // aplikasi seperti K2 (WS-Federation) memang tidak pernah menyajikan form
-            // yang bisa di-POST langsung, jadi FORM bukan pilihan yang benar untuknya.
-            const detail = redirected
+            // Gagal menemukan form. Loop redirect turut dijelaskan agar admin paham
+            // bahwa server hidup tapi URL yang diisi tidak mengarah ke formulir.
+            const loopNote = loopDetected
+                ? ` URL memantul dalam loop pengalihan (berakhir di ${finalUrl}) — server tampak hidup, tapi halaman tidak pernah berhenti dialihkan.`
+                : "";
+            const detail = !loopDetected && redirected
                 ? ` Halaman dialihkan ke ${finalUrl} — kemungkinan URL login kehilangan parameter query yang diperlukan (mis. ReturnUrl / wa / wtrealm). Salin URL login LENGKAP dari address bar browser.`
                 : "";
             return NextResponse.json(
                 {
-                    error: `Tidak ditemukan form login (input password) di halaman tersebut.${detail}`,
+                    error: `Tidak ditemukan form login (input password) di halaman tersebut.${loopNote}${detail}`,
                     finalUrl,
                     redirected,
+                    loopDetected: loopDetected ?? false,
                     recommendedMode: "VAULT",
-                    recommendationReason: redirected
-                        ? "Halaman login dialihkan ke alamat lain dan tidak menyajikan form yang bisa dikirim langsung. " +
-                          "Ini pola khas SSO federasi (WS-Federation/SAML/OAuth). SSO Mode FORM tidak akan berhasil — gunakan VAULT."
-                        : "Halaman tidak memuat form login yang bisa dikirim langsung. Gunakan SSO Mode VAULT agar portal " +
-                          "menyimpan kredensial dan pengguna login sendiri di halaman aslinya.",
+                    recommendationReason: loopDetected
+                        ? "Halaman login memantul dalam loop pengalihan dan tidak pernah menyajikan form. " +
+                          "Gunakan SSO Mode VAULT, atau isi LOGIN URL dengan endpoint formulir yang lengkap (bukan host polos)."
+                        : redirected
+                          ? "Halaman login dialihkan ke alamat lain dan tidak menyajikan form yang bisa dikirim langsung. " +
+                            "Ini pola khas SSO federasi (WS-Federation/SAML/OAuth). Gunakan SSO Mode VAULT."
+                          : "Halaman tidak memuat form login yang bisa dikirim langsung. Gunakan SSO Mode VAULT agar portal " +
+                            "menyimpan kredensial dan pengguna login sendiri di halaman aslinya.",
                 },
                 { status: 422 }
             );
         }
 
         const warnings = [...(result.warnings ?? [])];
-        if (redirected) {
+        if (redirected && !loopDetected) {
             warnings.push(`Halaman dialihkan ke ${finalUrl}. Pastikan LOGIN URL yang disimpan adalah URL akhir ini.`);
         }
 
         // Tentukan mode SSO yang tepat berdasarkan bukti dari halaman.
-        let recommendedMode: "FORM" | "VAULT" = "FORM";
+        let recommendedMode: "FORM" | "VAULT" | "POST" = "FORM";
         let recommendationReason =
             "Halaman menyajikan form login biasa yang bisa dikirim langsung, jadi SSO Mode FORM sesuai.";
 
         if (cookiePaired) {
-            recommendedMode = "VAULT";
+            recommendedMode = "POST";
             recommendationReason =
-                "Halaman ini menerbitkan token antiforgery yang terikat cookie sesi. Token hanya sah bila dipakai " +
-                "bersama cookie pasangannya, sedangkan browser pengguna tidak memilikinya saat portal mengirim form. " +
-                "SSO Mode FORM akan selalu ditolak — gunakan VAULT.";
+                "Halaman ini menerbitkan token antiforgery yang terikat cookie sesi. SSO Mode FORM akan selalu ditolak " +
+                "karena browser pengguna tidak memiliki cookie pasangannya. SSO Mode POST memperbaiki ini: portal " +
+                "mengambil token dan cookie sendiri di server, lalu mengirim kredensial, tanpa bergantung pada cookie browser.";
             warnings.push(
                 "Aplikasi ini memakai token antiforgery yang terikat cookie sesi. SSO Mode FORM tidak akan berhasil " +
-                    "karena browser pengguna tidak memiliki cookie pasangannya. Gunakan SSO Mode VAULT untuk aplikasi ini."
+                    "karena browser pengguna tidak memiliki cookie pasangannya. SSO Mode POST lebih sesuai."
             );
+        } else if (loopDetected) {
+            recommendedMode = "FORM";
+            recommendationReason =
+                "Formulir login ditemukan meski URL sempat memantul. SSO Mode FORM dipakai dengan refresh token otomatis.";
         }
 
         return NextResponse.json({
@@ -87,6 +97,7 @@ export async function POST(request: NextRequest) {
             warnings,
             finalUrl,
             redirected,
+            loopDetected: loopDetected ?? false,
             cookiePaired,
             recommendedMode,
             recommendationReason,

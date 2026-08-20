@@ -88,23 +88,27 @@ assertEq(t2.runs, 2, "2f setelah selesai, boleh jalan lagi");
 
 // --- 3. Klasifikasi status dari respons HTTP --------------------------------
 // Meniru aturan di checkAppHealth.
-function classify(statusCode: number, latencyMs: number): string {
+function classify(statusCode: number | null, latencyMs: number): string {
+    if (statusCode === null) return "OFFLINE"; // tidak ada respons (timeout/TLS/koneksi)
     if (statusCode >= 200 && statusCode < 400) {
         return latencyMs >= 2500 ? "DEGRADED" : "ONLINE";
     }
     if (statusCode === 401 || statusCode === 403) {
         return latencyMs >= 2500 ? "DEGRADED" : "ONLINE";
     }
-    return "OFFLINE";
+    return "DEGRADED";
 }
 
 assertEq(classify(200, 120), "ONLINE", "3a 200 cepat -> ONLINE");
-assertEq(classify(302, 80), "ONLINE", "3b redirect -> ONLINE");
+assertEq(classify(302, 80), "ONLINE", "3b redirect (loop) -> ONLINE server vivo");
 assertEq(classify(200, 3000), "DEGRADED", "3c 200 lambat -> DEGRADED");
-// 401/403 = server hidup dan form auth aktif, bukan mati.
-assertEq(classify(401, 100), "ONLINE", "3d 401 -> ONLINE (server hidup)");
-assertEq(classify(403, 100), "ONLINE", "3e 403 -> ONLINE (server hidup)");
-assertEq(classify(500, 100), "OFFLINE", "3f 500 -> OFFLINE");
-assertEq(classify(404, 100), "OFFLINE", "3g 404 -> OFFLINE");
+// 401/403 = server vivo y form auth activo, no muerto.
+assertEq(classify(401, 100), "ONLINE", "3d 401 -> ONLINE (server vivo)");
+assertEq(classify(403, 100), "ONLINE", "3e 403 -> ONLINE (server vivo)");
+// 500/404 = server respondió pero hay problema → DEGRADED, no OFFLINE.
+assertEq(classify(500, 100), "DEGRADED", "3f 500 -> DEGRADED (no OFFLINE)");
+assertEq(classify(404, 100), "DEGRADED", "3g 404 -> DEGRADED (no OFFLINE)");
+// Solo sin respuesta (timeout/conexión/TLS) = OFFLINE real.
+assertEq(classify(null, 5000), "OFFLINE", "3h null/timeout -> OFFLINE");
 
 console.log("=== ALL PASS ===");

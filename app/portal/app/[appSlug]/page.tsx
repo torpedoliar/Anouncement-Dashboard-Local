@@ -11,6 +11,7 @@ import NoCredential from "@/components/portal/NoCredential";
 import CorruptCredential from "@/components/portal/CorruptCredential";
 import SSOAutoSubmit from "@/components/portal/SSOAutoSubmit";
 import SSORerouteSubmit from "@/components/portal/SSORerouteSubmit";
+import SSOPostSubmit from "@/components/portal/SSOPostSubmit";
 import SSOCredentialVault from "@/components/portal/SSOCredentialVault";
 import AccountSelector from "@/components/portal/AccountSelector";
 
@@ -144,6 +145,18 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
     // 9. Render SSO method per app.ssoMode
     if (app.ssoMode === "REROUTE") {
         return <SSORerouteSubmit
+            app={{
+                name: app.name,
+                logoPath: app.logoPath,
+                slug: app.slug,
+            }}
+            cred={{ username: cred.username }}
+            credentialId={credential.id}
+        />;
+    }
+
+    if (app.ssoMode === "POST") {
+        return <SSOPostSubmit
             app={{
                 name: app.name,
                 logoPath: app.logoPath,

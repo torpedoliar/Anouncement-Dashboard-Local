@@ -235,7 +235,7 @@ export const PortalAppCreateSchema = z.object({
     logoPath: z.string().nullable().optional(),
     url: z.string().url('Invalid URL').max(500),
     loginUrl: z.string().url('Invalid login URL').max(500).nullable().optional(),
-    ssoMode: z.enum(['FORM', 'REDIRECT', 'PROXY', 'TOKEN', 'REROUTE', 'VAULT']).default('FORM'),
+    ssoMode: z.enum(['FORM', 'REDIRECT', 'PROXY', 'TOKEN', 'REROUTE', 'VAULT', 'POST']).default('FORM'),
     httpMethod: z.enum(['POST', 'GET']).default('POST'),
     usernameField: z.string().max(100).default('username'),
     passwordField: z.string().max(100).default('password'),

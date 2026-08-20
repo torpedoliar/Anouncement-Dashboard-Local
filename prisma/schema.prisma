@@ -374,6 +374,7 @@ enum PortalSsoMode {
   TOKEN     // (future) OIDC/OAuth2 token
   REROUTE   // Server-to-server login + full reverse proxy
   VAULT     // Credential vault: open target login tab + copy saved creds, user pastes & clicks target's own login
+  POST      // Server-side POST relay: portal prefetches login page (token+cookie), submits creds, re-issues session cookies to browser
 }
 
 // ============================================
