@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { portalAuthOptions } from "@/lib/portal-auth";
 import { canAccessPortalAppBySlug } from "@/lib/portal-access";
 import { decryptCredential } from "@/lib/portal-crypto";
+import { refreshVolatileFields } from "@/lib/portal-fetch-html";
 import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
@@ -120,22 +121,23 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
     }).catch(() => {});
 
     // 8. Parse extra fields
-    const extraFields: Array<{ name: string; value: string }> = [];
-    if (cred.extra) {
-        for (const [name, value] of Object.entries(cred.extra)) {
-            extraFields.push({ name, value });
-        }
-    }
-    // Also parse app-level extraFields (JSON from DB)
+    const extraFieldMap: Record<string, string> = {};
+    // App-level dulu (token/hidden field), lalu cred.extra menimpa bila bentrok.
     if (app.extraFields && typeof app.extraFields === "object") {
-        const fields = app.extraFields as Record<string, string>;
-        for (const [name, value] of Object.entries(fields)) {
-            // Don't duplicate if already in cred.extra
-            if (!cred.extra || !(name in cred.extra)) {
-                extraFields.push({ name, value });
-            }
-        }
+        Object.assign(extraFieldMap, app.extraFields as Record<string, string>);
     }
+    if (cred.extra) Object.assign(extraFieldMap, cred.extra);
+
+    // Token dinamis (__VIEWSTATE, CSRF) kedaluwarsa segera setelah disimpan —
+    // ambil ulang dari halaman login tepat sebelum submit.
+    const freshFields =
+        app.ssoMode === "FORM"
+            ? await refreshVolatileFields(app.loginUrl || app.url, extraFieldMap)
+            : extraFieldMap;
+
+    const extraFields: Array<{ name: string; value: string }> = Object.entries(freshFields).map(
+        ([name, value]) => ({ name, value })
+    );
 
     // 9. Render SSO method per app.ssoMode
     if (app.ssoMode === "REROUTE") {

@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { portalAuthOptions } from "@/lib/portal-auth";
 import { getPortalLayout } from "@/lib/portal-layout";
 import { getAccessiblePortalApps } from "@/lib/portal-access";
+import { triggerHealthCheckIfStale } from "@/lib/portal-health";
 import prisma from "@/lib/prisma";
 import OnboardingWizard from "@/components/portal/OnboardingWizard";
 import GroupedAppGrid, { GridGroup } from "@/components/portal/GroupedAppGrid";
@@ -13,6 +14,10 @@ export const dynamic = "force-dynamic";
 export default async function PortalPage() {
     const session = await getServerSession(portalAuthOptions);
     const userId = session!.user!.id as string;
+
+    // Segarkan status kesehatan di latar belakang (throttled 5 menit, tidak di-await).
+    // Tanpa ini tidak ada yang pernah menjalankan health check dan semua app tetap 'UNKNOWN'.
+    triggerHealthCheckIfStale();
 
     const { needsOnboarding, groups } = await getPortalLayout(userId);
 
@@ -47,7 +52,9 @@ export default async function PortalPage() {
                     return {
                         ...a,
                         credentialCount: credCountMap.get(a.id) ?? 0,
-                        healthStatus: fullApp?.healthStatus ?? "ONLINE",
+                        // Jangan paksa "ONLINE": itu menampilkan badge hijau palsu untuk
+                        // app yang belum pernah dicek. Biarkan apa adanya; AppCard menangani UNKNOWN.
+                        healthStatus: fullApp?.healthStatus ?? null,
                         healthLatencyMs: fullApp?.healthLatencyMs ?? null,
                         healthError: fullApp?.healthError ?? null,
                         healthCheckedAt: fullApp?.healthCheckedAt ?? null,

@@ -72,7 +72,7 @@ export default function PortalAppsPage() {
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [detecting, setDetecting] = useState(false);
-    const [detectMsg, setDetectMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+    const [detectMsg, setDetectMsg] = useState<{ type: "ok" | "err"; text: string; warnings?: string[] } | null>(null);
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
 
@@ -181,9 +181,11 @@ export default function PortalAppsPage() {
             }
             setFormData((prev) => ({
                 ...prev,
+                loginUrl: data.finalUrl || prev.loginUrl,
                 usernameField: data.usernameField ?? prev.usernameField,
                 passwordField: data.passwordField ?? prev.passwordField,
                 httpMethod: data.httpMethod ?? prev.httpMethod,
+                ssoMode: data.cookiePaired ? "VAULT" : prev.ssoMode,
                 extraFields: Object.keys(data.extraFields || {}).length
                     ? JSON.stringify(data.extraFields, null, 2)
                     : prev.extraFields,
@@ -192,7 +194,11 @@ export default function PortalAppsPage() {
                 data.usernameField ? `User: ${data.usernameField}` : null,
                 data.passwordField ? `Pass: ${data.passwordField}` : null,
             ].filter(Boolean).join(" | ");
-            setDetectMsg({ type: "ok", text: `Berhasil terdeteksi: ${detectedInfo}` });
+            setDetectMsg({
+                type: "ok",
+                text: `Berhasil terdeteksi: ${detectedInfo}`,
+                warnings: data.warnings,
+            });
         } catch {
             setDetectMsg({ type: "err", text: "Terjadi kesalahan saat deteksi." });
         } finally {
@@ -565,9 +571,16 @@ export default function PortalAppsPage() {
                                         placeholder="https://app.example.com/login"
                                     />
                                     {detectMsg && (
-                                        <p className={`mt-1 text-xs ${detectMsg.type === "ok" ? "text-success" : "text-danger"}`}>
-                                            {detectMsg.text}
-                                        </p>
+                                        <div className="mt-1 space-y-1">
+                                            <p className={`text-xs ${detectMsg.type === "ok" ? "text-success" : "text-danger"}`}>
+                                                {detectMsg.text}
+                                            </p>
+                                            {detectMsg.warnings?.map((w, i) => (
+                                                <p key={i} className="text-xs text-warning">
+                                                    ⚠ {w}
+                                                </p>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
                             </div>

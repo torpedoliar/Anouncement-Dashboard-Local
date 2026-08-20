@@ -2,6 +2,8 @@
  * Self-check aturan akses restricted (murni predikat, tanpa DB).
  * Run: npx tsx scripts/test-portal-restricted.ts
  */
+export {}; // jadikan modul agar helper tidak bentrok dengan skrip test lain
+
 type Role = "PORTAL_ADMIN" | "PORTAL_USER";
 
 interface AccessContext {

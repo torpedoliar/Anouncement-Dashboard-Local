@@ -25,12 +25,16 @@ export default function AppCard({
     logoPath,
     category,
     credentialCount,
-    healthStatus = "ONLINE",
+    healthStatus,
     healthLatencyMs,
     healthError,
 }: AppCardProps) {
     const isOffline = healthStatus === "OFFLINE";
     const isDegraded = healthStatus === "DEGRADED";
+    const isOnline = healthStatus === "ONLINE";
+    // Belum pernah dicek (default migrasi 'UNKNOWN') atau nilai tak dikenal.
+    // Ditampilkan eksplisit — sebelumnya badge hilang tanpa jejak dan terlihat seperti fitur rusak.
+    const isUnknown = !isOnline && !isDegraded && !isOffline;
 
     return (
         <Card className={`group relative p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lvl-2 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent flex flex-col justify-between ${
@@ -61,10 +65,19 @@ export default function AppCard({
 
                     {/* Real-time Health Status Badge */}
                     <div className="shrink-0">
-                        {healthStatus === "ONLINE" && (
+                        {isOnline && (
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success border border-success/20">
                                 <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
                                 Online{healthLatencyMs ? ` (${healthLatencyMs}ms)` : ""}
+                            </span>
+                        )}
+                        {isUnknown && (
+                            <span
+                                title="Status server belum diperiksa"
+                                className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-2 py-0.5 text-[11px] font-semibold text-text-3 border border-border"
+                            >
+                                <span className="h-1.5 w-1.5 rounded-full bg-text-3" />
+                                Belum dicek
                             </span>
                         )}
                         {isDegraded && (

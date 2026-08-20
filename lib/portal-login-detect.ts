@@ -12,6 +12,8 @@ export interface DetectedFields {
     formAction?: string | null;
     extraFields: Record<string, string>;
     confidence?: number;
+    /** Peringatan konfigurasi yang ditemukan saat deteksi (bukan error fatal). */
+    warnings?: string[];
 }
 
 interface FieldInfo {
@@ -68,6 +70,17 @@ function firstAutocompleteWord(raw: string | null): string | null {
     return raw.toLowerCase().split(/\s+/)[0] ?? null;
 }
 
+/** Semua <input> di dalam sebuah elemen (untuk label yang membungkus inputnya). */
+function descendantInputs(node: Node): Element[] {
+    const out: Element[] = [];
+    const walk = (n: Node) => {
+        if (isElement(n) && n.tagName.toLowerCase() === "input") out.push(n);
+        if ("childNodes" in n && Array.isArray(n.childNodes)) n.childNodes.forEach(walk);
+    };
+    walk(node);
+    return out;
+}
+
 /**
  * Ekstrak nama kontrol terminal (mis. "txtNikHris" dari "ctl00$ContentPlaceHolder1$txtNikHris"
  * atau "ctl00_ContentPlaceHolder1_txtPassword")
@@ -75,6 +88,17 @@ function firstAutocompleteWord(raw: string | null): string | null {
 function getTerminalControlName(identifier: string | null): string {
     if (!identifier) return "";
     const parts = identifier.split(/[$_.:]/);
+    return parts[parts.length - 1] || identifier;
+}
+
+/**
+ * Nama kontrol tanpa prefix framework, TAPI mempertahankan underscore internal.
+ * getTerminalControlName memecah di "_" sehingga "user_id" jadi "id" dan kata kuncinya
+ * hilang. Ini hanya membuang prefix ASP.NET ("ctl00$Panel$user_id" -> "user_id").
+ */
+function getControlNameKeepUnderscore(identifier: string | null): string {
+    if (!identifier) return "";
+    const parts = identifier.split(/[$.:]/);
     return parts[parts.length - 1] || identifier;
 }
 
@@ -89,8 +113,10 @@ function scoreUsername(f: FieldInfo): number {
 
     const rawName = (f.name ?? "").toLowerCase();
     const rawId = (f.id ?? "").toLowerCase();
-    const terminalName = getTerminalControlName(f.name).toLowerCase();
-    const terminalId = getTerminalControlName(f.id).toLowerCase();
+    // Dua bentuk: segmen terakhir (buang prefix ASP.NET) dan versi yang mempertahankan
+    // underscore, supaya "user_id" tidak menyusut jadi "id".
+    const terminalName = `${getTerminalControlName(f.name)} ${getControlNameKeepUnderscore(f.name)}`.toLowerCase();
+    const terminalId = `${getTerminalControlName(f.id)} ${getControlNameKeepUnderscore(f.id)}`.toLowerCase();
 
     const placeholder = (f.placeholder ?? "").toLowerCase();
     const aria = (f.ariaLabel ?? "").toLowerCase();
@@ -167,8 +193,8 @@ function scorePassword(f: FieldInfo): number {
 
     const rawName = (f.name ?? "").toLowerCase();
     const rawId = (f.id ?? "").toLowerCase();
-    const terminalName = getTerminalControlName(f.name).toLowerCase();
-    const terminalId = getTerminalControlName(f.id).toLowerCase();
+    const terminalName = `${getTerminalControlName(f.name)} ${getControlNameKeepUnderscore(f.name)}`.toLowerCase();
+    const terminalId = `${getTerminalControlName(f.id)} ${getControlNameKeepUnderscore(f.id)}`.toLowerCase();
 
     const placeholder = (f.placeholder ?? "").toLowerCase();
     const aria = (f.ariaLabel ?? "").toLowerCase();
@@ -229,9 +255,17 @@ export function detectLoginFields(html: string): DetectedFields {
 
     // Map: id -> label text
     const labelMap = new Map<string, string>();
+    // Map: id elemen mana pun -> teksnya (untuk aria-labelledby)
+    const textByIdMap = new Map<string, string>();
     // Collect all forms and all inputs
     const allInputs: FieldInfo[] = [];
     const extraFields: Record<string, string> = {};
+    // Tombol submit per form: WebForms/DevExpress hanya menjalankan handler klik
+    // server-side kalau name tombol ikut di-POST.
+    const submitButtons = new Map<
+        number,
+        { name: string; value: string; isPositive: boolean; formAction: string | null }
+    >();
 
     let currentFormIndex = -1;
     let currentFormMethod: string | null = null;
@@ -250,6 +284,23 @@ export function detectLoginFields(html: string): DetectedFields {
                 if (forAttr && text) {
                     labelMap.set(forAttr.toLowerCase(), text);
                 }
+                // <label>NIK <input name="f1"></label> — label membungkus input tanpa
+                // atribut for. Umum di aplikasi internal; tanpa ini teks label hilang.
+                if (text) {
+                    for (const el of descendantInputs(node)) {
+                        const key = elementName(el) ?? elementAttr(el, "id");
+                        if (key && !labelMap.has(`@wrap:${key.toLowerCase()}`)) {
+                            labelMap.set(`@wrap:${key.toLowerCase()}`, text);
+                        }
+                    }
+                }
+            }
+
+            // Elemen apa pun yang punya id dan teks bisa jadi target aria-labelledby.
+            const ownId = elementAttr(node, "id");
+            if (ownId && tag !== "input" && tag !== "form") {
+                const t = extractText(node);
+                if (t && t.length < 120) textByIdMap.set(ownId.toLowerCase(), t);
             }
 
             // ASP.NET ViewState & Security hidden tokens
@@ -291,6 +342,35 @@ export function detectLoginFields(html: string): DetectedFields {
                 currentFormAction = elementAttr(node, "action");
             }
 
+            // Tombol submit bernama: WebForms/DevExpress/Struts butuh name tombol
+            // ikut di-POST agar handler klik server-side benar-benar jalan.
+            if (tag === "input" || tag === "button") {
+                const btnType = (elementAttr(node, "type") ?? (tag === "button" ? "submit" : "text")).toLowerCase();
+                const btnName = elementName(node);
+                if (btnType === "submit" && btnName) {
+                    const btnValue = elementAttr(node, "value") ?? extractText(node) ?? "";
+                    const btnHay = `${btnName} ${btnValue} ${elementAttr(node, "id") ?? ""}`.toLowerCase();
+
+                    // Tombol batal/reset/lupa-password JANGAN dipilih — mengirimkan namanya
+                    // membuat server menjalankan aksi batal, bukan login.
+                    const isNegative =
+                        /(?:cancel|batal|reset|clear|kembali|back|close|tutup|forgot|lupa|register|daftar|signup|sign_up)/i.test(btnHay);
+                    // Tombol yang jelas login diprioritaskan di atas urutan DOM.
+                    const isPositive = /(?:login|masuk|signin|sign_in|submit|log_on|logon|enter|ok)/i.test(btnHay);
+
+                    const prev = submitButtons.get(currentFormIndex);
+                    if (!isNegative && (!prev || (isPositive && !prev.isPositive))) {
+                        submitButtons.set(currentFormIndex, {
+                            name: btnName,
+                            value: btnValue,
+                            isPositive,
+                            // formaction menimpa action <form> saat tombol ini diklik.
+                            formAction: elementAttr(node, "formaction"),
+                        });
+                    }
+                }
+            }
+
             if (tag === "input") {
                 const type = (elementAttr(node, "type") ?? "text").toLowerCase();
                 const name = elementName(node);
@@ -303,10 +383,25 @@ export function detectLoginFields(html: string): DetectedFields {
                 const isReadOnly = hasAttr(node, "readonly") || elementAttr(node, "aria-readonly") === "true";
                 const value = elementAttr(node, "value") ?? "";
 
-                // Associate label text
+                // Associate label text: for= → label pembungkus → aria-labelledby
                 let labelText: string | null = null;
                 if (id && labelMap.has(id.toLowerCase())) {
                     labelText = labelMap.get(id.toLowerCase())!;
+                }
+                if (!labelText) {
+                    const wrapKey = (name ?? id ?? "").toLowerCase();
+                    if (wrapKey) labelText = labelMap.get(`@wrap:${wrapKey}`) ?? null;
+                }
+                if (!labelText) {
+                    const labelledBy = elementAttr(node, "aria-labelledby");
+                    if (labelledBy) {
+                        labelText =
+                            labelledBy
+                                .split(/\s+/)
+                                .map((ref) => textByIdMap.get(ref.toLowerCase()))
+                                .filter(Boolean)
+                                .join(" ") || null;
+                    }
                 }
 
                 allInputs.push({
@@ -349,6 +444,7 @@ export function detectLoginFields(html: string): DetectedFields {
     let bestPasswordField: string | null = null;
     let bestMethod = "POST";
     let bestAction: string | null = null;
+    let bestFormIndex = -1;
     let highestPairScore = -1;
 
     // Evaluate each form group
@@ -385,13 +481,17 @@ export function detectLoginFields(html: string): DetectedFields {
             }
         }
 
-        if (pairScore > highestPairScore && formBestPass) {
+        // Hanya terima kalau kandidat password benar-benar bernilai positif.
+        // Tanpa cek skor, input teks biasa (skor 0) ikut lolos dan menghasilkan
+        // konfigurasi palsu dari halaman yang bukan halaman login.
+        if (pairScore > highestPairScore && formBestPass && formBestPassScore > 0) {
             highestPairScore = pairScore;
             // Prefer name attribute for form submission, fallback to id
             bestPasswordField = formBestPass.name ?? formBestPass.id;
             bestUsernameField = formBestUser ? (formBestUser.name ?? formBestUser.id) : null;
             bestMethod = formBestPass.formMethod || "POST";
             bestAction = formBestPass.formAction;
+            bestFormIndex = formIdx;
         }
     }
 
@@ -417,12 +517,38 @@ export function detectLoginFields(html: string): DetectedFields {
             }
         }
 
-        if (globalBestPass) {
+        if (globalBestPass && globalBestPassScore > 0) {
             bestPasswordField = globalBestPass.name ?? globalBestPass.id;
             bestUsernameField = globalBestUser ? (globalBestUser.name ?? globalBestUser.id) : null;
             bestMethod = globalBestPass.formMethod || "POST";
             bestAction = globalBestPass.formAction;
+            bestFormIndex = globalBestPass.formIndex;
         }
+    }
+
+    // Sertakan tombol submit form terpilih. Tanpa ini, ASP.NET WebForms /
+    // DevExpress menerima POST tapi tidak pernah menjalankan handler klik tombol,
+    // jadi halaman login cuma dirender ulang tanpa pesan error.
+    const submitBtn = submitButtons.get(bestFormIndex);
+    if (bestPasswordField && submitBtn && !(submitBtn.name in extraFields)) {
+        extraFields[submitBtn.name] = submitBtn.value;
+    }
+    // formaction pada tombol login menang atas action <form>.
+    if (bestPasswordField && submitBtn?.formAction) {
+        bestAction = submitBtn.formAction;
+    }
+
+    // Peringatan: token yang tidak bisa dipakai ulang / terikat cookie sesi.
+    const warnings: string[] = [];
+    const volatileKeys = Object.keys(extraFields).filter((k) =>
+        /^(?:__VIEWSTATE|__EVENTVALIDATION|__RequestVerificationToken|_csrf|csrf_token|_token|authenticity_token)/i.test(k)
+    );
+    if (volatileKeys.length > 0) {
+        warnings.push(
+            `Token dinamis terdeteksi (${volatileKeys.join(", ")}). Token ini berubah setiap kali halaman dibuka, ` +
+            `jadi nilai yang tersimpan akan kedaluwarsa. Aktifkan pengambilan token saat login (SSO Mode FORM sudah menanganinya otomatis) ` +
+            `atau gunakan SSO Mode VAULT bila aplikasi menolak token dari luar.`
+        );
     }
 
     return {
@@ -432,5 +558,6 @@ export function detectLoginFields(html: string): DetectedFields {
         formAction: bestAction,
         extraFields,
         confidence: highestPairScore > 0 ? highestPairScore : 0,
+        warnings,
     };
 }

@@ -192,6 +192,39 @@ export async function checkAppHealth(app: {
 }
 
 /**
+ * Interval minimum antar health check yang dipicu dari render halaman.
+ * Health check menembak host eksternal, jadi jauh lebih longgar daripada
+ * throttle scheduler (60 detik).
+ */
+const HEALTH_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+let lastHealthRun = 0;
+let inFlight: Promise<HealthSummary> | null = null;
+
+/**
+ * Pemicu health check oportunistik dari server render (pola sama dengan runScheduler).
+ * Proyek ini tidak memakai cron eksternal, jadi tanpa ini status app tidak pernah
+ * diperbarui dan selamanya bernilai default migrasi 'UNKNOWN'.
+ *
+ * Sengaja TIDAK di-await oleh pemanggil: pengecekan menembak host eksternal dengan
+ * timeout 5 detik per app, menunggunya akan menahan render halaman portal.
+ * Halaman menampilkan hasil run sebelumnya dari DB; run ini menyegarkan untuk kunjungan berikutnya.
+ */
+export function triggerHealthCheckIfStale(): void {
+    const now = Date.now();
+    if (inFlight || now - lastHealthRun < HEALTH_CHECK_INTERVAL_MS) return;
+    lastHealthRun = now;
+
+    inFlight = checkAllPortalAppsHealth()
+        .catch((err) => {
+            console.error("[PortalHealth] Background health check gagal:", err);
+            return null as unknown as HealthSummary;
+        })
+        .finally(() => {
+            inFlight = null;
+        }) as Promise<HealthSummary>;
+}
+
+/**
  * Lakukan health check untuk semua aplikasi aktif secara paralel
  */
 export async function checkAllPortalAppsHealth(): Promise<HealthSummary> {
