@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { detectLoginFields } from "@/lib/portal-login-detect";
 import { fetchLoginPage, FetchError } from "@/lib/portal-fetch-html";
+import { classifySsoMode } from "@/lib/portal-sso-mode";
 
 // POST /api/portal-apps/detect-fields — SuperAdmin & ADMIN. Body { url }
 export async function POST(request: NextRequest) {
@@ -26,16 +27,22 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Format URL tidak valid" }, { status: 400 });
         }
 
-        const { html, finalUrl, setCookies, redirected, loopDetected } = await fetchLoginPage(parsed.href);
+        const { html, finalUrl, setCookies, redirected, loopDetected, hopChain } = await fetchLoginPage(parsed.href);
 
-        // Token antiforgery yang dipasangkan dengan cookie (ASP.NET MVC, Django, Rails).
-        // SSO FORM tidak bisa menghandle ini (browser pengguna tidak punya cookie pasangannya),
-        // tapi SSO POST bisa: portal mengambil token + cookie sendiri lewat relay server-side.
-        const cookiePaired = setCookies.some((c) =>
-            /^(?:__RequestVerificationToken|csrftoken|_csrf|XSRF-TOKEN)/i.test(c.split("=")[0].trim())
-        );
-
+        const cookieNames = setCookies.map((c) => c.split("=")[0].trim()).filter(Boolean);
         const result = detectLoginFields(html);
+
+        // Mode ditentukan dari bukti halaman (token, cookie pasangan, rantai federasi,
+        // pola aplikasi), bukan dari "deteksi gagal → VAULT".
+        const verdict = classifySsoMode({
+            html,
+            finalUrl,
+            hopChain,
+            cookieNames,
+            detected: result,
+            redirected,
+            loopDetected: loopDetected ?? false,
+        });
 
         if (!result.passwordField) {
             // Gagal menemukan form. Loop redirect turut dijelaskan agar admin paham
@@ -44,7 +51,7 @@ export async function POST(request: NextRequest) {
                 ? ` URL memantul dalam loop pengalihan (berakhir di ${finalUrl}) — server tampak hidup, tapi halaman tidak pernah berhenti dialihkan.`
                 : "";
             const detail = !loopDetected && redirected
-                ? ` Halaman dialihkan ke ${finalUrl} — kemungkinan URL login kehilangan parameter query yang diperlukan (mis. ReturnUrl / wa / wtrealm). Salin URL login LENGKAP dari address bar browser.`
+                ? ` Halaman dialihkan ke ${finalUrl}. Salin URL login LENGKAP dari address bar browser bila halaman ini bukan formulir login.`
                 : "";
             return NextResponse.json(
                 {
@@ -52,45 +59,15 @@ export async function POST(request: NextRequest) {
                     finalUrl,
                     redirected,
                     loopDetected: loopDetected ?? false,
-                    recommendedMode: "VAULT",
-                    recommendationReason: loopDetected
-                        ? "Halaman login memantul dalam loop pengalihan dan tidak pernah menyajikan form. " +
-                          "Gunakan SSO Mode VAULT, atau isi LOGIN URL dengan endpoint formulir yang lengkap (bukan host polos)."
-                        : redirected
-                          ? "Halaman login dialihkan ke alamat lain dan tidak menyajikan form yang bisa dikirim langsung. " +
-                            "Ini pola khas SSO federasi (WS-Federation/SAML/OAuth). Gunakan SSO Mode VAULT."
-                          : "Halaman tidak memuat form login yang bisa dikirim langsung. Gunakan SSO Mode VAULT agar portal " +
-                            "menyimpan kredensial dan pengguna login sendiri di halaman aslinya.",
+                    recommendedMode: verdict.mode,
+                    recommendationReason: verdict.reason,
+                    detectionSignals: verdict.signals,
                 },
                 { status: 422 }
             );
         }
 
-        const warnings = [...(result.warnings ?? [])];
-        if (redirected && !loopDetected) {
-            warnings.push(`Halaman dialihkan ke ${finalUrl}. Pastikan LOGIN URL yang disimpan adalah URL akhir ini.`);
-        }
-
-        // Tentukan mode SSO yang tepat berdasarkan bukti dari halaman.
-        let recommendedMode: "FORM" | "VAULT" | "POST" = "FORM";
-        let recommendationReason =
-            "Halaman menyajikan form login biasa yang bisa dikirim langsung, jadi SSO Mode FORM sesuai.";
-
-        if (cookiePaired) {
-            recommendedMode = "POST";
-            recommendationReason =
-                "Halaman ini menerbitkan token antiforgery yang terikat cookie sesi. SSO Mode FORM akan selalu ditolak " +
-                "karena browser pengguna tidak memiliki cookie pasangannya. SSO Mode POST memperbaiki ini: portal " +
-                "mengambil token dan cookie sendiri di server, lalu mengirim kredensial, tanpa bergantung pada cookie browser.";
-            warnings.push(
-                "Aplikasi ini memakai token antiforgery yang terikat cookie sesi. SSO Mode FORM tidak akan berhasil " +
-                    "karena browser pengguna tidak memiliki cookie pasangannya. SSO Mode POST lebih sesuai."
-            );
-        } else if (loopDetected) {
-            recommendedMode = "FORM";
-            recommendationReason =
-                "Formulir login ditemukan meski URL sempat memantul. SSO Mode FORM dipakai dengan refresh token otomatis.";
-        }
+        const warnings = [...(result.warnings ?? []), ...verdict.warnings];
 
         return NextResponse.json({
             ...result,
@@ -98,9 +75,10 @@ export async function POST(request: NextRequest) {
             finalUrl,
             redirected,
             loopDetected: loopDetected ?? false,
-            cookiePaired,
-            recommendedMode,
-            recommendationReason,
+            cookiePaired: verdict.mode === "POST",
+            recommendedMode: verdict.mode,
+            recommendationReason: verdict.reason,
+            detectionSignals: verdict.signals,
         });
     } catch (err) {
         if (err instanceof FetchError) {

@@ -5,11 +5,9 @@ import { canAccessPortalAppBySlug } from "@/lib/portal-access";
 import { decryptCredential } from "@/lib/portal-crypto";
 import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
+import { relayRequest } from "@/lib/portal-fetch-html";
 
 export async function POST(request: NextRequest) {
-    // Ignore self-signed certs for internal Oracle EBS
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-    
     try {
         const reqHost = request.headers.get("x-forwarded-host") || request.headers.get("host");
         const reqProto = request.headers.get("x-forwarded-proto") || (request.url.startsWith("https") ? "https" : "http");
@@ -61,7 +59,6 @@ export async function POST(request: NextRequest) {
 
         const cred = decryptCredential(credential.credentialBlob);
         const loginUrl = app.loginUrl || app.url;
-        const origin = new URL(loginUrl).origin;
 
         // Oracle EBS AppsLocalLogin.jsp login is an XHR-style POST to the SAME url with
         // a custom header X-Service: AuthenticateUser. Response is a JS object literal (not JSON,
@@ -85,30 +82,19 @@ export async function POST(request: NextRequest) {
             formBody.append(k, v as string);
         }
 
-        // POST AuthenticateUser (server-to-server; Origin/Referer spoofed to target domain)
-        const postRes = await fetch(loginUrl, {
+        // POST AuthenticateUser (server-to-server; Origin/Referer spoofed to target domain).
+        // TLS longgar terbatas pada request ini (bukan seluruh proses).
+        const postRes = await relayRequest({
+            url: loginUrl,
             method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-Service": "AuthenticateUser",
-                "Origin": origin,
-                "Referer": loginUrl,
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-            },
             body: formBody.toString(),
-            redirect: "manual"
+            referer: loginUrl,
+            allowInsecureTLS: true,
+            headers: { "X-Service": "AuthenticateUser" },
         });
 
-        const setCookiePairs = (res: Response): string[] => {
-            if (typeof res.headers.getSetCookie === "function") {
-                return res.headers.getSetCookie().map(c => c.split(";")[0]);
-            }
-            const raw = res.headers.get("set-cookie");
-            return raw ? raw.split(",").map((c) => c.split(";")[0]) : [];
-        };
-
-        const finalCookiePairs: string[] = setCookiePairs(postRes);
-        const postBody = await postRes.text();
+        const finalCookiePairs: string[] = postRes.rawSetCookies.map((c) => c.split(";")[0]);
+        const postBody = postRes.html;
 
         // Parse Oracle's JS-object-literal response (keys unquoted, hex-escaped values).
         // login.js uses eval(); we extract fields with regex to avoid eval.

@@ -546,8 +546,7 @@ export function detectLoginFields(html: string): DetectedFields {
     if (volatileKeys.length > 0) {
         warnings.push(
             `Token dinamis terdeteksi (${volatileKeys.join(", ")}). Token ini berubah setiap kali halaman dibuka, ` +
-            `jadi nilai yang tersimpan akan kedaluwarsa. Aktifkan pengambilan token saat login (SSO Mode FORM sudah menanganinya otomatis) ` +
-            `atau gunakan SSO Mode VAULT bila aplikasi menolak token dari luar.`
+            `jadi nilai yang tersimpan akan kedaluwarsa — portal mengambilnya ulang tepat sebelum setiap peluncuran SSO.`
         );
     }
 
