@@ -6,7 +6,7 @@
 
 **Architecture:** Deteksi berhenti di lapis pertama yang berhasil. Lapis 1 (`fetchLoginPage` + `detectLoginFields`, sudah ada) menangani aplikasi klasik. Lapis 2 merender dengan Chromium di container terpisah bila lapis 1 tidak menemukan form — hanya untuk SPA, dan mati secara degradasi bila layanan tidak tersedia. Lapis 3 (`relayLogin`, sudah ada) menguji login sungguhan dengan kredensial sekali pakai. Hasil deteksi disimpan sebagai evidence di `PortalApp`; health check yang sudah ada menghitung ulang fingerprint untuk mendeteksi perubahan struktur form. Semua keputusan mode lewat `classifySsoMode` yang sudah ada.
 
-**Tech Stack:** Next.js 15 App Router, Prisma 5 / PostgreSQL, TypeScript, parse5, browserless/chromium (container terpisah), self-check via `npx tsx scripts/*.ts` (tanpa framework test — pola repo).
+**Tech Stack:** Next.js 15 App Router, Prisma 5 / PostgreSQL, TypeScript, parse5, browserless/chrome (container terpisah), self-check via `npx tsx scripts/*.ts` (tanpa framework test — pola repo).
 
 **Spec:** `docs/superpowers/specs/2026-08-22-portal-sso-detection-ladder.md` — rencana ini berargumen dari spec; eksekutor membaca keduanya.
 
@@ -1178,7 +1178,7 @@ Di `docker-compose.yml`, tambah service baru (di bawah `db`), dan pasang `PORTAL
 
 ```yaml
   browserless:
-    image: browserless/chromium:latest
+    image: browserless/chrome:latest
     restart: unless-stopped
     environment:
       - CONNECTION_TIMEOUT=10000

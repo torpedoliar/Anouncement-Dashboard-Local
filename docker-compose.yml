@@ -63,7 +63,9 @@ services:
       - internal
 
   browserless:
-    image: browserless/chromium:latest
+    # browserless/chromium sudah di-retired di Docker Hub (404); nama resmi adalah
+    # browserless/chrome — endpoint HTTP /content tetap sama untuk deteksi SPA.
+    image: browserless/chrome:latest
     restart: unless-stopped
     environment:
       - CONNECTION_TIMEOUT=10000
