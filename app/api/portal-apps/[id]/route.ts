@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { PortalAppUpdateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
+import { computeLoginFingerprint } from "@/lib/portal-fingerprint";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -61,7 +62,30 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
         }
 
-        const app = await prisma.portalApp.update({ where: { id }, data: validation.data });
+        // Fingerprint dari hasil GABUNGAN (data lama + patch), agar mencerminkan yang
+        // benar-benar tersimpan — bandingan drift di health check memakai formula ini.
+        const merged = {
+            loginUrl: validation.data.loginUrl ?? existing.loginUrl ?? existing.url,
+            usernameField: validation.data.usernameField ?? existing.usernameField ?? "username",
+            passwordField: validation.data.passwordField ?? existing.passwordField ?? "password",
+            extraFields: (validation.data.extraFields as Record<string, string> | null | undefined) ??
+                (existing.extraFields as Record<string, string> | null) ??
+                {},
+        };
+        const payload = {
+            ...validation.data,
+            detectionSignals: validation.data.detectionSignals ?? undefined,
+            detectedFingerprint: computeLoginFingerprint({
+                loginUrl: merged.loginUrl,
+                usernameField: merged.usernameField,
+                passwordField: merged.passwordField,
+                extraFieldNames: Object.keys(merged.extraFields),
+            }),
+            detectedAt: validation.data.detectionLayer ? new Date() : undefined,
+            loginFormChanged: false,
+        };
+
+        const app = await prisma.portalApp.update({ where: { id }, data: payload });
 
         await logAudit({
             actorType: "ADMIN_USER",

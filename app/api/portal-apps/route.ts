@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { validatePagination } from "@/lib/pagination-utils";
 import { PortalAppCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
+import { computeLoginFingerprint } from "@/lib/portal-fingerprint";
 
 // GET /api/portal-apps - List portal apps (Admin & SuperAdmin)
 export async function GET(request: NextRequest) {
@@ -80,13 +81,33 @@ export async function POST(request: NextRequest) {
 
         const data = validation.data;
 
+        // Fingerprint dihitung dari apa yang benar-benar tersimpan, bukan dari nilai
+        // token yang berubah tiap akses — bandingan drift di health check memakai formula ini.
+        const extraNames = Object.keys((data.extraFields as Record<string, string> | null | undefined) ?? {});
+        const fingerprint = computeLoginFingerprint({
+            loginUrl: data.loginUrl ?? data.url,
+            usernameField: data.usernameField ?? "username",
+            passwordField: data.passwordField ?? "password",
+            extraFieldNames: extraNames,
+        });
+
+        const payload = {
+            ...data,
+            // Prisma Json tidak menerima null polos — ubah ke undefined (field dilewati).
+            detectionSignals: data.detectionSignals ?? undefined,
+            detectedFingerprint: fingerprint,
+            // detectedAt hanya diisi bila admin baru saja menjalankan deteksi.
+            detectedAt: data.detectionLayer ? new Date() : undefined,
+            loginFormChanged: false,
+        };
+
         // Check slug uniqueness
         const existing = await prisma.portalApp.findUnique({ where: { slug: data.slug } });
         if (existing) {
             return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
         }
 
-        const app = await prisma.portalApp.create({ data });
+        const app = await prisma.portalApp.create({ data: payload });
 
         await logAudit({
             actorType: "ADMIN_USER",

@@ -244,6 +244,11 @@ export const PortalAppCreateSchema = z.object({
     isActive: z.boolean().default(true),
     displayOrder: z.number().int().default(0),
     isPublic: z.boolean().default(true), // true=publik; false=restricted
+    // Bukti deteksi berlapis — dikirim admin setelah tombol Deteksi/Uji.
+    // detectedAt & detectedFingerprint dihitung server-side di route.
+    detectionConfidence: z.number().int().nullable().optional(),
+    detectionSignals: z.array(z.string()).nullable().optional(),
+    detectionLayer: z.enum(["HTTP", "BROWSER", "MANUAL"]).nullable().optional(),
 });
 
 export const PortalAppUpdateSchema = PortalAppCreateSchema.partial();
