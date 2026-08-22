@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json().catch(() => null);
         const url = body?.url;
-        if (typeof url !== "string" || url.length > 500) {
+        // 4000: URL login WS-Federation/SAML membawa query bersarang yang panjang.
+        if (typeof url !== "string" || url.length > 4000) {
             return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
         }
 

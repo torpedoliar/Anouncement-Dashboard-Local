@@ -234,7 +234,9 @@ export const PortalAppCreateSchema = z.object({
     description: z.string().max(500).transform(sanitizeText).nullable().optional(),
     logoPath: z.string().nullable().optional(),
     url: z.string().url('Invalid URL').max(500),
-    loginUrl: z.string().url('Invalid login URL').max(500).nullable().optional(),
+    // URL login WS-Federation/SAML (K2) membawa query bersarang (wreply/wctx/wct) yang
+    // panjangnya bisa >2000 char. Kolom DB bertipe TEXT, jadi batas ini murni guard.
+    loginUrl: z.string().url('Invalid login URL').max(4000).nullable().optional(),
     ssoMode: z.enum(['FORM', 'REDIRECT', 'PROXY', 'TOKEN', 'REROUTE', 'VAULT', 'POST']).default('FORM'),
     httpMethod: z.enum(['POST', 'GET']).default('POST'),
     usernameField: z.string().max(100).default('username'),
@@ -254,7 +256,7 @@ export const PortalAppCreateSchema = z.object({
 export const PortalAppUpdateSchema = PortalAppCreateSchema.partial();
 
 export const verifyLoginSchema = z.object({
-    url: z.string().url("Invalid URL").max(500),
+    url: z.string().url("Invalid URL").max(4000), // sama dengan loginUrl PortalApp (WS-Fed panjang)
     appId: z.string().cuid().nullable().optional(), // saat edit: simpan loginVerifiedAt ke app ini
     usernameField: z.string().max(100).default("username"),
     passwordField: z.string().max(100).default("password"),
