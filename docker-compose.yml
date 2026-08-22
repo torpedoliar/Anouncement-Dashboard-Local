@@ -19,6 +19,8 @@ services:
       - PORTAL_CREDENTIAL_KEY=${PORTAL_CREDENTIAL_KEY}
       # Portal Session Duration (detik) — default 43200 (12 jam) jika tidak disetel di .env.server
       - PORTAL_SESSION_MAX_AGE=${PORTAL_SESSION_MAX_AGE:-43200}
+      # Layanan render Chromium (container terpisah) untuk deteksi SPA. Kosong = lapis browser mati.
+      - PORTAL_BROWSER_URL=${PORTAL_BROWSER_URL:-http://browserless:3000}
     volumes:
       - ./public/uploads:/app/public/uploads
     depends_on:
@@ -57,6 +59,16 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - internal
+
+  browserless:
+    image: browserless/chromium:latest
+    restart: unless-stopped
+    environment:
+      - CONNECTION_TIMEOUT=10000
+      - MAX_CONCURRENT_SESSIONS=2
+    # Bind ke jaringan internal compose saja — jangan di-expose ke host/publik.
     networks:
       - internal
 
