@@ -253,6 +253,15 @@ export const PortalAppCreateSchema = z.object({
 
 export const PortalAppUpdateSchema = PortalAppCreateSchema.partial();
 
+export const verifyLoginSchema = z.object({
+    url: z.string().url("Invalid URL").max(500),
+    appId: z.string().cuid().nullable().optional(), // saat edit: simpan loginVerifiedAt ke app ini
+    usernameField: z.string().max(100).default("username"),
+    passwordField: z.string().max(100).default("password"),
+    testUsername: z.string().max(200),
+    testPassword: z.string().max(500),
+});
+
 // -----------------------------------------
 // Portal Group Schemas
 // -----------------------------------------
