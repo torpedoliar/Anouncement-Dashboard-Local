@@ -34,6 +34,11 @@ interface PortalApp {
     healthLatencyMs?: number | null;
     healthCheckedAt?: string | null;
     healthError?: string | null;
+    detectionConfidence?: number | null;
+    detectionSignals?: string[] | null;
+    detectionLayer?: string | null;
+    loginFormChanged?: boolean;
+    ssoFailure24h?: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -61,6 +66,9 @@ const emptyForm = {
     isActive: true,
     isPublic: true,
     displayOrder: 0,
+    detectionConfidence: null as number | null,
+    detectionSignals: null as string[] | null,
+    detectionLayer: null as string | null,
 };
 
 export default function PortalAppsPage() {
@@ -75,6 +83,9 @@ export default function PortalAppsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [detecting, setDetecting] = useState(false);
     const [detectMsg, setDetectMsg] = useState<{ type: "ok" | "err"; text: string; warnings?: string[] } | null>(null);
+    const [verify, setVerify] = useState<{ username: string; password: string }>({ username: "", password: "" });
+    const [verifyState, setVerifyState] = useState<"idle" | "running" | "ok" | "fail">("idle");
+    const [verifyMsg, setVerifyMsg] = useState("");
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const [logoError, setLogoError] = useState("");
     const { showToast } = useToast();
@@ -136,6 +147,9 @@ export default function PortalAppsPage() {
                 isActive: formData.isActive,
                 isPublic: formData.isPublic,
                 displayOrder: Number(formData.displayOrder),
+                detectionConfidence: formData.detectionConfidence,
+                detectionSignals: formData.detectionSignals,
+                detectionLayer: formData.detectionLayer,
             };
 
             const response = await fetch(url, {
@@ -240,6 +254,9 @@ export default function PortalAppsPage() {
                 extraFields: Object.keys(data.extraFields || {}).length
                     ? JSON.stringify(data.extraFields, null, 2)
                     : prev.extraFields,
+                detectionConfidence: data.detectionConfidence ?? prev.detectionConfidence,
+                detectionSignals: data.detectionSignals ?? prev.detectionSignals,
+                detectionLayer: data.detectionLayer ?? prev.detectionLayer,
             }));
             const detectedInfo = [
                 data.usernameField ? `User: ${data.usernameField}` : null,
@@ -262,6 +279,46 @@ export default function PortalAppsPage() {
             setDetectMsg({ type: "err", text: "Terjadi kesalahan saat deteksi." });
         } finally {
             setDetecting(false);
+        }
+    };
+
+    const handleVerifyLogin = async () => {
+        if (!formData.loginUrl) {
+            setVerifyState("fail");
+            setVerifyMsg("Isi LOGIN URL terlebih dahulu.");
+            return;
+        }
+        if (!verify.username || !verify.password) {
+            setVerifyState("fail");
+            setVerifyMsg("Isi username dan password uji.");
+            return;
+        }
+        setVerifyState("running");
+        setVerifyMsg("");
+        try {
+            const res = await fetch("/api/portal-apps/verify-login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    url: formData.loginUrl,
+                    appId: editingApp?.id ?? undefined, // alur edit: hasil disimpan ke app (loginVerifiedAt)
+                    usernameField: formData.usernameField,
+                    passwordField: formData.passwordField,
+                    testUsername: verify.username,
+                    testPassword: verify.password,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setVerifyState("fail");
+                setVerifyMsg(data.error ?? "Uji login gagal");
+                return;
+            }
+            setVerifyState(data.ok ? "ok" : "fail");
+            setVerifyMsg(data.message);
+        } catch {
+            setVerifyState("fail");
+            setVerifyMsg("Terjadi kesalahan jaringan");
         }
     };
 
@@ -320,6 +377,9 @@ export default function PortalAppsPage() {
             isActive: app.isActive,
             isPublic: app.isPublic ?? true,
             displayOrder: app.displayOrder,
+            detectionConfidence: app.detectionConfidence ?? null,
+            detectionSignals: app.detectionSignals ?? null,
+            detectionLayer: app.detectionLayer ?? null,
         });
         setError("");
         setShowModal(true);
@@ -693,6 +753,21 @@ export default function PortalAppsPage() {
                                             ))}
                                         </div>
                                     )}
+                                    {detectMsg?.type === "ok" && formData.detectionLayer ? (
+                                        <div className="mt-3 rounded-card border border-border bg-surface-2 p-3 text-xs text-text-2">
+                                            <p className="font-medium text-text-1">Bukti deteksi</p>
+                                            <p>
+                                                Lapis: {formData.detectionLayer} · Confidence: {formData.detectionConfidence ?? "-"}
+                                            </p>
+                                            {Array.isArray(formData.detectionSignals) && formData.detectionSignals.length > 0 && (
+                                                <ul className="mt-1 list-inside list-disc">
+                                                    {formData.detectionSignals.map((s) => (
+                                                        <li key={s}>{s}</li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -748,6 +823,35 @@ export default function PortalAppsPage() {
                                     rows={3}
                                     className="w-full resize-y rounded-control border border-border bg-surface-1 px-3 py-2 font-mono text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                 />
+                            </div>
+
+                            <div className="rounded-card border border-border bg-surface-2 p-3">
+                                <p className="mb-2 text-sm font-medium text-text-1">Uji Login sebelum simpan</p>
+                                <div className="grid gap-2">
+                                    <input
+                                        type="text" placeholder="Username uji"
+                                        value={verify.username}
+                                        onChange={(e) => setVerify({ ...verify, username: e.target.value })}
+                                        className="w-full rounded-control border border-border bg-surface-1 px-3 py-2 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                                    />
+                                    <input
+                                        type="password" placeholder="Password uji"
+                                        value={verify.password}
+                                        onChange={(e) => setVerify({ ...verify, password: e.target.value })}
+                                        className="w-full rounded-control border border-border bg-surface-1 px-3 py-2 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                                    />
+                                    <button
+                                        type="button" onClick={handleVerifyLogin} disabled={verifyState === "running"}
+                                        className="inline-flex h-9 items-center justify-center rounded-control border border-border px-3 text-sm font-medium text-text-1 hover:bg-surface-3 disabled:opacity-50"
+                                    >
+                                        {verifyState === "running" ? "Menguji..." : "Uji Login"}
+                                    </button>
+                                </div>
+                                {verifyMsg && (
+                                    <p className={`mt-2 text-sm ${verifyState === "ok" ? "text-success" : "text-warning"}`}>
+                                        {verifyMsg}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
