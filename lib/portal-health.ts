@@ -1,6 +1,8 @@
 import prisma from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { fetchLoginPage, FetchError } from "@/lib/portal-fetch-html";
+import { detectLoginFields } from "@/lib/portal-login-detect";
+import { computeLoginFingerprint } from "@/lib/portal-fingerprint";
 
 export interface HealthCheckResult {
     appId: string;
@@ -33,6 +35,8 @@ export async function checkAppHealth(app: {
     url: string;
     loginUrl?: string | null;
     healthStatus?: string | null;
+    detectedFingerprint?: string | null;
+    loginFormChanged?: boolean | null;
 }): Promise<HealthCheckResult> {
     const targetUrl = (app.loginUrl && app.loginUrl.trim()) ? app.loginUrl.trim() : app.url.trim();
     const startTime = performance.now();
@@ -55,6 +59,39 @@ export async function checkAppHealth(app: {
         // Fetch polos memakai redirect:"follow" → loop redirect K2 menghabiskan batas,
         // TLS self-signed pun ikut melempar → server hidup dilaporkan OFFLINE.
         const page = await fetchLoginPage(targetUrl);
+
+        // Drift form login: bandingkan struktur form saat ini dengan config tersimpan.
+        // Perubahan struktur = SSO akan rusak — beri tahu admin sebelum user mengeluh.
+        if (page.html && app.detectedFingerprint) {
+            const live = detectLoginFields(page.html);
+            if (live.passwordField) {
+                const liveFp = computeLoginFingerprint({
+                    loginUrl: targetUrl,
+                    usernameField: live.usernameField ?? "",
+                    passwordField: live.passwordField ?? "",
+                    extraFieldNames: Object.keys(live.extraFields),
+                });
+                const changed = liveFp !== app.detectedFingerprint;
+                if (changed !== (app.loginFormChanged ?? false)) {
+                    await prisma.portalApp.update({
+                        where: { id: app.id },
+                        data: { loginFormChanged: changed },
+                    });
+                }
+                if (changed && !app.loginFormChanged) {
+                    await logAudit({
+                        actorType: "SYSTEM",
+                        category: "SYSTEM",
+                        action: "APP_LOGIN_FORM_CHANGED",
+                        severity: "WARNING",
+                        entityType: "PORTAL_APP",
+                        entityId: app.id,
+                        appId: app.id,
+                        changes: { appName: app.name, url: targetUrl },
+                    }).catch(() => {});
+                }
+            }
+        }
 
         const endTime = performance.now();
         latencyMs = Math.round(endTime - startTime);
@@ -233,6 +270,8 @@ export async function checkAllPortalAppsHealth(): Promise<HealthSummary> {
             url: true,
             loginUrl: true,
             healthStatus: true,
+            detectedFingerprint: true,
+            loginFormChanged: true,
         },
         orderBy: { displayOrder: "asc" },
     });
