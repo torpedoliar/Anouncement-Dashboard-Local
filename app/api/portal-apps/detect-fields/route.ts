@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { detectLoginFields } from "@/lib/portal-login-detect";
-import { fetchLoginPage, FetchError } from "@/lib/portal-fetch-html";
-import { classifySsoMode } from "@/lib/portal-sso-mode";
+import { detectWithLadder } from "@/lib/portal-detect-ladder";
+import { FetchError } from "@/lib/portal-fetch-html";
 
 // POST /api/portal-apps/detect-fields — SuperAdmin & ADMIN. Body { url }
 export async function POST(request: NextRequest) {
@@ -27,58 +26,51 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Format URL tidak valid" }, { status: 400 });
         }
 
-        const { html, finalUrl, setCookies, redirected, loopDetected, hopChain } = await fetchLoginPage(parsed.href);
+        // Deteksi berlapis: HTTP → (bila perlu) browser. Berhenti di lapis pertama
+        // yang menemukan form; mode ditentukan dari bukti halaman oleh classifySsoMode.
+        const result = await detectWithLadder(parsed.href);
+        const { detected, verdict } = result;
 
-        const cookieNames = setCookies.map((c) => c.split("=")[0].trim()).filter(Boolean);
-        const result = detectLoginFields(html);
-
-        // Mode ditentukan dari bukti halaman (token, cookie pasangan, rantai federasi,
-        // pola aplikasi), bukan dari "deteksi gagal → VAULT".
-        const verdict = classifySsoMode({
-            html,
-            finalUrl,
-            hopChain,
-            cookieNames,
-            detected: result,
-            redirected,
-            loopDetected: loopDetected ?? false,
-        });
-
-        if (!result.passwordField) {
+        if (!detected.passwordField) {
             // Gagal menemukan form. Loop redirect turut dijelaskan agar admin paham
             // bahwa server hidup tapi URL yang diisi tidak mengarah ke formulir.
-            const loopNote = loopDetected
-                ? ` URL memantul dalam loop pengalihan (berakhir di ${finalUrl}) — server tampak hidup, tapi halaman tidak pernah berhenti dialihkan.`
+            const loopNote = result.loopDetected
+                ? ` URL memantul dalam loop pengalihan (berakhir di ${result.finalUrl}) — server tampak hidup, tapi halaman tidak pernah berhenti dialihkan.`
                 : "";
-            const detail = !loopDetected && redirected
-                ? ` Halaman dialihkan ke ${finalUrl}. Salin URL login LENGKAP dari address bar browser bila halaman ini bukan formulir login.`
+            const detail = !result.loopDetected && result.redirected
+                ? ` Halaman dialihkan ke ${result.finalUrl}. Salin URL login LENGKAP dari address bar browser bila halaman ini bukan formulir login.`
                 : "";
             return NextResponse.json(
                 {
                     error: `Tidak ditemukan form login (input password) di halaman tersebut.${loopNote}${detail}`,
-                    finalUrl,
-                    redirected,
-                    loopDetected: loopDetected ?? false,
+                    finalUrl: result.finalUrl,
+                    redirected: result.redirected,
+                    loopDetected: result.loopDetected,
                     recommendedMode: verdict.mode,
                     recommendationReason: verdict.reason,
                     detectionSignals: verdict.signals,
+                    detectionLayer: result.layer,
+                    layerNotes: result.layerNotes,
                 },
                 { status: 422 }
             );
         }
 
-        const warnings = [...(result.warnings ?? []), ...verdict.warnings];
+        const warnings = [...(detected.warnings ?? []), ...verdict.warnings];
 
         return NextResponse.json({
-            ...result,
+            ...detected,
             warnings,
-            finalUrl,
-            redirected,
-            loopDetected: loopDetected ?? false,
+            finalUrl: result.finalUrl,
+            redirected: result.redirected,
+            loopDetected: result.loopDetected,
             cookiePaired: verdict.mode === "POST",
             recommendedMode: verdict.mode,
             recommendationReason: verdict.reason,
             detectionSignals: verdict.signals,
+            detectionConfidence: detected.confidence ?? 0,
+            detectionLayer: result.layer,
+            layerNotes: result.layerNotes,
         });
     } catch (err) {
         if (err instanceof FetchError) {
