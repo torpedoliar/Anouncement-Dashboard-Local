@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
             ];
         }
 
-        const [apps, total] = await Promise.all([
+        const [apps, total, failed] = await Promise.all([
             prisma.portalApp.findMany({
                 where,
                 orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
@@ -45,10 +45,23 @@ export async function GET(request: NextRequest) {
                 take: limit,
             }),
             prisma.portalApp.count({ where }),
+            // Kegagalan SSO 24 jam terakhir — data sudah terisi oleh logAudit saat SSO launch.
+            prisma.auditLog.groupBy({
+                by: ["appId"],
+                where: {
+                    action: "SSO_LAUNCH",
+                    outcome: "FAILURE",
+                    createdAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) },
+                },
+                _count: { _all: true },
+            }),
         ]);
 
+        const failCount = new Map(failed.map((r) => [r.appId, r._count._all]));
+        const data = apps.map((a) => ({ ...a, ssoFailure24h: failCount.get(a.id) ?? 0 }));
+
         return NextResponse.json({
-            data: apps,
+            data,
             pagination: {
                 page: Math.floor(skip / limit) + 1,
                 limit,

@@ -501,7 +501,15 @@ export default function PortalAppsPage() {
         ) : (
             <span key="category" className="text-xs text-text-3">-</span>
         ),
-        <Badge key="ssoMode" tone="neutral">{app.ssoMode}</Badge>,
+        <div key="ssoMode" className="flex flex-col items-start gap-1">
+            <Badge tone="neutral">{app.ssoMode}</Badge>
+            {app.loginFormChanged && (
+                <Badge tone="warning">Form berubah</Badge>
+            )}
+            {(app.ssoFailure24h ?? 0) >= 3 && (
+                <Badge tone="danger">Gagal ×{app.ssoFailure24h}/24h</Badge>
+            )}
+        </div>,
         app.isPublic ? (
             <Badge key="visibility" tone="success">Publik</Badge>
         ) : (
