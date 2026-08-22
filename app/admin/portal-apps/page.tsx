@@ -840,12 +840,14 @@ export default function PortalAppsPage() {
                                         type="text" placeholder="Username uji"
                                         value={verify.username}
                                         onChange={(e) => setVerify({ ...verify, username: e.target.value })}
+                                        onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
                                         className="w-full rounded-control border border-border bg-surface-1 px-3 py-2 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                     />
                                     <input
                                         type="password" placeholder="Password uji"
                                         value={verify.password}
                                         onChange={(e) => setVerify({ ...verify, password: e.target.value })}
+                                        onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
                                         className="w-full rounded-control border border-border bg-surface-1 px-3 py-2 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                     />
                                     <button
