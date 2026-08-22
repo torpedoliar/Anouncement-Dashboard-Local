@@ -21,6 +21,15 @@
 - Setelah edit `schema.prisma`, jalankan `npm run prisma:generate`; naikkan `schemaVersion` di `version.json` saat migrasi keluar.
 - Setiap task berakhir dengan deliverable yang bisa diverifikasi sendiri + commit.
 
+## Deviasi dari spec (sengaja, dicatat — bukan terlewat)
+
+Keputusan berikut menyimpang dari kalimat spec dengan alasan konkret; jangan dianggap kelupaan.
+
+1. **Render service tidak mengembalikan cookie** — spec menulis `{ html, cookies } | null`. Browserless/chromium (`/content`) tidak mengembalikan cookie, dan deteksi (menemukan form + klasifikasi mode) tidak membutuhkannya. Plan memakai `{ html } | null`; cookie untuk alur POST tetap datang dari `fetchLoginPage` di lapis 1. Bila suatu saat deteksi butuh cookie hasil render, kontraknya bisa diperluas dengan endpoint render sendiri.
+2. **Fingerprint memakai `loginUrl` path, bukan `formAction` path** — spec menulis `formAction (path saja)`. `formAction` tidak dipersist di `PortalApp`, sedangkan `loginUrl` tersedia di titik simpan (Task 6) dan di health check (Task 8). Untuk aplikasi normal keduanya identik (form login = loginUrl). Kunci konsistensi: kedua titik memakai input yang sama, jadi perbandingan valid. Bila ingin persis spec, perlu field `formAction` tambahan — di luar cakupan.
+3. **"Kegagalan berturut-turut" dibulatkan jadi "≥3 dalam 24 jam"** — spec menulis `berturut-turut ≥ 3`. Menghitung benar-benar berurutan butuh rangkaian per-app yang diurutkan; agregasi jendela 24 jam sudah menangkap aplikasi yang "selalu gagal" tanpa query lebih berat. Ini penjumlahan yang jujur: aplikasi gagal 3× dalam sehari ditandai merah, walau tak harus 3× berturut-turut.
+4. **Param `ssoMode` di body `verify-login` tidak dipakai** — spec menulis `POST { url, ssoMode, ... }`. Route menjalankan login sungguhan lewat `relayLogin`; mode bukan input pilihan melainkan hasil inferensi dari halaman. `ssoMode` dibuang agar tidak ada argumen yang hanya menghiasi API. Bila ingin "verifikasi dengan mode tertentu", itu keputusan desain tersendiri.
+
 ---
 
 ### Task 1: Migrasi — field evidence di PortalApp
@@ -768,6 +777,7 @@ Di `lib/validation-schemas.ts`:
 ```ts
 export const verifyLoginSchema = z.object({
     url: z.string().url("Invalid URL").max(500),
+    appId: z.string().cuid().nullable().optional(), // saat edit: simpan loginVerifiedAt ke app ini
     usernameField: z.string().max(100).default("username"),
     passwordField: z.string().max(100).default("password"),
     testUsername: z.string().max(200),
@@ -785,6 +795,7 @@ import { fetchLoginPage, CookieJar } from "@/lib/portal-fetch-html";
 import { detectLoginFields } from "@/lib/portal-login-detect";
 import { relayLogin } from "@/lib/portal-sso-relay";
 import { logAudit } from "@/lib/audit";
+import prisma from "@/lib/prisma";
 import { verifyLoginSchema } from "@/lib/validation-schemas";
 import { checkVerifyLimit, type VerifySlot } from "@/lib/verify-rate-limit";
 
@@ -815,7 +826,7 @@ export async function POST(request: NextRequest) {
         if (!validation.success) {
             return NextResponse.json({ error: "Validasi gagal" }, { status: 400 });
         }
-        const { url, usernameField, passwordField, testUsername, testPassword } = validation.data;
+        const { url, appId, usernameField, passwordField, testUsername, testPassword } = validation.data;
 
         const page = await fetchLoginPage(url);
         const jar = page.cookieJar ?? new CookieJar();
@@ -850,13 +861,26 @@ export async function POST(request: NextRequest) {
             request,
         }).catch(() => {});
 
+        // Persist bukti verifikasi pada aplikasi (khusus alur EDIT; saat CREATE app belum ada).
+        if (appId) {
+            await prisma.portalApp
+                .update({
+                    where: { id: appId },
+                    data: outcome.ok
+                        ? { loginVerifiedAt: new Date(), loginVerifyError: null }
+                        : { loginVerifyError: outcome.failureReason ?? "Login ditolak aplikasi." },
+                })
+                .catch(() => {});
+        }
+
+        // Pesan mengikuti 4 baris tabel Lapis 3 di spec, bukan sekadar sukses/gagal.
         return NextResponse.json({
             ok: outcome.ok,
             handoff: !!outcome.handoff,
             message: outcome.ok
                 ? outcome.handoff
                     ? "Login berhasil — konfigurasi terbukti (mode POST/federasi)."
-                    : "Login berhasil — konfigurasi terbukti."
+                    : "Login berhasil. Bila aplikasi berbeda domain dari portal, pastikan PORTAL_SSO_COOKIE_DOMAIN sesuai atau aplikasi memakai federasi."
                 : (outcome.failureReason ?? "Login ditolak aplikasi."),
         });
     } catch (err) {
@@ -1007,6 +1031,7 @@ const handleVerifyLogin = async () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 url: formData.loginUrl,
+                appId: formData.id ?? undefined, // alur edit: hasil disimpan ke app (loginVerifiedAt)
                 usernameField: formData.usernameField,
                 passwordField: formData.passwordField,
                 testUsername: verify.username,
