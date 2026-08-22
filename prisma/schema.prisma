@@ -634,6 +634,16 @@ model PortalApp {
   healthCheckedAt  DateTime?
   healthError      String?
 
+  // Detection evidence — hasil deteksi berlapis + verifikasi (spec detection-ladder)
+  detectionConfidence  Int?          // skor dari detectLoginFields (mis. 2010 utk K2)
+  detectionSignals     Json?         // bukti dari classifySsoMode
+  detectionLayer       String?       // "HTTP" | "BROWSER" | "MANUAL"
+  detectedAt           DateTime?
+  loginVerifiedAt      DateTime?
+  loginVerifyError     String?
+  detectedFingerprint  String?
+  loginFormChanged     Boolean       @default(false) // form login berubah sejak config terakhir
+
   userAccess    PortalUserAppAccess[]
   credentials   PortalUserAppCredential[]
   groupApps     PortalGroupApp[]
