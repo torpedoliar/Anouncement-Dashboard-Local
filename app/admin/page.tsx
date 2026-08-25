@@ -78,11 +78,13 @@ export default async function AdminDashboard() {
                 </Link>
             </div>
 
-            {/* Stat Tiles */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {statConfig.map(({ icon: Icon, label, key }) => (
+            {/* Stat Tiles — entrance stagger halus (Varian C, mode Operate:
+                hanya kartu, tanpa efek scroll; tabel & form tetap statis) */}
+            <div className="cine-stagger grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8" style={{ "--stagger-base": "0ms" } as React.CSSProperties}>
+                {statConfig.map(({ icon: Icon, label, key }, i) => (
                     <div
                         key={label}
+                        style={{ "--i": i } as React.CSSProperties}
                         className="bg-surface-1 border border-border rounded-card shadow-lvl-1 p-7 relative overflow-hidden transition-opacity duration-150"
                     >
                         <div

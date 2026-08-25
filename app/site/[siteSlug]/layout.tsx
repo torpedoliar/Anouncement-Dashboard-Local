@@ -4,6 +4,7 @@ import SiteThemeProvider from "@/components/SiteThemeProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MarqueeBanner from "@/components/MarqueeBanner";
+import CineReveal from "@/components/CineReveal";
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +64,8 @@ export default async function SiteLayout({
             siteSlug={site.slug}
         >
             <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                {/* Fallback scroll-reveal (browser tanpa animation-timeline). */}
+                <CineReveal />
                 {site.settings?.bannerEnabled && site.settings?.bannerText ? (
                     <MarqueeBanner text={site.settings.bannerText} />
                 ) : null}

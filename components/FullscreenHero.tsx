@@ -151,10 +151,17 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                 className="absolute inset-0 z-[1] bg-gradient-to-t from-black/90 via-black/40 to-black/50"
             />
 
-            {/* Active Content Caption */}
+            {/* Active Content Caption — remount per slide (key) supaya koreografi
+                entrance (garis aksen → judul un-blur → excerpt → CTA) berjalan
+                ulang setiap pergantian slide. */}
             <div className="absolute inset-0 z-[2] flex flex-col justify-end p-6 md:p-12 lg:p-16 pr-16 md:pr-32">
-                <div className="max-w-4xl space-y-2 md:space-y-3">
-                    <div className="flex items-center gap-2.5">
+                <div className="max-w-4xl space-y-2 md:space-y-3" key={current.id}>
+                    <div
+                        aria-hidden="true"
+                        className="h-[3px] w-14 origin-left bg-white/90"
+                        style={{ animation: "cine-grow-line 500ms var(--motion-ease) both" }}
+                    />
+                    <div className="flex items-center gap-2.5" style={{ animation: "cine-fade-in 300ms var(--motion-ease) 120ms both" }}>
                         <span
                             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider text-white shadow-sm"
                             style={{ backgroundColor: current.category?.color || primaryColor }}
@@ -172,13 +179,19 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                         href={`/site/${siteSlug}/${current.slug}`}
                         className="group block"
                     >
-                        <h1 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight text-white drop-shadow-md transition-colors group-hover:text-white/90">
+                        <h1
+                            className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight text-white drop-shadow-md transition-colors group-hover:text-white/90"
+                            style={{ animation: "cine-rise 550ms var(--motion-ease) 200ms both" }}
+                        >
                             {current.title}
                         </h1>
                     </Link>
 
                     {current.excerpt && (
-                        <p className="line-clamp-2 max-w-2xl text-sm sm:text-base text-white/85 leading-relaxed">
+                        <p
+                            className="line-clamp-2 max-w-2xl text-sm sm:text-base text-white/85 leading-relaxed"
+                            style={{ animation: "cine-fade-in 400ms var(--motion-ease) 420ms both" }}
+                        >
                             {current.excerpt}
                         </p>
                     )}
@@ -187,7 +200,7 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                         <Link
                             href={`/site/${siteSlug}/${current.slug}`}
                             className="inline-flex items-center gap-2 text-sm sm:text-base font-bold text-white transition-transform duration-150 hover:translate-x-1"
-                            style={{ color: primaryColor }}
+                            style={{ color: primaryColor, animation: "cine-fade-in 300ms var(--motion-ease) 520ms both" }}
                         >
                             <span>Baca selengkapnya</span>
                             <ArrowRight size={16} weight="bold" />

@@ -16,6 +16,8 @@ export interface AppCardProps {
     healthLatencyMs?: number | null;
     healthCheckedAt?: Date | string | null;
     healthError?: string | null;
+    /** Properti wrapper tambahan — dipakai stagger motion (Varian C). */
+    style?: React.CSSProperties;
 }
 
 export default function AppCard({
@@ -28,6 +30,7 @@ export default function AppCard({
     healthStatus,
     healthLatencyMs,
     healthError,
+    style,
 }: AppCardProps) {
     const isOffline = healthStatus === "OFFLINE";
     const isDegraded = healthStatus === "DEGRADED";
@@ -37,9 +40,12 @@ export default function AppCard({
     const isUnknown = !isOnline && !isDegraded && !isOffline;
 
     return (
-        <Card className={`group relative p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lvl-2 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent flex flex-col justify-between ${
-            isOffline ? "border-danger/40 bg-surface-1/90" : ""
-        }`}>
+        <Card
+            className={`group relative p-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lvl-2 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent flex flex-col justify-between ${
+                isOffline ? "border-danger/40 bg-surface-1/90" : ""
+            }`}
+            style={style}
+        >
             <div>
                 {/* Header: logo + nama. Nama dapat lebar penuh — badge status
                     dipindah ke baris meta di bawah agar tidak memangkas nama. */}

@@ -25,6 +25,8 @@ interface AnnouncementCardProps {
     };
     createdAt: Date | string;
     isPinned?: boolean;
+    /** Kelas/properti tambahan untuk wrapper — dipakai stagger motion (Varian C). */
+    style?: React.CSSProperties;
 }
 
 // Extract YouTube video ID for thumbnail
@@ -52,6 +54,7 @@ export default function AnnouncementCard({
     category,
     createdAt,
     isPinned,
+    style,
 }: AnnouncementCardProps) {
     const youtubeId = youtubeUrl ? extractYoutubeId(youtubeUrl) : null;
     // Thumbnail YouTube (img.youtube.com) jika ada; kalau ada imagePath pakai itu.
@@ -66,7 +69,7 @@ export default function AnnouncementCard({
 
     const href = siteSlug ? `/site/${siteSlug}/${slug}` : `/${slug}`;
     return (
-        <Link href={href} style={{ display: 'block', textDecoration: 'none' }}>
+        <Link href={href} style={{ display: 'block', textDecoration: 'none', ...style }}>
             <article style={{
                 backgroundColor: 'var(--bg-secondary)',
                 border: '1px solid var(--border-color)',

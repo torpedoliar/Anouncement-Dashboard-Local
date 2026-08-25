@@ -92,9 +92,15 @@ export default function GroupedAppGrid({ groups }: { groups: GridGroup[] }) {
                 visibleGroups.map((g) => (
                     <section key={g.id}>
                         <h2 className="text-sm font-semibold text-text-2">{g.name}</h2>
-                        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {g.apps.map((app) => (
-                                <AppCard key={app.id} {...app} />
+                        {/* cine-stagger + data-cine: entrance berurutan; section
+                            di bawah-fold ter-reveal saat discroll (Varian C). */}
+                        <div className="cine-stagger mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {g.apps.map((app, i) => (
+                                <AppCard
+                                    key={app.id}
+                                    {...app}
+                                    style={{ "--i": Math.min(i, 11) } as React.CSSProperties}
+                                />
                             ))}
                         </div>
                     </section>
