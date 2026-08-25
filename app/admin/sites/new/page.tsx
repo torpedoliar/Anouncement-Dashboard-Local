@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Globe, Copy, Check } from "@phosphor-icons/react";
+import Input from "@/components/ui/Input";
+import Button, { buttonClasses } from "@/components/ui/Button";
 
 interface Site {
     id: string;
@@ -35,7 +37,7 @@ export default function CreateSitePage() {
     }, []);
 
     useEffect(() => {
-        // Auto-generate slug from name
+        // Auto-generate slug dari name
         if (name) {
             const generatedSlug = name
                 .toLowerCase()
@@ -90,221 +92,114 @@ export default function CreateSitePage() {
     };
 
     return (
-        <div style={{ padding: "24px", maxWidth: "800px", margin: "0 auto" }}>
+        <div className="mx-auto max-w-3xl p-6">
             {/* Header */}
-            <div style={{ marginBottom: "32px" }}>
+            <div className="mb-8">
                 <Link
                     href="/admin/sites"
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        color: "var(--text-muted)",
-                        textDecoration: "none",
-                        marginBottom: "16px",
-                    }}
+                    className="mb-4 inline-flex items-center gap-2 text-sm text-text-2 transition-colors duration-150 hover:text-text-1"
                 >
-                    <ArrowLeft size={16} />
+                    <ArrowLeft size={16} aria-hidden="true" />
                     Back to Sites
                 </Link>
-                <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "8px" }}>
-                    Create New Site
-                </h1>
-                <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
+                <h1 className="text-2xl font-bold">Create New Site</h1>
+                <p className="mt-1 text-sm text-text-3">
                     Add a new site to your multi-site network
                 </p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit}>
-                <div
-                    style={{
-                        backgroundColor: "var(--bg-tertiary)",
-                        borderRadius: "12px",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        padding: "24px",
-                        marginBottom: "24px",
-                    }}
-                >
-                    <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "20px" }}>
-                        Basic Information
-                    </h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <section className="rounded-card border border-border bg-surface-1 p-6">
+                    <h2 className="mb-5 text-lg font-semibold">Basic Information</h2>
 
-                    {/* Name */}
-                    <div style={{ marginBottom: "20px" }}>
-                        <label
-                            style={{
-                                display: "block",
-                                fontSize: "13px",
-                                color: "var(--text-muted)",
-                                marginBottom: "8px",
-                            }}
-                        >
-                            Site Name *
-                        </label>
-                        <input
+                    <div className="space-y-5">
+                        <Input
+                            label="Site Name *"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="e.g., Factory 1"
                             required
-                            style={{
-                                width: "100%", boxSizing: "border-box",
-                                padding: "12px 16px",
-                                backgroundColor: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                borderRadius: "8px",
-                                color: "var(--text-primary)",
-                                fontSize: "14px",
-                            }}
                         />
-                    </div>
 
-                    {/* Slug */}
-                    <div style={{ marginBottom: "20px" }}>
-                        <label
-                            style={{
-                                display: "block",
-                                fontSize: "13px",
-                                color: "var(--text-muted)",
-                                marginBottom: "8px",
-                            }}
-                        >
-                            URL Slug *
+                        <label className="block">
+                            <span className="mb-1.5 block text-sm font-medium text-text-1">URL Slug *</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-text-3">/site/</span>
+                                <input
+                                    type="text"
+                                    value={slug}
+                                    onChange={(e) => setSlug(e.target.value)}
+                                    placeholder="factory-1"
+                                    required
+                                    pattern="[a-z0-9-]+"
+                                    className="h-11 flex-1 rounded-control border border-border bg-surface-1 px-3 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                                />
+                            </div>
+                            <span className="mt-1.5 block text-xs text-text-3">
+                                Only lowercase letters, numbers, and hyphens
+                            </span>
                         </label>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ color: "var(--text-tertiary)", fontSize: "14px" }}>/site/</span>
-                            <input
-                                type="text"
-                                value={slug}
-                                onChange={(e) => setSlug(e.target.value)}
-                                placeholder="factory-1"
-                                required
-                                pattern="[a-z0-9-]+"
-                                style={{
-                                    flex: 1,
-                                    padding: "12px 16px",
-                                    backgroundColor: "rgba(255,255,255,0.05)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: "8px",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
-                            />
-                        </div>
-                        <div style={{ color: "var(--text-tertiary)", fontSize: "11px", marginTop: "6px" }}>
-                            Only lowercase letters, numbers, and hyphens
-                        </div>
-                    </div>
 
-                    {/* Description */}
-                    <div style={{ marginBottom: "20px" }}>
-                        <label
-                            style={{
-                                display: "block",
-                                fontSize: "13px",
-                                color: "var(--text-muted)",
-                                marginBottom: "8px",
-                            }}
-                        >
-                            Description
+                        <label className="block">
+                            <span className="mb-1.5 block text-sm font-medium text-text-1">Description</span>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Brief description of this site..."
+                                rows={3}
+                                className="w-full rounded-control border border-border bg-surface-1 px-3 py-2.5 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                            />
                         </label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Brief description of this site..."
-                            rows={3}
-                            style={{
-                                width: "100%", boxSizing: "border-box",
-                                padding: "12px 16px",
-                                backgroundColor: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                borderRadius: "8px",
-                                color: "var(--text-primary)",
-                                fontSize: "14px",
-                                resize: "vertical",
-                            }}
-                        />
-                    </div>
 
-                    {/* Primary Color */}
-                    <div>
-                        <label
-                            style={{
-                                display: "block",
-                                fontSize: "13px",
-                                color: "var(--text-muted)",
-                                marginBottom: "8px",
-                            }}
-                        >
-                            Primary Color
+                        {/* Primary Color */}
+                        <label className="block">
+                            <span className="mb-1.5 block text-sm font-medium text-text-1">Primary Color</span>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="color"
+                                    value={primaryColor}
+                                    onChange={(e) => setPrimaryColor(e.target.value)}
+                                    aria-label="Pilih warna utama"
+                                    className="h-12 w-12 cursor-pointer rounded-control border border-border bg-surface-1"
+                                />
+                                <input
+                                    type="text"
+                                    value={primaryColor}
+                                    onChange={(e) => setPrimaryColor(e.target.value)}
+                                    aria-label="Kode warna utama"
+                                    className="h-11 w-32 rounded-control border border-border bg-surface-1 px-3 text-sm text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                                />
+                            </div>
                         </label>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                            <input
-                                type="color"
-                                value={primaryColor}
-                                onChange={(e) => setPrimaryColor(e.target.value)}
-                                style={{
-                                    width: "48px",
-                                    height: "48px",
-                                    borderRadius: "8px",
-                                    border: "none",
-                                    cursor: "pointer",
-                                }}
-                            />
-                            <input
-                                type="text"
-                                value={primaryColor}
-                                onChange={(e) => setPrimaryColor(e.target.value)}
-                                style={{
-                                    width: "120px",
-                                    padding: "12px 16px",
-                                    backgroundColor: "rgba(255,255,255,0.05)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: "8px",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
-                            />
-                        </div>
                     </div>
-                </div>
+                </section>
 
                 {/* Template Selection */}
-                <div
-                    style={{
-                        backgroundColor: "var(--bg-tertiary)",
-                        borderRadius: "12px",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        padding: "24px",
-                        marginBottom: "24px",
-                    }}
-                >
-                    <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "20px" }}>
-                        Template
-                    </h2>
+                <section className="rounded-card border border-border bg-surface-1 p-6">
+                    <h2 className="mb-5 text-lg font-semibold">Template</h2>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         {/* Blank Option */}
                         <button
                             type="button"
                             onClick={() => setCloneMode("blank")}
-                            style={{
-                                padding: "20px",
-                                backgroundColor: cloneMode === "blank" ? "rgba(237,28,36,0.1)" : "rgba(255,255,255,0.03)",
-                                border: `2px solid ${cloneMode === "blank" ? "#ED1C24" : "rgba(255,255,255,0.1)"}`,
-                                borderRadius: "12px",
-                                textAlign: "left",
-                                cursor: "pointer",
-                                transition: "all 0.2s",
-                            }}
+                            aria-pressed={cloneMode === "blank"}
+                            className={`rounded-sheet border-2 p-5 text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                                cloneMode === "blank"
+                                    ? "border-accent bg-accent-subtle"
+                                    : "border-border bg-surface-0 hover:border-border-strong"
+                            }`}
                         >
-                            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                                <Globe size={24} color={cloneMode === "blank" ? "#ED1C24" : "#888"} />
-                                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Blank Site</span>
-                                {cloneMode === "blank" && <Check color="#ED1C24" size={18} />}
+                            <div className="mb-2 flex items-center gap-3">
+                                <Globe size={24} color={cloneMode === "blank" ? "var(--accent)" : "var(--text-3)"} aria-hidden="true" />
+                                <span className="font-semibold">Blank Site</span>
+                                {cloneMode === "blank" && (
+                                    <Check size={18} color="var(--accent)" aria-hidden="true" />
+                                )}
                             </div>
-                            <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
+                            <p className="text-[13px] text-text-3">
                                 Start fresh with default settings
                             </p>
                         </button>
@@ -314,54 +209,35 @@ export default function CreateSitePage() {
                             type="button"
                             onClick={() => setCloneMode("clone")}
                             disabled={existingSites.length === 0}
-                            style={{
-                                padding: "20px",
-                                backgroundColor: cloneMode === "clone" ? "rgba(237,28,36,0.1)" : "rgba(255,255,255,0.03)",
-                                border: `2px solid ${cloneMode === "clone" ? "#ED1C24" : "rgba(255,255,255,0.1)"}`,
-                                borderRadius: "12px",
-                                textAlign: "left",
-                                cursor: existingSites.length === 0 ? "not-allowed" : "pointer",
-                                opacity: existingSites.length === 0 ? 0.5 : 1,
-                                transition: "all 0.2s",
-                            }}
+                            aria-pressed={cloneMode === "clone"}
+                            className={`rounded-sheet border-2 p-5 text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 ${
+                                cloneMode === "clone"
+                                    ? "border-accent bg-accent-subtle"
+                                    : "border-border bg-surface-0 hover:border-border-strong"
+                            }`}
                         >
-                            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                                <Copy size={24} color={cloneMode === "clone" ? "#ED1C24" : "#888"} />
-                                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Clone Existing</span>
-                                {cloneMode === "clone" && <Check color="#ED1C24" size={18} />}
+                            <div className="mb-2 flex items-center gap-3">
+                                <Copy size={24} color={cloneMode === "clone" ? "var(--accent)" : "var(--text-3)"} aria-hidden="true" />
+                                <span className="font-semibold">Clone Existing</span>
+                                {cloneMode === "clone" && (
+                                    <Check size={18} color="var(--accent)" aria-hidden="true" />
+                                )}
                             </div>
-                            <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
-                                Copy settings & categories from another site
+                            <p className="text-[13px] text-text-3">
+                                Copy settings &amp; categories from another site
                             </p>
                         </button>
                     </div>
 
                     {/* Clone Source Selector */}
                     {cloneMode === "clone" && existingSites.length > 0 && (
-                        <div style={{ marginTop: "20px" }}>
-                            <label
-                                style={{
-                                    display: "block",
-                                    fontSize: "13px",
-                                    color: "var(--text-muted)",
-                                    marginBottom: "8px",
-                                }}
-                            >
-                                Clone From
-                            </label>
+                        <label className="mt-5 block">
+                            <span className="mb-1.5 block text-sm font-medium text-text-1">Clone From</span>
                             <select
                                 value={cloneFromSiteId}
                                 onChange={(e) => setCloneFromSiteId(e.target.value)}
                                 required={cloneMode === "clone"}
-                                style={{
-                                    width: "100%", boxSizing: "border-box",
-                                    padding: "12px 16px",
-                                    backgroundColor: "rgba(255,255,255,0.05)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: "8px",
-                                    color: "var(--text-primary)",
-                                    fontSize: "14px",
-                                }}
+                                className="h-11 w-full rounded-control border border-border bg-surface-1 px-3 text-sm text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                             >
                                 <option value="">Select a site...</option>
                                 {existingSites.map((site) => (
@@ -370,59 +246,28 @@ export default function CreateSitePage() {
                                     </option>
                                 ))}
                             </select>
-                        </div>
+                        </label>
                     )}
-                </div>
+                </section>
 
                 {/* Error */}
                 {error && (
                     <div
-                        style={{
-                            padding: "12px 16px",
-                            backgroundColor: "rgba(239,68,68,0.1)",
-                            border: "1px solid rgba(239,68,68,0.2)",
-                            borderRadius: "8px",
-                            color: "var(--color-error)",
-                            marginBottom: "24px",
-                        }}
+                        role="alert"
+                        className="rounded-control border border-danger/20 bg-danger-subtle px-4 py-3 text-sm text-danger"
                     >
                         {error}
                     </div>
                 )}
 
                 {/* Submit Button */}
-                <div style={{ display: "flex", gap: "16px" }}>
-                    <Link
-                        href="/admin/sites"
-                        style={{
-                            padding: "14px 28px",
-                            backgroundColor: "rgba(255,255,255,0.05)",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            borderRadius: "8px",
-                            color: "var(--text-primary)",
-                            textDecoration: "none",
-                            fontWeight: 600,
-                        }}
-                    >
+                <div className="flex gap-4">
+                    <Link href="/admin/sites" className={buttonClasses({ variant: "secondary" })}>
                         Cancel
                     </Link>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        style={{
-                            flex: 1,
-                            padding: "14px 28px",
-                            backgroundColor: "var(--brand-red)",
-                            border: "none",
-                            borderRadius: "8px",
-                            color: "var(--text-primary)",
-                            fontWeight: 600,
-                            cursor: isSubmitting ? "not-allowed" : "pointer",
-                            opacity: isSubmitting ? 0.7 : 1,
-                        }}
-                    >
+                    <Button type="submit" disabled={isSubmitting} className="flex-1">
                         {isSubmitting ? "Creating..." : "Create Site"}
-                    </button>
+                    </Button>
                 </div>
             </form>
         </div>

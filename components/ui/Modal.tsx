@@ -164,7 +164,7 @@ export default function Modal({
         <div
             className={`fixed inset-0 z-modal flex items-center justify-center overflow-y-auto p-4 ${
                 bare ? "bg-black/90" : "bg-black/60"
-            }`}
+            } animate-modal-fade`}
             onMouseDown={(event) => {
                 // mousedown, bukan click: klik yang DIMULAI di dalam panel lalu
                 // dilepas di backdrop (mis. seleksi teks) tidak ikut menutup.
@@ -183,8 +183,8 @@ export default function Modal({
                     // (agar tombol tutup absolut punya jangkar) dan reset outline.
                     // Bentuk panel sepenuhnya milik pemanggil via panelClassName.
                     bare
-                        ? `relative focus:outline-none ${panelClassName}`
-                        : `flex max-h-[calc(100vh-2rem)] w-full flex-col rounded-sheet border border-border bg-surface-1 text-text-1 shadow-lvl-3 focus:outline-none ${SIZES[size]} ${panelClassName}`
+                        ? `relative animate-modal-scale focus:outline-none ${panelClassName}`
+                        : `animate-modal-scale flex max-h-[calc(100vh-2rem)] w-full flex-col rounded-sheet border border-border bg-surface-1 text-text-1 shadow-lvl-3 focus:outline-none ${SIZES[size]} ${panelClassName}`
                 }
             >
                 {bare ? (

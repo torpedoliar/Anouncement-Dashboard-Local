@@ -94,7 +94,7 @@ export default async function SiteSearchPage({ params, searchParams }: PageProps
     };
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
+        <div style={{ minHeight: "100vh", backgroundColor: "var(--surface-0)", color: "var(--text-1)" }}>
             {/* Halaman search mendapat Navbar dari site layout (T2.2 menghapus
                 blok <nav> lokal yang tertimbun). */}
 
@@ -176,14 +176,18 @@ export default async function SiteSearchPage({ params, searchParams }: PageProps
                 )}
 
                 {announcements.length > 0 ? (
-                    <div style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
-                        gap: "24px",
-                    }}>
-                        {announcements.map((a) => (
+                    <div
+                        className="cine-stagger"
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
+                            gap: "24px",
+                        }}
+                    >
+                        {announcements.map((a, i) => (
                             <AnnouncementCard
                                 key={a.id}
+                                style={{ "--i": Math.min(i, 11) } as React.CSSProperties}
                                 id={a.id}
                                 title={a.title}
                                 excerpt={a.excerpt || undefined}

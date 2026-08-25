@@ -639,6 +639,29 @@ a {
   }
 }
 
+/* Modal masuk — scrim fade + panel scale-up (motion tokens, transform/opacity
+   saja supaya tidak memicu reflow). Kelas di-mount oleh ui/Modal.tsx. */
+@keyframes modalFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modalScale {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-modal-fade {
+  animation: modalFade var(--motion-fast) var(--motion-ease) both;
+}
+.animate-modal-scale {
+  animation: modalScale var(--motion-standard) var(--motion-ease) both;
+}
+
 /* Accessibility - Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -648,6 +671,17 @@ a {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Motion sinematik (cine-*): konten harus langsung tampak penuh, bukan
+     sekadar "animasi super cepat" — scroll-driven timeline tetap bisa
+     meninggalkan elemen setengah-transparan di beberapa engine. */
+  .cine-stagger > *,
+  [data-cine] {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    animation: none !important;
   }
 }
 /* Category Tab Hover */
@@ -678,4 +712,70 @@ a {
 @keyframes marquee-scroll {
   from { transform: translateX(0); }
   to   { transform: translateX(-33.333%); }
+}
+
+/* ==========================================================================
+   Motion sinematik (Varian C) — entrance & scroll-reveal, CSS murni.
+   --------------------------------------------------------------------------
+   Pola:
+   - .cine-rise      : entrance sekali saat load (fade + naik + un-blur ringan).
+   - .cine-stagger   : pembungkus grid/feed; anak langsung diberi delay berurutan
+                       via --i (indeks) yang disuntik inline style.
+   - [data-cine]     : scroll-reveal bawah-fold. Primer: CSS scroll-driven
+                       (animation-timeline: view()) — tanpa JS. Fallback browser
+                       lama: IntersectionObserver kecil (lihat CineReveal.tsx)
+                       menambahkan class .in; @supports memastikan tidak dobel.
+   Semua hanya transform/opacity/filter (tanpa properti layout), dan seluruh
+   blok ini mati total di prefers-reduced-motion lewat rule global bawah file.
+   ========================================================================== */
+
+@keyframes cine-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.985);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+/* Garis aksen pembuka hero editorial: tumbuh dari kiri. */
+@keyframes cine-grow-line {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes cine-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.cine-stagger > * {
+  opacity: 0;
+  animation: cine-rise var(--motion-slow, 500ms) var(--motion-ease) forwards;
+  animation-delay: calc(var(--stagger-base, 280ms) + var(--i, 0) * 70ms);
+}
+
+/* Scroll-reveal: primer CSS scroll-driven. animation-range entry 0-50% berarti
+   elemen mulai tampak saat 50% pertamanya masuk viewport. */
+@supports (animation-timeline: view()) {
+  [data-cine] {
+    opacity: 0;
+    animation: cine-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 50%;
+  }
+}
+
+/* Fallback tanpa scroll-driven animations: IO menandai .in, animasi jalan. */
+@supports not (animation-timeline: view()) {
+  [data-cine] {
+    opacity: 0;
+  }
+  [data-cine].in {
+    animation: cine-rise var(--motion-slow, 500ms) var(--motion-ease) forwards;
+  }
 }

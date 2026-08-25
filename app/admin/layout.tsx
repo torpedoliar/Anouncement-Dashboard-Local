@@ -13,11 +13,14 @@ import CommandPalette from "@/components/admin/CommandPalette";
  * Script pra-paint: menyalin preferensi tersimpan ke atribut <html> SEBELUM
  * browser melakukan paint pertama.
  *
- * Kenapa perlu: rail sidebar dan tema terang dulu diterapkan di `useEffect`,
- * jadi pengguna yang menyimpan "rail" atau "terang" selalu melihat satu frame
- * tampilan penuh/gelap dulu, lalu melompat. Atribut yang ditulis di sini
- * langsung dibaca CSS (`html[data-admin-sidebar="rail"]`, `html.theme-light`),
- * sehingga geometri dan warna sudah benar sejak frame pertama.
+ * Kenapa perlu: rail sidebar dulu diterapkan di `useEffect`, jadi pengguna
+ * yang menyimpan "rail" selalu melihat satu frame tampilan penuh dulu, lalu
+ * melompat. Atribut yang ditulis di sini langsung dibaca CSS
+ * (`html[data-admin-sidebar="rail"]`), sehingga geometri sudah benar sejak
+ * frame pertama.
+ *
+ * Tema terang TIDAK diatur di sini lagi — itu sekarang tugas script pra-paint
+ * global di app/layout.tsx (kunci "theme", fallback prefers-color-scheme).
  */
 const PREPAINT_SCRIPT = `
 (function () {
@@ -25,9 +28,6 @@ const PREPAINT_SCRIPT = `
     var root = document.documentElement;
     root.dataset.adminSidebar =
       localStorage.getItem('adminSidebarCollapsed') === '1' ? 'rail' : 'full';
-    if (localStorage.getItem('adminTheme') === 'light') {
-      root.classList.add('theme-light');
-    }
   } catch (e) {
     document.documentElement.dataset.adminSidebar = 'full';
   }
