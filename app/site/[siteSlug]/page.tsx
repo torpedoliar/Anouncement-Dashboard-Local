@@ -140,7 +140,7 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
     };
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
+        <div style={{ minHeight: "100vh", backgroundColor: "var(--surface-0)", color: "var(--text-1)" }}>
             {/* Navbar removed - handled by layout */}
 
             {/* Fullscreen Hero Section */}
@@ -168,10 +168,38 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
                         background: `linear-gradient(180deg, ${site.primaryColor}20 0%, transparent 100%)`,
                     }}
                 >
-                    <h1 style={{ fontSize: "42px", fontWeight: 800, marginBottom: "12px" }}>
+                    {/* Garis aksen tumbuh + judul naik — pembuka editorial (Varian C) */}
+                    <div
+                        aria-hidden="true"
+                        style={{
+                            width: "56px",
+                            height: "3px",
+                            backgroundColor: site.primaryColor,
+                            margin: "0 auto 16px",
+                            transformOrigin: "left center",
+                            transform: "scaleX(0)",
+                            animation: "cine-grow-line 500ms var(--motion-ease) 100ms forwards",
+                        }}
+                    />
+                    <h1
+                        style={{
+                            fontSize: "42px",
+                            fontWeight: 800,
+                            marginBottom: "12px",
+                            animation: "cine-rise 550ms var(--motion-ease) 200ms both",
+                        }}
+                    >
                         {settings?.heroTitle || "Berita & Pengumuman"}
                     </h1>
-                    <p style={{ fontSize: "18px", color: "#888", maxWidth: "600px", margin: "0 auto" }}>
+                    <p
+                        style={{
+                            fontSize: "18px",
+                            color: "#888",
+                            maxWidth: "600px",
+                            margin: "0 auto",
+                            animation: "cine-fade-in var(--motion-standard) var(--motion-ease) 420ms both",
+                        }}
+                    >
                         {settings?.heroSubtitle || "Informasi terbaru dari " + site.name}
                     </p>
                 </div>
@@ -230,18 +258,20 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
                             </div>
                         )}
 
-                        {/* Grid kronologis murni */}
+                        {/* Grid kronologis murni — stagger entrance (Varian C) */}
                         {chronologicalFeed.length > 0 && (
                             <div
+                                className="cine-stagger"
                                 style={{
                                     display: "grid",
                                     gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
                                     gap: "24px",
                                 }}
                             >
-                                {chronologicalFeed.map((announcement) => (
+                                {chronologicalFeed.map((announcement, i) => (
                                     <AnnouncementCard
                                         key={announcement.id}
+                                        style={{ "--i": Math.min(i, 11) } as React.CSSProperties}
                                         id={announcement.id}
                                         title={announcement.title}
                                         excerpt={announcement.excerpt || undefined}

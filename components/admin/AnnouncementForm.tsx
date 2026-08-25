@@ -316,41 +316,26 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             {/* Error banner */}
             {error && (
-                <div
-                    className="rounded-card p-4 text-sm"
-                    style={{ background: "var(--color-danger-subtle)", border: "1px solid var(--color-danger)" }}
-                >
+                <div className="rounded-card border border-danger bg-danger-subtle p-4 text-sm">
                     {error}
                 </div>
             )}
 
             {/* Unsaved draft restore banner */}
             {pendingDraft && (
-                <div
-                    className="flex items-center justify-between gap-4 rounded-card p-3.5 text-sm"
-                    style={{
-                        background: "var(--color-warning-subtle)",
-                        border: "1px solid rgba(234,179,8,0.4)",
-                        color: "var(--color-warning)",
-                        flexWrap: "wrap",
-                    }}
-                >
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-warning/40 bg-warning-subtle p-3.5 text-sm text-warning">
                     <span>
                         Ditemukan draft otomatis yang belum disimpan
                         {pendingDraft.updatedAt && ` (${new Date(pendingDraft.updatedAt).toLocaleString("id-ID")})`}.
                     </span>
                     <span className="flex gap-2 shrink-0">
+                        {/* Tombol pulihkan: teks gelap di atas kuning warning —
+                            kuning #EAB308 dengan teks putih hanya 1.9:1, gelap yang lolos. */}
                         <button type="button" onClick={restoreDraft}
-                            className="rounded-control px-3 py-1.5 text-xs font-semibold cursor-pointer"
-                            style={{ background: "var(--color-warning)", color: "var(--surface-0)" }}
+                            className="rounded-control bg-warning px-3 py-1.5 text-xs font-semibold text-stone-900 cursor-pointer hover:opacity-90"
                         >Pulihkan</button>
                         <button type="button" onClick={discardDraft}
-                            className="rounded-control border px-3 py-1.5 text-xs cursor-pointer"
-                            style={{
-                                background: "transparent",
-                                color: "var(--color-warning)",
-                                borderColor: "rgba(234,179,8,0.4)",
-                            }}
+                            className="rounded-control border border-warning/40 bg-transparent px-3 py-1.5 text-xs text-warning cursor-pointer"
                         >Abaikan</button>
                     </span>
                 </div>
@@ -358,7 +343,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
 
             {/* Autosave indicator */}
             {isEditing && draftStatus !== "idle" && (
-                <p className="text-xs" style={{ color: "var(--text-3)" }}>
+                <p className="text-xs text-text-3">
                     {draftStatus === "saving"
                         ? "Menyimpan draft..."
                         : draftSavedAt
@@ -368,27 +353,19 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
             )}
 
             {/* ── Publish status bar (top) ── */}
-            <div
-                className="flex flex-wrap items-center gap-3 rounded-card p-4"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
-            >
-                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-3)" }}>
+            <div className="flex flex-wrap items-center gap-3 rounded-card border border-border bg-surface-2 p-4">
+                <span className="text-xs font-semibold uppercase tracking-wide text-text-3">
                     Status
                 </span>
+                {/* Pil status: tone token mengikuti status turunan (sukses/warning/info). */}
                 <span
-                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-                    style={{
-                        background: status === "published"
-                            ? "var(--color-success-subtle)"
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        status === "published"
+                            ? "bg-success-subtle text-success"
                             : status === "scheduled"
-                                ? "var(--color-warning-subtle)"
-                                : "var(--color-info-subtle)",
-                        color: status === "published"
-                            ? "var(--color-success)"
-                            : status === "scheduled"
-                                ? "var(--color-warning)"
-                                : "var(--color-info)",
-                    }}
+                                ? "bg-warning-subtle text-warning"
+                                : "bg-info-subtle text-info"
+                    }`}
                 >
                     <Check size={12} weight="bold" />
                     {statusLabel[status]}
@@ -399,14 +376,14 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         type="checkbox"
                         checked={isPublished}
                         onChange={(e) => setIsPublished(e.target.checked)}
-                        className="size-4 accent-[var(--brand-red)]"
+                        className="size-4 accent-accent"
                     />
                     <Eye size={16} weight="fill" className="text-success" />
-                    <span className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Publish</span>
+                    <span className="text-sm font-medium text-text-2">Publish</span>
                 </label>
 
                 <div className="flex items-center gap-2">
-                    <label htmlFor="scheduledAt" className="text-xs" style={{ color: "var(--text-3)" }}>
+                    <label htmlFor="scheduledAt" className="text-xs text-text-3">
                         <Clock size={12} weight="fill" className="inline mr-1 text-success" />
                         Terjadwal
                     </label>
@@ -415,13 +392,12 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         type="datetime-local"
                         value={scheduledAt}
                         onChange={(e) => setScheduledAt(e.target.value)}
-                        className="rounded-control border px-2 py-1 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
-                        style={{ background: "var(--surface-0)", borderColor: "var(--border)", color: "var(--text-1)" }}
+                        className="rounded-control border border-border bg-surface-0 px-2 py-1 text-sm text-text-1 outline-none transition-colors duration-150 focus:border-accent"
                     />
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <label htmlFor="takedownAt" className="text-xs" style={{ color: "var(--text-3)" }}>
+                    <label htmlFor="takedownAt" className="text-xs text-text-3">
                         <Clock size={12} weight="fill" className="inline mr-1 text-danger" />
                         Takedown
                     </label>
@@ -430,13 +406,12 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         type="datetime-local"
                         value={takedownAt}
                         onChange={(e) => setTakedownAt(e.target.value)}
-                        className="rounded-control border px-2 py-1 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
-                        style={{ background: "var(--surface-0)", borderColor: "var(--border)", color: "var(--text-1)" }}
+                        className="rounded-control border border-border bg-surface-0 px-2 py-1 text-sm text-text-1 outline-none transition-colors duration-150 focus:border-accent"
                     />
                 </div>
 
                 {siteAssocs.length > 0 && (
-                    <span className="ml-auto text-xs" style={{ color: "var(--text-3)" }}>
+                    <span className="ml-auto text-xs text-text-3">
                         <Star size={11} weight="fill" className="inline mr-1 text-warning" />
                         {siteAssocs.some(s => s.isPrimary) && "Primary"} · {siteAssocs.filter(s => s.isHero).length} hero · {siteAssocs.filter(s => s.isPinned).length} pin · {siteAssocs.length} site
                     </span>
@@ -449,7 +424,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                 <div className="flex flex-col gap-5">
                     {/* Title */}
                     <div>
-                        <label htmlFor="title" className="block text-sm font-medium mb-2" style={{ color: "var(--text-2)" }}>
+                        <label htmlFor="title" className="block text-sm font-medium mb-2 text-text-2">
                             Judul Pengumuman *
                         </label>
                         <input
@@ -459,63 +434,50 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Masukkan judul pengumuman"
                             required
-                            className="w-full rounded-control border px-4 py-3 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
-                            style={{
-                                background: "var(--surface-0)",
-                                borderColor: "var(--border)",
-                                color: "var(--text-1)",
-                            }}
+                            className="w-full rounded-control border border-border bg-surface-0 px-4 py-3 text-sm text-text-1 outline-none transition-colors duration-150 focus:border-accent"
                         />
                     </div>
 
                     {/* Content */}
                     <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-2)" }}>
+                        <label className="block text-sm font-medium mb-2 text-text-2">
                             Konten *
                         </label>
                         <RichTextEditor content={content} onChange={setContent} placeholder="Tulis konten pengumuman..." />
                         {/* Word count / reading time */}
                         {content.trim() && (
-                            <p className="mt-1.5 mono text-xs" style={{ color: "var(--text-3)" }}>
+                            <p className="mt-1.5 mono text-xs text-text-3">
                                 {wordCount} kata · {readingTime} min baca
                             </p>
                         )}
                     </div>
 
                     {/* Options (allow comments) */}
-                    <div
-                        className="flex items-center gap-3 rounded-card p-4"
-                        style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
-                    >
+                    <div className="flex items-center gap-3 rounded-card border border-border bg-surface-2 p-4">
                         <label htmlFor="allowComments" className="flex items-center gap-2.5 cursor-pointer">
                             <input
                                 id="allowComments"
                                 type="checkbox"
                                 checked={allowComments}
                                 onChange={(e) => setAllowComments(e.target.checked)}
-                                className="size-4 accent-[var(--brand-red)]"
+                                className="size-4 accent-accent"
                             />
                             <ChatCenteredText size={16} weight="fill" className="text-info" />
-                            <span className="text-sm font-medium" style={{ color: "var(--text-2)" }}>Izinkan Komentar</span>
+                            <span className="text-sm font-medium text-text-2">Izinkan Komentar</span>
                         </label>
                     </div>
 
                     {/* Category + Site Syndication */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="rounded-card p-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-                            <label htmlFor="categoryId" className="block text-sm font-medium mb-2" style={{ color: "var(--text-2)" }}>
+                        <div className="rounded-card border border-border bg-surface-2 p-4">
+                            <label htmlFor="categoryId" className="block text-sm font-medium mb-2 text-text-2">
                                 Kategori
                             </label>
                             <select
                                 id="categoryId"
                                 value={categoryId}
                                 onChange={(e) => setCategoryId(e.target.value)}
-                                className="w-full rounded-control border px-3 py-2 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
-                                style={{
-                                    background: "var(--surface-0)",
-                                    borderColor: "var(--border)",
-                                    color: "var(--text-1)",
-                                }}
+                                className="w-full rounded-control border border-border bg-surface-0 px-3 py-2 text-sm text-text-1 outline-none transition-colors duration-150 focus:border-accent"
                             >
                                 {categories.map((cat) => (
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -523,7 +485,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                             </select>
                         </div>
 
-                        <div className="rounded-card p-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                        <div className="rounded-card border border-border bg-surface-2 p-4">
                             <SiteSyndicationPicker
                                 value={siteAssocs}
                                 defaultSiteId={defaultSiteId}
@@ -533,8 +495,8 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                     </div>
 
                     {/* Media cover */}
-                    <div className="rounded-card p-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
-                        <label className="block text-sm font-medium mb-3" style={{ color: "var(--text-2)" }}>
+                    <div className="rounded-card border border-border bg-surface-2 p-4">
+                        <label className="block text-sm font-medium mb-3 text-text-2">
                             Media Cover
                         </label>
 
@@ -550,11 +512,9 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                     type="button"
                                     onClick={() => setMediaType(type)}
                                     aria-pressed={mediaType === type}
-                                    className="flex-1 flex items-center justify-center gap-1.5 rounded-control py-2 px-2 text-xs font-semibold transition-colors duration-150 cursor-pointer"
-                                    style={{
-                                        background: mediaType === type ? "var(--brand-red)" : "var(--surface-3)",
-                                        color: mediaType === type ? "var(--text-1)" : "var(--text-3)",
-                                    }}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 rounded-control py-2 px-2 text-xs font-semibold transition-colors duration-150 cursor-pointer ${
+                                        mediaType === type ? "bg-accent text-white" : "bg-surface-3 text-text-3"
+                                    }`}
                                 >
                                     <Icon size={14} /> {label}
                                 </button>
@@ -570,11 +530,11 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                         alt="Preview"
                                         className="w-full h-32 object-cover rounded-card"
                                     />
+                                    {/* Tombol hapus di atas media: scrim hitam konstan (bukan permukaan tema) supaya terbaca di atas gambar apa pun. */}
                                     <button
                                         type="button"
                                         onClick={() => setImagePath("")}
-                                        className="absolute top-2 right-2 size-6 rounded-full flex items-center justify-center cursor-pointer"
-                                        style={{ background: "rgba(0,0,0,0.8)", color: "var(--text-1)" }}
+                                        className="absolute top-2 right-2 size-6 rounded-full flex items-center justify-center cursor-pointer bg-black/80 text-white"
                                         aria-label="Hapus gambar"
                                     >
                                         <X size={14} weight="bold" />
@@ -583,13 +543,12 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                             ) : (
                                 <div className="flex flex-col gap-2">
                                     <label
-                                        className="flex flex-col items-center justify-center h-28 border-2 border-dashed cursor-pointer rounded-card transition-colors duration-150 hover:border-[var(--text-3)]"
-                                        style={{ borderColor: "var(--border-strong)" }}
+                                        className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-border-strong cursor-pointer rounded-card transition-colors duration-150 hover:border-text-3"
                                         role="button"
                                         aria-label="Upload gambar"
                                     >
-                                        <UploadSimple size={24} className="mb-1" style={{ color: "var(--text-3)" }} />
-                                        <span className="text-xs" style={{ color: "var(--text-3)" }}>
+                                        <UploadSimple size={24} className="mb-1 text-text-3" />
+                                        <span className="text-xs text-text-3">
                                             {imageUploading ? "Uploading..." : "Upload gambar"}
                                         </span>
                                         <input
@@ -603,12 +562,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                     <button
                                         type="button"
                                         onClick={() => setShowMediaPicker(true)}
-                                        className="flex items-center justify-center gap-1.5 rounded-control border py-2 px-3 text-xs cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-3)]"
-                                        style={{
-                                            background: "var(--surface-3)",
-                                            borderColor: "var(--border-strong)",
-                                            color: "var(--text-2)",
-                                        }}
+                                        className="flex items-center justify-center gap-1.5 rounded-control border border-border-strong bg-surface-3 py-2 px-3 text-xs text-text-2 cursor-pointer"
                                     >
                                         <FolderOpen size={14} /> Media Library
                                     </button>
@@ -624,14 +578,13 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                         src={videoPath}
                                         className="w-full h-32 object-cover rounded-card"
                                     />
-                                    <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
-                                        <Play size={32} weight="fill" color="#fff" />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                        <Play size={32} weight="fill" className="text-white" />
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setVideoPath("")}
-                                        className="absolute top-2 right-2 size-6 rounded-full flex items-center justify-center cursor-pointer"
-                                        style={{ background: "rgba(0,0,0,0.8)", color: "var(--text-1)" }}
+                                        className="absolute top-2 right-2 size-6 rounded-full flex items-center justify-center cursor-pointer bg-black/80 text-white"
                                         aria-label="Hapus video"
                                     >
                                         <X size={14} weight="bold" />
@@ -640,16 +593,15 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                             ) : (
                                 <div className="flex flex-col gap-2">
                                     <label
-                                        className="flex flex-col items-center justify-center h-32 border-2 border-dashed cursor-pointer rounded-card transition-colors duration-150 hover:border-[var(--text-3)]"
-                                        style={{ borderColor: "var(--border-strong)" }}
+                                        className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border-strong cursor-pointer rounded-card transition-colors duration-150 hover:border-text-3"
                                         role="button"
                                         aria-label="Upload video MP4, maksimal 100MB"
                                     >
-                                        <VideoCamera size={32} className="mb-2" style={{ color: "var(--text-3)" }} />
-                                        <span className="text-sm" style={{ color: "var(--text-3)" }}>
+                                        <VideoCamera size={32} className="mb-2 text-text-3" />
+                                        <span className="text-sm text-text-3">
                                             {videoUploading ? "Uploading video..." : "Klik untuk upload video"}
                                         </span>
-                                        <span className="text-xs mt-1" style={{ color: "var(--text-3)" }}>
+                                        <span className="text-xs mt-1 text-text-3">
                                             MP4, max 100MB
                                         </span>
                                         <input
@@ -663,12 +615,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                     <button
                                         type="button"
                                         onClick={() => setShowMediaPicker(true)}
-                                        className="flex items-center justify-center gap-1.5 rounded-control border py-2 px-3 text-xs cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-3)]"
-                                        style={{
-                                            background: "var(--surface-3)",
-                                            borderColor: "var(--border-strong)",
-                                            color: "var(--text-2)",
-                                        }}
+                                        className="flex items-center justify-center gap-1.5 rounded-control border border-border-strong bg-surface-3 py-2 px-3 text-xs text-text-2 cursor-pointer"
                                     >
                                         <FolderOpen size={14} /> Media Library
                                     </button>
@@ -684,20 +631,14 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                     placeholder="https://youtube.com/watch?v=..."
                                     value={youtubeUrl}
                                     onChange={(e) => setYoutubeUrl(e.target.value)}
-                                    className="w-full rounded-control border px-4 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
-                                    style={{
-                                        background: "var(--surface-0)",
-                                        borderColor: "var(--border)",
-                                        color: "var(--text-1)",
-                                        marginBottom: "8px",
-                                    }}
+                                    className="w-full mb-2 rounded-control border border-border bg-surface-0 px-4 py-2.5 text-sm text-text-1 outline-none transition-colors duration-150 focus:border-accent"
                                 />
+                                {/* Wrapper 16:9 memakai aspect-video, pengganti hack paddingBottom:56.25% */}
                                 {youtubeVideoId && (
-                                    <div className="relative" style={{ paddingBottom: "56.25%", height: 0, overflow: "hidden", borderRadius: "6px" }}>
+                                    <div className="relative aspect-video overflow-hidden rounded-control">
                                         <iframe
                                             src={`https://www.youtube.com/embed/${youtubeVideoId}`}
-                                            className="absolute inset-0 size-full"
-                                            style={{ border: 0 }}
+                                            className="absolute inset-0 size-full border-0"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                             allowFullScreen
                                             title="YouTube embed"
@@ -705,7 +646,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                     </div>
                                 )}
                                 {!youtubeVideoId && youtubeUrl && (
-                                    <p className="text-xs mt-1" style={{ color: "var(--color-danger)" }}>
+                                    <p className="text-xs mt-1 text-danger">
                                         URL YouTube tidak valid
                                     </p>
                                 )}
@@ -714,16 +655,15 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex items-center gap-4 pt-2 border-t" style={{ borderColor: "var(--surface-2)" }}>
+                    <div className="flex items-center gap-4 pt-2 border-t border-surface-2">
+                        {/* Tombol simpan: warna teks mengikuti token --text-1 persis perilaku versi inline sebelumnya. */}
+                        {/* Tombol simpan: selaras konvensi ui/Button primary —
+                            bg-santos-red-dark + teks putih (putih di #ED1C24 hanya
+                            4.38:1, gagal AA; di #C41920 ≈6.0:1). */}
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="inline-flex items-center gap-2 rounded-control px-6 py-3 text-sm font-semibold cursor-pointer transition-opacity duration-150"
-                            style={{
-                                background: "var(--brand-red)",
-                                color: "var(--text-1)",
-                                opacity: isLoading ? 0.5 : 1,
-                            }}
+                            className="inline-flex items-center gap-2 rounded-control px-6 py-3 text-sm font-semibold cursor-pointer transition-opacity duration-150 bg-santos-red-dark text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <UploadSimple size={16} weight="bold" />
                             {isLoading ? "Menyimpan..." : isEditing ? "Perbarui" : "Simpan"}
@@ -731,12 +671,7 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         <button
                             type="button"
                             onClick={() => router.back()}
-                            className="rounded-control border px-6 py-3 text-sm font-semibold cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-3)]"
-                            style={{
-                                background: "transparent",
-                                color: "var(--text-3)",
-                                borderColor: "var(--border-strong)",
-                            }}
+                            className="rounded-control border border-border-strong bg-transparent px-6 py-3 text-sm font-semibold text-text-3 cursor-pointer transition-colors duration-150"
                         >
                             Batal
                         </button>

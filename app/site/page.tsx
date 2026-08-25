@@ -44,17 +44,18 @@ export default async function SitePickerPage() {
         <div
             style={{
                 minHeight: "100vh",
-                backgroundColor: "#0a0a0a",
-                color: "#fff",
+                backgroundColor: "var(--surface-0)",
+                color: "var(--text-1)",
             }}
         >
             {/* Masthead Kapal Api — versi kalem (revisi): merah tidak lagi flat
-                menyala; tinggi dipangkas dan diberi napas sebelum grid. */}
+                menyala; tinggi dipangkas dan diberi napas sebelum grid.
+                Teks putih fixed-light: selalu di atas gradient merah brand. */}
             <div
                 style={{
                     padding: "36px 24px 32px",
                     textAlign: "center",
-                    background: "linear-gradient(135deg, var(--brand-red-dark, #C41920) 0%, var(--brand-red) 55%, #D52027 100%)",
+                    background: "linear-gradient(135deg, var(--brand-red-dark) 0%, var(--brand-red) 55%, var(--brand-red-light) 100%)",
                     borderBottom: "1px solid rgba(0,0,0,0.12)",
                 }}
             >
@@ -119,14 +120,17 @@ export default async function SitePickerPage() {
             >
                 {sites.length > 0 ? (
                     <div
+                        className="cine-stagger"
                         style={{
                             display: "grid",
                             gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
                             gap: "24px",
                         }}
                     >
-                        {sites.map((site) => (
-                            <SitePickerCard key={site.id} site={site} />
+                        {sites.map((site, i) => (
+                            <div key={site.id} style={{ "--i": i } as React.CSSProperties}>
+                                <SitePickerCard site={site} />
+                            </div>
                         ))}
                     </div>
                 ) : (
@@ -152,10 +156,10 @@ export default async function SitePickerPage() {
             {/* Footer */}
             <div
                 style={{
-                    borderTop: "1px solid rgba(255,255,255,0.1)",
+                    borderTop: "1px solid var(--border)",
                     padding: "24px",
                     textAlign: "center",
-                    color: "#666",
+                    color: "var(--text-3)",
                     fontSize: "13px",
                 }}
             >

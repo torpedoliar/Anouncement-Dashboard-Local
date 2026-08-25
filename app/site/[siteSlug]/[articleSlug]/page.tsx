@@ -91,7 +91,7 @@ export default async function ArticlePage({ params }: PageProps) {
     const { site, announcement, relatedArticles, canonicalUrl } = data;
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "#0a0a0a", color: "#fff" }}>
+        <div style={{ minHeight: "100vh", backgroundColor: "var(--surface-0)", color: "var(--text-1)" }}>
             {/* Canonical link for syndicated content */}
             {canonicalUrl && (
                 <link rel="canonical" href={canonicalUrl} />
@@ -131,10 +131,10 @@ export default async function ArticlePage({ params }: PageProps) {
                         style={{
                             marginTop: "48px",
                             padding: "16px 20px",
-                            backgroundColor: "rgba(255,255,255,0.05)",
+                            backgroundColor: "var(--surface-1)",
                             borderRadius: "8px",
                             fontSize: "13px",
-                            color: "#888",
+                            color: "var(--text-3)",
                         }}
                     >
                         Artikel ini juga tersedia di:{" "}
@@ -164,29 +164,32 @@ export default async function ArticlePage({ params }: PageProps) {
                 </div>
             )}
 
-            {/* Related Articles */}
+            {/* Related Articles — scroll-reveal saat masuk viewport */}
             {relatedArticles.length > 0 && (
                 <div
+                    data-cine
                     style={{
                         maxWidth: "1200px",
                         margin: "0 auto",
                         padding: "48px 24px 80px",
-                        borderTop: "1px solid rgba(255,255,255,0.1)",
+                        borderTop: "1px solid var(--border)",
                     }}
                 >
                     <h2 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}>
                         Artikel Terkait
                     </h2>
                     <div
+                        className="cine-stagger"
                         style={{
                             display: "grid",
                             gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
                             gap: "20px",
                         }}
                     >
-                        {relatedArticles.map((article) => (
+                        {relatedArticles.map((article, i) => (
                             <AnnouncementCard
                                 key={article.id}
+                                style={{ "--i": Math.min(i, 11) } as React.CSSProperties}
                                 id={article.id}
                                 title={article.title}
                                 excerpt={article.excerpt || undefined}
@@ -208,7 +211,7 @@ export default async function ArticlePage({ params }: PageProps) {
             {/* Footer */}
             <div
                 style={{
-                    borderTop: "1px solid rgba(255,255,255,0.1)",
+                    borderTop: "1px solid var(--border)",
                     padding: "24px",
                     textAlign: "center",
                     color: "#666",

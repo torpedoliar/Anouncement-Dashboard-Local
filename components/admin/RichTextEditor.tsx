@@ -24,6 +24,15 @@ interface RichTextEditorProps {
     placeholder?: string;
 }
 
+/** Pemisah vertikal antar-grup tombol toolbar. */
+function Divider({ h = 20 }: { h?: number }) {
+    return <div aria-hidden="true" className="mx-1 w-px shrink-0 bg-border" style={{ height: `${h}px` }} />;
+}
+
+function VDivider() {
+    return <Divider h={18} />;
+}
+
 // Custom Image extension with alignment and size support
 const CustomImage = Image.extend({
     addAttributes() {
@@ -189,7 +198,7 @@ export default function RichTextEditor({
             Link.configure({
                 openOnClick: false,
                 HTMLAttributes: {
-                    style: "color: #dc2626; text-decoration: underline;",
+                    style: "color: var(--accent); text-decoration: underline;",
                 },
             }),
             Underline,
@@ -236,7 +245,7 @@ export default function RichTextEditor({
                 style: `
                     min-height: 300px;
                     padding: 16px;
-                    color: #fff;
+                    color: var(--text-1);
                     font-size: 15px;
                     line-height: 1.7;
                 `,
@@ -502,139 +511,104 @@ export default function RichTextEditor({
 
     if (!editor) {
         return (
-            <div
-                className="flex h-[300px] items-center justify-center text-sm"
-                style={{
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                }}
-            >
-                <span style={{ color: "var(--text-3)" }}>Loading editor...</span>
+            <div className="flex h-[300px] items-center justify-center rounded-card border border-border bg-surface-2 text-sm">
+                <span className="text-text-3">Loading editor...</span>
             </div>
         );
     }
 
-    // Toolbar button style
-    const toolbarBtn = (isActive: boolean = false) => ({
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '6px 8px',
-        border: 'none', borderRadius: '4px',
-        cursor: 'pointer',
-        transition: 'all 0.15s ease',
-        background: isActive ? 'var(--brand-red)' : 'transparent',
-        color: isActive ? '#fff' : 'var(--text-2)',
-    });
+    // Tombol toolbar — kelas token, state aktif = accent bg + teks putih.
+    // (Putih di atas --accent merah brand dipakai hanya untuk ikon 16px, bukan
+    // body text, jadi tidak tunduk pada batas AA 14px.)
+    const toolbarBtn = (isActive: boolean = false) =>
+        `flex cursor-pointer items-center justify-center rounded px-2 py-1.5 transition-colors duration-150 hover:bg-surface-3 ${
+            isActive ? "bg-accent text-white" : "bg-transparent text-text-2"
+        }`;
 
-    // Media action button style
-    const mediaBtn = (isActive: boolean = false) => ({
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
-        padding: '4px 8px',
-        border: 'none', borderRadius: '4px',
-        cursor: 'pointer', fontSize: '12px',
-        background: isActive ? 'var(--brand-red)' : 'var(--surface-3)',
-        color: '#fff',
-    });
-
-    // PDF dropdown menu item style
-    const pdfMenuItem = {
-        display: 'flex', alignItems: 'center', gap: '8px',
-        width: '100%', padding: '8px 10px',
-        border: 'none', borderRadius: '6px', background: 'transparent',
-        color: 'var(--text-1)', fontSize: '12.5px', cursor: 'pointer',
-        transition: 'background 0.15s ease',
-    };
+    // Tombol aksi media (resize/align/hapus) — state aktif = accent bg.
+    const mediaBtn = (isActive: boolean = false) =>
+        `flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-xs transition-colors duration-150 ${
+            isActive ? "bg-accent text-white" : "bg-surface-3 text-text-2 hover:text-text-1"
+        }`;
 
     return (
-        <div
-            className="flex flex-col"
-            style={{
-                background: "var(--surface-1)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-card)",
-                maxHeight: '80vh',
-            }}
-        >
+        <div className="flex max-h-[80vh] flex-col rounded-card border border-border bg-surface-1">
             {/* ── Toolbar (sticky) ── */}
-            <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 px-3 py-2 border-b"
-                style={{
-                    borderBottomColor: "var(--border)",
-                    background: "var(--surface-2)",
-                }}
-            >
+            <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 border-b border-border bg-surface-2 px-3 py-2">
                 {/* Headings */}
                 <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                    style={toolbarBtn(editor.isActive("heading", { level: 1 }))} title="Heading 1"
+                    className={toolbarBtn(editor.isActive("heading", { level: 1 }))} title="Heading 1"
                 >
                     <TextHOne size={16} />
                 </button>
                 <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                    style={toolbarBtn(editor.isActive("heading", { level: 2 }))} title="Heading 2"
+                    className={toolbarBtn(editor.isActive("heading", { level: 2 }))} title="Heading 2"
                 >
                     <TextHTwo size={16} />
                 </button>
                 <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                    style={toolbarBtn(editor.isActive("heading", { level: 3 }))} title="Heading 3"
+                    className={toolbarBtn(editor.isActive("heading", { level: 3 }))} title="Heading 3"
                 >
                     <TextHThree size={16} />
                 </button>
 
-                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
+                <Divider />
 
                 {/* Formatting */}
                 <button type="button" onClick={() => editor.chain().focus().toggleBold().run()}
-                    style={toolbarBtn(editor.isActive("bold"))} title="Bold (Ctrl+B)"
+                    className={toolbarBtn(editor.isActive("bold"))} title="Bold (Ctrl+B)"
                 >
                     <TextB size={16} weight="bold" />
                 </button>
                 <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()}
-                    style={toolbarBtn(editor.isActive("italic"))} title="Italic (Ctrl+I)"
+                    className={toolbarBtn(editor.isActive("italic"))} title="Italic (Ctrl+I)"
                 >
                     <TextB size={16} style={{ fontStyle: 'italic' }} />
                 </button>
                 <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()}
-                    style={toolbarBtn(editor.isActive("underline"))} title="Underline (Ctrl+U)"
+                    className={toolbarBtn(editor.isActive("underline"))} title="Underline (Ctrl+U)"
                 >
                     <TextAUnderline size={16} />
                 </button>
 
-                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
+                <Divider />
 
                 {/* Lists */}
                 <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()}
-                    style={toolbarBtn(editor.isActive("bulletList"))} title="Bullet List"
+                    className={toolbarBtn(editor.isActive("bulletList"))} title="Bullet List"
                 >
                     <ListBullets size={16} />
                 </button>
                 <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                    style={toolbarBtn(editor.isActive("orderedList"))} title="Numbered List"
+                    className={toolbarBtn(editor.isActive("orderedList"))} title="Numbered List"
                 >
                     <ListNumbers size={16} />
                 </button>
 
-                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
+                <Divider />
 
                 {/* Alignment */}
                 <button type="button" onClick={() => editor.chain().focus().setTextAlign("left").run()}
-                    style={toolbarBtn(editor.isActive({ textAlign: "left" }))} title="Rata Kiri"
+                    className={toolbarBtn(editor.isActive({ textAlign: "left" }))} title="Rata Kiri"
                 >
                     <AlignLeft size={16} />
                 </button>
                 <button type="button" onClick={() => editor.chain().focus().setTextAlign("center").run()}
-                    style={toolbarBtn(editor.isActive({ textAlign: "center" }))} title="Rata Tengah"
+                    className={toolbarBtn(editor.isActive({ textAlign: "center" }))} title="Rata Tengah"
                 >
                     <TextAlignCenter size={16} />
                 </button>
                 <button type="button" onClick={() => editor.chain().focus().setTextAlign("right").run()}
-                    style={toolbarBtn(editor.isActive({ textAlign: "right" }))} title="Rata Kanan"
+                    className={toolbarBtn(editor.isActive({ textAlign: "right" }))} title="Rata Kanan"
                 >
                     <AlignRight size={16} />
                 </button>
 
-                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
+                <Divider />
 
                 {/* Link */}
                 <button type="button" onClick={addLink}
-                    style={toolbarBtn(editor.isActive("link"))} title="Insert Link"
+                    className={toolbarBtn(editor.isActive("link"))} title="Insert Link"
                 >
                     <LinkSimple size={16} />
                 </button>
@@ -642,19 +616,19 @@ export default function RichTextEditor({
                 {/* Image */}
                 <button type="button" onClick={handleImageClick}
                     disabled={isUploading}
-                    style={{ ...toolbarBtn(), opacity: isUploading ? 0.5 : 1 }}
+                    className={`${toolbarBtn()} disabled:cursor-not-allowed disabled:opacity-50`}
                     title="Insert Image"
                 >
                     <ImageSquare size={16} />
                 </button>
 
-                {isUploading && <span className="text-xs" style={{ color: 'var(--text-3)', marginLeft: '6px' }}>Uploading...</span>}
+                {isUploading && <span className="ml-1.5 text-xs text-text-3">Uploading...</span>}
 
-                <div style={{ width: '1px', height: '20px', background: 'var(--border)', margin: '0 4px' }} />
+                <Divider />
 
                 {/* YouTube */}
                 <button type="button" onClick={() => setShowYoutubeDialog(true)}
-                    style={toolbarBtn()} title="Embed YouTube"
+                    className={toolbarBtn()} title="Embed YouTube"
                 >
                     <YoutubeLogo size={16} />
                 </button>
@@ -662,19 +636,19 @@ export default function RichTextEditor({
                 {/* Video upload */}
                 <button type="button" onClick={handleVideoClick}
                     disabled={isVideoUploading}
-                    style={{ ...toolbarBtn(), opacity: isVideoUploading ? 0.5 : 1 }}
+                    className={`${toolbarBtn()} disabled:cursor-not-allowed disabled:opacity-50`}
                     title="Upload Video (MP4, max 100MB)"
                 >
                     <VideoCamera size={16} />
                 </button>
 
-                {isVideoUploading && <span className="text-xs" style={{ color: 'var(--text-3)' }}>Uploading video...</span>}
+                {isVideoUploading && <span className="text-xs text-text-3">Uploading video...</span>}
 
                 {/* PDF: one FilePdf button with Upload vs URL dropdown (D-01) */}
-                <div style={{ position: 'relative' }}>
+                <div className="relative">
                     <button type="button" onClick={() => setShowPdfMenu((v) => !v)}
                         disabled={isPdfUploading}
-                        style={{ ...toolbarBtn(), opacity: isPdfUploading ? 0.5 : 1 }}
+                        className={`${toolbarBtn()} disabled:cursor-not-allowed disabled:opacity-50`}
                         title="Sisipkan PDF"
                     >
                         <FilePdf size={16} />
@@ -682,50 +656,38 @@ export default function RichTextEditor({
 
                     {showPdfMenu && (
                         <>
-                            <div style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                            <div className="fixed inset-0 z-40"
                                 onClick={() => setShowPdfMenu(false)}
                             />
                             <div
-                                className="rounded-card"
-                                style={{
-                                    position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50,
-                                    background: 'var(--surface-3)',
-                                    border: '1px solid var(--border)',
-                                    boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-                                    padding: '4px',
-                                    minWidth: '190px',
-                                }}
+                                className="absolute left-0 top-[calc(100%+6px)] z-dropdown min-w-[190px] rounded-card border border-border bg-surface-3 p-1 shadow-lvl-2"
                             >
                                 <button type="button" onClick={handlePdfClick}
-                                    className="rich-editor-pdf-menu-item" style={pdfMenuItem}>
-                                    <UploadSimple size={16} style={{ color: 'var(--brand-red)' }} /> Upload PDF
+                                    className="rich-editor-pdf-menu-item flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-2 text-left text-[12.5px] text-text-1"
+                                >
+                                    <UploadSimple size={16} className="text-accent" /> Upload PDF
                                 </button>
                                 <button type="button"
                                     onClick={() => { setShowPdfMenu(false); setShowPdfUrlDialog(true); }}
-                                    className="rich-editor-pdf-menu-item" style={pdfMenuItem}>
-                                    <LinkSimple size={16} style={{ color: 'var(--brand-red)' }} /> Sisipkan via URL
+                                    className="rich-editor-pdf-menu-item flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-2 text-left text-[12.5px] text-text-1"
+                                >
+                                    <LinkSimple size={16} className="text-accent" /> Sisipkan via URL
                                 </button>
                             </div>
                         </>
                     )}
                 </div>
 
-                {isPdfUploading && <span className="text-xs" style={{ color: 'var(--text-3)' }}>Uploading PDF...</span>}
+                {isPdfUploading && <span className="text-xs text-text-3">Uploading PDF...</span>}
 
                 {/* Spacer */}
-                <span className="ml-auto text-xs" style={{ color: 'var(--text-3)' }}>
+                <span className="ml-auto text-xs text-text-3">
                     ? Klik gambar untuk resize
                 </span>
 
                 {/* Media Library */}
                 <button type="button" onClick={() => setShowMediaPicker(true)}
-                    style={{
-                        ...toolbarBtn(),
-                        marginLeft: '6px',
-                        background: 'var(--surface-3)',
-                        border: '1px solid var(--border)',
-                        padding: '4px 10px',
-                    }}
+                    className={`${mediaBtn()} ml-1.5 border border-border`}
                     title="Media Library"
                 >
                     <FolderOpen size={14} /> Library
@@ -734,23 +696,21 @@ export default function RichTextEditor({
 
             {/* ── Image toolbar ── */}
             {isImageSelected && (
-                <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b"
-                    style={{ borderBottomColor: "var(--border)", background: "var(--surface-3)" }}
-                >
-                    <span className="text-xs font-semibold" style={{ color: "var(--text-2)" }}>
+                <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-3 px-3 py-2">
+                    <span className="text-xs font-semibold text-text-2">
                         Gambar:
                     </span>
 
                     <button type="button" onClick={() => setImageSize('25%')}
-                        style={mediaBtn(selectedImageSize === '25%')} title="Ukuran 25%">
+                        className={mediaBtn(selectedImageSize === '25%')} title="Ukuran 25%">
                         <Minus size={10} /> 25%
                     </button>
                     <button type="button" onClick={() => setImageSize('50%')}
-                        style={mediaBtn(selectedImageSize === '50%')} title="Ukuran 50%">50%</button>
+                        className={mediaBtn(selectedImageSize === '50%')} title="Ukuran 50%">50%</button>
                     <button type="button" onClick={() => setImageSize('75%')}
-                        style={mediaBtn(selectedImageSize === '75%')} title="Ukuran 75%">75%</button>
+                        className={mediaBtn(selectedImageSize === '75%')} title="Ukuran 75%">75%</button>
                     <button type="button" onClick={() => setImageSize('100%')}
-                        style={mediaBtn(selectedImageSize === '100%')} title="Ukuran Penuh">
+                        className={mediaBtn(selectedImageSize === '100%')} title="Ukuran Penuh">
                         <Plus size={10} /> 100%
                     </button>
 
@@ -761,34 +721,29 @@ export default function RichTextEditor({
                             const val = Math.min(100, Math.max(10, parseInt(e.target.value) || 100));
                             setImageSize(`${val}%`);
                         }}
-                        className="w-12 rounded border px-1.5 py-0.5 text-center text-xs text-center"
-                        style={{
-                            background: "var(--surface-2)",
-                            borderColor: "var(--border)",
-                            color: "var(--text-1)",
-                        }}
+                        className="w-12 rounded border border-border bg-surface-2 px-1.5 py-0.5 text-center text-xs text-text-1"
                     />
-                    <span className="text-xs" style={{ color: "var(--text-3)" }}>%</span>
+                    <span className="text-xs text-text-3">%</span>
 
-                    <div style={{ width: '1px', height: '18px', background: 'var(--border)', margin: '0 4px' }} />
+                    <VDivider />
 
                     <button type="button" onClick={() => setImageAlign('left')}
-                        style={mediaBtn()} title="Rata Kiri">
+                        className={mediaBtn()} title="Rata Kiri">
                         <AlignLeft size={12} /> Kiri
                     </button>
                     <button type="button" onClick={() => setImageAlign('center')}
-                        style={mediaBtn()} title="Rata Tengah">
+                        className={mediaBtn()} title="Rata Tengah">
                         <TextAlignCenter size={12} /> Tengah
                     </button>
                     <button type="button" onClick={() => setImageAlign('right')}
-                        style={mediaBtn()} title="Rata Kanan">
+                        className={mediaBtn()} title="Rata Kanan">
                         <AlignRight size={12} /> Kanan
                     </button>
 
-                    <div style={{ width: '1px', height: '18px', background: 'var(--border)', margin: '0 4px' }} />
+                    <VDivider />
 
                     <button type="button" onClick={deleteImage}
-                        style={{ ...mediaBtn(), background: 'var(--color-danger)' }} title="Hapus Gambar">
+                        className={`${mediaBtn()} bg-danger text-white`} title="Hapus Gambar">
                         <Check size={12} weight="bold" /> Hapus
                     </button>
                 </div>
@@ -796,14 +751,12 @@ export default function RichTextEditor({
 
             {/* ── Video toolbar ── */}
             {isVideoSelected && (
-                <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b"
-                    style={{ borderBottomColor: "var(--border)", background: "var(--surface-3)" }}
-                >
-                    <span className="text-xs font-semibold" style={{ color: "var(--text-2)" }}>
+                <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-3 px-3 py-2">
+                    <span className="text-xs font-semibold text-text-2">
                         Video:
                     </span>
                     <button type="button" onClick={deleteVideo}
-                        style={{ ...mediaBtn(), background: 'var(--color-danger)' }} title="Hapus Video">
+                        className={`${mediaBtn()} bg-danger text-white`} title="Hapus Video">
                         <Check size={12} weight="bold" /> Hapus Video
                     </button>
                 </div>
@@ -811,18 +764,16 @@ export default function RichTextEditor({
 
             {/* ── PDF toolbar ── */}
             {isPdfSelected && (
-                <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b"
-                    style={{ borderBottomColor: "var(--border)", background: "var(--surface-3)" }}
-                >
-                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--text-2)" }}>
-                        <FilePdf size={14} style={{ color: 'var(--brand-red)' }} /> PDF:
+                <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-3 px-3 py-2">
+                    <span className="flex items-center gap-1.5 text-xs font-semibold text-text-2">
+                        <FilePdf size={14} className="text-accent" /> PDF:
                     </span>
-                    <span className="max-w-[280px] truncate text-xs" style={{ color: "var(--text-1)", fontWeight: 500 }}>
+                    <span className="max-w-[280px] truncate text-xs font-medium text-text-1">
                         {selectedPdfFilename}
                     </span>
-                    <div style={{ width: '1px', height: '18px', background: 'var(--border)', margin: '0 4px' }} />
+                    <VDivider />
                     <button type="button" onClick={deletePdf}
-                        style={{ ...mediaBtn(), background: 'var(--color-danger)' }} title="Hapus PDF">
+                        className={`${mediaBtn()} bg-danger text-white`} title="Hapus PDF">
                         <Check size={12} weight="bold" /> Hapus PDF
                     </button>
                 </div>
@@ -863,9 +814,9 @@ export default function RichTextEditor({
                     padding: 16px;
                 }
                 .tiptap p { margin: 0 0 12px 0; }
-                .tiptap h1 { font-size: 28px; font-weight: 700; margin: 24px 0 12px 0; color: #fff; }
-                .tiptap h2 { font-size: 22px; font-weight: 600; margin: 20px 0 10px 0; color: #fff; }
-                .tiptap h3 { font-size: 18px; font-weight: 600; margin: 16px 0 8px 0; color: #fff; }
+                .tiptap h1 { font-size: 28px; font-weight: 700; margin: 24px 0 12px 0; color: var(--text-1); }
+                .tiptap h2 { font-size: 22px; font-weight: 600; margin: 20px 0 10px 0; color: var(--text-1); }
+                .tiptap h3 { font-size: 18px; font-weight: 600; margin: 16px 0 8px 0; color: var(--text-1); }
                 .tiptap ul, .tiptap ol { padding-left: 24px; margin: 12px 0; }
                 .tiptap li { margin: 4px 0; }
                 .tiptap img {
@@ -877,13 +828,13 @@ export default function RichTextEditor({
                     outline-offset: 4px;
                 }
                 .tiptap img.ProseMirror-selectednode {
-                    outline: 3px solid #dc2626;
+                    outline: 3px solid var(--accent);
                     outline-offset: 4px;
                 }
                 .tiptap img[data-align="left"] { margin-left: 0; margin-right: auto; }
                 .tiptap img[data-align="center"] { margin-left: auto; margin-right: auto; display: block; }
                 .tiptap img[data-align="right"] { margin-left: auto; margin-right: 0; display: block; }
-                .tiptap a { color: #dc2626; text-decoration: underline; }
+                .tiptap a { color: var(--accent); text-decoration: underline; }
                 .tiptap p.is-editor-empty:first-child::before {
                     content: attr(data-placeholder);
                     float: left; color: var(--text-muted);
@@ -930,23 +881,19 @@ export default function RichTextEditor({
 
             {/* ── YouTube dialog ── */}
             {showYoutubeDialog && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center"
-                    style={{ background: 'rgba(0,0,0,0.7)' }}
+                <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/70 animate-modal-fade"
+                    onClick={() => { setShowYoutubeDialog(false); setYoutubeUrl(''); }}
                 >
-                    <div className="w-full max-w-sm rounded-card p-6"
-                        style={{
-                            background: 'var(--surface-3)',
-                            border: '1px solid var(--border)',
-                        }}
+                    <div className="w-full max-w-sm rounded-card border border-border bg-surface-3 p-6 animate-modal-scale"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-1)' }}>
-                                <YoutubeLogo size={18} className="text-[var(--brand-red)]" /> Embed YouTube Video
+                        <div className="mb-4 flex items-center justify-between">
+                            <h3 className="flex items-center gap-2 text-sm font-semibold text-text-1">
+                                <YoutubeLogo size={18} className="text-accent" /> Embed YouTube Video
                             </h3>
                             <button type="button"
                                 onClick={() => { setShowYoutubeDialog(false); setYoutubeUrl(''); }}
-                                className="cursor-pointer p-1" style={{ color: 'var(--text-3)' }}
+                                className="cursor-pointer rounded p-1 text-text-3 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1"
                                 aria-label="Tutup"
                             >
                                 <Minus size={18} weight="bold" />
@@ -958,37 +905,21 @@ export default function RichTextEditor({
                             value={youtubeUrl}
                             onChange={(e) => setYoutubeUrl(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && insertYoutube()}
-                            className="w-full rounded-control border px-3 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
-                            style={{
-                                background: 'var(--surface-2)',
-                                borderColor: 'var(--border)',
-                                color: 'var(--text-1)',
-                                marginBottom: '8px',
-                            }}
+                            className="mb-2 w-full rounded-control border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-1 outline-none transition-colors duration-150 focus:border-accent"
                             autoFocus
                         />
-                        <p className="text-xs mb-4" style={{ color: 'var(--text-3)' }}>
+                        <p className="mb-4 text-xs text-text-3">
                             Format: youtube.com/watch?v=XXX atau youtu.be/XXX
                         </p>
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex justify-end gap-2">
                             <button type="button"
                                 onClick={() => { setShowYoutubeDialog(false); setYoutubeUrl(''); }}
-                                className="rounded-control border px-4 py-2 text-sm cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-2)]"
-                                style={{
-                                    background: 'transparent',
-                                    borderColor: 'var(--border)',
-                                    color: 'var(--text-2)',
-                                }}
+                                className="cursor-pointer rounded-control border border-border px-4 py-2 text-sm text-text-2 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1"
                             >
                                 Batal
                             </button>
                             <button type="button" onClick={insertYoutube} disabled={!youtubeUrl}
-                                className="rounded-control px-4 py-2 text-sm font-semibold cursor-pointer transition-opacity duration-150"
-                                style={{
-                                    background: 'var(--brand-red)',
-                                    color: 'var(--text-1)',
-                                    opacity: youtubeUrl ? 1 : 0.5,
-                                }}
+                                className="rounded-control bg-santos-red-dark px-4 py-2 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 Embed
                             </button>
@@ -999,23 +930,19 @@ export default function RichTextEditor({
 
             {/* ── PDF URL dialog ── */}
             {showPdfUrlDialog && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center"
-                    style={{ background: 'rgba(0,0,0,0.7)' }}
+                <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/70 animate-modal-fade"
+                    onClick={() => { setShowPdfUrlDialog(false); setPdfUrl(''); }}
                 >
-                    <div className="w-full max-w-sm rounded-card p-6"
-                        style={{
-                            background: 'var(--surface-3)',
-                            border: '1px solid var(--border)',
-                        }}
+                    <div className="w-full max-w-sm rounded-card border border-border bg-surface-3 p-6 animate-modal-scale"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text-1)' }}>
-                                <FilePdf size={18} className="text-[var(--brand-red)]" /> Sisipkan PDF via URL
+                        <div className="mb-4 flex items-center justify-between">
+                            <h3 className="flex items-center gap-2 text-sm font-semibold text-text-1">
+                                <FilePdf size={18} className="text-accent" /> Sisipkan PDF via URL
                             </h3>
                             <button type="button"
                                 onClick={() => { setShowPdfUrlDialog(false); setPdfUrl(''); }}
-                                className="cursor-pointer p-1" style={{ color: 'var(--text-3)' }}
+                                className="cursor-pointer rounded p-1 text-text-3 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1"
                                 aria-label="Tutup"
                             >
                                 <Minus size={18} weight="bold" />
@@ -1027,37 +954,21 @@ export default function RichTextEditor({
                             value={pdfUrl}
                             onChange={(e) => setPdfUrl(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && insertPdfUrl()}
-                            className="w-full rounded-control border px-3 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-[var(--accent)]"
-                            style={{
-                                background: 'var(--surface-2)',
-                                borderColor: 'var(--border)',
-                                color: 'var(--text-1)',
-                                marginBottom: '8px',
-                            }}
+                            className="mb-2 w-full rounded-control border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-1 outline-none transition-colors duration-150 focus:border-accent"
                             autoFocus
                         />
-                        <p className="text-xs mb-4" style={{ color: 'var(--text-3)' }}>
+                        <p className="mb-4 text-xs text-text-3">
                             Format: https://domain.com/berkas/contoh.pdf (hanya http/https yang diizinkan)
                         </p>
-                        <div className="flex gap-2 justify-end">
+                        <div className="flex justify-end gap-2">
                             <button type="button"
                                 onClick={() => { setShowPdfUrlDialog(false); setPdfUrl(''); }}
-                                className="rounded-control border px-4 py-2 text-sm cursor-pointer transition-colors duration-150 hover:bg-[var(--surface-2)]"
-                                style={{
-                                    background: 'transparent',
-                                    borderColor: 'var(--border)',
-                                    color: 'var(--text-2)',
-                                }}
+                                className="cursor-pointer rounded-control border border-border px-4 py-2 text-sm text-text-2 transition-colors duration-150 hover:bg-surface-2 hover:text-text-1"
                             >
                                 Batal
                             </button>
                             <button type="button" onClick={insertPdfUrl} disabled={!pdfUrl}
-                                className="rounded-control px-4 py-2 text-sm font-semibold cursor-pointer transition-opacity duration-150"
-                                style={{
-                                    background: 'var(--brand-red)',
-                                    color: 'var(--text-1)',
-                                    opacity: pdfUrl ? 1 : 0.5,
-                                }}
+                                className="rounded-control bg-santos-red-dark px-4 py-2 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 Sisipkan
                             </button>

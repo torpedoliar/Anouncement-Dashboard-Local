@@ -47,91 +47,47 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
     return (
         <>
             {/* Skip to Content Link - Accessibility */}
-            <a
-                href="#main-content"
-                /*
-                  Style inline di sini dulu menduplikasi kelas .skip-link di
-                  globals.css — termasuk handler onFocus/onBlur yang meniru
-                  `.skip-link:focus`. Duplikatnya juga memakai --text-primary
-                  sebagai warna teks di atas merah brand, yang di tema terang
-                  jadi teks gelap di atas merah (kontras buruk). Kelas CSS sudah
-                  memakai --site-text-on-primary, jadi cukup pakai kelasnya.
-                  Target #main-content ada di <main> layout site (T2.5); #news
-                  lama hilang setelah app/page.tsx dihapus di T1.
-                */
-                className="skip-link"
-            >
+            <a href="#main-content" className="skip-link">
                 Langsung ke Konten
             </a>
             <nav
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    // Sejajar `z-sticky` pada skala z-index semantik.
-                    zIndex: 200,
-                    // `transition: all` memaksa browser mengawasi setiap properti,
-                    // termasuk properti layout. Dibatasi ke yang benar-benar berubah.
-                    transition: 'background-color 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease',
-                    backgroundColor: isScrolled ? 'rgba(0, 0, 0, 0.95)' : 'transparent',
-                    borderBottom: isScrolled ? '1px solid var(--border-color)' : 'none',
-                    backdropFilter: isScrolled ? 'blur(8px)' : 'none',
-                }}
+                className={`fixed inset-x-0 top-0 z-sticky transition-colors duration-300 ${
+                    isScrolled
+                        ? "border-b border-border bg-[rgb(var(--surface-0-rgb)/0.95)] backdrop-blur-md"
+                        : "border-b border-transparent bg-transparent"
+                }`}
             >
-                <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '80px' }}>
+                <div className="mx-auto max-w-7xl px-6">
+                    <div className="flex h-20 items-center justify-between">
                         {/* Logo */}
-                        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Link href="/" className="flex items-center gap-3">
                             {logoPath ? (
                                 <Image
                                     src={logoPath}
                                     alt={siteName}
                                     width={48}
                                     height={48}
-                                    style={{ objectFit: 'contain' }}
+                                    className="object-contain"
                                 />
                             ) : (
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    backgroundColor: 'var(--brand-red)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}>
-                                    <span style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '18px' }}>
+                                <div className="flex h-10 w-10 items-center justify-center bg-brand">
+                                    <span aria-hidden="true" className="text-lg font-bold text-white">
                                         {siteName.charAt(0).toUpperCase()}
                                     </span>
                                 </div>
                             )}
-                            <span style={{
-                                fontFamily: 'Montserrat, sans-serif',
-                                fontWeight: 700,
-                                color: 'var(--text-primary)',
-                                fontSize: '13px',
-                                letterSpacing: '0.1em',
-                                textTransform: 'uppercase',
-                            }}>
+                            <span className="text-[13px] font-bold uppercase tracking-[0.1em] text-text-1">
                                 {siteName}
                             </span>
                         </Link>
 
                         {/* Desktop Navigation */}
-                        <div className="hidden lg:flex" style={{ alignItems: 'center', gap: '40px' }}>
+                        <div className="hidden items-center gap-10 lg:flex">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className="nav-link"
-                                    style={{
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                        letterSpacing: '0.15em',
-                                        textTransform: 'uppercase',
-                                        padding: '8px 0',
-                                        borderBottom: '2px solid transparent',
-                                    }}
+                                    className="nav-link px-0 py-2 text-xs font-semibold uppercase tracking-[0.15em]"
                                 >
                                     {link.label}
                                 </Link>
@@ -143,14 +99,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             aria-label={isMobileMenuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
                             aria-expanded={isMobileMenuOpen}
-                            className="lg:hidden"
-                            style={{
-                                padding: '8px',
-                                color: 'var(--text-primary)',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                            }}
+                            className="cursor-pointer p-2 text-text-1 transition-colors duration-150 hover:text-accent lg:hidden"
                         >
                             {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
                         </button>
@@ -158,24 +107,13 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
 
                     {/* Mobile Menu */}
                     {isMobileMenuOpen && (
-                        <div className="lg:hidden" style={{
-                            padding: '16px 0',
-                            borderTop: '1px solid var(--border-color)',
-                            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-                        }}>
+                        <div className="border-t border-border bg-[rgb(var(--surface-1-rgb)/0.98)] py-4 backdrop-blur-md lg:hidden">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.href}
                                     href={link.href}
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    style={{
-                                        display: 'block',
-                                        padding: '12px 16px',
-                                        color: 'var(--text-secondary)',
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                        letterSpacing: '0.1em',
-                                    }}
+                                    className="block px-4 py-3 text-xs font-semibold tracking-[0.1em] text-text-2 transition-colors duration-150 hover:text-text-1"
                                 >
                                     {link.label}
                                 </Link>
@@ -183,14 +121,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                             <Link
                                 href="/admin-login"
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                style={{
-                                    display: 'block',
-                                    padding: '12px 16px',
-                                    color: 'var(--brand-red)',
-                                    fontSize: '12px',
-                                    fontWeight: 600,
-                                    letterSpacing: '0.1em',
-                                }}
+                                className="block px-4 py-3 text-xs font-semibold tracking-[0.1em] text-accent"
                             >
                                 ADMIN
                             </Link>

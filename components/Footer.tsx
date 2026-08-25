@@ -54,62 +54,38 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
     ].filter(link => link.href);
 
     return (
-        <footer style={{ backgroundColor: 'var(--bg-primary)', borderTop: '1px solid var(--bg-tertiary)' }}>
+        <footer className="border-t border-border bg-surface-0">
             {/* Main Footer */}
-            <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '64px 24px' }}>
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                    gap: '48px',
-                }}>
+            <div className="mx-auto max-w-7xl px-6 py-16">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-12">
                     {/* Company Info */}
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                        <div className="mb-6 flex items-center gap-3">
                             {settings.logoPath ? (
                                 <Image
                                     src={settings.logoPath}
                                     alt={settings.siteName}
                                     width={48}
                                     height={48}
-                                    style={{ objectFit: 'contain' }}
+                                    className="object-contain"
                                 />
                             ) : (
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    backgroundColor: 'var(--brand-red)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}>
-                                    <span style={{ fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '18px' }}>
+                                <div className="flex h-10 w-10 items-center justify-center bg-brand">
+                                    <span aria-hidden="true" className="text-lg font-bold text-white">
                                         {settings.siteName.charAt(0).toUpperCase()}
                                     </span>
                                 </div>
                             )}
-                            <span style={{
-                                fontFamily: 'Montserrat, sans-serif',
-                                fontWeight: 700,
-                                color: 'var(--text-primary)',
-                                fontSize: '12px',
-                                letterSpacing: '0.1em',
-                                textTransform: 'uppercase',
-                            }}>
+                            <span className="text-xs font-bold uppercase tracking-[0.1em] text-text-1">
                                 {settings.siteName}
                             </span>
                         </div>
-                        <p style={{
-                            color: 'var(--text-muted)',
-                            fontSize: '14px',
-                            lineHeight: 1.7,
-                            marginBottom: '24px',
-                            maxWidth: '320px',
-                        }}>
+                        <p className="mb-6 max-w-sm text-sm leading-relaxed text-text-3">
                             {settings.aboutText}
                         </p>
                         {/* Social Links */}
                         {socialLinks.length > 0 && (
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                            <div className="flex gap-2">
                                 {socialLinks.map((social, index) => (
                                     <a
                                         key={index}
@@ -118,16 +94,9 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
                                         rel="noopener noreferrer"
                                         title={social.label}
                                         aria-label={social.label}
-                                        className="footer-social"
-                                        style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                        }}
+                                        className="footer-social flex h-10 w-10 items-center justify-center"
                                     >
-                                        <social.icon size={16} />
+                                        <social.icon size={16} aria-hidden="true" />
                                     </a>
                                 ))}
                             </div>
@@ -136,30 +105,17 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
 
                     {/* Quick Links */}
                     <div>
-                        <h2 style={{
-                            color: 'var(--brand-red)',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            letterSpacing: '0.2em',
-                            textTransform: 'uppercase',
-                            marginBottom: '24px',
-                        }}>
+                        <h2 className="mb-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
                             TAUTAN
                         </h2>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                        <ul className="m-0 list-none p-0">
                             {/* Tautan global. Berita/Pencarian adalah per-site (lihat
                                 navbar site), jadi hanya Beranda ke site picker. */}
                             {[
                                 { href: "/site", label: "Beranda" },
                             ].map((link) => (
-                                <li key={link.href} style={{ marginBottom: '12px' }}>
-                                    <Link
-                                        href={link.href}
-                                        className="footer-link"
-                                        style={{
-                                            fontSize: '14px',
-                                        }}
-                                    >
+                                <li key={link.href} className="mb-3">
+                                    <Link href={link.href} className="footer-link text-sm">
                                         {link.label}
                                     </Link>
                                 </li>
@@ -173,43 +129,20 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
             </div>
 
             {/* Bottom Bar */}
-            <div style={{ borderTop: '1px solid var(--bg-tertiary)' }}>
-                <div style={{
-                    maxWidth: '1280px',
-                    margin: '0 auto',
-                    padding: '24px',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: '16px',
-                }}>
-                    <p style={{
-                        color: 'var(--text-tertiary)',
-                        fontSize: '12px',
-                        letterSpacing: '0.05em',
-                    }}>
+            <div className="border-t border-border">
+                <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-4 px-6 py-6">
+                    <p className="text-xs tracking-[0.05em] text-text-3">
                         © {currentYear} {settings.siteName.toUpperCase()}. ALL RIGHTS RESERVED.
                     </p>
                     <Link
                         href="/admin-login"
-                        style={{
-                            color: 'var(--border-strong)',
-                            fontSize: '11px',
-                            textDecoration: 'none',
-                            transition: 'color 0.3s',
-                        }}
+                        className="text-[11px] text-text-3 transition-colors duration-150 hover:text-text-1"
                     >
                         Admin
                     </Link>
                     <Link
                         href="/portal-login"
-                        style={{
-                            color: 'var(--border-strong)',
-                            fontSize: '11px',
-                            textDecoration: 'none',
-                            transition: 'color 0.3s',
-                        }}
+                        className="text-[11px] text-text-3 transition-colors duration-150 hover:text-text-1"
                     >
                         Portal Karyawan
                     </Link>

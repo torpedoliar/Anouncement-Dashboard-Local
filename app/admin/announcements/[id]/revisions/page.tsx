@@ -128,101 +128,95 @@ export default function RevisionsPage({
         return <Badge tone={tone}>{changeType}</Badge>;
     };
 
+    // Skeleton loading — pola ListSkeleton (animate-pulse + surface token), bentuk
+    // meniru header + kartu timeline di bawahnya supaya layout tidak melompat.
     if (isLoading) {
         return (
-            <div style={{ padding: "32px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-                <p style={{ color: "var(--text-tertiary)" }}>Loading...</p>
+            <div className="p-8">
+                <div aria-hidden="true">
+                    <div className="mb-8 space-y-3">
+                        <div className="h-2.5 w-28 rounded bg-surface-2 animate-pulse" />
+                        <div className="h-6 w-72 max-w-full rounded bg-surface-2 animate-pulse" />
+                        <div className="h-3.5 w-32 rounded bg-surface-2 animate-pulse" />
+                    </div>
+                    <div className="space-y-4">
+                        {Array.from({ length: 4 }, (_, i) => (
+                            <div
+                                key={i}
+                                className="ml-10 flex items-center gap-4 rounded-card border border-border bg-surface-1 px-5 py-5"
+                                style={{ animationDelay: `${i * 60}ms` }}
+                            >
+                                <div className="size-3 shrink-0 rounded-full bg-surface-3 animate-pulse" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-3.5 w-1/3 rounded bg-surface-2 animate-pulse" />
+                                    <div className="h-3 w-2/3 rounded bg-surface-2 animate-pulse" />
+                                </div>
+                                <div className="hidden h-8 w-24 rounded-control bg-surface-2 sm:block animate-pulse" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div style={{ padding: "32px" }}>
+        <div className="p-8">
             {/* Header */}
-            <div style={{ marginBottom: "32px" }}>
+            <div className="mb-8">
                 <Link
                     href={`/admin/announcements/${id}/edit`}
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        color: "var(--text-muted)",
-                        fontSize: "13px",
-                        marginBottom: "16px",
-                        textDecoration: "none",
-                    }}
+                    className="inline-flex items-center gap-1.5 mb-4 text-[13px] text-text-3 hover:text-text-1"
                 >
                     <ArrowLeft size={14} />
                     Kembali ke Editor
                 </Link>
-                <p style={{ color: "var(--brand-red)", fontSize: "11px", fontWeight: 600, letterSpacing: "0.2em", marginBottom: "8px" }}>
+                <p className="mb-2 text-[11px] font-semibold tracking-[0.2em] text-accent">
                     RIWAYAT REVISI
                 </p>
-                <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "24px", fontWeight: 700, color: "var(--text-primary)" }}>
+                <h1 className="text-2xl font-bold text-text-1">
                     {announcement?.title || "Loading..."}
                 </h1>
-                <p style={{ color: "var(--text-muted)", fontSize: "14px", marginTop: "8px" }}>
+                <p className="mt-2 text-sm text-text-3">
                     {pagination?.total || 0} versi tersimpan
                 </p>
             </div>
 
             {/* Revisions Timeline */}
-            <div style={{ position: "relative" }}>
+            <div className="relative">
                 {/* Timeline line */}
-                <div style={{
-                    position: "absolute",
-                    left: "19px",
-                    top: "0",
-                    bottom: "0",
-                    width: "2px",
-                    backgroundColor: "var(--border-color)",
-                }} />
+                <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-border" />
 
                 {revisions.length === 0 ? (
-                    <div style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        border: "1px solid var(--border-color)",
-                        padding: "48px",
-                        textAlign: "center",
-                        color: "var(--text-tertiary)",
-                        marginLeft: "40px",
-                    }}>
-                        <Clock size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
+                    <div className="ml-10 rounded-card border border-border bg-surface-1 p-12 text-center text-text-3">
+                        <Clock size={32} className="mb-3 mx-auto opacity-50" />
                         <p>Belum ada riwayat revisi</p>
                     </div>
                 ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    <div className="flex flex-col gap-4">
                         {revisions.map((revision, index) => (
-                            <div key={revision.id} style={{ display: "flex", gap: "16px" }}>
+                            <div key={revision.id} className="flex gap-4">
                                 {/* Timeline dot */}
-                                <div style={{
-                                    width: "40px",
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    position: "relative",
-                                    zIndex: 1,
-                                }}>
-                                    <div style={{
-                                        width: "12px",
-                                        height: "12px",
-                                        borderRadius: "50%",
-                                        backgroundColor: index === 0 ? "var(--brand-red)" : "var(--border-strong)",
-                                        border: "2px solid var(--bg-secondary)",
-                                    }} />
+                                <div className="relative z-[1] flex w-10 justify-center">
+                                    {/* Titik pertama memakai aksen brand, sisanya netral border-strong */}
+                                    <div
+                                        className={`size-3 rounded-full border-2 border-surface-1 ${
+                                            index === 0 ? "bg-accent" : "bg-border-strong"
+                                        }`}
+                                    />
                                 </div>
 
                                 {/* Revision card */}
-                                <div style={{
-                                    flex: 1,
-                                    backgroundColor: "var(--bg-secondary)",
-                                    border: index === 0 ? "1px solid var(--brand-red)" : "1px solid var(--border-color)",
-                                    padding: "20px",
-                                }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                                <div
+                                    className={`flex-1 rounded-card border bg-surface-1 p-5 ${
+                                        index === 0 ? "border-accent" : "border-border"
+                                    }`}
+                                >
+                                    <div className="mb-3 flex items-start justify-between">
                                         <div>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                                                <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "15px" }}>
-                                                    <GitCommit style={{ marginRight: "6px", verticalAlign: "middle" }} />
+                                            <div className="mb-2 flex items-center gap-3">
+                                                <span className="text-[15px] font-semibold text-text-1">
+                                                    <GitCommit className="mr-1.5 inline-block align-middle" />
                                                     v{revision.version}
                                                 </span>
                                                 {getChangeTypeBadge(revision.changeType)}
@@ -230,11 +224,11 @@ export default function RevisionsPage({
                                                     <Badge tone="danger">CURRENT</Badge>
                                                 )}
                                             </div>
-                                            <p style={{ color: "var(--text-secondary)", fontSize: "14px", fontWeight: 500 }}>
+                                            <p className="text-sm font-medium text-text-2">
                                                 {revision.title}
                                             </p>
                                             {revision.changeSummary && (
-                                                <p style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "4px" }}>
+                                                <p className="mt-1 text-[13px] text-text-3">
                                                     {revision.changeSummary}
                                                 </p>
                                             )}
@@ -243,19 +237,11 @@ export default function RevisionsPage({
                                             <button
                                                 onClick={() => handleRestore(revision.id)}
                                                 disabled={isRestoring === revision.id}
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: "6px",
-                                                    padding: "8px 14px",
-                                                    backgroundColor: "transparent",
-                                                    border: "1px solid var(--border-strong)",
-                                                    color: "var(--text-secondary)",
-                                                    fontSize: "12px",
-                                                    fontWeight: 600,
-                                                    cursor: isRestoring ? "not-allowed" : "pointer",
-                                                    opacity: isRestoring ? 0.5 : 1,
-                                                }}
+                                                className={`inline-flex items-center gap-1.5 rounded-control border border-border-strong bg-transparent px-3.5 py-2 text-xs font-semibold transition-colors duration-150 ${
+                                                    isRestoring
+                                                        ? "cursor-not-allowed opacity-50"
+                                                        : "cursor-pointer hover:bg-surface-2 hover:text-text-1"
+                                                }`}
                                             >
                                                 <ArrowCounterClockwise size={12} />
                                                 {isRestoring === revision.id ? "Restoring..." : "Restore"}
@@ -263,12 +249,12 @@ export default function RevisionsPage({
                                         )}
                                     </div>
 
-                                    <div style={{ display: "flex", alignItems: "center", gap: "16px", color: "var(--text-tertiary)", fontSize: "12px" }}>
-                                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <div className="flex items-center gap-4 text-xs text-text-3">
+                                        <span className="flex items-center gap-1">
                                             <User size={12} />
                                             {revision.author.name}
                                         </span>
-                                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                        <span className="flex items-center gap-1">
                                             <Clock size={12} />
                                             {formatDate(revision.createdAt)}
                                         </span>

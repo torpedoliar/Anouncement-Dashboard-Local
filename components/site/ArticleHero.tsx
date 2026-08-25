@@ -117,7 +117,10 @@ export default function ArticleHero({
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                color: "var(--text-primary)",
+                                // ponytail: warna fixed-light, bukan token tema —
+                                // konten ini selalu di atas gradient gelap, di kedua tema
+                                // (token tema di sini malah jadi teks gelap saat theme-light).
+                                color: "#FFFFFF",
                                 cursor: "pointer",
                                 transition: "all 0.2s"
                             }}
@@ -166,6 +169,8 @@ export default function ArticleHero({
                     left: 0,
                     width: "100%",
                     height: "100%",
+                    // ponytail: gradient hitam fixed — scrim keterbacaan di atas
+                    // media, bukan warna tema.
                     background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.95) 100%)",
                     zIndex: 10
                 }}
@@ -234,7 +239,9 @@ export default function ArticleHero({
                         fontWeight: 800,
                         lineHeight: 1.1,
                         marginBottom: "24px",
-                        color: "var(--text-primary)",
+                        // ponytail: fixed-light, bukan token tema — judul selalu di
+                        // atas gradient gelap; token tema jadi gelap saat theme-light.
+                        color: "#FFFFFF",
                         textShadow: "0 2px 4px rgba(0,0,0,0.5)"
                     }}
                 >
@@ -248,7 +255,8 @@ export default function ArticleHero({
                         alignItems: "center",
                         flexWrap: "wrap",
                         gap: "24px",
-                        color: "#ddd",
+                        // ponytail: fixed-light — meta di atas gradient gelap, kedua tema.
+                        color: "rgba(255,255,255,0.87)",
                         fontSize: "14px",
                         fontWeight: 500
                     }}
