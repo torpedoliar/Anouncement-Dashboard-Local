@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Plus, PencilSimple, Trash, ShieldCheck, User as UserIcon, Lightning } from "@phosphor-icons/react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -11,6 +11,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface Site {
     id: string;
@@ -45,6 +46,10 @@ export default function UsersPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    // Pagination + pencarian server-side (GET /api/users?page=&limit=&q=)
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
     const { showToast } = useToast();
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [formData, setFormData] = useState({
@@ -58,17 +63,29 @@ export default function UsersPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "createdAt", dir: "desc" });
 
+    // Muat awal. fetchUsers sengaja tidak masuk deps: ia membaca page/searchQuery
+    // lewat argumen default, dan perubahan keduanya sudah memicu fetch sendiri
+    // (search via debounce-effect, pagination via handler klik).
     useEffect(() => {
         fetchUsers();
         fetchSites();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (targetPage = page, q = "") => {
         try {
-            const response = await fetch("/api/users");
+            const params = new URLSearchParams({ page: String(targetPage), limit: "20" });
+            if (q) params.set("q", q);
+            const response = await fetch(`/api/users?${params.toString()}`);
             if (response.ok) {
                 const data = await response.json();
-                setUsers(data);
+                if (Array.isArray(data)) {
+                    // Respons lama (array) — API belum berformat { data, pagination }.
+                    setUsers(data);
+                } else {
+                    setUsers(data.data || []);
+                    setTotalPages(data.pagination?.totalPages || 1);
+                }
             }
         } catch (err) {
             console.error("Failed to fetch users:", err);
@@ -76,6 +93,23 @@ export default function UsersPage() {
             setIsLoading(false);
         }
     };
+
+    // Debounce pencarian 300ms; reset ke halaman 1 saat query berubah.
+    // Ref "firstRun" melewati eksekusi pertama: saat mount, fetchUsers() dari
+    // effect muat-awal sudah mengambil halaman 1 — tanpa ini terjadi fetch dobel.
+    const isFirstSearch = useRef(true);
+    useEffect(() => {
+        if (isFirstSearch.current) {
+            isFirstSearch.current = false;
+            return;
+        }
+        const t = setTimeout(() => {
+            setPage(1);
+            fetchUsers(1, searchQuery);
+        }, 300);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery]);
 
     const fetchSites = async () => {
         try {
@@ -156,7 +190,7 @@ export default function UsersPage() {
             );
             setEditingUser(null);
             setFormData({ name: "", email: "", password: "", role: "EDITOR", siteIds: [] });
-            fetchUsers();
+            fetchUsers(page, searchQuery);
         } catch {
             setError("An error occurred");
         } finally {
@@ -177,7 +211,7 @@ export default function UsersPage() {
             }
 
             showToast("User berhasil dihapus", "success");
-            fetchUsers();
+            fetchUsers(page, searchQuery);
         } catch {
             showToast("An error occurred", "error");
         }
@@ -337,11 +371,29 @@ export default function UsersPage() {
                 </Button>
             </div>
 
+            {/* Pencarian server-side */}
+            <div className="relative mb-4 max-w-md">
+                <input
+                    type="search"
+                    placeholder="Cari nama atau email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Cari pengguna"
+                    className="h-10 w-full rounded-control border border-border bg-surface-1 px-3 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                />
+            </div>
+
             {/* Users ledger */}
             {users.length === 0 ? (
-                <div className="rounded-card border border-border p-12 text-center shadow-lvl-1">
-                    <p className="text-text-3">Belum ada pengguna.</p>
-                </div>
+                <EmptyState
+                    icon={<UserIcon weight="duotone" />}
+                    title={searchQuery ? "Tidak ada pengguna yang cocok" : "Belum ada pengguna"}
+                    description={
+                        searchQuery
+                            ? `Tidak ditemukan pengguna untuk pencarian "${searchQuery}".`
+                            : "Tambahkan pengguna pertama untuk memberi akses tim."
+                    }
+                />
             ) : (
                 <div className="overflow-hidden rounded-card border border-border shadow-lvl-1">
                     <Table
@@ -352,6 +404,33 @@ export default function UsersPage() {
                         ariaLabel="Daftar pengguna"
                     />
                 </div>
+            )}
+
+            {/* Pagination — server-side (20/halaman) */}
+            {totalPages > 1 && (
+                <nav className="mt-6 flex items-center justify-center gap-2" aria-label="Pagination pengguna">
+                    <button
+                        type="button"
+                        onClick={() => { const p = Math.max(1, page - 1); setPage(p); fetchUsers(p, searchQuery); }}
+                        disabled={page <= 1}
+                        className="inline-flex h-9 cursor-pointer items-center rounded-control border border-border bg-surface-1 px-3 text-sm text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label="Halaman sebelumnya"
+                    >
+                        ‹
+                    </button>
+                    <span className="mono px-2 text-sm text-text-2" aria-current="page">
+                        {page} / {totalPages}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => { const p = Math.min(totalPages, page + 1); setPage(p); fetchUsers(p, searchQuery); }}
+                        disabled={page >= totalPages}
+                        className="inline-flex h-9 cursor-pointer items-center rounded-control border border-border bg-surface-1 px-3 text-sm text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label="Halaman berikutnya"
+                    >
+                        ›
+                    </button>
+                </nav>
             )}
 
             {/* Modal — shell (portal, focus trap, Escape, kunci scroll) dari kit */}

@@ -12,6 +12,7 @@ import {
 import { useConfirm } from "@/hooks/useConfirm";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface Category {
     id: string;
@@ -281,13 +282,42 @@ export default function CategoriesPage() {
 
             {/* Categories List grouped by Site */}
             {isLoading ? (
-                <div className="rounded-card border border-border bg-surface-1 p-8 text-center">
-                    <p className="text-text-3">Memuat...</p>
+                <div className="space-y-4" aria-hidden="true">
+                    {[0, 1].map((g) => (
+                        <div key={g} className="overflow-hidden rounded-card border border-border bg-surface-1">
+                            <div className="border-b border-border bg-surface-2 px-5 py-3">
+                                <div className="h-3.5 w-40 rounded bg-surface-3 animate-pulse" />
+                            </div>
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-4 border-b border-border px-4 py-3.5 last:border-0">
+                                    <div className="h-7 w-7 rounded animate-pulse bg-surface-2" />
+                                    <div className="h-3.5 w-36 rounded bg-surface-2 animate-pulse" />
+                                    <div className="h-3.5 flex-1 max-w-24 rounded bg-surface-2 animate-pulse" />
+                                    <div className="ml-auto h-6 w-16 rounded-full bg-surface-2 animate-pulse" />
+                                </div>
+                            ))}
+                        </div>
+                    ))}
                 </div>
             ) : categories.length === 0 ? (
-                <div className="rounded-card border border-border bg-surface-1 p-8 text-center">
-                    <p className="text-text-3">Belum ada kategori</p>
-                </div>
+                <EmptyState
+                    icon={<Folder weight="duotone" />}
+                    title="Belum ada kategori"
+                    description="Kategori mengelompokkan pengumuman per site dan memunculkan di navigasi."
+                    action={
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            iconLeft={<PencilSimple size={14} weight="bold" />}
+                            onClick={() => {
+                                setShowAddForm(true);
+                                setError("");
+                            }}
+                        >
+                            Tambah Kategori
+                        </Button>
+                    }
+                />
             ) : (
                 Object.entries(groupedCategories)
                     .filter(([siteId]) => {

@@ -103,8 +103,16 @@ export default function EmailPage() {
 
     if (isLoading) {
         return (
-            <div className="flex min-h-[60vh] items-center justify-center p-8">
-                <p className="text-text-3">Memuat pengaturan email...</p>
+            <div className="p-6 md:p-8" aria-hidden="true">
+                <div className="mb-6 h-7 w-56 rounded bg-surface-2 animate-pulse" />
+                <div className="space-y-4 rounded-card border border-border bg-surface-1 p-6">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="space-y-2">
+                            <div className="h-3 w-32 rounded bg-surface-2 animate-pulse" />
+                            <div className="h-10 w-full max-w-md rounded-control bg-surface-2 animate-pulse" />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }

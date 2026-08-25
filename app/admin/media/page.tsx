@@ -33,16 +33,26 @@ export default function MediaGalleryPage() {
     const [isUploading, setIsUploading] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [previewItem, setPreviewItem] = useState<Media | null>(null);
+    // Pagination server-side (API /api/media sudah mendukung page/limit).
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState(0);
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const fetchMedia = useCallback(async () => {
+    const PAGE_SIZE = 24;
+
+    const fetchMedia = useCallback(async (targetPage: number) => {
         setIsLoading(true);
         try {
-            const response = await fetch("/api/media?limit=100");
+            const response = await fetch(`/api/media?limit=${PAGE_SIZE}&page=${targetPage}`);
             const data = await response.json();
             setMedia(data.data || []);
+            if (data.pagination) {
+                setTotalPages(data.pagination.totalPages || 1);
+                setTotal(data.pagination.total ?? (data.data || []).length);
+            }
         } catch (error) {
             console.error("Error fetching media:", error);
             showToast("Gagal memuat galeri", "error");
@@ -52,8 +62,8 @@ export default function MediaGalleryPage() {
     }, [showToast]);
 
     useEffect(() => {
-        fetchMedia();
-    }, [fetchMedia]);
+        fetchMedia(page);
+    }, [fetchMedia, page]);
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -83,7 +93,7 @@ export default function MediaGalleryPage() {
             }
         }
 
-        fetchMedia();
+        fetchMedia(page);
         setIsUploading(false);
         e.target.value = "";
     };
@@ -96,6 +106,7 @@ export default function MediaGalleryPage() {
             if (response.ok) {
                 showToast("File dihapus", "success");
                 setMedia((prev) => prev.filter((m) => m.id !== id));
+                setTotal((t) => Math.max(0, t - 1));
                 if (previewItem?.id === id) setPreviewItem(null);
             }
         } catch (error) {
@@ -172,7 +183,8 @@ export default function MediaGalleryPage() {
             <div className="mb-6 flex flex-wrap gap-6 rounded-card border border-border bg-surface-1 px-5 py-4">
                 <div>
                     <span className="block text-xs font-medium text-text-3">Total Media</span>
-                    <span className="text-xl font-semibold text-text-1">{media.length}</span>
+                    {/* Total dari server — bukan media.length yang hanya isi halaman ini. */}
+                    <span className="text-xl font-semibold text-text-1">{total}</span>
                 </div>
                 <div>
                     <span className="block text-xs font-medium text-text-3">Gambar</span>
@@ -305,6 +317,36 @@ export default function MediaGalleryPage() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {/* Pagination — server-side (24/halaman) */}
+            {!isLoading && totalPages > 1 && (
+                <nav
+                    className="mt-8 flex items-center justify-center gap-2"
+                    aria-label="Pagination galeri media"
+                >
+                    <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page <= 1}
+                        className="inline-flex h-9 cursor-pointer items-center rounded-control border border-border bg-surface-1 px-3 text-sm text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label="Halaman sebelumnya"
+                    >
+                        ‹
+                    </button>
+                    <span className="mono px-2 text-sm text-text-2" aria-current="page">
+                        {page} / {totalPages}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={page >= totalPages}
+                        className="inline-flex h-9 cursor-pointer items-center rounded-control border border-border bg-surface-1 px-3 text-sm text-text-2 transition-colors hover:bg-surface-2 hover:text-text-1 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label="Halaman berikutnya"
+                    >
+                        ›
+                    </button>
+                </nav>
             )}
 
             {/* Lightbox preview — `bare` memakai perilaku dialog dari kit

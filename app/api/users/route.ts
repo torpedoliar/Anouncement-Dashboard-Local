@@ -4,39 +4,60 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import bcrypt from "bcryptjs";
+import { validatePagination, getPaginationMeta } from "@/lib/pagination-utils";
 
-// GET /api/users - List all users (SuperAdmin only — exposes all accounts/roles)
-export async function GET() {
+// GET /api/users - List users (SuperAdmin only — exposes all accounts/roles).
+// Mendukung ?page=&limit=&q= — tanpa parameter perilaku lama (array polos)
+// tetap dikembalikan agar pemanggil lama tidak putus.
+export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.isSuperAdmin) {
             return NextResponse.json({ error: "Forbidden: SuperAdmin only" }, { status: 403 });
         }
 
-        const users = await prisma.user.findMany({
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                avatar: true,
-                role: true,
-                isSuperAdmin: true,
-                createdAt: true,
-                updatedAt: true,
-                siteAccess: {
-                    select: { siteId: true }
-                }
-            },
-            orderBy: { createdAt: "desc" },
+        const { searchParams } = new URL(request.url);
+        const q = searchParams.get("q")?.trim() || null;
+        const wantsPagination = searchParams.has("page") || searchParams.has("limit") || !!q;
+
+        const where = q
+            ? {
+                OR: [
+                    { name: { contains: q, mode: "insensitive" as const } },
+                    { email: { contains: q, mode: "insensitive" as const } },
+                ],
+            }
+            : undefined;
+
+        if (!wantsPagination) {
+            // Perilaku lama: seluruh user sebagai array polos.
+            const users = await prisma.user.findMany({
+                select: USER_SELECT,
+                orderBy: { createdAt: "desc" },
+            });
+            return NextResponse.json(users.map(formatUser));
+        }
+
+        const { limit, skip } = validatePagination(searchParams.get("page"), searchParams.get("limit"));
+        const [users, total] = await Promise.all([
+            prisma.user.findMany({
+                where,
+                select: USER_SELECT,
+                orderBy: { createdAt: "desc" },
+                skip,
+                take: limit,
+            }),
+            prisma.user.count({ where }),
+        ]);
+
+        return NextResponse.json({
+            data: users.map(formatUser),
+            pagination: getPaginationMeta(
+                Math.max(1, parseInt(String(searchParams.get("page"))) || 1),
+                limit,
+                total
+            ),
         });
-
-        // Flatten siteAccess to array of ids
-        const formattedUsers = users.map((user) => ({
-            ...user,
-            siteIds: user.siteAccess.map((sa) => sa.siteId)
-        }));
-
-        return NextResponse.json(formattedUsers);
     } catch (error) {
         console.error("Error fetching users:", error);
         return NextResponse.json(
@@ -44,6 +65,30 @@ export async function GET() {
             { status: 500 }
         );
     }
+}
+
+const USER_SELECT = {
+    id: true,
+    email: true,
+    name: true,
+    avatar: true,
+    role: true,
+    isSuperAdmin: true,
+    createdAt: true,
+    updatedAt: true,
+    siteAccess: {
+        select: { siteId: true }
+    }
+} as const;
+
+function formatUser(user: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    siteAccess: any[];
+} & Record<string, unknown>) {
+    return {
+        ...user,
+        siteIds: user.siteAccess.map((sa) => sa.siteId),
+    };
 }
 
 // POST /api/users - Create new user
