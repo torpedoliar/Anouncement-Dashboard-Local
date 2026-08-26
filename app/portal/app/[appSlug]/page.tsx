@@ -6,6 +6,8 @@ import { refreshVolatileFields } from "@/lib/portal-fetch-html";
 import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Wrench } from "@phosphor-icons/react";
 import AccessDenied from "@/components/portal/AccessDenied";
 import NoCredential from "@/components/portal/NoCredential";
 import CorruptCredential from "@/components/portal/CorruptCredential";
@@ -176,6 +178,34 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
             }}
             cred={cred}
         />;
+    }
+
+    // Mode belum diimplementasi (REDIRECT/PROXY/TOKEN masih future di PortalSsoMode):
+    // jangan diam-diam jatuh ke FORM seolah SSO otomatis berfungsi — tampilkan statusnya.
+    if (app.ssoMode === "REDIRECT" || app.ssoMode === "PROXY" || app.ssoMode === "TOKEN") {
+        return (
+            <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-surface-0 px-4 py-10 sm:px-5">
+                <div className="max-w-[400px] text-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-sheet border border-border bg-surface-2">
+                        <Wrench size={24} className="text-text-2" aria-hidden="true" />
+                    </div>
+                    <h1 className="mt-5 font-display text-xl font-semibold text-text-1">
+                        SSO Mode {app.ssoMode} Belum Aktif
+                    </h1>
+                    <p className="mt-3 text-sm text-text-2">
+                        Mode SSO <strong className="font-semibold text-text-1">{app.ssoMode}</strong> untuk{" "}
+                        <strong className="font-semibold text-text-1">{app.name}</strong> belum didukung portal.
+                        Hubungi admin untuk mengubah mode aplikasi ini.
+                    </p>
+                    <Link
+                        href="/portal"
+                        className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-control border border-border bg-surface-1 px-4 text-sm font-semibold text-text-1 transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    >
+                        Kembali ke Portal
+                    </Link>
+                </div>
+            </div>
+        );
     }
 
     return <SSOAutoSubmit
