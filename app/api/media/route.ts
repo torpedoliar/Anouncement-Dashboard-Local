@@ -4,11 +4,12 @@ import { validatePagination } from '@/lib/pagination-utils';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getCurrentSiteId } from "@/lib/site-context";
-import { canAccessSite } from "@/lib/site-access";
+import { canAccessSite, canEditOnSite } from "@/lib/site-access";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
 import sharp from "sharp";
+import { z } from "zod";
 
 // File type configurations
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
@@ -116,6 +117,23 @@ export async function POST(request: NextRequest) {
 
         if (!file) {
             return NextResponse.json({ error: "File is required" }, { status: 400 });
+        }
+
+        // CR-01: tulis media adalah jalur write — wajib gate lewat lib/site-access
+        // (invariant CLAUDE.md), pola sama dengan GET/DELETE di file ini. Sebelumnya
+        // siteId diterima mentah sehingga editor situs A bisa menulis ke situs mana pun.
+        const isSuperAdmin = !!session.user?.isSuperAdmin;
+        if (siteId) {
+            if (!z.string().cuid().safeParse(siteId).success) {
+                return NextResponse.json({ error: "Invalid siteId" }, { status: 400 });
+            }
+            if (!session.user?.id || !(await canEditOnSite(session.user.id, siteId))) {
+                return NextResponse.json({ error: "No access to this site" }, { status: 403 });
+            }
+        } else if (!isSuperAdmin) {
+            // Media bersama (siteId=null) hanya boleh dibuat SuperAdmin — selaras
+            // dengan DELETE yang juga mensyaratkan SuperAdmin untuk menghapusnya.
+            return NextResponse.json({ error: "Only SuperAdmin can upload shared media" }, { status: 403 });
         }
 
         // Determine file type
