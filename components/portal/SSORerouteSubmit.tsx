@@ -32,9 +32,11 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
 
     useEffect(() => {
         if (status !== "submitting" || failed) return;
+        // Harus lebih lama daripada timeout relayRequest di server (12 dtk): Oracle yang
+        // lambat membuat navigasi tertahan, bukan gagal — jangan bunuh UI lebih dulu.
         const t = setTimeout(() => {
             if (!document.hidden) setFailed(true);
-        }, 3000);
+        }, 15000);
         return () => clearTimeout(t);
     }, [status, failed]);
 

@@ -31,6 +31,27 @@ export interface AutoPostForm {
     fields: Record<string, string>;
 }
 
+export interface OracleAuthResult {
+    status: string;
+    url: string;
+    errorCode: string;
+}
+
+/**
+ * Parse respons autentikasi Oracle EBS AppsLocalLogin.jsp: literal objek JS
+ * (key tanpa kutip, nilai hex-escaped) — bukan JSON. login.js aslinya memakai
+ * eval(); cukup regex di sini agar eval tidak masuk kode kita.
+ */
+export function parseOracleAuthResponse(body: string): OracleAuthResult {
+    const unescapeHex = (s: string) =>
+        s.replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+    const field = (name: string) => {
+        const m = body.match(new RegExp(`${name}\\s*:\\s*'(.*?)'`, "m"));
+        return m ? unescapeHex(m[1]) : "";
+    };
+    return { status: field("status"), url: field("url"), errorCode: field("errorCode") };
+}
+
 /**
  * Cari form auto-POST protokol federasi (WS-Federation `wresult`, SAML `SAMLResponse`).
  *
@@ -249,6 +270,20 @@ export async function relayLogin(opts: {
         failureReason: backOnLogin ? "Aplikasi menolak kredensial yang tersimpan." : null,
         hops,
     };
+}
+
+/** Login Oracle EBS: tombol JS memanggil endpoint XHR dengan header X-Service. */
+export function looksLikeOracleEbs(html: string, finalUrl: string): boolean {
+    return /AppsLocalLogin\.jsp|AuthenticateUser|OA_HTML/i.test(`${html.slice(0, 20000)} ${finalUrl}`);
+}
+
+/** Halaman yang form login-nya dirakit JavaScript — HTML mentah tidak memuat inputnya. */
+export function looksLikeClientRenderedApp(html: string): boolean {
+    if (!html) return false;
+    const hasAppRoot = /<div[^>]+id=["'](?:root|app|__next|ng-app)["']/i.test(html);
+    const hasNoForm = !/<form[\s>]/i.test(html);
+    const heavyScript = (html.match(/<script[\s>]/gi) ?? []).length >= 3;
+    return hasAppRoot && hasNoForm && heavyScript;
 }
 
 /**

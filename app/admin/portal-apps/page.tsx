@@ -231,12 +231,19 @@ export default function PortalAppsPage() {
                 if (data.recommendedMode) {
                     setFormData((prev) => ({ ...prev, ssoMode: data.recommendedMode }));
                 }
+                // Catatan lapis (mis. "Layanan render browser tidak tersedia") wajib tampil:
+                // tanpa ini, SPA yang gagal terdeteksi terlihat seperti bug, padahal
+                // penyebabnya layanan browserless mati.
+                const notes: string[] = Array.isArray(data.layerNotes) ? data.layerNotes : [];
                 setDetectMsg({
                     type: "err",
                     text: data.error || "Deteksi gagal",
-                    warnings: data.recommendationReason
-                        ? [`Mode SSO otomatis diubah ke ${data.recommendedMode}. ${data.recommendationReason}`]
-                        : undefined,
+                    warnings: [
+                        ...(data.recommendationReason
+                            ? [`Mode SSO otomatis diubah ke ${data.recommendedMode}. ${data.recommendationReason}`]
+                            : []),
+                        ...notes,
+                    ],
                 });
                 return;
             }
@@ -265,7 +272,7 @@ export default function PortalAppsPage() {
                 data.passwordField ? `Pass: ${data.passwordField}` : null,
             ].filter(Boolean).join(" | ");
 
-            const allWarnings = [...(data.warnings ?? [])];
+            const allWarnings = [...(data.warnings ?? []), ...(data.layerNotes ?? [])];
             if (modeChanged) {
                 allWarnings.unshift(
                     `SSO Mode diubah dari ${formData.ssoMode} ke ${data.recommendedMode}. ${data.recommendationReason ?? ""}`.trim()

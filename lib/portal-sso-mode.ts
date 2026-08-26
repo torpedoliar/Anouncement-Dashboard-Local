@@ -1,4 +1,5 @@
 import type { DetectedFields } from "@/lib/portal-login-detect";
+import { looksLikeClientRenderedApp, looksLikeOracleEbs } from "@/lib/portal-sso-relay";
 
 /**
  * Klasifikasi mode SSO berdasarkan BUKTI dari halaman login, bukan tebakan.
@@ -66,19 +67,8 @@ function findPairedCookies(cookieNames: string[], extraFields: Record<string, st
     return Array.from(paired);
 }
 
-/** Halaman yang form login-nya dirakit JavaScript — HTML mentah tidak memuat inputnya. */
-function looksLikeClientRenderedApp(html: string): boolean {
-    if (!html) return false;
-    const hasAppRoot = /<div[^>]+id=["'](?:root|app|__next|ng-app)["']/i.test(html);
-    const hasNoForm = !/<form[\s>]/i.test(html);
-    const heavyScript = (html.match(/<script[\s>]/gi) ?? []).length >= 3;
-    return hasAppRoot && hasNoForm && heavyScript;
-}
-
-/** Login Oracle EBS: tombol JS memanggil endpoint XHR dengan header X-Service. */
-function looksLikeOracleEbs(html: string, finalUrl: string): boolean {
-    return /AppsLocalLogin\.jsp|AuthenticateUser|OA_HTML/i.test(`${html.slice(0, 20000)} ${finalUrl}`);
-}
+// looksLikeClientRenderedApp & looksLikeOracleEbs kini di lib/portal-sso-relay
+// agar dipakai bersama verify-login (satu definisi, dua pemanggil).
 
 export function classifySsoMode(ev: ModeEvidence): ModeVerdict {
     const signals: string[] = [];

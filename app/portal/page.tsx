@@ -6,14 +6,23 @@ import { triggerHealthCheckIfStale } from "@/lib/portal-health";
 import prisma from "@/lib/prisma";
 import OnboardingWizard from "@/components/portal/OnboardingWizard";
 import GroupedAppGrid, { GridGroup } from "@/components/portal/GroupedAppGrid";
+import SsoErrorBanner from "@/components/portal/SsoErrorBanner";
 import Link from "next/link";
 import { SquaresFour } from "@/components/ui/client-icons";
 
 export const dynamic = "force-dynamic";
 
-export default async function PortalPage() {
+interface PortalPageProps {
+    searchParams: Promise<{ error?: string; app?: string }>;
+}
+
+export default async function PortalPage({ searchParams }: PortalPageProps) {
     const session = await getServerSession(portalAuthOptions);
     const userId = session!.user!.id as string;
+
+    // Kegagalan SSO dari route REROUTE/POST kembali ke sini via query param.
+    // Tampilkan penyebabnya agar pengguna tidak melihat portal "diam saja".
+    const { error: ssoError, app: ssoErrorApp } = await searchParams;
 
     // Segarkan status kesehatan di latar belakang (throttled 5 menit, tidak di-await).
     // Tanpa ini tidak ada yang pernah menjalankan health check dan semua app tetap 'UNKNOWN'.
@@ -69,6 +78,8 @@ export default async function PortalPage() {
                 <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">PORTAL SSO</p>
                 <h1 className="font-display text-2xl font-semibold text-text-1">Aplikasi Saya</h1>
             </div>
+
+            {ssoError && <SsoErrorBanner error={ssoError} appSlug={ssoErrorApp} />}
 
             {gridGroups.length === 0 ? (
                 <div className="mx-auto max-w-[400px] rounded-sheet border border-border bg-surface-1 p-10 text-center">

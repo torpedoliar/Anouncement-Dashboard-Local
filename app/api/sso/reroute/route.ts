@@ -6,6 +6,7 @@ import { decryptCredential } from "@/lib/portal-crypto";
 import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
 import { relayRequest } from "@/lib/portal-fetch-html";
+import { parseOracleAuthResponse, sharedCookieDomain } from "@/lib/portal-sso-relay";
 
 export async function POST(request: NextRequest) {
     try {
@@ -94,22 +95,13 @@ export async function POST(request: NextRequest) {
         });
 
         const finalCookiePairs: string[] = postRes.rawSetCookies.map((c) => c.split(";")[0]);
-        const postBody = postRes.html;
 
         // Parse Oracle's JS-object-literal response (keys unquoted, hex-escaped values).
         // login.js uses eval(); we extract fields with regex to avoid eval.
-        const unescapeOracle = (s: string) =>
-            s.replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
-        const fieldRe = (name: string) => {
-            const m = postBody.match(new RegExp(`${name}\\s*:\\s*'(.*?)'`, "m"));
-            return m ? unescapeOracle(m[1]) : "";
-        };
-        const authStatus = fieldRe("status");
-        const authUrl = fieldRe("url");
+        const { status: authStatus, url: authUrl, errorCode } = parseOracleAuthResponse(postRes.html);
 
         // Oracle rejects bad creds with {status:'failed', errorCode:'...'} (still 200, small JSON-ish body)
         if (authStatus !== "success" || !authUrl) {
-            const errorCode = fieldRe("errorCode") || "unknown";
             await logAudit({
                 actorType: "PORTAL_USER",
                 actorId: portalUserId,
@@ -119,7 +111,7 @@ export async function POST(request: NextRequest) {
                 entityId: app.id,
                 appId: app.id, // KPI /admin/portal-audit memfilter appId
                 outcome: "FAILURE",
-                errorMessage: `Oracle login rejected credentials (${errorCode})`,
+                errorMessage: `Oracle login rejected credentials (${errorCode || "unknown"})`,
                 metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" }
             }).catch(() => {});
 
@@ -135,16 +127,43 @@ export async function POST(request: NextRequest) {
         }
         
         // Direct-redirect mode (Laporan Investigasi SSO Oracle):
-        // Re-issue Oracle's session cookies to the browser with Domain=.santos.co.id, then
-        // redirect to Oracle's REAL landing URL. No reverse proxy → no 502 (proxy route's
-        // OOM crash gone), no OAF MAC breakage (URLs not rewritten).
-        // ponytail: cookie domain hardcoded to .santos.co.id; generalize to a PortalApp
-        // cookieDomain field if a non-santos app ever needs REROUTE.
-        const cookieDomain = ".santos.co.id";
+        // Re-issue Oracle's session cookies to the browser scoped to the shared domain,
+        // then redirect to Oracle's REAL landing URL. No reverse proxy → no 502 (proxy
+        // route's OOM crash gone), no OAF MAC breakage (URLs not rewritten).
+        //
+        // Domain cookie HARUS dihitung dari host portal yang sebenarnya: cookie
+        // Domain=*.santos.co.id dari host IP (mis. 192.168.2.3:3100) dibuang browser
+        // diam-diam → redirect mendarat kembali di halaman login Oracle. Pola sama
+        // dengan route POST: tanpa shared domain, jangan berpura-pura berhasil.
+        const resolvedUrl = new URL(authUrl, loginUrl);
+        const cookieDomain = sharedCookieDomain(reqHost ?? "", resolvedUrl.hostname);
         const isHttps = reqProto === "https";
 
+        if (!cookieDomain) {
+            await logAudit({
+                actorType: "PORTAL_USER",
+                actorId: portalUserId,
+                category: "SECURITY",
+                action: "SSO_LAUNCH",
+                entityType: "PORTAL_APP",
+                entityId: app.id,
+                appId: app.id,
+                outcome: "FAILURE",
+                errorMessage:
+                    "REROUTE: login Oracle berhasil di server, tetapi sesi tidak dapat dipindahkan ke browser " +
+                    "karena portal dan aplikasi tidak berbagi domain induk (cookie lintas-domain dibuang browser). " +
+                    "Solusi permanen: akses portal via subdomain .santos.co.id atau setel PORTAL_SSO_COOKIE_DOMAIN; " +
+                    "sementara itu gunakan SSO Mode VAULT.",
+                metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE", portalHost: reqHost, appHost: resolvedUrl.hostname },
+            }).catch(() => {});
+
+            return NextResponse.redirect(
+                new URL(`/portal?error=sso_cross_domain&app=${appSlug}`, baseUrl),
+                302
+            );
+        }
+
         // Destination: Oracle's success response carries the absolute landing url (OANEWHOMEPAGE).
-        const resolvedUrl = new URL(authUrl, loginUrl);
         const destinationUrl = resolvedUrl.href;
 
         // Build one Set-Cookie header per Oracle cookie, scoped to the shared TLD so the
