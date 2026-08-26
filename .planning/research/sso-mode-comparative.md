@@ -1,115 +1,78 @@
-# Riset Komparatif Protokol: REDIRECT vs PROXY vs TOKEN (TASK-12, Milestone #3 Gelombang 1)
+# Riset Komparatif Mode SSO: REDIRECT vs PROXY vs TOKEN — Level Protokol
 
-Tanggal: 2026-08-26 · Agent: jhonnie-walker-mt9o7hpl (R&D) · Sifat: **input independen** bagi
-TASK-10 (desain arsitektur, Arak Bali) dan TASK-11 (threat model, Tuak) — level **protokol**,
-bukan implementasi repo. Dokumen untracked; god commit saat sign-off.
+| | |
+|---|---|
+| Penulis | Jhonnie Walker (R&D), TASK-12 gelombang 1 Milestone #3 |
+| Tanggal | 2026-08-26 |
+| Status | Selesai — input independen untuk TASK-10 (desain) & TASK-11 (threat model); dokumen **untracked**, god commit saat sign-off |
+| Scope | Karakteristik protokol/pola umum, BUKAN implementasi repo. Read-only kode aplikasi |
+| Sumber primer | RFC 8693 (token exchange); RFC 9700 OAuth Security BCP; OpenID `oauth-v2-form-post-response-mode-1_0`; nginx Admin Guide *Configuring Subrequest Authentication*; oauth2-proxy docs (*Behaviour*, *Integrations › Nginx*) |
 
-## 1. Pertanyaan Riset
+Notasi: **[F]** fakta terverifikasi dari sumber primer · **[O]** observasi pola industri · **[A]** asumsi/konteks repo.
 
-> Dari tiga mekanisme yang akan diaktifkan — redirect form-post, reverse-proxy header injection,
-> token exchange (OIDC/OAuth2) — mana yang paling cocok untuk karakteristik aplikasi target
-> portal ini, dan apa implikasi keamanan tiap mekanisme pada tingkat protokol?
+---
 
-## 2. Konteks & Batasan (fakta terverifikasi dari repo)
+## 1. Pertanyaan riset
 
-- Enum `PortalSsoMode` (7 nilai): mode berjalan hari ini = **FORM / POST / REROUTE / VAULT**
-  (`lib/portal-sso-mode.ts`, `app/api/sso/{reroute,post}/route.ts`). REDIRECT/PROXY/TOKEN masih
-  halaman "Belum Aktif" sejak commit `32c266c`.
-- Mayoritas target = **aplikasi legacy form-based on-premise**: Oracle EBS (REROUTE khusus pola
-  XHR `AuthenticateUser`), ASP.NET WebForms/MVC (antiforgery terikat cookie → POST), K2, SPA JS.
-  Bukti klasifikasi: `lib/portal-detect-ladder.ts` + `classifySsoMode`.
-- **Kendala domain terverifikasi produksi** (memory + `Laporan Investigasi Kendala SSO Oracle.md`):
-  portal diakses via IP `192.168.2.3:3100`; browser membuang `Set-Cookie Domain=.santos.co.id`
-  dari host non-subdomain (RFC 6265 §5.1.2 + same-origin). Reverse proxy OAF/OAM sudah terbukti
-  jalan buntu (MAC rusak). Solusi permanen = DNS shared (`portal.santos.co.id`) +
-  `sharedCookieDomain()` (`lib/portal-sso-relay.ts`). Ini menghampari SEMUA mekanisme yang
-  menyerahkan sesi via cookie domain ketiga.
-- Aturan milestone: file beku OPD-1 zero-diff; tanpa migration baru kecuali terpaksa.
+Dari tiga mekanisme aktivasi SSO (`PortalSsoMode`: REDIRECT = redirect hand-off, PROXY = reverse proxy + header injection, TOKEN = OIDC/OAuth2 token) — bagaimana cara kerja standarnya menurut spec, apa trade-off intinya, apa implikasi keamanan tingkat protokol, dan mana yang paling cocok untuk karakteristik aplikasi target di repo ini (mayoritas app legacy form-based: Oracle EBS, K2, ASP.NET — bukti: `lib/portal-sso-relay.ts`, `lib/portal-sso-mode.ts`)?
 
-## 3. Cara Kerja Standar per Mekanisme (sumber primer)
+## 2. Konteks & kendala
 
-### A. REDIRECT (redirect form-post)
-Pola umum: portal mengarahkan browser ke endpoint SSO aplikasi target sambil membawa bukti
-identitas (biasanya satu kali / berumur sangat pendek) melalui POST body atau parameter query;
-target menukar bukti itu menjadi sesi lokalnya sendiri. Ini varian dari keluarga "extension
-grant" RFC 6749 §4.5 — pertukaran bukti antar-server dengan HTTP POST — dan mewarisi aturan
-mainnya: bukti HARUS berumur pendek, sekali pakai, dan ditukar langsung oleh penerima.
-Kerabat spesifikasinya: WS-Federation wsignin1.0 dan SAML HTTP-POST binding (sudah dikenali
-`FEDERATION_URL_RE` di kode deteksi). Bedanya dengan SAML/OIDC asli: tidak ada signature
-kriptografis atas bukti tersebut kecuali kita menambahkannya sendiri.
+- **[A]** Target mayoritas tidak punya endpoint federasi sendiri; deteksi repo bahkan mengklasifikasikan rantai WS-Fed/ADFS/SAML/OIDC lewat `FEDERATION_URL_RE` (`portal-sso-mode.ts:40`) — sebagian kecil target jelas federated.
+- **[A]** Portal = monolit Next.js satu proses (IP internal :3100); tidak ada lapisan reverse proxy umum di depan semua app target hari ini.
+- **[A]** Constraint cookie lintas host sudah diketahui: hanya domain suffix bersama yang bisa dipakai (`sharedCookieDomain()`); portal diakses via IP di non-prod.
+- **[F]** Desain repo (TASK-10) telah menolak PROXY di dalam Next.js dan menjadikan TOKEN blueprint kondisional — riset ini uji independen level protokol atas dua keputusan itu.
 
-### B. PROXY (reverse proxy + header injection)
-Pola standar oauth2-proxy/nginx `auth_request`/Authelia: proxy mengautentikasi user SEKALI
-(session milik proxy), lalu setiap request ke upstream disuntik identitas via header —
-`X-Forwarded-User`/`X-Forwarded-Email` (oauth2-proxy `--pass-user-headers`) atau
-`Remote-User`/`Remote-Groups`/`Remote-Email` (konvensi Authelia), atau mapping bebas via nginx
-`auth_request_set $upstream_http_*` → `proxy_set_header X-UserId ...`. Upstream dipercaya
-buta terhadap header itu. Syarat keamanannya eksplisit di dokumen oauth2-proxy:
-upstream TIDAK BOLEH terjangkau langsung oleh klien (hanya lewat proxy), `--skip-auth-strip-headers`
-(default true) harus aktif agar klien tak bisa menyelundupkan `X-Forwarded-*`, dan
-`--trusted-proxy-ip` dibatasi. Dengan kata lain: keamanan mode ini = keamanan SEGMENTASI JARINGAN.
+## 3. Temuan per mekanisme
 
-### C. TOKEN (OIDC/OAuth2 token exchange)
-Standar: RFC 8693 — client POST ke token endpoint dengan
-`grant_type=urn:ietf:params:oauth:grant-type:token-exchange` + `subject_token` (+ type), opsional
-`actor_token`, `audience`/`resource`/`scope`. Respons = token baru (`issued_token_type`,
-`expires_in`). Semantik resmi: **impersonasi** (A menjadi B, tak terbedakan) vs **delegasi**
-(token komposit `act` claim). Syarat keamanan eksplisit spec: autentikasi client WAJIB — tanpa
-itu "compromised token bisa ditukar STS menjadi token lain oleh siapa pun"; token hanya lewat
-TLS; scope dibatasi; umur pendek. Prasyarat mutlak: **aplikasi target harus mengerti OAuth2/OIDC**.
+### 3.1 REDIRECT — redirect hand-off (analog: alur berbasis redirect OAuth2/CAS + Form Post Response Mode)
 
-## 4. Trade-off Inti & Kompatibilitas Target Legacy
+- **(a) Cara kerja standar [F]** Browser diarahkan (302) ke IdP/portal, autentikasi terjadi di sana, respons dikembalikan ke app lewat redirect/callback dengan parameter tiket/kode. Varian *form post*: respons dikirim sebagai HTML form auto-submit `method=POST` ke `redirect_uri` sehingga parameter tidak masuk URL/history/referrer/log; spec mewajibkan `state` divalidasi klien dan `Cache-Control: no-store` pada halaman respons.
+- **(b) Trade-off inti**: kompleksitas rendah–sedang, tanpa infra baru (cukup HTTPS). Syarat mutlak: **app target harus punya titik integrasi** (endpoint validasi tiket, secret bersama, atau dukungan federasi) — redirect murni tanpa kerja sama app tidak mengautentikasi apa pun. Untuk app legacy tanpa titik itu, nilai REDIRECT ≈ nol dibanding FORM/POST existing.
+- **(c) Implikasi keamanan [F]** (RFC 9700): `redirect_uri` WAJIB exact-match (prefix match dilarang — §2.1, serangan §4.1); `state` satu-pakai terikat UA untuk CSRF (§2.1); pertahanan mix-up attack WAJIB bila >1 authorization server (§4.4). Parameter tiket di URL = bocor ke history/referrer/log → gunakan pola form-post atau POST callback.
+- **(d) Fit repo**: paling luas untuk app yang punya sedikit pun titik integrasi; sejalan dengan arsitektur hand-off existing (REROUTE/POST) dan constraint cookie.
+
+### 3.2 PROXY — reverse proxy + header injection (pola: nginx `auth_request` + oauth2-proxy/authelia)
+
+- **(a) Cara kerja standar [F]** Proxy memvalidasi tiap request lewat *subrequest* ke endpoint auth (oracle boolean: 2xx boleh, 401/403 tolak; body request dibuang dari subrequest; lokasi auth ditandai `internal`). Identitas terverifikasi disuntik sebagai header ke upstream via `auth_request_set` → `proxy_set_header` (mis. `X-User`/`X-Forwarded-User` dari `$upstream_http_x_auth_request_user` saat `--set-xauthrequest`).
+- **(b) Trade-off inti**: UX terbaik bagi app (tanpa ubah app), tapi biaya infra tertinggi: butuh lapisan proxy riil di depan SETIAP app + isolasi jaringan. App legacy seperti Oracle EBS tidak otomatis percaya header eksternal — butuh konfigurasi produk tambahan (SSO/OAM dsb.) [O].
+- **(c) Implikasi keamanan**: model keamanannya **runtuh total** bila upstream bisa dijangkau langsung — siapa pun yang lolos ke port app bisa memalsukan `X-Forwarded-User`. Dokumentasi resmi tidak menyatakan ini eksplisit, tapi mengikut secara struktural dari pola header-trust [F+O]. Wajib: strip header identitas dari klien sebelum injeksi, deny-by-default akses langsung upstream. Ini konsisten dengan risiko spoofing di threat model TASK-11 (R-2 allowlist bypass).
+- **(d) Fit repo**: RENDAH saat ini — menuntut re-arsitektur jaringan (semua app target hanya reachable via proxy) yang di luar kendali portal Next.js; desain repo sudah tepat menolak PROXY-in-process (Next.js bukan full proxy; streaming/websocket/upload passthrough jadi permukaan bug baru) [A+F].
+
+### 3.3 TOKEN — token exchange / federasi OIDC-OAuth2 (analog: authorization code flow + RFC 8693)
+
+- **(a) Cara kerja standar [F]** App target bertindak klien OIDC: redirect ke authorize → kode → tukar token (confidential client) → validasi ID token. RFC 8693 menambah grant `token-exchange`: portal menukar `subject_token` menjadi token utk `audience` tertentu, mendukung delegasi (`act` claim; A bertindak untuk B) vs impersonasi (A = B dalam batas scope/waktu).
+- **(b) Trade-off inti**: kompleksitas tertinggi; syarat mutlak **app target OIDC-aware** (atau penerima bearer token). Bagi app legacy non-federasi: tidak dapat dipakai sama sekali. Nilainya tinggi justru untuk minoritas target yang terdeteksi federated (rantai WS-Fed/ADFS/OIDC di evidence deteksi).
+- **(c) Implikasi keamanan [F]** (RFC 9700 + RFC 8693): PKCE direkomendasikan juga utk confidential client, WAJIB utk public (§2.1.1); access token idealnya *sender-constrained* (mTLS/DPoP) atau berumur pendek + *audience-restricted* (§4.10); client authentication pada token endpoint krusial — tanpa itu "token sekali bocor bisa ditukar jadi token lain oleh siapa saja" (RFC 8693 §2.1). Model kriptografis terkuat dari ketiganya.
+- **(d) Fit repo**: cocok persis untuk subset app federasi; untuk mayoritas legacy = bukan opsi. Menempatkannya sebagai blueprint kondisional (keputusan TASK-10) selaras temuan ini.
+
+## 4. Tabel trade-off
 
 | Kriteria | REDIRECT | PROXY | TOKEN |
 |---|---|---|---|
-| Kompleksitas implementasi | Sedang — endpoint penerbit bukti + endpoint penukar di sisi target (atau shim) | Tinggi — proxy per-app/per-path, rewrite URL absolut, WebSocket, TLS passthrough vs terminate | Sedang-tinggi di sisi portal, NOL di target jika target sudah OIDC |
-| Kebutuhan infra | Hampir nol | **Perlu kontrol routing + segmentasi jaringan** (wajib, bukan opsional) | Hampir nol di infra; perlu IdP/token service |
-| Kompatibilitas app legacy form-based | Sedang — butuh modifikasi/shim di target | Rendah-sedang — app tidak sadar SSO, tapi rentan rusak (preseden: OAF MAC rusak saat di-proksi; app JS/XHR yang hardcode path absolut sering rusak) | **Nol** — app legacy tidak mengerti token |
-| Perubahan di target app | Ya (endpoint penukar) | Tidak (di luar jaringan) | Ya, besar (adopsi OIDC) |
-| Jejak audit | Jelas (bukti sekali pakai per launch) | Tersekat antara proxy dan app | Paling kuat (token bertanda tangan, `act` delegation chain) |
+| Kompatibilitas app legacy tanpa integrasi | Rendah–sedang (butuh titik integrasi) | Sedang (butuh percaya header — jarang bawaan) | Sangat rendah (wajib OIDC-aware) |
+| Kompatibilitas app federasi | Tinggi | Sedang | **Tinggi** |
+| Kompleksitas implementasi | Sedang | Tinggi (per-app infra) | Tinggi (kripto + validasi) |
+| Biaya operasional | Rendah | Tinggi (lapisan proxy permanen + isolasi jaringan) | Rendah–sedang |
+| Permukaan keamanan baru | Redirect validation, tiket di URL | Spoofing header bila upstream bocor langsung — fatal | Key management, mix-up, replay token |
+| Keandalan terhadap app yang tak bisa diubah | Bergantung app | Terbaik (app tak disentuh) | Tidak ada |
+| Vendor lock-in | Rendah | Ikut produk proxy | Rendah (standar terbuka) |
 
-## 5. Implikasi Keamanan Tingkat Protokol
+## 5. Rekomendasi fit (level protokol)
 
-| Vektor | REDIRECT | PROXY | TOKEN |
-|---|---|---|---|
-| Pencurian bukti/kredensial | Bukti sekali pakai bocor via referrer/log/history bila lewat GET — wajib POST + TTL pendek + one-time | Identitas hanya header internal — tidak bocor ke klien bila strip headers aktif | Token bocor = akses penuh sampai expiry; mitigasi: TTL pendek, scope sempit, client auth |
-| Spoofing identitas | Target memercayai bukti tanpa signature → wajib HMAC/signature + audience binding | Klien menyuntik `X-Forwarded-User` langsung ke upstream bila upstream terjangkau — **vektor utama** | Sulit — butuh client secret/private key; impersonasi dikontrol `may_act` |
-| Replay | Wajib nonce one-time | Session proxy adalah titik replay (cookie curian = akses semua upstream) | Refresh/replay dikontrol server otorisasi |
-| Blast radius salah konfigurasi | Satu aplikasi target | **Semua upstream di belakang proxy sekaligus** | Satu audience |
-| Kepatuhan audit trail (repo pakai `logAudit`) | Mudah (event launch) | Harus gabung log proxy + app | Native (token log + `jti`) |
+1. **REDIRECT duluan** — nilai/biaya terbaik untuk repo: tanpa infra baru, aman bila disiplin RFC 9700 (exact `redirect_uri`, `state`, tiket satu-pakai pendek, respons via POST bukan GET-query). Prioritas implementasi gelombang 2. **[rekomendasi]**
+2. **TOKEN tetap blueprint** — satu-satunya jalur benar untuk app federasi; aktifkan hanya saat ada target nyata yang OIDC-aware, dengan client auth + audience restriction + token pendek sebagai syarat minimum. **[rekomendasi]**
+3. **PROXY jangan di dalam Next.js** — keputusan TASK-10 terkonfirmasi level protokol: pola ini sah secara industri tapi prasyaratnya (proxy riil + isolasi jaringan total upstream) adalah keputusan infrastruktur, bukan fitur CMS. Dokumentasikan sebagai pola ops (nginx + oauth2-proxy) bila suatu hari ada app yang tak bisa diubah sama sekali. **[rekomendasi]**
+4. Mayoritas target legacy tetap dilayani mode existing FORM/POST/REROUTE — ketiga mode baru adalah pelengkap spektrum, bukan pengganti. **[kesimpulan]**
 
-## 6. Tabel Fit terhadap Karakteristik Repo
+## 6. Risiko & keterbatasan riset
 
-Skor fit 1–5 (5 = paling cocok) untuk profil target mayoritas: **legacy form-based on-premise,
-tanpa kemampuan dimodifikasi, portal via IP hingga DNS shared tersedia.**
+- Uji coba/PoC tidak dijalankan (riset kepustakaan); semua klaim performa/perilaku runtime di luar cakupan.
+- Dua fetch sumber gagal saat riset (openid.net core spec timeout; sebagian halaman oauth2-proxy 404) — digantikan sumber setara resmi (RFC, admin guide nginx, docs oauth2-proxy yang hidup). Klaim CAS tidak dirujuk spesifik karena tak sempat diverifikasi ke sumber primernya — diperlakukan sebagai observasi.
+- Kesesuaian akhir tetap bergantung inventaris riil app target per-site (data produksi belum diaudit dalam riset ini) **[A]**.
 
-| Mode | Fit teknis | Alasan singkat |
-|---|---|---|
-| **REDIRECT** | **4** | Paling realistis untuk legacy: pola extension-grant butuh satu endpoint penukar kecil di target (atau shim IIS/Apache), sisanya murni sisi portal. Risiko utama = desain bukti (POST, one-time, HMAC, audience). Cocok dgn pola WS-Fed/SAML yang memang sudah ada di beberapa target (terdeteksi `FEDERATION_URL_RE`). |
-| **PROXY** | **2** | Secara teori "app tidak perlu diubah", tetapi dua fakta repo menentang: (1) preseden nyata OAF/EBS rusak saat di-proksi (dokumen investigasi); (2) syarat keamanannya — segmentasi jaringan ketat + DNS shared + kontrol routing — belum tersedia (portal masih via IP). Melakukan ini sebelum prasyarat = membangun vektor spoofing. |
-| **TOKEN** | **1** (untuk legacy saat ini) · **5** (untuk target modern masa depan) | Secara protokol paling bersih & paling auditable, tetapi butuh target yang mengerti OIDC/OAuth2 — tidak ada satu pun target saat ini yang begitu. Rekomendasikan diimplementasikan sebagai jalur generik (mis. Keycloak sebagai broker) untuk app modern berikutnya, bukan untuk armada legacy. |
+## 7. Handoff
 
-### Rekomendasi urutan aktivasi
-1. **REDIRECT duluan** (nilai tertinggi / risiko infra terendah untuk armada legacy).
-2. **TOKEN kedua**, difokuskan ke aplikasi modern/broker, bukan legacy.
-3. **PROXY terakhir**, dan HANYA setelah dua prasyarat non-kode terpenuhi:
-   (a) DNS shared domain aktif (`portal.santos.co.id`), (b) segmentasi jaringan yang menjamin
-   upstream hanya terjangkau lewat proxy. Tanpa keduanya, mode ini sebaiknya tetap "Belum Aktif".
-
-## 7. Ketidakpastian & Batasan Riset
-
-- Penilaian fit REDIRECT=4 mengasumsikan target legacy dapat menerima endpoint penukar bukti
-  kecil (shim). Untuk target yang benar-benar tak bisa disentuh, VAULT/POST (mode berjalan)
-  tetap fallback-nya.
-- Dokumentasi Authelia gagal dijangkau saat riset (beberapa URL 404); klaim tentang
-  `Remote-*` bersumber dari pola umum forward-auth, bukan halaman resmi yang berhasil dibaca.
-  Bagian PROXY bertumpu pada oauth2-proxy + nginx docs resmi yang berhasil diverifikasi.
-- WebSearch di lingkungan ini mengembalikan hasil kosong; semua kutipan berasal dari
-  WebFetch dokumen primer (RFC 8693, RFC 6749, oauth2-proxy config, nginx auth_request).
-
-## 8. Sumber Primer
-
-- RFC 8693 — OAuth 2.0 Token Exchange: https://datatracker.ietf.org/doc/html/rfc8693
-- RFC 6749 — OAuth 2.0 Framework (§4.5 Extension Grants; §10 security considerations): https://datatracker.ietf.org/doc/html/rfc6749
-- oauth2-proxy Configuration Overview (header injection, `--trusted-proxy-ip`, `--skip-auth-strip-headers`): https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview
-- nginx ngx_http_auth_request_module (`auth_request_set`, `$upstream_http_*`): https://nginx.org/en/docs/http/ngx_http_auth_request_module.html
+- Untuk **TASK-10** (desain): poin §5.1–5.2; pastikan mekanisme tiket REDIRECT memakai POST-callback/form-post, bukan parameter query.
+- Untuk **TASK-11** (threat model): §3.2(c) — prasyarat isolasi upstream utk PROXY; §3.1(c)/§3.3(c) — daftar kontrol wajib REDIRECT/TOKEN yang memperluas R-1/R-2 yang sudah dicatat.
+- Untuk **gelombang 2**: jadikan checklist RFC 9700 (exact redirect_uri, state, PKCE bila alur kode) sebagai acceptance criteria implikasi.
