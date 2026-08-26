@@ -53,7 +53,10 @@ export default function ArticleContent({ html }: ArticleContentProps) {
 
         for (const el of placeholders) {
             const src = el.getAttribute("data-src");
-            if (!src) continue;
+            // Skip falsy DAN string literal "null" — jejak serialisasi lama
+            // Pdf.renderHTML yang mem-pass null mentah (IN-01); "null" truthy
+            // sehingga tanpa guard ini reader merender viewer terhadap URL rusak.
+            if (!src || src === "null") continue;
 
             // Kosongkan isi placeholder sebelum mount (guard re-render).
             el.replaceChildren();
