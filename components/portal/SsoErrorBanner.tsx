@@ -22,6 +22,14 @@ const MESSAGES: Record<string, { title: string; detail: string }> = {
             "Portal dan aplikasi berada di domain yang berbeda, sehingga sesi login tidak bisa diteruskan otomatis. " +
             "Solusi permanen: akses portal melalui subdomain perusahaan. Hubungi admin untuk pengaturannya.",
     },
+    // Mode REDIRECT: URL target aplikasi gagal validator keamanan (bukan kesalahan
+    // pengguna) — peluncuran ditolak sebelum browser meninggalkan portal.
+    sso_invalid_target: {
+        title: "Aplikasi belum dapat dialihkan",
+        detail:
+            "Konfigurasi URL tujuan aplikasi ini tidak valid, sehingga pengalihan otomatis diblokir demi keamanan. " +
+            "Hubungi admin untuk memperbaiki konfigurasi aplikasi.",
+    },
 };
 
 /**
