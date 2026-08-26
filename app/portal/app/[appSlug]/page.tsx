@@ -11,10 +11,12 @@ import { Wrench } from "@phosphor-icons/react";
 import AccessDenied from "@/components/portal/AccessDenied";
 import NoCredential from "@/components/portal/NoCredential";
 import CorruptCredential from "@/components/portal/CorruptCredential";
+import SSORedirectHandoff from "@/components/portal/SSORedirectHandoff";
 import SSOAutoSubmit from "@/components/portal/SSOAutoSubmit";
 import SSORerouteSubmit from "@/components/portal/SSORerouteSubmit";
 import SSOPostSubmit from "@/components/portal/SSOPostSubmit";
 import SSOCredentialVault from "@/components/portal/SSOCredentialVault";
+import SSORedirectHandoff from "@/components/portal/SSORedirectHandoff";
 import AccountSelector from "@/components/portal/AccountSelector";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +65,18 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
     const hasAccess = await canAccessPortalAppBySlug(portalUserId, appSlug);
     if (!hasAccess) {
         return <AccessDenied appName={app.name} />;
+    }
+
+    // 3b. Kelas credential-less (desain §1): REDIRECT tidak memakai kredensial —
+    // dispatch mode harus naik SEBELUM resolusi kredensial agar alurnya jalan.
+    if (app.ssoMode === "REDIRECT") {
+        return <SSORedirectHandoff
+            app={{
+                name: app.name,
+                logoPath: app.logoPath,
+                slug: app.slug,
+            }}
+        />;
     }
 
     // 4. Find credentials — list (multi-akun)
@@ -180,9 +194,10 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
         />;
     }
 
-    // Mode belum diimplementasi (REDIRECT/PROXY/TOKEN masih future di PortalSsoMode):
-    // jangan diam-diam jatuh ke FORM seolah SSO otomatis berfungsi — tampilkan statusnya.
-    if (app.ssoMode === "REDIRECT" || app.ssoMode === "PROXY" || app.ssoMode === "TOKEN") {
+    // Mode belum aktif (TOKEN menunggu gelombang B — desain §3; PROXY ditolak di
+    // monolit, lihat desain §4): jangan diam-diam jatuh ke FORM seolah SSO otomatis
+    // berfungsi — tampilkan status dan arahkan admin ke mode alternatif.
+    if (app.ssoMode === "PROXY" || app.ssoMode === "TOKEN") {
         return (
             <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-surface-0 px-4 py-10 sm:px-5">
                 <div className="max-w-[400px] text-center">
@@ -195,7 +210,9 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
                     <p className="mt-3 text-sm text-text-2">
                         Mode SSO <strong className="font-semibold text-text-1">{app.ssoMode}</strong> untuk{" "}
                         <strong className="font-semibold text-text-1">{app.name}</strong> belum didukung portal.
-                        Hubungi admin untuk mengubah mode aplikasi ini.
+                        {app.ssoMode === "PROXY"
+                            ? " Gunakan mode alternatif (REROUTE/POST/VAULT) untuk aplikasi ini."
+                            : " Hubungi admin untuk mengubah mode aplikasi ini."}
                     </p>
                     <Link
                         href="/portal"
