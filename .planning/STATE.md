@@ -56,7 +56,7 @@ Progress: [████████░░] 80% (4/5 phases of the active milesto
 ### Decisions
 
 - **Approach A "tokenize then migrate"** locked for the rework (design doc approved 2026-08-12); P0–P3 shipped token-native (evidence: tokens in `app/globals.css`, `components/ui/` kit, token-class `AdminSidebar`/`StatTile`, `lib/{admin-nav,announcement-status,chart-theme}.ts`).
-- **Six open decision points** from ingest conflicts preserved in ROADMAP.md (OPD-1..6) — do NOT pick winners unilaterally. Phase 11 must respect OPD-1 (never touch `getAccessiblePortalApps`/`getPortalLayout`), OPD-4 (sweep for stale `portalUserId_appId`), OPD-2 (REROUTE/VAULT out-of-band enum question stays open).
+- **Open decision points** from ingest conflicts preserved in ROADMAP.md (OPD-1..6) — do NOT pick winners unilaterally. Phase 11 must respect OPD-1 (never touch `getAccessiblePortalApps`/`getPortalLayout`) and OPD-4 (sweep for stale `portalUserId_appId`). OPD-2 (REROUTE/VAULT enum) RESOLVED 2026-08-26: `PortalSsoMode` finalized at 7 official values (FORM/REDIRECT/PROXY/TOKEN/REROUTE/VAULT/POST) in `prisma/schema.prisma`; evidence `.planning/phases/opd2-audit.md`.
 - **Announcement status is derived, not stored** (`deriveAnnouncementStatus()`: takedown wins → scheduled → published → draft). NO "Perlu Persetujuan" state — approval schema was dropped (migration `20260605010000_drop_approval_add_revision_video`).
 - M1 D1–D8 are SPEC-sourced decisions, NOT locked ADRs (none exist in repo) — recorded in PROJECT.md.
 
@@ -75,7 +75,8 @@ None (capture via /gsd-add-todo when ideas arise).
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| SSO modes | REDIRECT/PROXY/TOKEN; REROUTE/VAULT enum values (OPD-2) | Future | 2026-08-15 |
+| SSO modes | REDIRECT/PROXY/TOKEN implementations (kept in enum, unimplemented) | Future | 2026-08-15 |
+| SSO modes | REROUTE/VAULT enum values (OPD-2) — RESOLVED: `PortalSsoMode` final 7 values (FORM/REDIRECT/PROXY/TOKEN/REROUTE/VAULT/POST) in `prisma/schema.prisma`; migrations `add_portal_and_audit`, `add_sso_mode_reroute`, `add_sso_mode_vault`, `add_sso_mode_post`; evidence `.planning/phases/opd2-audit.md` | Resolved | 2026-08-26 |
 | Portal features | PORTAL_ADMIN delegation, email notif, health probes, self-registration | Out of scope (00-overview) | 2026-08-15 |
 | Approval | Restore ApprovalRequest workflow | Only if re-added as future feature (OPD-6) | 2026-08-15 |
 | Rate limit | Redis/distributed | Accepted in-memory, future | 2026-08-15 |
