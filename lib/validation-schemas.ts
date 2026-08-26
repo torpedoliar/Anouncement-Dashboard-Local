@@ -38,7 +38,7 @@ function installPdfSrcConstraint(): void {
         if (!el.hasAttribute?.('data-pdf')) return;
         const src = el.getAttribute?.('data-src');
         if (src !== null && src !== undefined && !PDF_SRC_PATTERN.test(src)) {
-            el.removeAttribute('data-src');
+            el.removeAttribute?.('data-src');
         }
     });
     pdfSrcHookInstalled = true;
