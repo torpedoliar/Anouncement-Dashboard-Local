@@ -5,11 +5,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getCurrentSiteId } from "@/lib/site-context";
 import { canAccessSite, canEditOnSite } from "@/lib/site-access";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
 import sharp from "sharp";
 import { z } from "zod";
+
+// WR-05: folder fisik ditentukan dari MIME tersimpan (bukan ekstensi nama file).
+function isVideoMime(mimeType: string): boolean {
+    return mimeType.startsWith("video/");
+}
 
 // File type configurations
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
@@ -253,7 +258,7 @@ export async function DELETE(request: NextRequest) {
         // to that site. Shared media (siteId=null) requires SuperAdmin.
         const media = await prisma.mediaLibrary.findUnique({
             where: { id },
-            select: { siteId: true },
+            select: { siteId: true, mimeType: true, filename: true },
         });
         if (!media) {
             return NextResponse.json({ error: "Media not found" }, { status: 404 });
@@ -271,6 +276,16 @@ export async function DELETE(request: NextRequest) {
         await prisma.mediaLibrary.delete({
             where: { id },
         });
+
+        // WR-05: hapus juga file fisiknya — tanpa ini "terhapus" hanya di DB dan
+        // berkas tetap terserve publik lewat /api/uploads selamanya. Best-effort:
+        // kegagalan unlink tidak menggugurkan delete yang sudah berhasil.
+        try {
+            const folder = isVideoMime(media.mimeType) ? "videos" : (media.mimeType === "application/pdf" ? "documents" : "images");
+            await unlink(path.join(process.cwd(), "public", "uploads", folder, media.filename));
+        } catch (unlinkError) {
+            console.error(`Orphan file left for media ${id}:`, unlinkError);
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {
