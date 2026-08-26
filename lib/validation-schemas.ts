@@ -14,10 +14,38 @@ import DOMPurify from 'isomorphic-dompurify';
 // -----------------------------------------
 
 /**
- * Sanitize HTML content to prevent XSS attacks.
- * Allows safe HTML tags for rich text content.
+ * data-src pada placeholder PDF hanya boleh menunjuk PDF: path relatif
+ * /api/uploads/*.pdf (hasil upload) atau URL absolut http(s) berakhiran .pdf.
+ * Editor sudah memvalidasi ini (parsePdfUrl), tapi sanitasi adalah trust
+ * boundary — markup yang lolos editor tetap dibersihkan di sini (WR-02),
+ * jangan andakan pemeriksaan client-side.
  */
+const PDF_SRC_PATTERN = /^(?:\/api\/uploads\/[^"'>\s]+\.pdf|https?:\/\/[^"'>\s]+\.pdf)$/i;
+
+// Hook dipasang sekali per proses (guard level-modul; API publik DOMPurify
+// tidak mengekspos daftar hook untuk inspeksi).
+let pdfSrcHookInstalled = false;
+
+function installPdfSrcConstraint(): void {
+    if (pdfSrcHookInstalled) return;
+    DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+        // nodeType 1 = ELEMENT_NODE; jangan instanceof Element — hook menerima
+        // node dari dokumen internal sanitizer, bukan global runtime ini.
+        const el = node as Partial<Element> | null;
+        if (!el || el.nodeType !== 1) return;
+        // Hanya placeholder PDF yang dibatasi; atribut data-* lain tidak ada
+        // di whitelist sehingga sudah ter-strip sendiri oleh DOMPurify.
+        if (!el.hasAttribute?.('data-pdf')) return;
+        const src = el.getAttribute?.('data-src');
+        if (src !== null && src !== undefined && !PDF_SRC_PATTERN.test(src)) {
+            el.removeAttribute('data-src');
+        }
+    });
+    pdfSrcHookInstalled = true;
+}
+
 export function sanitizeHTML(html: string): string {
+    installPdfSrcConstraint();
     return DOMPurify.sanitize(html, {
         ALLOWED_TAGS: [
             'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',

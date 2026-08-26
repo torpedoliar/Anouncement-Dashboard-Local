@@ -96,6 +96,31 @@ function testVideoYoutubeMarkersSurvive(): void {
     );
 }
 
+// --- Sanitize half: data-src must be constrained to PDF URLs at the server
+// trust boundary (WR-02: editor check alone is not enough) ---
+
+function testPdfSrcConstrained(): void {
+    // Sah: path upload relatif dan URL absolut .pdf tetap utuh.
+    const ok = sanitizeHTML(
+        '<div data-pdf data-src="https://cdn.example.com/a.pdf" data-filename="a.pdf"></div>',
+    );
+    check("valid absolute .pdf src survives constraint", ok.includes('data-src="https://cdn.example.com/a.pdf"'));
+
+    const okRel = sanitizeHTML('<div data-pdf data-src="/api/uploads/documents/x.pdf"></div>');
+    check("valid relative uploads .pdf src survives constraint", okRel.includes('data-src="/api/uploads/documents/x.pdf"'));
+
+    // Terlarang: halaman HTML eksternal menyamar sebagai sumber PDF.
+    const evil = sanitizeHTML('<div data-pdf data-src="https://evil.com/phish"></div>');
+    check(
+        "non-PDF https src stripped from placeholder",
+        !evil.includes("evil.com"),
+    );
+
+    // Terlarang: scheme berbahaya tetap (dan kini juga) hilang.
+    const js = sanitizeHTML('<div data-pdf data-src="javascript:alert(1)"></div>');
+    check("javascript: data-src stripped", !js.includes("javascript:"));
+}
+
 // --- Sanitize half: the default URI regex must still strip javascript:/data: ---
 function testDangerousUriStripped(): void {
     const payloads: Array<[string, string]> = [
@@ -143,6 +168,7 @@ function main(): void {
     testPlaceholderSurvives();
     testPayloadsStripped();
     testVideoYoutubeMarkersSurvive();
+    testPdfSrcConstrained();
     testDangerousUriStripped();
     console.log("pdf-inline harness: serve half (static)");
     testServeContract();
