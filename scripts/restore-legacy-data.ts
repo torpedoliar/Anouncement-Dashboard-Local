@@ -33,7 +33,7 @@ async function restoreLegacyData() {
     }
 
     const buffer = fs.readFileSync(backupPath);
-    let fileContent = buffer.includes(0x00) ? buffer.toString('ucs2') : buffer.toString('utf-8');
+    const fileContent = buffer.includes(0x00) ? buffer.toString('ucs2') : buffer.toString('utf-8');
     const lines = fileContent.replace(/\r\n/g, '\n').split('\n');
     console.log(`📂 Read ${lines.length} lines`);
 
