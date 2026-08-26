@@ -16,7 +16,6 @@ import SSOAutoSubmit from "@/components/portal/SSOAutoSubmit";
 import SSORerouteSubmit from "@/components/portal/SSORerouteSubmit";
 import SSOPostSubmit from "@/components/portal/SSOPostSubmit";
 import SSOCredentialVault from "@/components/portal/SSOCredentialVault";
-import SSORedirectHandoff from "@/components/portal/SSORedirectHandoff";
 import AccountSelector from "@/components/portal/AccountSelector";
 
 export const dynamic = "force-dynamic";
@@ -68,7 +67,9 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
     }
 
     // 3b. Kelas credential-less (desain §1): REDIRECT tidak memakai kredensial —
-    // dispatch mode harus naik SEBELUM resolusi kredensial agar alurnya jalan.
+    // dispatch mode naik SEBELUM resolusi kredensial. F-3: halaman ini TIDAK menulis
+    // baris audit SSO_LAUNCH untuk kelas ini; route /api/sso/redirect satu-satunya
+    // penulisnya (selaras pola reroute/post), sehingga AC-5 "tepat satu baris" tegas.
     if (app.ssoMode === "REDIRECT") {
         return <SSORedirectHandoff
             app={{
