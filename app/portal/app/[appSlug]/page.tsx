@@ -7,7 +7,7 @@ import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Wrench } from "@phosphor-icons/react";
+import { Wrench } from "@phosphor-icons/react/dist/ssr";
 import AccessDenied from "@/components/portal/AccessDenied";
 import NoCredential from "@/components/portal/NoCredential";
 import CorruptCredential from "@/components/portal/CorruptCredential";
