@@ -8,6 +8,9 @@
 
 import { z } from 'zod';
 import DOMPurify from 'isomorphic-dompurify';
+// Validator URL pusat SSO (threat model §1b.1): menutup vektor R-2 —
+// z.string().url() menerima javascript:/data:/userinfo yang tidak boleh jadi target.
+import { assertSafeHttpUrl } from '@/lib/portal-url-guard';
 
 // -----------------------------------------
 // Sanitization Helpers
@@ -265,10 +268,13 @@ export const PortalAppCreateSchema = z.object({
         .regex(slugPattern, 'Slug must be lowercase with hyphens only'),
     description: z.string().max(500).transform(sanitizeText).nullable().optional(),
     logoPath: z.string().nullable().optional(),
-    url: z.string().url('Invalid URL').max(500),
+    url: z.string().url('Invalid URL').max(500)
+        .refine((v) => assertSafeHttpUrl(v).ok, 'URL harus http(s) tanpa userinfo (@host)'),
     // URL login WS-Federation/SAML (K2) membawa query bersarang (wreply/wctx/wct) yang
     // panjangnya bisa >2000 char. Kolom DB bertipe TEXT, jadi batas ini murni guard.
-    loginUrl: z.string().url('Invalid login URL').max(4000).nullable().optional(),
+    loginUrl: z.string().url('Invalid login URL').max(4000)
+        .refine((v) => assertSafeHttpUrl(v).ok, 'Login URL harus http(s) tanpa userinfo (@host)')
+        .nullable().optional(),
     ssoMode: z.enum(['FORM', 'REDIRECT', 'PROXY', 'TOKEN', 'REROUTE', 'VAULT', 'POST']).default('FORM'),
     httpMethod: z.enum(['POST', 'GET']).default('POST'),
     usernameField: z.string().max(100).default('username'),
