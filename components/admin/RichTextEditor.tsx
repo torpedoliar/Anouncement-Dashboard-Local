@@ -131,7 +131,15 @@ const Pdf = Node.create({
         return {
             src: {
                 default: null,
-                parseHTML: () => null,
+                // Baca balik data-src saat artikel lama dibuka ulang (12-02) —
+                // tanpa ini simpan ulang menghapus data-src semua blok PDF
+                // (regresi yang sempat ditimbulkan WR-03). String literal
+                // "null", jejak serialisasi pra-IN-01, diperlakukan kosong agar
+                // simpan berikutnya ikut membersihkannya.
+                parseHTML: element => {
+                    const value = element.getAttribute('data-src');
+                    return value && value !== 'null' ? value : null;
+                },
             },
             filename: {
                 default: null,
