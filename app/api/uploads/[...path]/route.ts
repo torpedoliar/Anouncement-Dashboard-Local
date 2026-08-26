@@ -29,6 +29,12 @@ export async function GET(
     try {
         const { path } = await params;
 
+        // IN-02: GET /api/uploads/ tanpa segmen lolos guard di bawah lalu readFile(dir)
+        // melempar EISDIR → 500. Tolak eksplisit sebagai request yang salah.
+        if (!path || path.length === 0) {
+            return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+        }
+
         // Reject any segment that could escape the upload dir before touching the FS.
         if (path.some((seg) => seg === ".." || seg === "." || seg.includes("\0"))) {
             return NextResponse.json({ error: "Invalid path" }, { status: 400 });
@@ -44,7 +50,9 @@ export async function GET(
 
         // Check if file exists
         if (!existsSync(filepath)) {
-            console.error(`File not found: ${filepath}`);
+            // IN-02: 404 adalah kejadian normal (hotlink/scan traffic) — bukan error
+            // aplikasi; jangan banjiri log error.
+            console.debug(`File not found: ${filepath}`);
             return NextResponse.json({ error: "File not found" }, { status: 404 });
         }
 
