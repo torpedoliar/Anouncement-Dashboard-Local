@@ -12,6 +12,7 @@ import {
     Download,
     Spinner,
     FolderOpen,
+    FilePdf,
 } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
 import Button from "@/components/ui/Button";
@@ -42,7 +43,9 @@ interface StockMedia {
 interface MediaPickerModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSelect: (url: string, type: "image" | "video") => void;
+    // WR-04: baris PDF dilaporkan sebagai "pdf" agar penerima menyisipkan
+    // blok PDF, bukan <img> rusak.
+    onSelect: (url: string, type: "image" | "video" | "pdf") => void;
     mediaType?: "image" | "video" | "all";
 }
 
@@ -171,9 +174,10 @@ export default function MediaPickerModal({
         if (!selectedMedia) return;
 
         if ("filename" in selectedMedia) {
-            // Local media - use directly
+            // Local media - use directly (WR-04: PDF dilaporkan sbg "pdf")
+            const isPdf = selectedMedia.mimeType === "application/pdf";
             const isVideo = selectedMedia.mimeType.startsWith("video/");
-            onSelect(selectedMedia.url, isVideo ? "video" : "image");
+            onSelect(selectedMedia.url, isPdf ? "pdf" : isVideo ? "video" : "image");
             onClose();
         } else {
             // Stock media - download first
@@ -320,6 +324,9 @@ export default function MediaPickerModal({
                                     <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
                                         {localMedia.map((media) => {
                                             const isVideoMedia = media.mimeType.startsWith("video/");
+                                            // WR-04: PDF bukan gambar — render kartu ikon,
+                                            // jangan <img> yang selalu rusak.
+                                            const isPdfMedia = media.mimeType === "application/pdf";
                                             const isSelected =
                                                 selectedMedia &&
                                                 "id" in selectedMedia &&
@@ -338,7 +345,14 @@ export default function MediaPickerModal({
                                                     aria-label={`Pilih ${media.filename}`}
                                                     aria-pressed={!!isSelected}
                                                 >
-                                                    {isVideoMedia ? (
+                                                    {isPdfMedia ? (
+                                                        <span className="flex h-full w-full flex-col items-center justify-center gap-1 bg-surface-2 text-text-2">
+                                                            <FilePdf size={28} weight="duotone" aria-hidden="true" />
+                                                            <span className="max-w-full truncate px-1 text-[10px] font-medium">
+                                                                {media.filename}
+                                                            </span>
+                                                        </span>
+                                                    ) : isVideoMedia ? (
                                                         <video
                                                             src={media.url}
                                                             className="h-full w-full object-cover"

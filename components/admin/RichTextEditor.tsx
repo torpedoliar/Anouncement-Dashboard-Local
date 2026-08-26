@@ -994,6 +994,13 @@ export default function RichTextEditor({
                             type: 'video',
                             attrs: { src: url },
                         }).run();
+                    } else if (type === "pdf") {
+                        // WR-04: PDF dari library → blok PDF utuh, bukan <img> rusak.
+                        const filename = url.split('/').filter(Boolean).pop() || 'dokumen.pdf';
+                        editor?.chain().focus().insertContent({
+                            type: 'pdf',
+                            attrs: { src: url, filename },
+                        }).run();
                     } else {
                         editor?.chain().focus().setImage({ src: url }).run();
                     }
