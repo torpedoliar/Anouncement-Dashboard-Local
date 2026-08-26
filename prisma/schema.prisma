@@ -372,7 +372,7 @@ enum PortalSsoMode {
   REDIRECT  // (future) redirect SSO
   PROXY     // (future) reverse proxy + header injection
   TOKEN     // (future) OIDC/OAuth2 token
-  REROUTE   // Server-to-server login + full reverse proxy
+  REROUTE   // Server-to-server login, lalu re-issue cookie sesi ke browser (direct redirect; reverse proxy dihapus — OAM/OOM)
   VAULT     // Credential vault: open target login tab + copy saved creds, user pastes & clicks target's own login
   POST      // Server-side POST relay: portal prefetches login page (token+cookie), submits creds, re-issues session cookies to browser
 }
