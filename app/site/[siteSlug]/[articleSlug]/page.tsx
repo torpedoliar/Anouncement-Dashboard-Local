@@ -70,12 +70,14 @@ async function getArticleData(siteSlug: string, articleSlug: string) {
         },
     });
 
-    // Check if this is the primary site for canonical URL
-    const primarySite = announcement.sites.find((s) => s.isPrimary)?.site;
+    // Canonical URL (IN-04): utamakan junction bertanda isPrimary; data legacy
+    // bisa tak punya satu pun — fallback ke situs pertama. Tanpa situs sama
+    // sekali (atau sedang dilihat di situs primernya) -> tanpa canonical.
+    const primarySite =
+        announcement.sites.find((s) => s.isPrimary)?.site ?? announcement.sites[0]?.site;
     const isPrimarySite = primarySite?.id === site.id;
-    const canonicalUrl = isPrimarySite
-        ? null
-        : `/site/${primarySite?.slug}/${announcement.slug}`;
+    const canonicalUrl =
+        primarySite && !isPrimarySite ? `/site/${primarySite.slug}/${announcement.slug}` : null;
 
     return { site, announcement, relatedArticles, canonicalUrl };
 }
