@@ -60,6 +60,9 @@ export async function GET(
         return new NextResponse(fileBuffer, {
             headers: {
                 "Content-Type": mimeType,
+                // IN-03: cegah MIME-sniffing — svg/pdf same-origin jangan pernah
+                // ditafsirkan browser sebagai skrip/HTML lain dari Content-Type.
+                "X-Content-Type-Options": "nosniff",
                 "Cache-Control": "public, max-age=31536000, immutable",
                 "Accept-Ranges": "bytes",
             },
