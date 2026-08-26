@@ -34,6 +34,10 @@ export function sanitizeHTML(html: string): string {
             // PDF inline placeholder markers (whitelisted individually; the
             // generic data-* wildcard stays disabled)
             'data-pdf', 'data-src', 'data-filename',
+            // Video/YouTube atom-node parse markers (div[data-video],
+            // div[data-youtube-video]) + the native video controls flag —
+            // tanpa ini save→reload menghancurkan embed yang sah (WR-06).
+            'data-video', 'data-youtube-video', 'controls',
         ],
         ALLOW_DATA_ATTR: false,
     });

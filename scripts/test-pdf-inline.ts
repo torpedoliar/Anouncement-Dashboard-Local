@@ -72,8 +72,31 @@ function testPayloadsStripped(): void {
     );
 }
 
-// --- Sanitize half: the default URI regex must still strip javascript:/data: ---
+// --- Sanitize half: Video/YouTube parse markers must survive the round-trip
+// (WR-06: tanpa whitelist, save→reload menghancurkan embed sah) ---
 
+function testVideoYoutubeMarkersSurvive(): void {
+    const video =
+        '<div data-video data-filename="v.mp4"><video src="/api/uploads/videos/v.mp4" controls></video></div>';
+    const videoOut = sanitizeHTML(video);
+    check(
+        "data-video marker + controls survive sanitization",
+        videoOut.includes("data-video") &&
+            videoOut.includes('src="/api/uploads/videos/v.mp4"') &&
+            videoOut.includes("controls"),
+    );
+
+    const yt =
+        '<div data-youtube-video><iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe></div>';
+    const ytOut = sanitizeHTML(yt);
+    check(
+        "data-youtube-video marker survives sanitization",
+        ytOut.includes("data-youtube-video") &&
+            ytOut.includes("youtube.com/embed/dQw4w9WgXcQ"),
+    );
+}
+
+// --- Sanitize half: the default URI regex must still strip javascript:/data: ---
 function testDangerousUriStripped(): void {
     const payloads: Array<[string, string]> = [
         ['data-src="javascript:alert(1)"', "javascript:"],
@@ -119,6 +142,7 @@ function main(): void {
     console.log("pdf-inline harness: sanitize half");
     testPlaceholderSurvives();
     testPayloadsStripped();
+    testVideoYoutubeMarkersSurvive();
     testDangerousUriStripped();
     console.log("pdf-inline harness: serve half (static)");
     testServeContract();
