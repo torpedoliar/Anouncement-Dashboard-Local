@@ -57,8 +57,12 @@ next-env.d.ts
 # graphify cache
 graphify-out/cache/
 
-# artefak lokal — hasil triage TASK-04 (2026-08-26)
-/.superpowers/
-/From Server Prod/
+# lokal saja: artefak workflow superpowers (brief/report/diff SDD)
+.superpowers/
+
+# snapshot config server produksi — berisi secrets inline, JANGAN pernah di-commit
+From Server Prod/
+
+# screenshot liar di root (tidak direferensikan kode mana pun)
 /image.png
 
