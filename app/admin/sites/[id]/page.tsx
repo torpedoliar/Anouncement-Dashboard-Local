@@ -55,6 +55,7 @@ export default function EditSitePage({ params }: PageProps) {
 
     useEffect(() => {
         fetchSite();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: muat sekali per id; fetchSite membaca state setter stabil saja
     }, [id]);
 
     const fetchSite = async () => {

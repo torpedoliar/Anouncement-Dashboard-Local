@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
     X,
     MagnifyingGlass,
@@ -343,7 +344,9 @@ export default function MediaPickerModal({
                                                             className="h-full w-full object-cover"
                                                         />
                                                     ) : (
-                                                        <img
+                                                        <Image
+                                                            width={120}
+                                                            height={120}
                                                             src={media.url}
                                                             alt={media.alt || media.filename}
                                                             className="h-full w-full object-cover"
@@ -422,7 +425,9 @@ export default function MediaPickerModal({
                                                     aria-label={`Pilih stock ${media.type} by ${media.photographer}`}
                                                     aria-pressed={!!isSelected}
                                                 >
-                                                    <img
+                                                    <Image
+                                                        width={120}
+                                                        height={120}
                                                         src={media.thumbnail}
                                                         alt={media.alt || `By ${media.photographer}`}
                                                         className="h-full w-full object-cover"

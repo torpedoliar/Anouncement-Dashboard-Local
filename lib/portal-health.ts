@@ -115,7 +115,9 @@ export async function checkAppHealth(app: {
             // Kode null tanpa loop = kasus aneh, aman anggap hidup bila halaman terbaca.
             status = latencyMs >= 2500 ? "DEGRADED" : "ONLINE";
         }
-    } catch (err: any) {
+    } catch (err) {
+        const e = err as Error & { status?: number | null; code?: string };
+        const errCode = e.code;
         const endTime = performance.now();
         latencyMs = Math.round(endTime - startTime);
 
@@ -124,24 +126,24 @@ export async function checkAppHealth(app: {
         //   (memberi 4xx/5xx atau respons berbeda dari HTML) → DIGRADED
         // - "Gagal mengakses" / timeout → server tidak terjawab → OFFLINE
         const serverResponded =
-            err instanceof FetchError &&
-            (/\bmengembalikan HTTP \d{3}\b/.test(err.message) || /Respons bukan halaman web/i.test(err.message));
+            e instanceof FetchError &&
+            (/\bmengembalikan HTTP \d{3}\b/.test(e.message) || /Respons bukan halaman web/i.test(e.message));
         if (serverResponded) {
             status = "DEGRADED";
-            statusCode = err.status && err.status >= 400 ? err.status : null;
-            errorMessage = `Server menjawab namun respons bermasalah: ${err.message}`;
+            statusCode = e.status && e.status >= 400 ? e.status : null;
+            errorMessage = `Server menjawab namun respons bermasalah: ${e.message}`;
         } else {
             status = "OFFLINE";
         }
 
-        if (err.name === "AbortError" || latencyMs >= 5000) {
+        if (e.name === "AbortError" || latencyMs >= 5000) {
             errorMessage = "Koneksi Timeout (> 5000ms)";
-        } else if (err.code === "ECONNREFUSED") {
+        } else if (errCode === "ECONNREFUSED") {
             errorMessage = "Koneksi Ditolak (Server Tidak Aktif)";
-        } else if (err.code === "ENOTFOUND") {
+        } else if (errCode === "ENOTFOUND") {
             errorMessage = "Domain / Host Tidak Ditemukan";
         } else {
-            errorMessage = err.message || "Gagal Terhubung ke Server";
+            errorMessage = e.message || "Gagal Terhubung ke Server";
         }
     }
 

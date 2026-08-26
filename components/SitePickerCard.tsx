@@ -6,6 +6,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { FiArrowRight, FiFileText, FiTag } from "react-icons/fi";
 
 interface SitePickerCardProps {
@@ -72,7 +73,9 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
                 }}
             >
                 {(site.logo || site.logoPath) ? (
-                    <img
+                    <Image
+                        width={320}
+                        height={160}
                         src={site.logo || site.logoPath || ""}
                         alt={site.name}
                         style={{

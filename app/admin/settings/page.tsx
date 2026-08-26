@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { FloppyDisk, UploadSimple, X, InstagramLogo, LinkedinLogo, FacebookLogo, TwitterLogo, YoutubeLogo, Info, Database, ArrowClockwise, ArrowSquareOut, CloudArrowUp } from "@phosphor-icons/react";
 import Button, { buttonClasses } from "@/components/ui/Button";
 import { useToast } from "@/contexts/ToastContext";
@@ -716,10 +717,13 @@ export default function SettingsPage() {
                             <label style={labelStyle}>Logo</label>
                             {settings.logoPath ? (
                                 <div style={{ position: 'relative', display: 'inline-block' }}>
-                                    <img
+                                    <Image
+                                        width={256}
+                                        height={64}
                                         src={settings.logoPath}
                                         alt="Logo"
                                         style={{
+                                            width: "auto",
                                             height: '64px',
                                             objectFit: 'contain',
                                             backgroundColor: 'var(--bg-secondary)',

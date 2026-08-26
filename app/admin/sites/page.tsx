@@ -98,6 +98,7 @@ export default function SitesPage() {
 
     useEffect(() => {
         fetchSites();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: daftar site dimuat sekali; refresh dilakukan manual setelah mutasi
     }, []);
 
     const fetchSites = async () => {

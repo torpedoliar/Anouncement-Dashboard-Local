@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { CheckCircle } from "@phosphor-icons/react";
 
 interface SSOPostSubmitProps {
@@ -47,7 +48,9 @@ export default function SSOPostSubmit({ app, cred, credentialId }: SSOPostSubmit
             <div className="w-full max-w-[400px] rounded-sheet border border-border bg-surface-1 p-8 text-center shadow-lvl-2">
                 <div className="flex justify-center">
                     {app.logoPath ? (
-                        <img
+                        <Image
+                            width={56}
+                            height={56}
                             src={app.logoPath}
                             alt={app.name}
                             className="h-14 w-14 rounded-sheet object-cover"

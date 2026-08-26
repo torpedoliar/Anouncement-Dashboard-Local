@@ -286,7 +286,7 @@ export default function RichTextEditor({
         } finally {
             setIsUploading(false);
         }
-    }, [editor]);
+    }, [editor, showToast]);
 
     const handleImageClick = () => {
         fileInputRef.current?.click();
@@ -326,7 +326,7 @@ export default function RichTextEditor({
         } finally {
             setIsVideoUploading(false);
         }
-    }, [editor]);
+    }, [editor, showToast]);
 
     const handleVideoClick = () => {
         videoInputRef.current?.click();

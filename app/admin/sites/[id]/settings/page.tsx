@@ -35,7 +35,6 @@ export default function SiteSettingsPage() {
     const [activeTab, setActiveTab] = useState<'general' | 'social' | 'comments'>('general');
     const [settings, setSettings] = useState<SiteSettings | null>(null);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
 
     // Clear message after 3 seconds
     useEffect(() => {
@@ -70,7 +69,6 @@ export default function SiteSettingsPage() {
         const file = e.target.files?.[0];
         if (!file || !settings) return;
 
-        setIsUploading(true);
         const formData = new FormData();
         formData.append("file", file);
 
@@ -88,8 +86,6 @@ export default function SiteSettingsPage() {
         } catch (error) {
             console.error("Error uploading image:", error);
             setMessage({ type: 'error', text: "Gagal mengupload gambar" });
-        } finally {
-            setIsUploading(false);
         }
     };
 
@@ -178,7 +174,7 @@ export default function SiteSettingsPage() {
                 ].map((tab) => (
                     <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
+                        onClick={() => setActiveTab(tab.id as typeof activeTab)}
                         className={
                             activeTab === tab.id
                                 ? "-mb-px flex items-center gap-2 border-b-2 border-accent p-3 font-semibold text-text-1"
@@ -357,7 +353,7 @@ export default function SiteSettingsPage() {
                                 </label>
                                 <input
                                     type="url"
-                                    value={(settings as any)[field.key] || ''}
+                                    value={settings[field.key as keyof SiteSettings] as string || ''}
                                     onChange={(e) => setSettings({ ...settings, [field.key]: e.target.value })}
                                     placeholder="https://..."
                                     className="w-full rounded-control border border-border bg-surface-1 px-3 py-3 text-sm text-text-1 placeholder:text-text-3"

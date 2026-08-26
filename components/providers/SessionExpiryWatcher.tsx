@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 
@@ -15,20 +15,22 @@ export default function SessionExpiryWatcher() {
     const pathname = usePathname();
     const isRedirecting = useRef(false);
 
-    const redirectToLogin = (reason = "SessionExpired") => {
+    // Stabil (useCallback + deps pathname): aman masuk deps effect tanpa
+    // memicu re-run — hanya berganti bila path berubah, yang sudah jadi dep.
+    const redirectToLogin = useCallback((reason = "SessionExpired") => {
         if (isRedirecting.current) return;
         isRedirecting.current = true;
         const currentPath = typeof window !== "undefined" ? window.location.pathname : pathname;
         const callbackUrl = encodeURIComponent(currentPath || "/admin");
         window.location.href = `/admin-login?error=${reason}&callbackUrl=${callbackUrl}`;
-    };
+    }, [pathname]);
 
     // 1. Pantau status autentikasi dari NextAuth
     useEffect(() => {
         if (status === "unauthenticated" && pathname?.startsWith("/admin")) {
             redirectToLogin("SessionExpired");
         }
-    }, [status, pathname]);
+    }, [status, pathname, redirectToLogin]);
 
     // 2. Intersepsi fetch global untuk menangkap respon 401 Unauthorized
     useEffect(() => {
@@ -51,7 +53,7 @@ export default function SessionExpiryWatcher() {
         return () => {
             window.fetch = originalFetch;
         };
-    }, []);
+    }, [redirectToLogin]);
 
     return null;
 }

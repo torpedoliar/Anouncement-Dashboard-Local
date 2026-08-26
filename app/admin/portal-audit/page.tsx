@@ -22,8 +22,127 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useToast } from "@/contexts/ToastContext";
 
+// Bentuk payload GET /api/admin/portal-audit (mirror app/api/admin/portal-audit/route.ts).
+// Field tanggal berupa string ISO karena sudah melewati serialisasi JSON NextResponse.
+
+interface AuditSummary {
+    totalPortalUsers: number;
+    totalApps: number;
+    totalSharedAccounts: number;
+    totalDormantAccounts: number;
+    totalSsoLaunches30d: number;
+    totalOnlineApps: number;
+    totalOfflineApps: number;
+    averageLatencyMs: number;
+    globalUptimePercent: number;
+}
+
+interface SsoTrendItem {
+    appId: string;
+    appName: string;
+    launchCount: number;
+}
+
+interface SharedAccountUser {
+    id: string;
+    name: string;
+    nik: string;
+    isActive: boolean;
+    groups: string[];
+}
+
+interface SharedAccountItem {
+    app: { id: string; name: string; logoPath: string | null };
+    appUsername: string;
+    users: SharedAccountUser[];
+    userCount: number;
+    riskLevel: "CRITICAL" | "HIGH" | "MEDIUM";
+}
+
+interface DormantAccountItem {
+    id: string;
+    portalUser: { id: string; name: string; nik: string; isActive: boolean; groups: string[] };
+    app: { id: string; name: string; logoPath: string | null };
+    appUsername: string;
+    label: string;
+    lastUsedAt: string | null;
+    createdAt: string;
+    daysInactive: number;
+    status: "INACTIVE" | "NEVER_USED";
+}
+
+interface MatrixAppAccess {
+    appId: string;
+    appName: string;
+    hasAccess: boolean;
+    accessType: "PUBLIC" | "DIRECT" | "GROUP" | "ADMIN" | "NONE";
+    groupNames: string[];
+    hasCredential: boolean;
+    credentialsCount: number;
+    username: string | null;
+}
+
+interface AccessMatrixEntry {
+    user: { id: string; name: string; nik: string; role: string; groups: string[] };
+    apps: Record<string, MatrixAppAccess>;
+}
+
+interface RevokeHistoryItem {
+    id: string;
+    action: string;
+    actionLabel: string;
+    category: string;
+    actorName: string;
+    portalUser: { id: string; name: string; nik: string } | null;
+    details: string;
+    targetApp: string | null;
+    createdAt: string;
+}
+
+interface DowntimeIncident {
+    id: string;
+    action: string;
+    actionLabel: string;
+    severity: "INFO" | "WARNING" | "ERROR";
+    appId: string | null;
+    appName: string;
+    url: string;
+    statusCode: number | null;
+    latencyMs: number | null;
+    errorMessage: string;
+    createdAt: string;
+}
+
+interface PortalAppHealthItem {
+    id: string;
+    name: string;
+    slug: string;
+    url: string;
+    loginUrl: string | null;
+    logoPath: string | null;
+    isPublic: boolean;
+    isActive: boolean;
+    category: string | null;
+    healthStatus: "ONLINE" | "DEGRADED" | "OFFLINE" | "UNKNOWN" | null;
+    healthStatusCode: number | null;
+    healthLatencyMs: number | null;
+    healthCheckedAt: string | null;
+    healthError: string | null;
+}
+
+interface PortalAuditData {
+    summary: AuditSummary;
+    trends: SsoTrendItem[];
+    sharedAccounts: SharedAccountItem[];
+    dormantAccounts: DormantAccountItem[];
+    accessMatrix: AccessMatrixEntry[];
+    historicalRevokes: RevokeHistoryItem[];
+    downtimeIncidents: DowntimeIncident[];
+    apps: PortalAppHealthItem[];
+}
+
 export default function PortalAuditPage() {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<PortalAuditData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -153,16 +272,16 @@ export default function PortalAuditPage() {
         if (!data?.sharedAccounts) return [];
         if (!sharingSearch) return data.sharedAccounts;
         const q = sharingSearch.toLowerCase();
-        return data.sharedAccounts.filter((item: any) =>
+        return data.sharedAccounts.filter((item) =>
             item.app.name.toLowerCase().includes(q) ||
             item.appUsername.toLowerCase().includes(q) ||
-            item.users.some((u: any) => u.name.toLowerCase().includes(q) || u.nik.toLowerCase().includes(q))
+            item.users.some((u) => u.name.toLowerCase().includes(q) || u.nik.toLowerCase().includes(q))
         );
     }, [data?.sharedAccounts, sharingSearch]);
 
     const filteredDormant = useMemo(() => {
         if (!data?.dormantAccounts) return [];
-        return data.dormantAccounts.filter((item: any) => {
+        return data.dormantAccounts.filter((item) => {
             const matchApp = dormantAppFilter === "ALL" || item.app.id === dormantAppFilter;
             const q = dormantSearch.toLowerCase();
             const matchQuery = !dormantSearch ||
@@ -178,7 +297,7 @@ export default function PortalAuditPage() {
         if (!data?.accessMatrix) return [];
         if (!matrixSearch) return data.accessMatrix;
         const q = matrixSearch.toLowerCase();
-        return data.accessMatrix.filter((item: any) => {
+        return data.accessMatrix.filter((item) => {
             const u = item?.user;
             if (!u) return false;
             return (
@@ -191,7 +310,7 @@ export default function PortalAuditPage() {
 
     const filteredHistory = useMemo(() => {
         if (!data?.historicalRevokes) return [];
-        return data.historicalRevokes.filter((item: any) => {
+        return data.historicalRevokes.filter((item) => {
             const matchAction = historyActionFilter === "ALL" || item.action === historyActionFilter;
             const q = historySearch.toLowerCase();
             const matchQuery = !historySearch ||
@@ -206,7 +325,7 @@ export default function PortalAuditPage() {
 
     const filteredHealthApps = useMemo(() => {
         if (!data?.apps) return [];
-        return data.apps.filter((app: any) => {
+        return data.apps.filter((app) => {
             const matchStatus = healthStatusFilter === "ALL" || (app.healthStatus || "UNKNOWN") === healthStatusFilter;
             const q = healthSearch.toLowerCase();
             const matchQuery = !healthSearch ||
@@ -221,7 +340,7 @@ export default function PortalAuditPage() {
         if (!data?.downtimeIncidents) return [];
         if (!incidentSearch) return data.downtimeIncidents;
         const q = incidentSearch.toLowerCase();
-        return data.downtimeIncidents.filter((inc: any) =>
+        return data.downtimeIncidents.filter((inc) =>
             inc.appName.toLowerCase().includes(q) ||
             (inc.url && inc.url.toLowerCase().includes(q)) ||
             (inc.errorMessage && inc.errorMessage.toLowerCase().includes(q)) ||
@@ -254,7 +373,8 @@ export default function PortalAuditPage() {
         );
     }
 
-    const { summary, trends, sharedAccounts, dormantAccounts, apps } = data || {};
+    // Render hanya tercapai saat isLoading/error false, artinya data sudah payload penuh.
+    const { summary, trends, sharedAccounts, dormantAccounts, apps } = (data || {}) as PortalAuditData;
 
     const TAB_DEFS = [
         { key: "dashboard", label: "Ringkasan & KPI", icon: <Pulse size={16} aria-hidden="true" /> },
@@ -283,7 +403,7 @@ export default function PortalAuditPage() {
         { key: "history", label: "Histori Pencabutan", icon: <ArrowCounterClockwise size={16} aria-hidden="true" /> },
     ];
 
-    const maxTrendLaunch = trends?.length ? Math.max(...trends.map((t: any) => t.launchCount), 1) : 1;
+    const maxTrendLaunch = trends?.length ? Math.max(...trends.map((t) => t.launchCount), 1) : 1;
 
     return (
         <div className="p-6 space-y-6">
@@ -430,7 +550,7 @@ export default function PortalAuditPage() {
                             <div className="py-8 text-center text-sm text-text-3">Belum ada aktivitas SSO tercatat dalam 30 hari terakhir.</div>
                         ) : (
                             <div className="space-y-3">
-                                {trends.map((t: any) => {
+                                {trends.map((t) => {
                                     const percent = Math.round((t.launchCount / maxTrendLaunch) * 100);
                                     return (
                                         <div key={t.appId} className="space-y-1">
@@ -477,7 +597,7 @@ export default function PortalAuditPage() {
                                 </div>
                             ) : (
                                 <div className="divide-y divide-border">
-                                    {sharedAccounts.slice(0, 5).map((item: any, i: number) => (
+                                    {sharedAccounts.slice(0, 5).map((item, i) => (
                                         <div key={i} className="py-2.5 flex items-center justify-between gap-2">
                                             <div>
                                                 <p className="text-xs font-semibold text-text-1">{item.app.name}</p>
@@ -516,7 +636,7 @@ export default function PortalAuditPage() {
                                 </div>
                             ) : (
                                 <div className="divide-y divide-border">
-                                    {dormantAccounts.slice(0, 5).map((item: any, i: number) => (
+                                    {dormantAccounts.slice(0, 5).map((item, i) => (
                                         <div key={i} className="py-2.5 flex items-center justify-between gap-2">
                                             <div>
                                                 <p className="text-xs font-semibold text-text-1">{item.portalUser.name}</p>
@@ -610,7 +730,7 @@ export default function PortalAuditPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
-                                    {filteredHealthApps.map((app: any) => {
+                                    {filteredHealthApps.map((app) => {
                                         const isAppChecking = checkingAppId === app.id;
                                         const status = app.healthStatus || "UNKNOWN";
                                         return (
@@ -751,7 +871,7 @@ export default function PortalAuditPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
-                                    {filteredIncidents.map((inc: any, i: number) => (
+                                    {filteredIncidents.map((inc, i) => (
                                         <tr key={i} className="hover:bg-surface-2/40 transition-colors">
                                             <td className="px-4 py-3 font-mono text-xs text-text-3 whitespace-nowrap tabular-nums">
                                                 {new Date(inc.createdAt).toLocaleString("id-ID", {
@@ -844,7 +964,7 @@ export default function PortalAuditPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
-                                    {filteredSharing.map((item: any, i: number) => (
+                                    {filteredSharing.map((item, i) => (
                                         <tr key={i} className="hover:bg-surface-2/40 transition-colors">
                                             <td className="px-4 py-3">
                                                 <span className={`inline-flex rounded px-2 py-0.5 text-[10px] font-bold border ${
@@ -860,7 +980,7 @@ export default function PortalAuditPage() {
                                             <td className="px-4 py-3 font-mono text-xs font-bold text-text-1 tabular-nums">{item.userCount} user</td>
                                             <td className="px-4 py-3">
                                                 <div className="flex flex-wrap gap-1.5">
-                                                    {item.users.map((u: any) => (
+                                                    {item.users.map((u) => (
                                                         <span
                                                             key={u.id}
                                                             className="inline-flex items-center gap-1 rounded bg-surface-2 px-2 py-0.5 text-xs text-text-2 border border-border"
@@ -916,7 +1036,7 @@ export default function PortalAuditPage() {
                                 className="rounded-control border border-border bg-surface-1 px-3 py-2 text-xs text-text-1 focus-visible:outline-2 focus-visible:outline-accent"
                             >
                                 <option value="ALL">Semua Aplikasi</option>
-                                {apps?.map((app: any) => (
+                                {apps?.map((app) => (
                                     <option key={app.id} value={app.id}>{app.name}</option>
                                 ))}
                             </select>
@@ -944,7 +1064,7 @@ export default function PortalAuditPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
-                                    {filteredDormant.map((item: any, i: number) => (
+                                    {filteredDormant.map((item, i) => (
                                         <tr key={i} className="hover:bg-surface-2/40 transition-colors">
                                             <td className="px-4 py-3">
                                                 <span className="inline-flex rounded bg-warning/15 px-2 py-0.5 font-mono text-xs font-bold text-warning border border-warning/30">
@@ -1030,7 +1150,7 @@ export default function PortalAuditPage() {
                                             Pengguna (NIK)
                                         </th>
                                         <th className="px-3 py-3 text-left font-semibold text-text-3">Grup</th>
-                                        {apps?.map((app: any) => (
+                                        {apps?.map((app) => (
                                             <th key={app.id} className="px-3 py-3 text-center font-semibold text-text-3 whitespace-nowrap min-w-[120px]">
                                                 {app.name}
                                             </th>
@@ -1038,7 +1158,7 @@ export default function PortalAuditPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
-                                    {filteredMatrix.map((item: any) => (
+                                    {filteredMatrix.map((item) => (
                                         <tr key={item.user.id} className="hover:bg-surface-2/40 transition-colors">
                                             <td className="sticky left-0 z-10 bg-surface-1 px-4 py-2.5 font-semibold text-text-1 whitespace-nowrap">
                                                 {item.user.name} <span className="font-mono text-[11px] font-normal text-text-3">({item.user.nik})</span>
@@ -1046,7 +1166,7 @@ export default function PortalAuditPage() {
                                             <td className="px-3 py-2.5 text-text-3 whitespace-nowrap">
                                                 {item.user.groups?.join(", ") || "-"}
                                             </td>
-                                            {apps?.map((app: any) => {
+                                            {apps?.map((app) => {
                                                 const appAccess = item.apps[app.id];
                                                 if (!appAccess || !appAccess.hasAccess) {
                                                     return (
@@ -1147,7 +1267,7 @@ export default function PortalAuditPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
-                                    {filteredHistory.map((item: any, i: number) => (
+                                    {filteredHistory.map((item, i) => (
                                         <tr key={i} className="hover:bg-surface-2/40 transition-colors">
                                             <td className="px-4 py-3 font-mono text-xs text-text-3 whitespace-nowrap tabular-nums">
                                                 {new Date(item.createdAt).toLocaleString("id-ID", {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { ArrowSquareOut, Check, Copy, Eye, EyeSlash, LockKey } from "@phosphor-icons/react";
 
 interface SSOCredentialVaultProps {
@@ -71,7 +72,9 @@ export default function SSOCredentialVault({ app, cred }: SSOCredentialVaultProp
                 {/* Logo + header */}
                 <div className="flex items-center gap-4">
                     {app.logoPath ? (
-                        <img
+                        <Image
+                            width={56}
+                            height={56}
                             src={app.logoPath}
                             alt={app.name}
                             className="h-14 w-14 rounded-sheet object-cover"

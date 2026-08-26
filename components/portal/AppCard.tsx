@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { CheckCircle, WarningCircle, Warning } from "@phosphor-icons/react";
 import Card from "@/components/ui/Card";
 
@@ -51,7 +52,9 @@ export default function AppCard({
                     dipindah ke baris meta di bawah agar tidak memangkas nama. */}
                 <div className="flex items-center gap-3 min-w-0">
                     {logoPath ? (
-                        <img
+                        <Image
+                            width={40}
+                            height={40}
                             src={logoPath}
                             alt={name}
                             className="h-10 w-10 shrink-0 rounded-card object-cover border border-border"

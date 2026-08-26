@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import DOMPurify from "isomorphic-dompurify";
 import { FilePdf } from "@phosphor-icons/react";
 
@@ -172,11 +173,13 @@ export default function AnnouncementPreview({
             {media && (media.type === "image" || media.type === "video" || youtubeId) && (
                 <div className="relative overflow-hidden">
                     {media.type === "image" && media.url && (
-                        <img
+                        <Image
+                            width={800}
+                            height={260}
                             src={media.url}
                             alt=""
                             className="w-full"
-                            style={{ maxHeight: "260px", objectFit: "cover" }}
+                            style={{ maxHeight: "260px", width: "100%", objectFit: "cover", height: "auto" }}
                         />
                     )}
                     {media.type === "video" && media.url && (

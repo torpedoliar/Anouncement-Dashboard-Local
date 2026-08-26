@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { CheckCircle } from "@phosphor-icons/react";
 
 interface SSOAutoSubmitProps {
@@ -49,7 +50,9 @@ export default function SSOAutoSubmit({ app, cred, extraFields }: SSOAutoSubmitP
                 {/* Logo */}
                 <div className="flex justify-center">
                     {app.logoPath ? (
-                        <img
+                        <Image
+                            width={56}
+                            height={56}
                             src={app.logoPath}
                             alt={app.name}
                             className="h-14 w-14 rounded-sheet object-cover"

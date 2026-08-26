@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
         const summary = await checkAllPortalAppsHealth();
         return NextResponse.json({ message: "Pemeriksaan kesehatan semua aplikasi selesai", summary });
-    } catch (error: any) {
+    } catch (error) {
         console.error("POST /api/portal-apps/health-check error:", error);
         return NextResponse.json({ error: "Gagal menjalankan health check" }, { status: 500 });
     }
@@ -76,7 +76,7 @@ export async function GET() {
                 offline: offlineCount,
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("GET /api/portal-apps/health-check error:", error);
         return NextResponse.json({ error: "Gagal mengambil status kesehatan aplikasi" }, { status: 500 });
     }

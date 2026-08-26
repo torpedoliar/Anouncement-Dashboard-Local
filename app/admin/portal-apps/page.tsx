@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { CaretLeft, CaretRight, GridFour, LockKey, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/contexts/ToastContext";
@@ -24,7 +25,7 @@ interface PortalApp {
     httpMethod: string;
     usernameField: string | null;
     passwordField: string | null;
-    extraFields: any;
+    extraFields: Record<string, string> | null;
     category: string | null;
     isActive: boolean;
     isPublic: boolean;
@@ -123,7 +124,7 @@ export default function PortalAppsPage() {
             let extraFieldsParsed = null;
             if (formData.extraFields && formData.extraFields.trim()) {
                 try {
-                    extraFieldsParsed = JSON.parse(formData.extraFields);
+                    extraFieldsParsed = JSON.parse(formData.extraFields) as Record<string, string>;
                 } catch {
                     setError("Extra Fields harus berformat JSON yang valid");
                     setIsSaving(false);
@@ -162,7 +163,8 @@ export default function PortalAppsPage() {
 
             if (!response.ok) {
                 if (data.details && Array.isArray(data.details)) {
-                    const messages = data.details.map((d: any) => `${d.field}: ${d.message}`).join(', ');
+                    const messages = (data.details as { field: string; message: string }[])
+                        .map((d) => `${d.field}: ${d.message}`).join(', ');
                     setError(`${data.error}: ${messages}`);
                 } else {
                     setError(data.error || "Gagal menyimpan data");
@@ -347,13 +349,14 @@ export default function PortalAppsPage() {
     };
 
     const openEditModal = (app: PortalApp) => {
+        // Prisma Json? bisa datang sebagai object atau string (tergantung isi kolom).
         let extraFieldsFormatted = "";
         if (app.extraFields) {
             if (typeof app.extraFields === "object") {
                 extraFieldsFormatted = JSON.stringify(app.extraFields, null, 2);
             } else if (typeof app.extraFields === "string") {
                 try {
-                    extraFieldsFormatted = JSON.stringify(JSON.parse(app.extraFields), null, 2);
+                    extraFieldsFormatted = JSON.stringify(JSON.parse(app.extraFields as string), null, 2);
                 } catch {
                     extraFieldsFormatted = app.extraFields;
                 }
@@ -675,7 +678,9 @@ export default function PortalAppsPage() {
                                 <span className="mb-2 block text-sm font-semibold text-text-1">LOGO APLIKASI</span>
                                 <div className="flex items-center gap-4">
                                     {formData.logoPath ? (
-                                        <img
+                                        <Image
+                                            width={64}
+                                            height={64}
                                             src={formData.logoPath}
                                             alt="Pratinjau logo"
                                             className="h-16 w-16 shrink-0 rounded-card border border-border object-cover"

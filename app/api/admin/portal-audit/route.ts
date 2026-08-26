@@ -376,7 +376,15 @@ export async function GET() {
         });
 
         const downtimeIncidents = downtimeAuditLogs.map((log) => {
-            const changes = (log.changes as any) || {};
+            // Prisma Json? — bentuk yang ditulis logAudit: { appName, url, statusCode, latencyMs, error, appId? }
+            const changes = (log.changes as {
+                appId?: string;
+                appName?: string;
+                url?: string;
+                statusCode?: number;
+                latencyMs?: number;
+                error?: string;
+            } | null) || {};
             const targetApp = log.appId ? appsMap.get(log.appId) : null;
             return {
                 id: log.id,

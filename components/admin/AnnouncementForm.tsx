@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Check, YoutubeLogo, Image as ImageIcon, VideoCamera, FolderOpen, Play, Eye, Clock, Star, X, UploadSimple, ChatCenteredText } from "@phosphor-icons/react";
 import RichTextEditor from "./RichTextEditor";
 import MediaPickerModal from "./MediaPickerModal";
@@ -525,10 +526,12 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                         {mediaType === "image" && (
                             imagePath ? (
                                 <div className="relative">
-                                    <img
+                                    <Image
+                                        width={400}
+                                        height={128}
                                         src={imagePath}
                                         alt="Preview"
-                                        className="w-full h-32 object-cover rounded-card"
+                                        className="h-32 w-full object-cover rounded-card"
                                     />
                                     {/* Tombol hapus di atas media: scrim hitam konstan (bukan permukaan tema) supaya terbaca di atas gambar apa pun. */}
                                     <button

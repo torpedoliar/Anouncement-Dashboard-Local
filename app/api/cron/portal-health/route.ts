@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
                 globalUptimePercent: summary.globalUptimePercent,
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("Cron /api/cron/portal-health error:", error);
         return NextResponse.json({ error: "Failed to execute cron health check" }, { status: 500 });
     }
