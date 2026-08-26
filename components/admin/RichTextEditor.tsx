@@ -119,7 +119,9 @@ const Video = Node.create({
 // renderHTML emits EXACTLY div + data-pdf/data-src/data-filename (the 12-01
 // sanitizer whitelist) in the steady state. A transient data-pdf-error is
 // emitted only while an upload is failing; the server sanitizer strips it at
-// save so persisted markup never carries it.
+// save so persisted markup never carries it. data-pdf-id is an in-editor-only
+// nonce for matching optimistic blocks (WR-03); it is stripped by the same
+// sanitizer at save and never parsed back from HTML.
 const Pdf = Node.create({
     name: 'pdf',
     group: 'block',
@@ -129,11 +131,18 @@ const Pdf = Node.create({
         return {
             src: {
                 default: null,
-                parseHTML: element => element.getAttribute('data-src'),
+                parseHTML: () => null,
             },
             filename: {
                 default: null,
                 parseHTML: element => element.getAttribute('data-filename'),
+            },
+            // Nonce sisi editor (WR-03): identitas stabil satu insert, tidak
+            // pernah diparse balik dari HTML maupun disimpan ke server.
+            pdfId: {
+                default: null,
+                parseHTML: () => null,
+                renderHTML: () => ({}),
             },
             error: {
                 default: false,
@@ -148,10 +157,12 @@ const Pdf = Node.create({
         }];
     },
     renderHTML({ HTMLAttributes }) {
+        const { pdfId: _pdfId, ...rest } = HTMLAttributes as Record<string, unknown>;
+        void _pdfId;
         return ['div', mergeAttributes({
             'data-pdf': '',
-            'data-src': HTMLAttributes.src,
-            'data-filename': HTMLAttributes.filename || '',
+            ...(rest.src ? { 'data-src': String(rest.src) } : {}),
+            'data-filename': rest.filename || '',
         })];
     },
 });
@@ -333,20 +344,14 @@ export default function RichTextEditor({
     };
 
     // ── PDF helpers ────────────────────────────────────────────────
-    // Locate the pdf node just inserted for `filename` (optimistic block).
-    // Primary: it sits immediately before the cursor after insertContent.
-    // Fallback: scan for the last pdf node with this filename that has no src yet.
-    const findInsertedPdfNodePos = useCallback((filename: string): number => {
-        if (!editor) return -1;
-        const doc = editor.state.doc;
-        const guess = editor.state.selection.from - 1;
-        const node = guess >= 0 ? doc.nodeAt(guess) : null;
-        if (node && node.type.name === 'pdf' && node.attrs.filename === filename) {
-            return guess;
-        }
+    // WR-03: blok optimistis dicocokkan lewat nonce data-pdf-id, bukan posisi
+    // insert-time — posisi basi begitu user mengetik/menyisipkan node lain
+    // selagi unggahan berjalan (mark mendarat di node salah atau no-op).
+    const findPdfNodeByNonce = useCallback((pdfId: string): number => {
+        if (!editor || !pdfId) return -1;
         let found = -1;
-        doc.descendants((n, pos) => {
-            if (found === -1 && n.type.name === 'pdf' && n.attrs.filename === filename && !n.attrs.src) {
+        editor.state.doc.descendants((n, pos) => {
+            if (found === -1 && n.type.name === 'pdf' && n.attrs.pdfId === pdfId) {
                 found = pos;
             }
         });
@@ -354,12 +359,12 @@ export default function RichTextEditor({
     }, [editor]);
 
     // Update attributes of the optimistic pdf block (src on success / error on failure).
-    const markPdfBlock = useCallback((pos: number, attrs: { src?: string; error?: boolean }) => {
+    const markPdfBlock = useCallback((pdfId: string, attrs: { src?: string; error?: boolean }) => {
         if (!editor) return;
-        const node = pos >= 0 ? editor.state.doc.nodeAt(pos) : null;
-        if (!node || node.type.name !== 'pdf') return;
+        const pos = findPdfNodeByNonce(pdfId);
+        if (pos < 0) return;
         editor.chain().focus().setNodeSelection(pos).updateAttributes('pdf', attrs).run();
-    }, [editor]);
+    }, [editor, findPdfNodeByNonce]);
 
     const handlePdfUpload = useCallback(async (file: File) => {
         if (!editor) return;
@@ -372,14 +377,16 @@ export default function RichTextEditor({
             return;
         }
         setIsPdfUploading(true);
-        let insertPos = -1;
+        let pdfId = '';
         try {
             // Optimistic block FIRST: named placeholder appears immediately (D-02).
+            // Nonce unik per insert → mark pasca-upload selalu mengenai blok ini,
+            // apa pun yang terjadi pada posisi dokumen selama transfer.
+            pdfId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
             editor.chain().focus().insertContent({
                 type: 'pdf',
-                attrs: { src: '', filename: file.name },
+                attrs: { src: '', filename: file.name, pdfId },
             }).run();
-            insertPos = findInsertedPdfNodePos(file.name);
             const formData = new FormData();
             formData.append("file", file);
             const response = await fetch("/api/media", {
@@ -392,17 +399,17 @@ export default function RichTextEditor({
             }
             const data = await response.json();
             // Update the SAME block's src in place (no new node). Filename kept.
-            markPdfBlock(insertPos, { src: data.url });
+            markPdfBlock(pdfId, { src: data.url });
         } catch (error) {
             // Red block + message (D-02). Transient data-pdf-error is stripped
             // by the server sanitizer at save — never persisted.
-            markPdfBlock(insertPos, { error: true });
+            markPdfBlock(pdfId, { error: true });
             const message = error instanceof Error ? error.message : "Gagal mengunggah PDF";
             showToast(message, "error");
         } finally {
             setIsPdfUploading(false);
         }
-    }, [editor, findInsertedPdfNodePos, markPdfBlock, showToast]);
+    }, [editor, markPdfBlock, showToast]);
 
     const handlePdfClick = () => {
         setShowPdfMenu(false);
