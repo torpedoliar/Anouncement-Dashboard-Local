@@ -72,6 +72,20 @@ const emptyForm = {
     detectionLayer: null as string | null,
 };
 
+// Guardrail pemilih SSO Mode (TASK-14, gelombang A3; §5/§7 sso-modes-design):
+// salah mode = user mendarat di halaman login manual dan persepsi "SSO rusak".
+// Satu kalimat per mode di bawah select; PROXY/TOKEN ditandai belum siap
+// (§4/§5), sedangkan REDIRECT aktif sehingga TIDAK diberi label nonaktif.
+const SSO_MODE_HINT: Record<string, string> = {
+    FORM: "Forwarding kredensial: kredensial tersimpan di-auto-submit ke form login aplikasi.",
+    REDIRECT: "Hand-off identitas tanpa kredensial — untuk app intranet WIA / IP-trusted.",
+    PROXY: "Portal tidak mendukung reverse proxy — gunakan REROUTE atau POST.",
+    TOKEN: "Butuh aplikasi yang bisa memvalidasi JWT portal (menunggu konsumen pertama).",
+    REROUTE: "Login server-to-server ke Oracle/EBS lalu re-issue cookie ke browser.",
+    VAULT: "Buka tab aplikasi target lalu salin kredensial tersimpan.",
+    POST: "Relay POST federasi (WS-Fed/K2) memakai kredensial tersimpan.",
+};
+
 export default function PortalAppsPage() {
     const [apps, setApps] = useState<PortalApp[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -792,20 +806,28 @@ export default function PortalAppsPage() {
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <Select
-                                    label="SSO MODE"
-                                    value={formData.ssoMode}
-                                    onChange={(e) => setFormData({ ...formData, ssoMode: e.target.value })}
-                                    options={[
-                                        { value: "FORM", label: "FORM" },
-                                        { value: "REDIRECT", label: "REDIRECT" },
-                                        { value: "PROXY", label: "PROXY" },
-                                        { value: "TOKEN", label: "TOKEN" },
-                                        { value: "REROUTE", label: "REROUTE" },
-                                        { value: "VAULT", label: "VAULT" },
-                                        { value: "POST", label: "POST (relay server)" },
-                                    ]}
-                                />
+                                <div>
+                                    <Select
+                                        label="SSO MODE"
+                                        value={formData.ssoMode}
+                                        onChange={(e) => setFormData({ ...formData, ssoMode: e.target.value })}
+                                        options={[
+                                            // Label guardrail TASK-14: REDIRECT aktif
+                                            // (tanpa penanda); PROXY/TOKEN belum siap.
+                                            { value: "FORM", label: "FORM" },
+                                            { value: "REDIRECT", label: "REDIRECT" },
+                                            { value: "PROXY", label: "PROXY (nonaktif)" },
+                                            { value: "TOKEN", label: "TOKEN (tertunda konsumen)" },
+                                            { value: "REROUTE", label: "REROUTE" },
+                                            { value: "VAULT", label: "VAULT" },
+                                            { value: "POST", label: "POST (relay server)" },
+                                        ]}
+                                    />
+                                    {/* Helper text per-mode — 1 kalimat, token-native. */}
+                                    <p className="mt-1.5 text-xs leading-relaxed text-text-3">
+                                        {SSO_MODE_HINT[formData.ssoMode]}
+                                    </p>
+                                </div>
                                 <Select
                                     label="HTTP METHOD"
                                     value={formData.httpMethod}
