@@ -18,7 +18,7 @@ interface SSOPostSubmitProps {
 }
 
 /**
- * SSO Mode POST — relay server-side. Browser dikirim to /api/sso/post; portallah
+ * SSO Mode POST — relay server-side. Browser dikirim ke /api/sso/post; portal
  * melakukan prefetch + login ke aplikasi target (token/cookie segar tiap akses),
  * lalu alihkan browser DENGAN cookie sesi aplikasi.
  */
