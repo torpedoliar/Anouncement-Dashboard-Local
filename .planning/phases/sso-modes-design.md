@@ -1,169 +1,151 @@
-# Desain Arsitektur Aktivasi Mode SSO REDIRECT / PROXY / TOKEN
+# Desain Arsitektur Mode SSO REDIRECT / PROXY / TOKEN
 
-Tanggal: 2026-08-26 · Agent: arak-bali-mt9w2be8 (Solution Architect) · Milestone: SSO M3 — Gelombang 1 (desain)
-Status: **DESAIN — belum ada perubahan kode aplikasi**
+Tanggal: 2026-08-26 · Agent: arak-bali-mt9w2be8 (Solution Architect) · Kontrak: TASK-10, milestone conv-sso-m3
+Prasyarat terpenuhi: OPD-2 tuntas — enum `PortalSsoMode` final 7 nilai (`prisma/schema.prisma:373-382`), bukti `.planning/phases/opd2-audit.md`.
 
-## 1. Ringkasan keputusan (TL;DR)
+---
 
-| Mode | Rekomendasi | Inti keputusan |
-|---|---|---|
-| REDIRECT | **Siap eksekusi, tunda sampai ada ≥1 aplikasi target nyata** | Identity-assertion redirect (HMAC token URL), ~120 baris, nol migration |
-| PROXY | **Jangan pernah reverse-proxy in-process; jalur resmi = gateway eksternal** | Cukup satu endpoint forward-auth + runbook ops |
-| TOKEN | **Tunda; dilarang menyimpan rahasia di `extraFields`** | Tertahan kolom rahasia app-level (= migration) + prinsip jangan bangun IdP sendiri |
+## 1. Problem Understanding
 
-Yang layak dibangun **sekarang** bukan mesin SSO-nya, melainkan dua perbaikan kecil bernilai langsung
-(bagian 4): guardrail picker admin + kartu panduan pengganti halaman mati. Desain penuh tiap mode tetap
-disiapkan di bawah supaya eksekusi tinggal dispatch tanpa riset ulang.
+- **Objective:** tiga mode enum masih jatuh ke halaman "Belum Aktif" (`app/portal/app/[appSlug]/page.tsx:185-209`). Dokumen ini adalah usulan keputusan produk yang ditunda sejak ROADMAP OPD-2: perilaku per mode, kebutuhan data, potongan MVP, dekomposisi tugas, dan risiko.
+- **Constraints:** tanpa migration baru dan tanpa perubahan enum; file beku OPD-1 zero-diff (`lib/portal-access.ts`, `lib/portal-layout.ts`, `lib/portal-auth.ts`, `lib/auth.ts`, `middleware.ts`); tanpa dependency baru.
+- **Fakta terverifikasi:** `PortalApp` TIDAK punya kolom `metadata` — permukaan konfigurasi yang ada: `url`, `loginUrl`, `httpMethod`, `usernameField`, `passwordField`, `extraFields Json?` (`prisma/schema.prisma:609-625`). Paket `jose` tidak terinstal (`package.json`) — penandatanganan token memakai `node:crypto` stdlib.
+- **Asumsi:** tidak ada aplikasi konsumen TOKEN yang disebutkan eksplisit sampai hari ini; portofolio aplikasi nyata = Oracle EBS (REROUTE), K2 WS-Federation (POST), form ASP.NET biasa (FORM).
 
-## 2. Fakta dasar (terverifikasi di repo)
+### Keputusan sentral: dua kelas mode
 
-- Enum final 7 nilai di `prisma/schema.prisma:370-378`; migrations lengkap tercatat di `.planning/phases/opd2-audit.md`. Desain ini **tidak menambah enum/migration**.
-- Titik integrasi: `app/portal/app/[appSlug]/page.tsx:183-209` — blok "SSO Mode {X} Belum Aktif" (hasil fix `32c266c`) adalah branch yang diganti/diperluas.
-- **`PortalApp` tidak punya kolom `metadata` umum** (`schema.prisma:609-658`). Kolom konfigurasi yang ada: `url`, `loginUrl`, `httpMethod`, `usernameField`, `passwordField`, `extraFields Json?`. `extraFields` berisi nilai form yang dikirim ke aplikasi — **bukan tempat rahasia** (tersimpan sebagai JSON polos).
-- Preseden konfigurasi via env: `PORTAL_SSO_COOKIE_DOMAIN` dibaca `sharedCookieDomain()` (`lib/portal-sso-relay.ts:294`) dan `PORTAL_CREDENTIAL_KEY` fail-closed di `lib/portal-crypto.ts:11`.
-- Infra reusable (semua sudah ada, tidak perlu disentuh): `fetchLoginPage`/`CookieJar`/`relayRequest`/`refreshVolatileFields` (`lib/portal-fetch-html.ts`), `relayLogin`/`findFederationAutoPost`/`classifyRedirect`/`parseOracleAuthResponse` (`lib/portal-sso-relay.ts`), `decryptCredential`, `logAudit` (wajib set `appId`), banner `SsoErrorBanner` (`sso_failed`, `sso_cross_domain`), pola komponen submit `SSORerouteSubmit`/`SSOPostSubmit`.
-- Sejarah penting: reverse proxy **sudah pernah ada lalu dihapus** — komentar `app/api/sso/reroute/route.ts:129-137` mencatat crash OOM di route proxy lama dan OAF MAC breakage karena URL rewriting. Ini bukti empiris, bukan spekulasi.
-- File beku OPD-1 (`lib/portal-access.ts`, `lib/portal-layout.ts`, `lib/portal-auth.ts`, `lib/auth.ts`, `middleware.ts`): semua desain di bawah hanya **memanggil** fungsi dari file-file itu (pola yang sudah dipakai dispatcher hari ini: `getServerSession(portalAuthOptions)`, `canAccessPortalAppBySlug`) — tidak ada yang perlu diedit. Import ≠ edit; zero-diff terjaga.
-- Picker admin (`app/admin/portal-apps/page.tsx`, blok Select "SSO MODE") menampilkan ketiga mode tanpa penanda bahwa belum aktif — sumber miskonfigurasi utama saat ini.
+Pembagian ini adalah fondasi seluruh desain — ia menentukan bentuk dispatcher, bukan sekadar daftar fitur:
 
-## 3. Kontrak perilaku per mode
-
-### 3.1 REDIRECT — identity-assertion redirect (HMAC token)
-
-**Semantik**: portal tidak meneruskan kredensial sama sekali; ia menerbitkan *asersi identitas*
-berumur sangat pendek dan mengarahkan browser ke aplikasi dengannya. Beda fundamental dari POST/REROUTE
-(yang mengirim username/password) dan cocok untuk aplikasi/gateway internal yang bisa memvalidasi token.
-
-**Flow end-to-end**
-```
-PortalUser klik app (REDIRECT)
-  → Dispatcher (launch page, server component):
-      1. sesi + akses + kredensial? → TIDAK PERLU kredensial (beda dgn mode lain;
-         langkah 4-8 dispatcher dilewati untuk mode ini)
-      2. baca PORTAL_SSO_REDIRECT_SECRET; kosong → tetap render kartu "Belum Aktif"
-         (degradasi anggun, konsisten fail-closed ala portal-crypto)
-      3. mint token: base64url(payload) + "." + base64url(HMAC-SHA256(secret, payload))
-         payload = { v:1, sub: portalUserId, slug: app.slug, exp: now+60 }
-      4. logAudit SSO_LAUNCH SUCCESS (appId wajib, metadata.ssoMode:"REDIRECT")
-      5. 302 → loginUrl||url + (punya query ? …&sso=<token> : ?sso=<token>)
-  → Aplikasi/gateway target memvalidasi HMAC + exp + slug, membaca sub sebagai identitas
-    (kontrak integrasi di luar repo ini — lihat Risiko)
-```
-
-**Route/komponen**
-| Berkas | Baru/Modifikasi | Isi |
-|---|---|---|
-| `lib/portal-sso-token.ts` | baru | `mintRedirectToken()` + getter secret fail-closed (~50 baris; gaya `getKey()` portal-crypto) |
-| `app/api/sso/redirect/route.ts` | baru (opsional) | hanya jika ingin paritas audit ulang-klik dgn REROUTE/POST; versi minimum cukup di dispatcher |
-| `app/portal/app/[appSlug]/page.tsx:183-209` | modifikasi | branch REDIRECT → mint + 302; PROXY/TOKEN tetap kartu status |
-| `.env.example` | modifikasi | dokumentasi `PORTAL_SSO_REDIRECT_SECRET` |
-
-**Config**: nol kolom baru. Secret via env (rotasi = ganti env + restart; token lama hangus ≤60 dtk).
-**Kegagalan**: tanpa secret → kartu status (bukan error); audit FAILURE hanya bila mint/redirect throw.
-
-### 3.2 PROXY — header-injection via gateway eksternal (bukan in-process)
-
-**Keputusan inti**: reverse proxy di dalam Next.js **ditolak** — sudah terbukti gagal di repo ini
-(OOM crash route lama; OAF MAC pecah oleh URL rewriting; plus websocket/streaming/path absolut yang
-tidak akan pernah selesai ditangani). Kebutuhan nyata di balik PROXY adalah *"aplikasi percaya header
-identitas (mis. REMOTE_USER/X-Forwarded-User)"* — itu pekerjaan **gateway**, bukan monolith Next.js.
-
-**Desain jika diaktifkan**
-```
-Browser → [gateway eksternal: Traefik forwardAuth / oauth2-proxy / nginx auth_request]
-            └─ sebelum proxy ke aplikasi, panggil:
-               GET /api/sso/proxy-check?app=<slug>   (cookie portal ikut)
-               ← 200 + x-forwarded-user: <portalUserId>   |   401
-```
-| Berkas | Baru/Modifikasi | Isi |
-|---|---|---|
-| `app/api/sso/proxy-check/route.ts` | baru | validasi sesi portal (`getServerSession(portalAuthOptions)` — import saja) + `canAccessPortalAppBySlug` + logAudit; respons header identitas (~40 baris) |
-| `app/portal/app/[appSlug]/page.tsx` | modifikasi | branch PROXY → kartu panduan "mode ini butuh gateway; hubungi admin" |
-| `docs/` runbook | baru | contoh konfig Traefik/nginx |
-
-Dispatcher TIDAK melakukan apa pun selain menjelaskan syaratnya — peluncuran normal lewat URL aplikasi
-langsung, gateway yang mengurus otentikasi per-request. Effort in-repo sangat kecil; risiko hampir nol.
-
-### 3.3 TOKEN — OIDC/OAuth2
-
-Dua kemungkinan makna, keduanya tertahan fakta repo:
-
-1. **Token endpoint milik aplikasi** (portal panggil pakai akun servis): butuh **rahasia app-level
-   terenkripsi** — struktur kredensial sekarang per-PortalUser (`PortalUserAppCredential`), dan
-   `extraFields` JSON polos dilarang keras untuk rahasia. Terobos = butuh migration/model baru
-   (`AppCredential` terenkripsi) → di luar batasan milestone ini.
-2. **Portal sebagai OIDC RP/IdP**: butuh registrasi client per deployment, manajemen signing key,
-   discovery/JWKS — proyek tersendiri dengan permukaan keamanan besar. Prinsip arsitektur: **jangan
-   membangun IdP sendiri**; bila suatu hari dibutuhkan, adopsi OSS (Keycloak/Authentik/Zitadel) dan
-   posisikan portal sebagai pembungkus peluncuran.
-
-**Desain cadangan (bila prasyarat #1 dipenuui suatu saat)**: `app/api/sso/token/route.ts` meniru pola
-POST (guard `ssoMode !== "TOKEN"`, access check, logAudit) → server-to-server panggil token endpoint,
-lalu serahkan token ke browser via fragmen `#token=` (fragmen, bukan query, agar tak masuk log server).
-Komponen UI tidak perlu — 302/handoff halam ala `autoPostHandoffPage`.
-
-## 4. MVP cut — usulan keputusan produk (bagian yang DIEKSEKUSI dari milestone ini)
-
-**Bangun sekarang (kecil, bernilai langsung, nol migration):**
-
-1. **Guardrail picker admin** (`app/admin/portal-apps/page.tsx`): label ketiga mode diberi sufiks
-   "(nonaktif)", dan saat dipilih muncul konfirmasi + saran mode aktif terdekat:
-   REDIRECT → POST/REROUTE · PROXY → VAULT · TOKEN → VAULT. Konfirmasi, bukan blokir — pra-konfigurasi
-   tetap mungkin. (Mencegah dead-end di sumbernya.)
-2. **Kartu panduan pengganti halaman mati**: ekstrak blok 183-209 menjadi
-   `components/portal/SSOModeInactive.tsx` dan perkaya per mode — alasan + "mode terdekat yang bisa
-   dipakai sekarang". Pengguna tidak lagi hanya disuruh "hubungi admin".
-
-**Tunda + pemicu aktivasi (dokumen ini = usulan keputusan "separate product decision" di ROADMAP):**
-
-| Mode | Pemicu aktivasi | Prasyarat |
-|---|---|---|
-| REDIRECT | Ada ≥1 aplikasi target riil yang bisa memvalidasi token HMAC | Setuju env `PORTAL_SSO_REDIRECT_SECRET`; gelombang 3 jalan (~hari kerja terkecil) |
-| PROXY | Organisasi mau memasang gateway eksternal | Keputusan DevOps; di luar scope repo |
-| TOKEN | Ada aplikasi yang benar-benar bicara OIDC/token-endpoint | Migration model rahasia app-level + keputusan produk |
-
-**Alasan anti-spekulasi**: menulis mesin SSO tanpa satu pun konsumen nyata menghasilkan kode
-otentikasi tak teruji lapangan — permukaan risiko tanpa nilai terbukti. Guardrail + kartu panduan
-menutup 100% masalah pengguna yang ada hari ini (miskonfigurasi & dead-end).
-
-## 5. Dekomposisi tugas siap-dispatch (Gelombang 2 — MVP)
-
-Lane paralel bebas konflik (tiap lane menyentuh file berbeda):
-
-| Lane | Agent | File | Isi |
+| Kelas | Mode | Butuh kredensial? | Pola serah-terima |
 |---|---|---|---|
-| UI admin | Hennesy | `app/admin/portal-apps/page.tsx` | label "(nonaktif)" + konfirmasi + saran mode terdekat |
-| Portal/dispatcher | Oscar | `app/portal/app/[appSlug]/page.tsx` + `components/portal/SSOModeInactive.tsx` (baru) | ekstrak & perkaya kartu status per mode |
-| QA rilis | Baileys Irish Cream | — | gate: tsc + eslint scoped + review diff + push |
+| **Credential-forwarding** | FORM, REROUTE, POST, VAULT | Ya | Sudah berjalan hari ini |
+| **Credential-less handoff** | REDIRECT, TOKEN | **Tidak** | Identitas portal → browser/aplikasi |
+| **Ditolak di monolit** | PROXY | — | Lihat §4 |
 
-Gelombang 3 (hanya bila Open Question #1 dijawab "ya"): REDIRECT engine —
-Kawa: `lib/portal-sso-token.ts` + `app/api/sso/redirect/route.ts`; Oscar: dispatcher branch +
-`.env.example`; Hennesy: hint picker REDIRECT dilepas dari "(nonaktif)".
+Konsekuensi langsung: alur peluncuran saat ini menuntut kredensial SEBELUM dispatch (`page.tsx` langkah 4-8: `NoCredential` → `AccountSelector` → decrypt → audit). Untuk kelas credential-less, pemeriksaan itu harus dilewati — **dispatch mode naik ke atas langkah 4**. Ini satu refactor kecil di satu file, bukan per-mode.
 
-Gate semua lane: `npx tsc --noEmit` + eslint scoped; commit atomik; file beku OPD-1 zero-diff;
-tanpa migration; enum & `lib/validation-schemas.ts:240` tidak berubah.
+---
 
-## 6. Risiko teknis & mitigasi
+## 2. Mode REDIRECT — hand-off langsung tanpa kredensial
+
+### Kontrak perilaku
+
+Portal memverifikasi sesi portal + hak akses, menulis audit, lalu 302 browser ke `app.loginUrl || app.url`. Target diautentikasi oleh mekanismenya sendiri: Windows Integrated Auth/Kerberos, whitelist IP portal/perusahaan, atau SSO di belakang IdP korporat. Kasus nyata: aplikasi intranet yang "begitu dibuka sudah masuk".
+
+**Varian yang DITOLAK:** menyisipkan kredensial sebagai query param (`?user=..&pass=..`). Kredensial mendarat di history browser, access log aplikasi, dan header Referer — melanggar batas keamanan yang sama dengan prinsip redaksi `logAudit`. Jika suatu aplikasi hanya bisa menerima kredensial lewat parameter, mode yang tepat adalah FORM/POST/REROUTE, bukan REDIRECT.
+
+### Perubahan kode
+
+| File | Baru/ubah | Isi |
+|---|---|---|
+| `app/api/sso/redirect/route.ts` | **baru** | POST form (`appSlug`) — pola kontrak identik `reroute/post`: guard `ssoMode !== "REDIRECT"` → 404, `canAccessPortalAppBySlug` → 403, `logAudit SSO_LAUNCH`, lalu 302 ke tujuan. Tujuan HANYA dari config admin (bukan input user) → tidak ada open-redirect; tidak ada fetch server → tidak ada permukaan SSRF. |
+| `components/portal/SSORedirectHandoff.tsx` | **baru** | Interstitial singkat "Mengalihkan ke {app}" + fallback link manual (UX konsisten dgn SSORerouteSubmit), auto-submit form ke `/api/sso/redirect`. |
+| `app/portal/app/[appSlug]/page.tsx` | ubah | Branch "Belum Aktif" baris 185-209: REDIRECT/TOKEN keluar dari daftar itu; dispatch mode dinaikkan sebelum resolusi kredensian (§1). PROXY tetap halaman status. |
+
+### Data/config
+
+Tidak ada kolom baru. Semantik kolom existing: `loginUrl` = titik masuk autentikasi aplikasi (boleh = `url`). Tidak menyentuh `extraFields`.
+
+---
+
+## 3. Mode TOKEN — JWT handoff (blueprint, aktivasi kondisional)
+
+### Kontrak perilaku
+
+Portal menerbitkan JWT HS256 berumur pendek yang menegaskan identitas pengguna portal, lalu menyerahkannya ke endpoint konsumen milik aplikasi. **Validasi token adalah tanggung jawab aplikasi konsumen** — portal menyediakan kontrak klaim + kunci, bukan mengelola sesi aplikasi.
+
+```
+Browser → POST /api/sso/token (form: appSlug)
+          ├─ guard ssoMode==="TOKEN", canAccessPortalAppBySlug, logAudit
+          └─ terbitkan JWT (node:crypto createHmac, HS256):
+             iss="portal-sja", aud=origin(app.url), sub=portalUser.id,
+             nik=<NIK HRIS>, exp=iat+120, iat
+          ← HTML auto-POST form (action=app.loginUrl, field: sso_token=<jwt>)
+             — pola identik autoPostHandoffPage() di app/api/sso/post/route.ts:28-46
+Aplikasi → validasi signature + aud + exp (+ toleransi clock ±30 dtk) → sesi lokal sendiri
+```
+
+**Keputusan kunci:**
+
+1. **Kunci = HKDF dari `PORTAL_CREDENTIAL_KEY`**, bukan env baru. `crypto.hkdfSync("sha256", key, salt("portal-sso-token"), info, 32)` memberi pemisahan domain kriptografis tanpa menambah env wajib (mengikuti pola fail-closed `PORTAL_CREDENTIAL_KEY`). Upgrade path: env khusus `PORTAL_SSO_TOKEN_KEY` jika konsumen butuh rotasi independen — cukup ganti satu baris derivasi.
+2. **Pengiriman via auto-POST form, bukan query param.** Token di query bocor ke history/log/Referer — alasan sama dengan penolakan varian REDIRECT §2.
+3. **Tanpa dependency baru.** `jose` tidak terinstal dan tidak perlu: HS256 + base64url ≈ 20 baris stdlib. RS256/JWKS hanya relevan bila konsumen menuntut verifikasi public-key — tunda sampai ada konsumen nyata (lihat Open Questions).
+4. **Kredensial tak dipakai** → ikut kelas credential-less §1; `sub` = identitas portal, bukan akun aplikasi. Pemetaan banyak akun aplikasi per user = ditunda.
+
+### Perubahan kode (saat diaktifkan)
+
+| File | Baru/ubah | Isi |
+|---|---|---|
+| `lib/portal-sso-token.ts` | **baru** | `deriveTokenKey()` (HKDF), `issueSsoToken()` (header/payload/signature base64url), konstanta TTL. Murni fungsi — mudah diuji tanpa HTTP. |
+| `app/api/sso/token/route.ts` | **baru** | Kontrak sama dengan §2; guard `ssoMode !== "TOKEN"`; render halaman auto-POST. |
+| `components/portal/SSOTokenSubmit.tsx` | **baru** | Interstitial, pola SSOPostSubmit. |
+| `app/portal/app/[appSlug]/page.tsx` | ubah | Ditangani gelombang yang sama dengan REDIRECT (satu refactor dispatcher untuk dua mode). |
+
+Data: `loginUrl` = endpoint penerima token konsumen; `aud` diturunkan dari `app.url` — tidak ada kolom baru. Single-use/replay-cache (jti) = **ditunda**; deploy saat ini satu instans, TTL 120 dtk memadai sebagai kontrol awal.
+
+---
+
+## 4. Mode PROXY — DITOLAK untuk implementasi di dalam Next.js
+
+Bukan "belum sempat" — **sudah dicoba dan digugurkan dengan bukti**: route `app/portal/proxy/[appSlug]/[[...path]]/route.ts` dihapus di `c6afaf1` setelah rentetan `4655d11`, `60e293e`, `ca10809` gagal menambalnya. Kegagalannya struktural, bukan bug:
+
+1. **OOM/502** — buffering `arrayBuffer()` atas payload Oracle besar di dalam proses Next.js.
+2. **OAF MAC breakage** — penulisan ulang URL merusak tanda tangan internal Oracle.
+3. **Racun TLS global** — kode lama menyetel `NODE_TLS_REJECT_UNAUTHORIZED=0` pada level proses (melumpuhkan verifikasi TLS koneksi DB/SMTP juga). Pelajaran ini sudah dikodifikasi di `relayRequest()` (`lib/portal-fetch-html.ts:315-393`): longgarkan TLS per-request saja.
+4. **Rewriting HTML/JS tanpa ujung** — setiap absolutisasi path/redirect/XHR baru adalah kebocoran baru.
+
+Kebutuhan aslinya (header-injection SSO) kini terlayani lebih aman oleh REROUTE direct-redirect + re-issue cookie domain-bagi (`sharedCookieDomain`, `PORTAL_SSO_COOKIE_DOMAIN`). **Jika suatu hari ada aplikasi yang benar-benar butuh reverse proxy**, jawabannya adalah infrastruktur terpisah (nginx/Traefik/oauth2-proxy dengan forwardAuth), bukan route handler monolit — keputusan DevOps, di luar scope portal. PROXY tetap di enum & dropdown admin; halaman launch mempertahankan status "Belum Aktif" dengan copy yang dirapikan agar admin diarahkan ke mode alternatif.
+
+---
+
+## 5. Rekomendasi MVP cut
+
+| Mode | Keputusan | Alasan |
+|---|---|---|
+| **REDIRECT** | **Implement sekarang** (gelombang A) | Termurah (~2 file baru + 1 refactor dispatcher), nilai langsung untuk aplikasi intranet WIA/IP-trusted, nol permukaan kredensial baru. |
+| **TOKEN** | Blueprint siap; **aktifkan saat ada konsumen pertama** (gelombang B kondisional) | Tanpa aplikasi konsumen, ini infrastruktur mati (ponytail #1). Seluruh desain §3 sudah final sehingga implementasi tinggal mengikuti resep. |
+| **PROXY** | **Tidak dibangun** di monolit | Bukti kegagalan historis §4; jalur alternatif eksternal didokumentasikan. |
+
+Deteksi (`classifySsoMode`, `lib/portal-sso-mode.ts`) **tidak diubah**: ia sengaja hanya merekomendasikan mode terimplementasi (keputusan OPD-2). REDIRECT/TOKEN dipilih admin manual — makanya bantuan UI di bawah wajib ikut.
+
+---
+
+## 6. Dekomposisi tugas siap-dispatch (lane bebas konflik)
+
+Dispatcher `page.tsx` adalah titik gesekan satu-satunya → dimiliki SATU lane per gelombang, tidak paralel antar-lane pada file itu.
+
+| # | Tugas | Lane | File |
+|---|---|---|---|
+| A1 | Refactor dispatcher: pisahkan kelas credential-less, dispatch sebelum resolusi kredensial; cabang REDIRECT | Backend (Kawa) | `app/portal/app/[appSlug]/page.tsx` |
+| A2 | Route + komponen REDIRECT | Backend (Kawa) | `app/api/sso/redirect/route.ts`, `components/portal/SSORedirectHandoff.tsx` |
+| A3 | Copy halaman status PROXY + helper text per-mode di form/badge portal-apps (peringatan "mode belum diuji") | UI (Hennesy) | `app/admin/portal-apps/**` — paralel aman, beda file |
+| B1 | `lib/portal-sso-token.ts` + unit self-check | Backend (Oscar) | file baru saja |
+| B2 | Route + komponen TOKEN + cabang dispatcher TOKEN (setelah A merge) | Backend (Oscar) | `app/api/sso/token/route.ts`, `SSOTokenSubmit.tsx`, `page.tsx` |
+| QA | Gate rilis: diff review, zero-diff file beku, tsc + eslint scoped, E2E manual REDIRECT ke satu app nyata | Release (Baileys) | — |
+
+Urutan: A1→A2→QA(parsial) berjalan bersama A3; B menunggu A merge (file dispatcher sama).
+
+---
+
+## 7. Risiko teknis & mitigasi
 
 | Risiko | Dampak | Mitigasi |
 |---|---|---|
-| Token REDIRECT bocor (log/referer) | impersonasi | TTL 60 dtk, aud=slug, secret env-only; kontrak: aplikasi wajib HTTPS intranet; pertimbangkan single-use nonce saat dieksekusi |
-| Clock skew antar host | token ditolak | toleransi ±30 dtk di sisi validator (kontrak integrasi) |
-| Rotasi secret | SSO berhenti sebentar | rotasi = restart; degradasi ke kartu status, bukan error 500 |
-| Validasi sisi aplikasi salah dibangun | SSO diam-diam gagal | runbook + contoh verifier di docs saat gelombang 3 |
-| Guardrail dianggap menyulitkan admin | friksi kecil | konfirmasi dapat dilewati; tidak mengubah API/zod |
-| PROXY dicoba diimplement in-process di masa depan | OOM/MAC ulang | keputusan tertulis di dokumen ini + kartu status menjelaskan syarat gateway |
-| Rahasia dicempel ke `extraFields` | kebocoran rahasia | dilarang eksplisit di dokumen + reviewer gate |
+| Salah mode: admin memilih REDIRECT untuk app yang butuh kredensial | User mendarat di halaman login manual — "SSO rusak" persepsi | Helper text per-mode di admin (A3); interstitial REDIRECT selalu sediakan link manual; audit trail membedakan mode per launch |
+| Kunci token = turunan `PORTAL_CREDENTIAL_KEY` | Kompromi kunci → identitas palsu di semua app konsumen TOKEN | TTL 120 dtk; pengiriman POST bukan query; rotasi = rotasi kunci induk (prosedur existing); upgrade path env khusus |
+| Token bocor via Referer/log | Replay dalam window TTL | Auto-POST (bukan query) + `referrer-policy` global existing; dokumentasikan tuntutan HTTPS ke konsumen |
+| Clock skew portal↔konsumen | Token valid ditolak | Toleransi ±30 dtk ditulis di kontrak konsumen (bagian dari deliverable B2) |
+| Regresi selera membangun proxy lagi | Ulang tragedi OOM/502 | Putusan §4 direkam di dokumen ini + commit hapus `c6afaf1` sebagai rujukan; review menolak route proxy baru di monolit |
+| Dispatcher refactor menyentuh alur mode existing | Regresi FORM/REROUTE/POST/VAULT | A1 murni memindah urutan pemeriksaan untuk kelas credential-less; gate E2E manual keempat mode tersebut sebelum merge |
 
-## 7. Open Questions (untuk god / human — jangan parkir kerja MVP)
+## Open Questions (butuh input human/god — tidak memarkir kerja)
 
-1. **Adakah ≥1 aplikasi target nyata untuk REDIRECT?** Menentukan Gelombang 3 jalan atau tidak.
-2. **Penamaan & rotasi** `PORTAL_SSO_REDIRECT_SECRET` — ikuti konvensi env existing, cukup disepakati god.
-3. **Copy picker admin** "(nonaktif)" — persetujuan ringan atas perubahan teks admin.
-4. **PROXY**: apakah organisasi mau jalur gateway eksternal (keputusan ops/DevOps, di luar repo)?
+1. **Konsumen TOKEN pertama:** adakah aplikasi konkret yang akan memvalidasi JWT portal? Gelombang B menunggu jawaban ini.
+2. **PII dalam klaim:** klaim `nik` (NIK HRIS) dikirim ke aplikasi konsumen — layak atau cukup `sub` + nama?
+3. **PROXY eksternal:** bila suatu saat dibutuhkan, apakah infra bersedia mengoperasikan reverse proxy terpisah?
 
-## 8. Verifikasi desain
+## Verifikasi desain
 
-- Dokumen murni `.planning/` — nol sentuhan kode; gate `npx tsc --noEmit` dijalankan saat commit untuk memastikan tree tetap sehat.
-- Analisis file beku: semua pola yang dirujuk (`getServerSession(portalAuthOptions)`, `canAccessPortalAppBySlug`, `logAudit`) sudah dipakai dispatcher/route hari ini lewat import — tidak ada file beku yang perlu diedit.
-- Tanpa migration: konfigurasi mode memakai kolom `PortalApp` existing + env var; kebutuhan yang tidak muat di situ (rahasia app-level) sengaja menjadi pemicu aktivasi, bukan ditempel paksa.
+- Semua rute baru otomatis tercakup matcher `/api/:path*` + rate limit segmen `sso` (`middleware.ts:59,80-90`) — tanpa sentuh middleware (beku).
+- Akses selalu via `canAccessPortalAppBySlug` (`lib/portal-access.ts`, beku — hanya dipakai, tidak diubah); audit selalu via `logAudit`.
+- `npx tsc --noEmit` exit 0 pada saat dokumen ini di-commit (tree sehat, dokumen tidak menyentuh kode).
