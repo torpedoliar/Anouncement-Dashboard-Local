@@ -393,7 +393,7 @@ export function relayRequest(opts: {
 }
 
 /** Nama field yang nilainya berubah tiap kali halaman login dibuka. */
-const VOLATILE_RE =
+export const VOLATILE_RE =
     /^(?:__VIEWSTATE|__VIEWSTATEGENERATOR|__EVENTVALIDATION|__RequestVerificationToken|_csrf|csrf[-_]?token|_token|authenticity_token|csrfmiddlewaretoken)/i;
 
 export function hasVolatileFields(extraFields: Record<string, string>): boolean {

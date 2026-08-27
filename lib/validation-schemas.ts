@@ -296,10 +296,26 @@ export const PortalAppUpdateSchema = PortalAppCreateSchema.partial();
 export const verifyLoginSchema = z.object({
     url: z.string().url("Invalid URL").max(4000), // sama dengan loginUrl PortalApp (WS-Fed panjang)
     appId: z.string().cuid().nullable().optional(), // saat edit: simpan loginVerifiedAt ke app ini
+    // Snapshot form (TASK-20, §3 keputusan A). DB tidak dipakai sebagai sumber
+    // utama karena konfigurasi bisa basi; admin yang sedang menguji ingin
+    // mode/field/extraFields dari FORM dipakai walau belum di-Save.
+    ssoMode: z.enum(["FORM", "POST", "REROUTE", "VAULT", "REDIRECT", "PROXY", "TOKEN"]).default("FORM"),
+    httpMethod: z.enum(["POST", "GET"]).default("POST"),
     usernameField: z.string().max(100).default("username"),
     passwordField: z.string().max(100).default("password"),
+    // Field tambahan non-volatil (mis. {"login":"submit"}). Token volatil
+    // (__VIEWSTATE/__RequestVerificationToken/csrf) SELALU di-refresh dari
+    // halaman runtime, bukan dari nilai tersimpan.
+    extraFields: z.record(z.string(), z.string()).nullable().optional(),
     testUsername: z.string().max(200),
     testPassword: z.string().max(500),
+    // Opsional — hanya saat admin menekan tombol "Uji JSON" di UI.
+    jsonApi: z
+        .object({
+            path: z.string().regex(/^\//, "Path JSON harus absolut di origin (diawali /)").max(500),
+        })
+        .nullable()
+        .optional(),
 });
 
 // -----------------------------------------
