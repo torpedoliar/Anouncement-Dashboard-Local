@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle } from "@phosphor-icons/react";
 
 interface SSORerouteSubmitProps {
     app: {
@@ -20,7 +19,6 @@ interface SSORerouteSubmitProps {
 export default function SSORerouteSubmit({ app, cred, credentialId }: SSORerouteSubmitProps) {
     const formRef = useRef<HTMLFormElement>(null);
     const [status, setStatus] = useState<"preparing" | "submitting">("preparing");
-    const [failed, setFailed] = useState(false);
 
     useEffect(() => {
         const t = setTimeout(() => {
@@ -30,15 +28,17 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
         return () => clearTimeout(t);
     }, []);
 
+    // ponytail: Oracle login bisa sangat lambat — jangan bunih UI dgn fallback
+    // waktu. Loading tampil terus sampai navigasi berhasil/gagal sendiri.
+    // Setelah 30 dtk, tombol "Buka Oracle" manual muncul utk user yang gugup.
+    const [slow, setSlow] = useState(false);
     useEffect(() => {
-        if (status !== "submitting" || failed) return;
-        // Harus lebih lama daripada timeout relayRequest di server (12 dtk): Oracle yang
-        // lambat membuat navigasi tertahan, bukan gagal — jangan bunuh UI lebih dulu.
+        if (status !== "submitting") return;
         const t = setTimeout(() => {
-            if (!document.hidden) setFailed(true);
-        }, 15000);
+            if (!document.hidden) setSlow(true);
+        }, 30000);
         return () => clearTimeout(t);
-    }, [status, failed]);
+    }, [status]);
 
     return (
         <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-surface-0 px-5 py-10">
@@ -71,34 +71,27 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
                     {status === "preparing" ? `Menyambungkan sebagai ${cred.username}...` : "Mengalihkan..."}
                 </p>
 
-                {failed ? (
-                    <div className="mt-6 rounded-card border border-warning/30 bg-surface-2 p-4 text-left text-sm text-text-2">
-                        Tidak bisa membuka {app.name} otomatis.
+                {slow ? (
+                    <div className="mt-6 rounded-card border border-border bg-surface-2 p-4 text-left text-sm text-text-2">
+                        {app.name} lambat merespons. Buka manual bila tidak ingin menunggu.
                     </div>
                 ) : null}
 
                 <div className="mt-6 flex items-center justify-center gap-2">
-                    {status === "preparing" ? (
-                        <>
-                            {/* Impressive concentric ring loader */}
-                            <div className="sso-rings-container" aria-hidden="true">
-                                <div className="sso-ring sso-ring-outer"></div>
-                                <div className="sso-ring sso-ring-middle"></div>
-                                <div className="sso-ring sso-ring-inner"></div>
-                            </div>
-                            <span className="text-sm text-text-2 animate-sso-glow">Menghubungkan...</span>
-                        </>
-                    ) : failed ? (
-                        <span className="text-sm text-warning">Hubungi admin atau coba lagi.</span>
-                    ) : (
-                        <>
-                            <CheckCircle size={20} className="shrink-0 text-success" aria-hidden="true" />
-                            <span className="text-sm text-success">Mengalihkan...</span>
-                        </>
-                    )}
+                    <>
+                        {/* Impressive concentric ring loader — tampil terus sampai navigasi selesai */}
+                        <div className="sso-rings-container" aria-hidden="true">
+                            <div className="sso-ring sso-ring-outer"></div>
+                            <div className="sso-ring sso-ring-middle"></div>
+                            <div className="sso-ring sso-ring-inner"></div>
+                        </div>
+                        <span className="text-sm text-text-2 animate-sso-glow">
+                            {status === "preparing" ? "Menghubungkan..." : "Mengalihkan..."}
+                        </span>
+                    </>
                 </div>
 
-                {failed && (
+                {slow && (
                     <div className="mt-4 flex flex-col gap-2">
                         <button
                             type="submit"
@@ -121,7 +114,7 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
                 method="POST"
                 action="/api/sso/reroute"
                 className="sr-only"
-                aria-hidden={failed ? undefined : "true"}
+                aria-hidden="true"
             >
                 <input type="hidden" name="appSlug" value={app.slug} />
                 {credentialId && <input type="hidden" name="credentialId" value={credentialId} />}

@@ -85,12 +85,15 @@ export async function POST(request: NextRequest) {
 
         // POST AuthenticateUser (server-to-server; Origin/Referer spoofed to target domain).
         // TLS longgar terbatas pada request ini (bukan seluruh proses).
+        // ponytail: Oracle login bisa sangat lambat — timeout 120 dtk khusus REROUTE
+        // (default relayRequest 12 dtk). Naik per-call, jangan ubah default global.
         const postRes = await relayRequest({
             url: loginUrl,
             method: "POST",
             body: formBody.toString(),
             referer: loginUrl,
             allowInsecureTLS: true,
+            timeoutMs: 120000,
             headers: { "X-Service": "AuthenticateUser" },
         });
 
