@@ -265,6 +265,9 @@ html.theme-light {
 /* Base Styles */
 html {
   scroll-behavior: smooth;
+  /* Smooth theme transitions - prevent jarring visual changes */
+  transition: background-color var(--motion-standard) var(--motion-ease),
+    color var(--motion-standard) var(--motion-ease);
 }
 
 body {
@@ -273,6 +276,31 @@ body {
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
+  /* Ensure all elements transition smoothly during theme switch */
+  transition: background-color var(--motion-standard) var(--motion-ease),
+    color var(--motion-standard) var(--motion-ease),
+    border-color var(--motion-standard) var(--motion-ease),
+    box-shadow var(--motion-standard) var(--motion-ease);
+}
+
+/* Apply smooth transitions to root when theme changes */
+:root {
+  transition:
+    --surface-0 var(--motion-standard) var(--motion-ease),
+    --surface-1 var(--motion-standard) var(--motion-ease),
+    --surface-2 var(--motion-standard) var(--motion-ease),
+    --surface-3 var(--motion-standard) var(--motion-ease),
+    --border var(--motion-standard) var(--motion-ease),
+    --text-1 var(--motion-standard) var(--motion-ease),
+    --text-2 var(--motion-standard) var(--motion-ease),
+    --text-3 var(--motion-standard) var(--motion-ease);
+}
+
+/* Theme light edition smooth transition */
+html.theme-light {
+  transition:
+    background-color var(--motion-standard) var(--motion-ease),
+    color var(--motion-standard) var(--motion-ease);
 }
 
 /* Headings — Sora (display) */

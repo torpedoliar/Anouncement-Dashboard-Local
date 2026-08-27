@@ -71,7 +71,8 @@ export default function AnnouncementCard({
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isHovered, setIsHovered] = useState(false);
 
-    // Handle hover events for video playback
+    // Handle hover/tap events for video playback
+    // Works for both desktop (hover) and mobile (tap)
     useEffect(() => {
         if (!showVideoFrame) return;
 
@@ -81,6 +82,7 @@ export default function AnnouncementCard({
         const videoElement = videoRef.current;
         if (!videoElement) return;
 
+        // Desktop: mouse enter/leave
         const handleMouseEnter = () => {
             setIsHovered(true);
         };
@@ -89,12 +91,19 @@ export default function AnnouncementCard({
             setIsHovered(false);
         };
 
+        // Mobile: tap/click to toggle play/pause
+        const handleTap = () => {
+            setIsHovered(prev => !prev);
+        };
+
         videoElement.addEventListener('mouseenter', handleMouseEnter);
         videoElement.addEventListener('mouseleave', handleMouseLeave);
+        videoElement.addEventListener('click', handleTap);
 
         return () => {
             videoElement.removeEventListener('mouseenter', handleMouseEnter);
             videoElement.removeEventListener('mouseleave', handleMouseLeave);
+            videoElement.removeEventListener('click', handleTap);
         };
     }, [showVideoFrame]);
 
@@ -105,10 +114,9 @@ export default function AnnouncementCard({
         const videoElement = videoRef.current;
         if (!videoElement) return;
 
-        if (!isHovered) {
-            videoElement.pause();
-            videoElement.currentTime = 0;
-        }
+        // Pause when not hovered, reset to beginning
+        videoElement.pause();
+        videoElement.currentTime = 0;
     }, [isHovered, showVideoFrame]);
 
     const href = siteSlug ? `/site/${siteSlug}/${slug}` : `/${slug}`;
