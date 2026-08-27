@@ -166,6 +166,8 @@ export default function AnnouncementCard({
                             loop
                             playsInline
                             preload="metadata"
+                            aria-label={`Video preview: ${title}`}
+                            role="img"
                             style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
                             className="group-hover:scale-110"
                             autoPlay={isHovered}
@@ -203,7 +205,7 @@ export default function AnnouncementCard({
                             alignItems: 'center',
                             justifyContent: 'center',
                             zIndex: 5,
-                        }}>
+                        }} aria-hidden="true">
                             {videoType === 'youtube'
                                 ? <FiYoutube size={24} style={{ color: 'var(--site-text-on-primary)' }} />
                                 : <FiPlay size={24} style={{ color: 'var(--site-text-on-primary)' }} />}
