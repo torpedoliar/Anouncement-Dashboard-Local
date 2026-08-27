@@ -5,13 +5,13 @@ import { FaSun, FaMoon } from 'react-icons/fa';
 
 export function ThemeToggle() {
   const [isLight, setIsLight] = useState(false);
-  
+
   useEffect(() => {
     // Check initial state from DOM classList
     const html = document.documentElement;
     const saved = localStorage.getItem('theme');
     setIsLight(html.classList.contains('theme-light') || saved === 'light');
-    
+
     // Listen for changes
     const observer = new MutationObserver(() => {
       setIsLight(html.classList.contains('theme-light'));
@@ -19,7 +19,7 @@ export function ThemeToggle() {
     observer.observe(html, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
   }, []);
-  
+
   const toggle = () => {
     const html = document.documentElement;
     if (isLight) {
@@ -31,11 +31,12 @@ export function ThemeToggle() {
     }
     setIsLight(!isLight);
   };
-  
+
   return (
     <button
       onClick={toggle}
       aria-label={isLight ? "Beralih ke mode gelap" : "Beralih ke mode terang"}
+      aria-pressed={!isLight}
       className="p-2 rounded-control hover:bg-surface-2 transition-colors focus-visible:ring-2 focus-visible:ring-accent"
     >
       {isLight ? (
