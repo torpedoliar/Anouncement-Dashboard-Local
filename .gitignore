@@ -79,3 +79,6 @@ From Server Prod/
 # screenshot liar di root (tidak direferensikan kode mana pun)
 /image.png
 
+
+# hive workspace (agent coordination, local only) — never commit
+hive/
