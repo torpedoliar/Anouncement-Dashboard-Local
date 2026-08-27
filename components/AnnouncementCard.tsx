@@ -5,6 +5,7 @@ import Image from "next/image";
 import { formatDateShort } from "@/lib/utils";
 import { FiClock, FiPlay, FiYoutube } from "react-icons/fi";
 import { getContrastColor } from "@/components/SiteThemeProvider";
+import { useRef, useState, useEffect } from "react";
 
 interface AnnouncementCardProps {
     id: string;
@@ -66,6 +67,49 @@ export default function AnnouncementCard({
     const imageThumb = imagePath || null;
     const showVideoFrame = !!videoPath && !imageThumb && !youtubeThumb;
     const hasVideo = videoPath || videoType === 'youtube';
+    
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isHovered, setIsHovered] = useState(false);
+
+    // Handle hover events for video playback
+    useEffect(() => {
+        if (!showVideoFrame) return;
+
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        if (mediaQuery.matches) return;
+
+        const videoElement = videoRef.current;
+        if (!videoElement) return;
+
+        const handleMouseEnter = () => {
+            setIsHovered(true);
+        };
+
+        const handleMouseLeave = () => {
+            setIsHovered(false);
+        };
+
+        videoElement.addEventListener('mouseenter', handleMouseEnter);
+        videoElement.addEventListener('mouseleave', handleMouseLeave);
+
+        return () => {
+            videoElement.removeEventListener('mouseenter', handleMouseEnter);
+            videoElement.removeEventListener('mouseleave', handleMouseLeave);
+        };
+    }, [showVideoFrame]);
+
+    // Play/pause video based on hover state
+    useEffect(() => {
+        if (!showVideoFrame || isHovered) return;
+
+        const videoElement = videoRef.current;
+        if (!videoElement) return;
+
+        if (!isHovered) {
+            videoElement.pause();
+            videoElement.currentTime = 0;
+        }
+    }, [isHovered, showVideoFrame]);
 
     const href = siteSlug ? `/site/${siteSlug}/${slug}` : `/${slug}`;
     return (
@@ -108,16 +152,15 @@ export default function AnnouncementCard({
                         />
                     ) : showVideoFrame ? (
                         <video
-                            src={`${videoPath}#t=0.1`}
+                            ref={videoRef}
+                            src={videoPath}
                             muted
+                            loop
                             playsInline
-                            preload="none"
+                            preload="metadata"
                             style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
                             className="group-hover:scale-110"
-                            onLoadedMetadata={(e) => {
-                                const video = e.currentTarget;
-                                video.currentTime = 0.1;
-                            }}
+                            autoPlay={isHovered}
                         />
                     ) : (
                         // Placeholder bertoken tanpa teks — bukan literal "SJA".

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { GearSix, Key, List, SignOut, SquaresFour, X } from "@phosphor-icons/react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import Button from "@/components/ui/Button";
 
 interface PortalHeaderProps {
@@ -55,6 +56,7 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
 
                 {/* Right side */}
                 <div className="flex items-center gap-3">
+                    <ThemeToggle />
                     <span className="hidden text-sm text-text-2 sm:inline">{userName}</span>
                     <Button
                         variant="secondary"

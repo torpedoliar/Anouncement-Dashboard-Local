@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { FiMenu, FiX } from "react-icons/fi";
 import { useState, useEffect } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface NavLink {
     href: string;
@@ -92,17 +93,21 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                                     {link.label}
                                 </Link>
                             ))}
+                            <ThemeToggle />
                         </div>
 
-                        {/* Mobile Menu Button */}
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            aria-label={isMobileMenuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
-                            aria-expanded={isMobileMenuOpen}
-                            className="cursor-pointer p-2 text-text-1 transition-colors duration-150 hover:text-accent lg:hidden"
-                        >
-                            {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-                        </button>
+                        {/* Mobile Menu Button + Theme Toggle */}
+                        <div className="flex items-center gap-2">
+                            <ThemeToggle />
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                aria-label={isMobileMenuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
+                                aria-expanded={isMobileMenuOpen}
+                                className="cursor-pointer p-2 text-text-1 transition-colors duration-150 hover:text-accent lg:hidden"
+                            >
+                                {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Mobile Menu */}
