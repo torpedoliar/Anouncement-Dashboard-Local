@@ -26,6 +26,7 @@
 dev.db
 
 # debug
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -50,6 +51,18 @@ docker-compose.override.yml
 next-env.d.ts
 
 /src/generated/prisma
+
+# graphify / planning research caches (regenerated, never commit)
+.planning/research/.cache/
+
+# agent & IDE local config
+/.claude/
+/.impeccable/hook.*.json
+/.impeccable/config.local.json
+/.kilo/
+/.kilocode/
+scripts/backups/
+backups/
 
 # Docker compose is now tracked (secrets moved to server-side .env via env_file).
 # Keep docker-compose.override.yml ignored (dev-only, may contain local secrets).
