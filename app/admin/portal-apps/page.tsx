@@ -40,6 +40,12 @@ interface PortalApp {
     detectionLayer?: string | null;
     loginFormChanged?: boolean;
     ssoFailure24h?: number;
+    apiLayer?: string | null;                    // "OPENAPI" | "NONE" (v2)
+    apiContracts?: Array<{                       // detected API contracts (v2)
+        method: string;
+        path: string;
+        params: string[];
+    }>;
     createdAt: string;
     updatedAt: string;
 }
@@ -70,6 +76,12 @@ const emptyForm = {
     detectionConfidence: null as number | null,
     detectionSignals: null as string[] | null,
     detectionLayer: null as string | null,
+    apiLayer: null as string | null,            // v2: "OPENAPI" or "NONE"
+    apiContracts: null as Array<{               // v2: detected API contracts
+        method: string;
+        path: string;
+        params: string[];
+    }> | null,
 };
 
 // Guardrail pemilih SSO Mode (TASK-14, gelombang A3; §5/§7 sso-modes-design):
@@ -101,6 +113,7 @@ export default function PortalAppsPage() {
     const [verify, setVerify] = useState<{ username: string; password: string }>({ username: "", password: "" });
     const [verifyState, setVerifyState] = useState<"idle" | "running" | "ok" | "fail">("idle");
     const [verifyMsg, setVerifyMsg] = useState("");
+    const [apiProbeResult, setApiProbeResult] = useState<{ ok: boolean; status: number; note: string } | null>(null);
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const [logoError, setLogoError] = useState("");
     const { showToast } = useToast();
@@ -280,6 +293,9 @@ export default function PortalAppsPage() {
                 detectionConfidence: data.detectionConfidence ?? prev.detectionConfidence,
                 detectionSignals: data.detectionSignals ?? prev.detectionSignals,
                 detectionLayer: data.detectionLayer ?? prev.detectionLayer,
+                // v2: Save API layer detection results
+                apiLayer: data.apiLayer ?? prev.apiLayer,              // "OPENAPI" | "NONE"
+                apiContracts: data.apiContracts ?? prev.apiContracts,  // array of contracts
             }));
             const detectedInfo = [
                 data.usernameField ? `User: ${data.usernameField}` : null,
@@ -291,6 +307,11 @@ export default function PortalAppsPage() {
                 allWarnings.unshift(
                     `SSO Mode diubah dari ${formData.ssoMode} ke ${data.recommendedMode}. ${data.recommendationReason ?? ""}`.trim()
                 );
+            }
+            // Add API contract warning/info
+            if (data.apiLayer === "OPENAPI" && data.apiContracts && data.apiContracts.length > 0) {
+                const contracts = data.apiContracts.map((c: any) => `${c.method} ${c.path}`).join(", ");
+                allWarnings.push(`Kontrak API JSON terdeteksi: ${contracts} — tombol "Uji JSON" tersedia`);
             }
 
             setDetectMsg({
@@ -305,7 +326,7 @@ export default function PortalAppsPage() {
         }
     };
 
-    const handleVerifyLogin = async () => {
+    const handleVerifyLogin = async (useJsonApi?: boolean) => {
         if (!formData.loginUrl) {
             setVerifyState("fail");
             setVerifyMsg("Isi LOGIN URL terlebih dahulu.");
@@ -318,18 +339,40 @@ export default function PortalAppsPage() {
         }
         setVerifyState("running");
         setVerifyMsg("");
+        setApiProbeResult(null); // Reset API probe result
         try {
+            // Build full payload with complete form snapshot (v2 requirement)
+            const body: Record<string, unknown> = {
+                url: formData.loginUrl,
+                appId: editingApp?.id ?? undefined, // alur edit: hasil disimpan ke app (loginVerifiedAt)
+                ssoMode: formData.ssoMode,         // v2: add ssoMode
+                httpMethod: formData.httpMethod,   // v2: add httpMethod
+                usernameField: formData.usernameField,
+                passwordField: formData.passwordField,
+                testUsername: verify.username,
+                testPassword: verify.password,
+            };
+
+            // Parse extraFields from JSON string to object
+            if (formData.extraFields && formData.extraFields.trim()) {
+                try {
+                    body.extraFields = JSON.parse(formData.extraFields) as Record<string, string>;
+                } catch {
+                    // Invalid JSON - skip extraFields
+                }
+            }
+
+            // Add jsonApi probe when "Uji JSON" is clicked
+            if (useJsonApi && formData.apiContracts && formData.apiContracts.length > 0) {
+                // Use first contract's path for now
+                const contract = formData.apiContracts[0];
+                body.jsonApi = { path: contract.path };
+            }
+
             const res = await fetch("/api/portal-apps/verify-login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    url: formData.loginUrl,
-                    appId: editingApp?.id ?? undefined, // alur edit: hasil disimpan ke app (loginVerifiedAt)
-                    usernameField: formData.usernameField,
-                    passwordField: formData.passwordField,
-                    testUsername: verify.username,
-                    testPassword: verify.password,
-                }),
+                body: JSON.stringify(body),
             });
             const data = await res.json();
             if (!res.ok) {
@@ -339,6 +382,15 @@ export default function PortalAppsPage() {
             }
             setVerifyState(data.ok ? "ok" : "fail");
             setVerifyMsg(data.message);
+
+            // Store apiProbe result if present (for "Uji JSON")
+            if (data.apiProbe) {
+                setApiProbeResult({
+                    ok: data.apiProbe.ok,
+                    status: data.apiProbe.status,
+                    note: data.apiProbe.note,
+                });
+            }
         } catch {
             setVerifyState("fail");
             setVerifyMsg("Terjadi kesalahan jaringan");
@@ -404,9 +456,57 @@ export default function PortalAppsPage() {
             detectionConfidence: app.detectionConfidence ?? null,
             detectionSignals: app.detectionSignals ?? null,
             detectionLayer: app.detectionLayer ?? null,
+            apiLayer: app.apiLayer ?? null,
+            apiContracts: app.apiContracts ?? null,
         });
         setError("");
         setShowModal(true);
+    };
+
+    // Helper: Check if current form differs from saved app (for "belum disimpan" warning)
+    const isFormUnsaved = (): boolean => {
+        if (!editingApp) return true; // never saved
+        const keyFields = [
+            ["loginUrl", formData.loginUrl, editingApp.loginUrl || ""],
+            ["ssoMode", formData.ssoMode, editingApp.ssoMode],
+            ["usernameField", formData.usernameField, editingApp.usernameField || ""],
+            ["passwordField", formData.passwordField, editingApp.passwordField || ""],
+            ["httpMethod", formData.httpMethod, editingApp.httpMethod],
+        ] as const;
+        
+        for (const [field, current, saved] of keyFields) {
+            if (current !== saved) return true;
+        }
+        
+        // Compare extraFields (normalize both to JSON string for comparison)
+        let currentExtra: string;
+        let savedExtra: string;
+        
+        if (formData.extraFields?.trim()) {
+            try {
+                currentExtra = JSON.stringify(JSON.parse(formData.extraFields));
+            } catch {
+                currentExtra = formData.extraFields;
+            }
+        } else {
+            currentExtra = "";
+        }
+        
+        if (editingApp.extraFields) {
+            if (typeof editingApp.extraFields === "object") {
+                savedExtra = JSON.stringify(editingApp.extraFields);
+            } else {
+                try {
+                    savedExtra = JSON.stringify(JSON.parse(editingApp.extraFields));
+                } catch {
+                    savedExtra = editingApp.extraFields;
+                }
+            }
+        } else {
+            savedExtra = "";
+        }
+        
+        return currentExtra !== savedExtra;
     };
 
     const closeModal = () => {
@@ -414,6 +514,7 @@ export default function PortalAppsPage() {
         setEditingApp(null);
         setFormData(emptyForm);
         setError("");
+        setApiProbeResult(null);
     };
 
     if (isLoading) {
@@ -869,6 +970,11 @@ export default function PortalAppsPage() {
 
                             <div className="rounded-card border border-border bg-surface-2 p-3">
                                 <p className="mb-2 text-sm font-medium text-text-1">Uji Login sebelum simpan</p>
+                                {isFormUnsaved() && (
+                                    <p className="mb-2 text-xs font-medium text-warning">
+                                        ⚠ menggunakan konfigurasi belum disimpan
+                                    </p>
+                                )}
                                 <div className="grid gap-2">
                                     <input
                                         type="text" placeholder="Username uji"
@@ -885,16 +991,34 @@ export default function PortalAppsPage() {
                                         className="w-full rounded-control border border-border bg-surface-1 px-3 py-2 text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                     />
                                     <button
-                                        type="button" onClick={handleVerifyLogin} disabled={verifyState === "running"}
+                                        type="button" onClick={() => handleVerifyLogin(false)} disabled={verifyState === "running"}
                                         className="inline-flex h-9 items-center justify-center rounded-control border border-border px-3 text-sm font-medium text-text-1 hover:bg-surface-3 disabled:opacity-50"
                                     >
                                         {verifyState === "running" ? "Menguji..." : "Uji Login"}
                                     </button>
+                                    {/* Uji JSON button - only show when apiLayer is OPENAPI */}
+                                    {formData.apiLayer === "OPENAPI" && formData.apiContracts && formData.apiContracts.length > 0 && (
+                                        <button
+                                            type="button" onClick={() => handleVerifyLogin(true)} disabled={verifyState === "running"}
+                                            className="inline-flex h-9 items-center justify-center rounded-control border border-border px-3 text-sm font-medium text-text-1 hover:bg-surface-3 disabled:opacity-50"
+                                        >
+                                            {verifyState === "running" ? "Menguji..." : "Uji JSON"}
+                                        </button>
+                                    )}
                                 </div>
                                 {verifyMsg && (
                                     <p className={`mt-2 text-sm ${verifyState === "ok" ? "text-success" : "text-warning"}`}>
                                         {verifyMsg}
                                     </p>
+                                )}
+                                {/* API probe result */}
+                                {apiProbeResult && (
+                                    <div className={`mt-2 rounded border p-2 text-xs ${apiProbeResult.ok ? "border-success/40 bg-success/10" : "border-warning/40 bg-warning/10"}`}>
+                                        <p className="font-medium">
+                                            API Probe {apiProbeResult.ok ? "✓ OK" : "⚠ Warning"} (Status: {apiProbeResult.status})
+                                        </p>
+                                        <p className="mt-1 text-text-2">{apiProbeResult.note}</p>
+                                    </div>
                                 )}
                             </div>
 
