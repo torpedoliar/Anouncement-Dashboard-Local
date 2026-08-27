@@ -52,6 +52,11 @@ export async function POST(request: NextRequest) {
                     detectionSignals: verdict.signals,
                     detectionLayer: result.layer,
                     layerNotes: result.layerNotes,
+                    // Kontrak API JSON dari lapis 3 probe — biar admin tahu opsi
+                    // "Uji JSON" tersedia walau form login tidak terdeteksi.
+                    apiLayer: result.apiProbe.layer,
+                    apiContracts: result.apiProbe.contracts,
+                    apiProbeNote: result.apiProbe.note,
                 },
                 { status: 422 }
             );
@@ -72,6 +77,11 @@ export async function POST(request: NextRequest) {
             detectionConfidence: detected.confidence ?? 0,
             detectionLayer: result.layer,
             layerNotes: result.layerNotes,
+            // Lapis 3 probe. NONE saat form login ditemukan di HTTP/BROWSER —
+            // apiContracts kosong sehingga UI tidak menampilkan tombol "Uji JSON".
+            apiLayer: result.apiProbe.layer,
+            apiContracts: result.apiProbe.contracts,
+            apiProbeNote: result.apiProbe.note,
         });
     } catch (err) {
         if (err instanceof FetchError) {

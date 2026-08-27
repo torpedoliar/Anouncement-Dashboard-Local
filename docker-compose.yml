@@ -70,6 +70,10 @@ services:
     environment:
       - CONNECTION_TIMEOUT=10000
       - MAX_CONCURRENT_SESSIONS=2
+      # Terima sertifikat self-signed untuk target intranet internal (lihat
+      # detect-verify-v2 §5 keputusan C). Tanpa flag ini, Chromium abort pada
+      # TLS handshake dan lapis 2 ladder selalu gagal untuk target internal.
+      - CHROME_FLAGS=--ignore-certificate-errors
     # Bind ke jaringan internal compose saja — jangan di-expose ke host/publik.
     networks:
       - internal
