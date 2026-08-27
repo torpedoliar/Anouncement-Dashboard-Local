@@ -626,6 +626,236 @@ a {
   }
 }
 
+/* ==========================================================================
+   IMPRESSIVE LOADING ANIMATIONS (TASK-23)
+   ========================================================================== */
+
+/* Pulsing Glow Effect - For SSO handoff pages */
+@keyframes sso-glow-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 8px var(--brand-red-alpha),
+      0 0 16px var(--brand-red-alpha),
+      inset 0 0 12px var(--brand-red-alpha);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 
+      0 0 12px var(--brand-red),
+      0 0 24px var(--brand-red-light),
+      inset 0 0 20px var(--brand-red);
+    transform: scale(1.05);
+  }
+}
+
+.animate-sso-glow {
+  animation: sso-glow-pulse 2s ease-in-out infinite;
+}
+
+/* Concentric Ring Rotation - Stylized instead of basic spinner */
+@keyframes sso-ring-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.sso-rings-container {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.sso-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.sso-ring-outer {
+  width: 100%;
+  height: 100%;
+  border-top-color: var(--brand-red);
+  border-bottom-color: var(--brand-red-light);
+  animation: sso-ring-spin 1.5s linear infinite;
+}
+
+.sso-ring-middle {
+  width: 70%;
+  height: 70%;
+  top: 15%;
+  left: 15%;
+  border-right-color: var(--brand-red-light);
+  border-left-color: var(--brand-red);
+  animation: sso-ring-spin 2s linear infinite reverse;
+}
+
+.sso-ring-inner {
+  width: 40%;
+  height: 40%;
+  top: 30%;
+  left: 30%;
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark));
+  box-shadow: 0 0 12px var(--brand-red-alpha), 0 0 24px var(--brand-red-alpha);
+  animation: sso-glow-pulse 2s ease-in-out infinite;
+}
+
+/* Shimmer Effect - For ListSkeleton */
+@keyframes shimmer-shine {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.shimmer-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 0%,
+    var(--surface-3) 20%,
+    var(--surface-2) 40%,
+    var(--surface-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-shine 1.5s ease-in-out infinite;
+}
+
+/* Stagger delays for shimmer rows */
+.shimmer-delay-0 { animation-delay: 0ms; }
+.shimmer-delay-1 { animation-delay: 100ms; }
+.shimmer-delay-2 { animation-delay: 200ms; }
+.shimmer-delay-3 { animation-delay: 300ms; }
+.shimmer-delay-4 { animation-delay: 400ms; }
+.shimmer-delay-5 { animation-delay: 500ms; }
+.shimmer-delay-6 { animation-delay: 600ms; }
+.shimmer-delay-7 { animation-delay: 700ms; }
+
+/* Progress Bar Shimmer - Alternative loading indicator */
+@keyframes progress-shimmer {
+  0% {
+    background-position: -100% center;
+  }
+  100% {
+    background-position: 100% center;
+  }
+}
+
+.progress-bar-loading {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 0%,
+    var(--surface-3) 50%,
+    var(--surface-2) 100%
+  );
+  background-size: 100% 100%;
+  animation: progress-shimmer 1.2s ease-in-out infinite;
+}
+
+/* Gradient Flow Animation - For logo container */
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-flow-bg {
+  background: linear-gradient(
+    90deg,
+    var(--brand-red),
+    var(--brand-red-light),
+    var(--brand-red),
+    var(--brand-red-dark)
+  );
+  background-size: 200% 100%;
+  animation: gradient-flow 3s ease infinite;
+}
+
+/* Particle Float Animation - Geometric elements */
+@keyframes particle-float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translateY(-8px) translateX(4px);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-4px) translateX(0);
+    opacity: 0.8;
+  }
+  75% {
+    transform: translateY(-12px) translateX(-4px);
+    opacity: 0.7;
+  }
+}
+
+.particle {
+  width: 6px;
+  height: 6px;
+  background: var(--brand-red);
+  border-radius: 50%;
+  animation: particle-float 3s ease-in-out infinite;
+}
+
+.particle:nth-child(2) { animation-delay: 0.5s; }
+.particle:nth-child(3) { animation-delay: 1s; }
+.particle:nth-child(4) { animation-delay: 1.5s; }
+
+/* Wave SVG Animation - Inline wave pattern */
+@keyframes wave-sinusoid {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  25% {
+    transform: translateX(-10px) translateY(5px);
+  }
+  50% {
+    transform: translateX(-20px) translateY(0);
+  }
+  75% {
+    transform: translateX(-10px) translateY(-5px);
+  }
+  100% {
+    transform: translateX(0) translateY(0);
+  }
+}
+
+.wave-animation {
+  animation: wave-sinusoid 2s ease-in-out infinite;
+}
+
+/* Scale Fade Sequence - For text elements */
+@keyframes text-reveal-sequence {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.text-reveal {
+  opacity: 0;
+  animation: text-reveal-sequence 0.4s ease-out forwards;
+}
+
+.text-reveal-delay-1 { animation-delay: 0.1s; }
+.text-reveal-delay-2 { animation-delay: 0.2s; }
+.text-reveal-delay-3 { animation-delay: 0.3s; }
+
 /* Toast Slide Animation */
 @keyframes slideInRight {
   from {

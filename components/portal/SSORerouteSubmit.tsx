@@ -80,11 +80,13 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
                 <div className="mt-6 flex items-center justify-center gap-2">
                     {status === "preparing" ? (
                         <>
-                            <div
-                                className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent"
-                                aria-hidden="true"
-                            />
-                            <span className="text-sm text-text-2">Menghubungkan...</span>
+                            {/* Impressive concentric ring loader */}
+                            <div className="sso-rings-container" aria-hidden="true">
+                                <div className="sso-ring sso-ring-outer"></div>
+                                <div className="sso-ring sso-ring-middle"></div>
+                                <div className="sso-ring sso-ring-inner"></div>
+                            </div>
+                            <span className="text-sm text-text-2 animate-sso-glow">Menghubungkan...</span>
                         </>
                     ) : failed ? (
                         <span className="text-sm text-warning">Hubungi admin atau coba lagi.</span>
