@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
+import { useSession } from "next-auth/react";
 import {
+    ArrowsClockwise,
     CaretDown,
     CaretLeft,
     CaretRight,
@@ -55,6 +57,21 @@ interface PortalUser {
     createdAt: string;
     appAccess?: AppAccess[];
     groups?: PortalGroupInfo[];
+    // HRIS fields (TASK-36 GET /api/portal-users mengembalikan field ini)
+    email?: string | null;
+    nikSantos?: string | null;
+    eligible?: boolean | null;
+    lastSyncAt?: string | null;
+}
+
+// Hasil POST /api/admin/hris/sync (Oscar TASK-29/36) — dipakai tombol Tarik dari HRIS
+interface HrisSyncResult {
+    totalProcessed: number;
+    updated: number;
+    unchanged: number;
+    deactivated: number;
+    errors: Array<{ nik: string; error: string }>;
+    jobId?: string;
 }
 
 interface Pagination {
@@ -92,6 +109,9 @@ export default function PortalUsersPage() {
     const [isResetting, setIsResetting] = useState(false);
     const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
     const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "createdAt", dir: "desc" });
+    const [isSyncing, setIsSyncing] = useState(false);
+    const { data: session } = useSession();
+    const isSuperAdmin = session?.user?.isSuperAdmin ?? false;
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
 
@@ -131,6 +151,40 @@ export default function PortalUsersPage() {
             }
         } catch (err) {
             console.error("Gagal memuat groups:", err);
+        }
+    };
+
+    // Tarik dari HRIS — bulk sync (SuperAdmin only). POST /api/admin/hris/sync (Oscar TASK-29)
+    const handleTarikHris = async () => {
+        const ok = await confirm({
+            title: "Tarik dari HRIS",
+            message: "Menarik data karyawan dari HRIS akan membuat akun JIT untuk yang belum ada dan memperbarui yang sudah ada. Lanjutkan?",
+        });
+        if (!ok) return;
+
+        setIsSyncing(true);
+        try {
+            const response = await fetch("/api/admin/hris/sync", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ full: true }),
+            });
+            if (!response.ok) {
+                const data = await response.json();
+                showToast(data.error || "Gagal menarik dari HRIS", "error");
+                return;
+            }
+            const result: HrisSyncResult = await response.json();
+            const errorCount = result.errors?.length ?? 0;
+            showToast(
+                `Tarik HRIS selesai: ${result.updated} diperbarui, ${result.deactivated} dinonaktifkan${errorCount > 0 ? `, ${errorCount} error` : ""}`,
+                errorCount > 0 ? "warning" : "success"
+            );
+            fetchUsers();
+        } catch {
+            showToast("Terjadi kesalahan saat menarik dari HRIS", "error");
+        } finally {
+            setIsSyncing(false);
         }
     };
 
@@ -350,6 +404,16 @@ export default function PortalUsersPage() {
         });
     };
 
+    const formatDateTime = (dateString: string) => {
+        return new Date(dateString).toLocaleString("id-ID", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
     const handleSort = (key: string) => {
         setSort((prev) =>
             prev.key === key
@@ -384,6 +448,10 @@ export default function PortalUsersPage() {
     const columns: TableColumn[] = [
         { key: "name", header: "NAMA", sortKey: "name" },
         { key: "nik", header: "NIK HRIS" },
+        { key: "email", header: "EMAIL" },
+        { key: "eligible", header: "ELIGIBLE" },
+        { key: "nikSantos", header: "NIK SANTOS" },
+        { key: "lastSyncAt", header: "LAST SYNC" },
         { key: "role", header: "ROLE", sortKey: "role" },
         { key: "groups", header: "GRUP" },
         { key: "status", header: "STATUS" },
@@ -403,6 +471,22 @@ export default function PortalUsersPage() {
                 <span className="text-sm font-semibold text-text-1">{user.name}</span>
             </div>,
             <span key="nik" className="font-mono text-xs tabular-nums text-text-2">{user.nik}</span>,
+            <span key="email" className="block max-w-[12rem] truncate text-xs text-text-2" title={user.email ?? ""}>
+                {user.email || <span className="text-text-3">-</span>}
+            </span>,
+            user.eligible === null || user.eligible === undefined ? (
+                <span key="eligible" className="text-xs text-text-3">-</span>
+            ) : (
+                <Badge key="eligible" tone={user.eligible ? "success" : "danger"}>
+                    {user.eligible ? "ELIGIBLE" : "TIDAK ELIGIBLE"}
+                </Badge>
+            ),
+            <span key="nikSantos" className="font-mono text-xs tabular-nums text-text-2">
+                {user.nikSantos || <span className="text-text-3">-</span>}
+            </span>,
+            <span key="lastSyncAt" className="whitespace-nowrap font-mono text-xs tabular-nums text-text-2">
+                {user.lastSyncAt ? formatDateTime(user.lastSyncAt) : <span className="text-text-3">-</span>}
+            </span>,
             <Badge key="role" tone={roleBadge.tone}>
                 {roleBadge.icon}
                 {user.role}
@@ -543,9 +627,22 @@ export default function PortalUsersPage() {
                     <p className="mb-1 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
                     <h1 className="font-display text-2xl font-semibold text-text-1">Pengguna Portal</h1>
                 </div>
-                <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
-                    Tambah Pengguna
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                    {isSuperAdmin && (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            iconLeft={<ArrowsClockwise size={14} aria-hidden="true" />}
+                            onClick={handleTarikHris}
+                            disabled={isSyncing}
+                        >
+                            {isSyncing ? "Menarik..." : "Tarik dari HRIS"}
+                        </Button>
+                    )}
+                    <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
+                        Tambah Pengguna
+                    </Button>
+                </div>
             </div>
 
             {/* Stats */}
