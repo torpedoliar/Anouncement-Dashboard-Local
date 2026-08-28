@@ -578,11 +578,18 @@ model EmailSettings {
 model PortalUser {
   id               String     @id @default(cuid())
   nik              String     @unique
-  passwordHash     String
+  passwordHash     String?
   name             String
   avatar           String?
   role             PortalRole @default(PORTAL_USER)
   isActive         Boolean    @default(true)
+
+  // HRIS sync fields (TASK-29) — diisi dari lookup / sync HRIS gateway, bukan dari form login.
+  email            String?   // email korporat dari HRIS lookup
+  nikHris          String?   // aliasing field HRIS (denormalisasi dari response)
+  nikSantos        String?   // identifier SANTOS dari response (nik_santos)
+  eligible         Boolean   @default(true) // source-of-truth dari HRIS; false = blokir akses
+  lastSyncAt       DateTime? // timestamp sinkronisasi HRIS terakhir yang sukses
 
   // Lockout (anti brute-force)
   failedLoginCount Int        @default(0)
@@ -603,7 +610,25 @@ model PortalUser {
 
   @@index([isActive])
   @@index([role])
+  @@index([nikHris])
+  @@index([nikSantos])
+  @@index([eligible])
   @@map("portal_users")
+}
+
+// Konfigurasi global gateway HRIS (enterprise-wide, singleton id=1 seperti Settings/EmailSettings)
+model HrisGatewayConfig {
+  id              Int       @id @default(1) // Singleton
+  baseUrl         String
+  apiKeyEncrypted String    // AES-256-GCM via lib/portal-crypto.ts encryptCredential
+  enabled         Boolean   @default(false)
+  lastSyncAt      DateTime?
+  lastPingAt      DateTime?
+  pingError       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("hris_gateway_config")
 }
 
 model PortalApp {

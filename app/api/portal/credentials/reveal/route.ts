@@ -36,6 +36,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Pengguna tidak valid atau tidak aktif" }, { status: 401 });
         }
 
+        if (!user.passwordHash) {
+            // Akun JIT tanpa password tidak bisa re-auth untuk reveal.
+            return NextResponse.json({ error: "Akun belum memiliki kata sandi — atur kata sandi dahulu" }, { status: 403 });
+        }
+
         const isPasswordValid = await compare(portalPassword, user.passwordHash);
         if (!isPasswordValid) {
             return NextResponse.json({ error: "Password login portal tidak sesuai" }, { status: 403 });

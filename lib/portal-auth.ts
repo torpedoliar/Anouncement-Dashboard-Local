@@ -51,6 +51,14 @@ export const portalAuthOptions: NextAuthOptions = {
                     );
                 }
 
+                // Null-guard JIT (TASK-29): akun JIT dibuat tanpa passwordHash,
+                // harus atur kata sandi dulu sebelum bisa login.
+                if (!user.passwordHash) {
+                    throw new Error(
+                        "Akun terdaftar namun belum aktif. Silakan atur kata sandi terlebih dahulu."
+                    );
+                }
+
                 const isValid = await compare(
                     credentials.password,
                     user.passwordHash
