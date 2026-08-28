@@ -16,6 +16,8 @@ const SERVER_MESSAGE_PREFIXES = [
   "NIK tidak ditemukan",
   "Akun dinonaktifkan. Hubungi administrator.",
   "Akun terkunci. Coba lagi dalam ",
+  // JIT (TASK-29): akun valid di HRIS tapi belum set password → arahkan ke set-password
+  "Akun terdaftar namun belum aktif. Silakan atur kata sandi terlebih dahulu.",
 ];
 
 // Kode error generik provider NextAuth — dipetakan ke "NIK atau password salah"
@@ -45,17 +47,22 @@ function mapLoginError(error: string | undefined | null): string {
   return "Terjadi kesalahan. Silakan coba lagi.";
 }
 
+const JIT_PASSWORD_REQUIRED =
+  "Akun terdaftar namun belum aktif. Silakan atur kata sandi terlebih dahulu.";
+
 export default function PortalLoginPage() {
   const router = useRouter();
   const [nik, setNik] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [needsPasswordSetup, setNeedsPasswordSetup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setNeedsPasswordSetup(false);
     setIsLoading(true);
 
     try {
@@ -67,7 +74,9 @@ export default function PortalLoginPage() {
       });
 
       if (result?.error) {
-        setError(mapLoginError(result.error));
+        const mapped = mapLoginError(result.error);
+        setError(mapped);
+        setNeedsPasswordSetup(mapped === JIT_PASSWORD_REQUIRED);
       } else {
         router.push("/portal");
         router.refresh();
@@ -130,6 +139,17 @@ export default function PortalLoginPage() {
         <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? "Masuk..." : "Masuk"}
         </Button>
+
+        {needsPasswordSetup && (
+          <div className="text-center">
+            <a
+              href={`/portal/set-password?nik=${encodeURIComponent(nik)}`}
+              className="text-xs font-medium text-accent underline hover:text-accent/80 transition-colors"
+            >
+              Atur kata sandi sekarang
+            </a>
+          </div>
+        )}
 
         <p className="text-center text-xs text-text-3">
           Lupa password? Hubungi Admin HRIS.

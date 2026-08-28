@@ -42,6 +42,14 @@ export const portalAuthOptions: NextAuthOptions = {
                     throw new Error("Akun dinonaktifkan. Hubungi administrator.");
                 }
 
+                // Defense-in-depth eligible (TASK-29b): eksplisit === false — akun
+                // pre-migration dengan eligible=null TIDAK diblokir (sakelar bersih).
+                if (user.eligible === false) {
+                    throw new Error(
+                        "Akun dinonaktifkan karena tidak aktif di HRIS. Hubungi administrator."
+                    );
+                }
+
                 if (user.lockedUntil && new Date() < user.lockedUntil) {
                     const remaining = Math.ceil(
                         (user.lockedUntil.getTime() - Date.now()) / 60000

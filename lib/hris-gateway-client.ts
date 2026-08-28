@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { decrypt } from "@/lib/portal-crypto";
+import { decryptCredential } from "@/lib/portal-crypto";
 
 // ============================================================================
 // HRIS Gateway client (TASK-29)
@@ -76,7 +76,8 @@ async function getConfig(): Promise<{ baseUrl: string; apiKey: string }> {
     }
     let apiKey: string;
     try {
-        apiKey = decrypt(cfg.apiKeyEncrypted);
+        // Config disimpan via encryptCredential (blob JSON) — decryptCredential yang benar (fix TASK-29b CRITICAL).
+        apiKey = decryptCredential(cfg.apiKeyEncrypted).password;
     } catch {
         throw new HrisGatewayError("Gagal mendekripsi API key gateway HRIS", undefined, "CONFIG");
     }
