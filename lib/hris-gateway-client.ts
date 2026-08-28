@@ -122,7 +122,26 @@ async function request(
                 // 4xx / 404 — no retry (client error)
                 throw new HrisGatewayError(`HTTP ${res.status}`, res.status, "HTTP");
             }
-            return await res.json();
+            // Deteksi response HTML (bukan JSON). Terjadi saat baseUrl menunjuk root
+            // web app (mis. /api/v1 terlupa) — server balas SPA index.html 200.
+            const contentType = res.headers.get("content-type") ?? "";
+            if (contentType.includes("text/html")) {
+                throw new HrisGatewayError(
+                    "Gateway merespons HTML, bukan JSON. Periksa Base URL — kemungkinan butuh path API (mis. /api/v1).",
+                    res.status,
+                    "CONFIG",
+                );
+            }
+            try {
+                return await res.json();
+            } catch {
+                // res.json() gagal walau content-type bukan text/html (mis. body kosong / teks).
+                throw new HrisGatewayError(
+                    "Respons gateway bukan JSON valid. Periksa Base URL & endpoint.",
+                    res.status,
+                    "CONFIG",
+                );
+            }
         } catch (err: unknown) {
             // Timeout / network — retry juga (transient)
             if (err instanceof HrisGatewayError && err.status && err.status >= 500) {
