@@ -20,6 +20,7 @@ import {
   Envelope,
   PaperPlane,
   Gear,
+  Plugs,
 } from "@phosphor-icons/react";
 
 export interface AdminNavItem {
@@ -82,6 +83,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { href: "/admin/email", label: "Email", icon: Envelope },
       { href: "/admin/newsletter", label: "Newsletter", icon: PaperPlane },
       { href: "/admin/settings", label: "Pengaturan", icon: Gear },
+      { href: "/admin/hris-gateway", label: "HRIS Gateway", icon: Plugs, superAdminOnly: true },
     ],
   },
 ];
