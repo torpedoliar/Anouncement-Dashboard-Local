@@ -74,6 +74,9 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             ...result,
+            // Alias nama untuk kontrak TASK-36 (Meredith TASK-37) — UI lama pakai `updated`/`deactivated`.
+            updatedCount: result.updated,
+            deactivatedCount: result.deactivated,
             jobId: `sync-${Date.now()}`,
             nextSyncAt: null,
         });
