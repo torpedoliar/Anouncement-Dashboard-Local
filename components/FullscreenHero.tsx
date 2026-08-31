@@ -145,10 +145,27 @@ export default function FullscreenHero({ siteSlug, announcements, primaryColor }
                 );
             })}
 
-            {/* Gradient Overlay for Readability */}
+            {/* Gradient Overlay for Readability
+                Diringankan sedikit di dasar (from-black/80, bukan /90) supaya
+                saat hero bertemu konten terang di bawah tidak sekeras /90. */}
             <div
                 aria-hidden="true"
-                className="absolute inset-0 z-[1] bg-gradient-to-t from-black/90 via-black/40 to-black/50"
+                className="absolute inset-0 z-[1] bg-gradient-to-t from-black/80 via-black/40 to-black/50"
+            />
+
+            {/* Bottom blend — melarutkan tepi bawah hero ke var(--surface-0) supaya
+                nyambung mulus ke konten di bawah pada KEDUA tema (gelap:
+                surface-0≈hitam, terang: surface-0≈off-white). Sengaja DIPENDEKKAN
+                (h-12, transparan penuh di ~22px) supaya hanya melebur garis batas
+                hero↔konten di tepi bawah, TIDAK mencapai teks caption (justify-end)
+                maupun kontrol bawah (bottom-6=24px) yang harus tetap terbaca.
+                Diletakkan di atas readability scrim (z-[1]), di bawah konten. */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-x-0 bottom-0 z-[1] h-12 pointer-events-none"
+                style={{
+                    background: `linear-gradient(to top, var(--surface-0) 0%, var(--surface-0) 10%, transparent 45%)`,
+                }}
             />
 
             {/* Active Content Caption — remount per slide (key) supaya koreografi
