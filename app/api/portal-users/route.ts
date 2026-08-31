@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
                     // HRIS fields (TASK-36): sudah ada di schema dari TASK-29, dipakai
                     // tabel portal-users utk tampil status sync/eligible.
                     email: true, nikHris: true, nikSantos: true, eligible: true, lastSyncAt: true,
+                    // HRIS org fields (TASK-39): kolom DEPARTEMEN/JABATAN di tabel portal-users.
+                    departemen: true, jabatan: true,
                     appAccess: { select: { appId: true, role: true } },
                     groups: { select: { id: true, groupId: true, group: { select: { id: true, name: true } } } },
                 },
