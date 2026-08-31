@@ -1,11 +1,13 @@
 "use client";
 
-import { InputHTMLAttributes } from "react";
+import { InputHTMLAttributes, type Ref } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
+  /* React 19: ref lewat sebagai prop biasa lalu tersebar ke <input> oleh ...rest. */
+  ref?: Ref<HTMLInputElement>;
 }
 
 export default function Input({ label, error, hint, className = "", ...rest }: InputProps) {

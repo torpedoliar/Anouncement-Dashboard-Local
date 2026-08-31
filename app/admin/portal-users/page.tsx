@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
 import { useSession } from "next-auth/react";
 import {
     ArrowsClockwise,
@@ -8,6 +8,8 @@ import {
     CaretLeft,
     CaretRight,
     CaretRight as ChevronRight,
+    Eye,
+    EyeSlash,
     Key,
     PencilSimple,
     Plus,
@@ -113,6 +115,13 @@ export default function PortalUsersPage() {
     const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
     const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "createdAt", dir: "desc" });
     const [isSyncing, setIsSyncing] = useState(false);
+    // Hapus Semua (TASK-42) — modal konfirmasi 2-lapis: warning + password admin
+    const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+    const [deleteAllPassword, setDeleteAllPassword] = useState("");
+    const [showDeleteAllPassword, setShowDeleteAllPassword] = useState(false);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
+    const [deleteAllError, setDeleteAllError] = useState("");
+    const deleteAllPasswordRef = useRef<HTMLInputElement>(null);
     const { data: session } = useSession();
     const isSuperAdmin = session?.user?.isSuperAdmin ?? false;
     const { showToast } = useToast();
@@ -189,6 +198,45 @@ export default function PortalUsersPage() {
         } finally {
             setIsSyncing(false);
         }
+    };
+
+    // Hapus Semua pengguna PORTAL_USER (TASK-42) — SuperAdmin only.
+    // POST /api/admin/portal-users/delete-all { adminPassword } (Oscar TASK-41).
+    // 401/403 = password salah -> inline error, modal tetap terbuka agar bisa dicoba lagi.
+    const handleDeleteAll = async () => {
+        setIsDeletingAll(true);
+        setDeleteAllError("");
+        try {
+            const response = await fetch("/api/admin/portal-users/delete-all", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ adminPassword: deleteAllPassword }),
+            });
+            if (response.status === 401 || response.status === 403) {
+                setDeleteAllError("Password admin salah");
+                return;
+            }
+            if (!response.ok) {
+                const data = await response.json().catch(() => null);
+                showToast(data?.error || "Gagal menghapus pengguna", "error");
+                return;
+            }
+            const result: { deletedCount?: number } = await response.json().catch(() => ({}));
+            showToast(`${result.deletedCount ?? 0} pengguna dihapus`, "success");
+            closeDeleteAllModal();
+            fetchUsers();
+        } catch {
+            showToast("Terjadi kesalahan jaringan saat menghapus pengguna", "error");
+        } finally {
+            setIsDeletingAll(false);
+        }
+    };
+
+    const closeDeleteAllModal = () => {
+        setShowDeleteAllModal(false);
+        setDeleteAllPassword("");
+        setShowDeleteAllPassword(false);
+        setDeleteAllError("");
     };
 
     useEffect(() => {
@@ -645,9 +693,20 @@ export default function PortalUsersPage() {
                             variant="secondary"
                             iconLeft={<ArrowsClockwise size={14} aria-hidden="true" />}
                             onClick={handleTarikHris}
-                            disabled={isSyncing}
+                            disabled={isSyncing || isDeletingAll}
                         >
                             {isSyncing ? "Menarik..." : "Tarik dari HRIS"}
+                        </Button>
+                    )}
+                    {isSuperAdmin && (
+                        <Button
+                            type="button"
+                            variant="danger"
+                            iconLeft={<Trash size={14} aria-hidden="true" />}
+                            onClick={() => setShowDeleteAllModal(true)}
+                            disabled={isSyncing || isDeletingAll}
+                        >
+                            {isDeletingAll ? "Menghapus..." : "Hapus Semua"}
                         </Button>
                     )}
                     <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
@@ -944,6 +1003,69 @@ export default function PortalUsersPage() {
                     placeholder="Masukkan password baru"
                     autoComplete="new-password"
                 />
+            </Modal>
+
+            {/* Hapus Semua Modal (TASK-42) — konfirmasi 2-lapis: warning + password admin.
+                Bukan useConfirm biasa karena butuh input. 401/403 tidak menutup modal
+                (inline error, user bisa coba lagi). Focus awal ke input password. */}
+            <Modal
+                open={showDeleteAllModal}
+                onClose={closeDeleteAllModal}
+                title="Hapus Semua Pengguna?"
+                description="Tindakan ini menghapus SEMUA portal user (bukan admin). Tidak bisa dibatalkan."
+                size="sm"
+                initialFocusRef={deleteAllPasswordRef}
+                closeOnBackdrop={false}
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={closeDeleteAllModal}
+                            disabled={isDeletingAll}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="danger"
+                            disabled={isDeletingAll || !deleteAllPassword}
+                            onClick={handleDeleteAll}
+                        >
+                            {isDeletingAll ? "Menghapus..." : "Hapus Permanen"}
+                        </Button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    {deleteAllError && (
+                        <div
+                            className="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
+                            role="alert"
+                        >
+                            {deleteAllError}
+                        </div>
+                    )}
+                    <div className="relative">
+                        <Input
+                            ref={deleteAllPasswordRef}
+                            label="Password admin"
+                            type={showDeleteAllPassword ? "text" : "password"}
+                            value={deleteAllPassword}
+                            onChange={(e) => setDeleteAllPassword(e.target.value)}
+                            placeholder="Masukkan password admin"
+                            autoComplete="current-password"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowDeleteAllPassword((p) => !p)}
+                            aria-label={showDeleteAllPassword ? "Sembunyikan password" : "Tampilkan password"}
+                            className="absolute right-3 top-[38px] text-text-3 transition-colors hover:text-text-1"
+                        >
+                            {showDeleteAllPassword ? <EyeSlash size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                        </button>
+                    </div>
+                </div>
             </Modal>
             <ConfirmDialog />
         </div>
