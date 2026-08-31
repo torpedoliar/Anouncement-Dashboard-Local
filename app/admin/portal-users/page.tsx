@@ -62,6 +62,9 @@ interface PortalUser {
     nikSantos?: string | null;
     eligible?: boolean | null;
     lastSyncAt?: string | null;
+    // HRIS org data (Oscar TASK-39) — GET belum return; UI tampil '-' sampai backend live
+    departemen?: string | null;
+    jabatan?: string | null;
 }
 
 // Hasil POST /api/admin/hris/sync (Oscar TASK-29/36) — dipakai tombol Tarik dari HRIS
@@ -451,6 +454,8 @@ export default function PortalUsersPage() {
         { key: "email", header: "EMAIL" },
         { key: "eligible", header: "ELIGIBLE" },
         { key: "nikSantos", header: "NIK SANTOS" },
+        { key: "departemen", header: "DEPARTEMEN" },
+        { key: "jabatan", header: "JABATAN" },
         { key: "lastSyncAt", header: "LAST SYNC" },
         { key: "role", header: "ROLE", sortKey: "role" },
         { key: "groups", header: "GRUP" },
@@ -483,6 +488,12 @@ export default function PortalUsersPage() {
             ),
             <span key="nikSantos" className="font-mono text-xs tabular-nums text-text-2">
                 {user.nikSantos || <span className="text-text-3">-</span>}
+            </span>,
+            <span key="departemen" className="block max-w-[10rem] truncate text-xs text-text-2" title={user.departemen ?? ""}>
+                {user.departemen || <span className="text-text-3">-</span>}
+            </span>,
+            <span key="jabatan" className="block max-w-[10rem] truncate text-xs text-text-2" title={user.jabatan ?? ""}>
+                {user.jabatan || <span className="text-text-3">-</span>}
             </span>,
             <span key="lastSyncAt" className="whitespace-nowrap font-mono text-xs tabular-nums text-text-2">
                 {user.lastSyncAt ? formatDateTime(user.lastSyncAt) : <span className="text-text-3">-</span>}
