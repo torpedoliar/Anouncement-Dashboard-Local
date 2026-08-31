@@ -1,7 +1,8 @@
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 import { listEmployees, HrisGatewayError } from "@/lib/hris-gateway-client";
 import type { HrisEmployeeRow } from "@/lib/hris-gateway-client";
-import { maskNik } from "@/lib/hris-jit";
+import { maskNik, JIT_DEFAULT_PASSWORD } from "@/lib/hris-jit";
 import { logAudit } from "@/lib/audit";
 import { Prisma } from "@prisma/client";
 
@@ -43,6 +44,17 @@ export interface HrisSyncResult {
 
 function sleep(ms: number): Promise<void> {
     return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * Hash password default JIT — dihitung SEKALI per run (bcrypt ~100ms/hash;
+ * 4755 row × per-row = menit-menit sia-sia). compare() baca salt dari hash
+ * itu sendiri, jadi satu hash valid untuk semua user.
+ */
+let jitDefaultHash: Promise<string> | null = null;
+function getJitDefaultHash(): Promise<string> {
+    jitDefaultHash ??= bcrypt.hash(JIT_DEFAULT_PASSWORD, 10);
+    return jitDefaultHash;
 }
 
 /** Extract identifier utama baris /employees (nik_hris, fallback nik_santos). */
@@ -180,7 +192,9 @@ async function syncEmployeeRow(row: HrisEmployeeRow, result: HrisSyncResult): Pr
                 jabatan: row.nama_jabatan ?? null,
                 eligible: true,
                 isActive: true,
-                // passwordHash sengaja NULL — user harus set password dulu (D3, alur JIT).
+                // TASK-41B: password default — user baru langsung bisa login NIK + 12345.
+                // SECURITY: default password lemah — user wajib ganti (backlog).
+                passwordHash: await getJitDefaultHash(),
                 lastSyncAt: new Date(),
             },
         });

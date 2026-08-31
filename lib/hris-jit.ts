@@ -1,15 +1,20 @@
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 import { lookupNIK, HrisGatewayError } from "@/lib/hris-gateway-client";
 import { logAudit } from "@/lib/audit";
 
 // ============================================================================
-// JIT (Just-In-Time) provisioning (TASK-29, desain Jim §2)
+// JIT (Just-In-Time) provisioning (TASK-29, desain Jim §2; TASK-41B password default)
 //
 // Saat NIK ditemukan valid+eligible di HRIS tapi belum ada PortalUser → auto-create
-// akun portal dengan passwordHash=NULL (harus set password dulu sebelum login).
+// akun portal dengan password default (TASK-41B) sehingga user bisa langsung login.
 // Dipanggil dari alur aktivasi set-password (BUKAN dari portal-auth.ts — file itu
 // hanya dibolehkan modifikasi null-guard).
 // ============================================================================
+
+// SECURITY: default password lemah — user wajib ganti (backlog).
+// USER-SUPERVISED: dipilih user via god; admin bisa resync utk reset kuat.
+export const JIT_DEFAULT_PASSWORD = "12345";
 
 export type JitProvisionResult =
     | { status: "created"; userId: string }
@@ -61,7 +66,9 @@ export async function provisionJitPortalUser(nik: string): Promise<JitProvisionR
             nikSantos: lookup.nikSantos ?? null,
             eligible: true,
             isActive: true,
-            // passwordHash sengaja TIDAK diisi — user harus set password dulu (D3)
+            // TASK-41B: password default (bcrypt) — user langsung bisa login NIK + 12345.
+            // SECURITY: default password lemah — user wajib ganti (backlog).
+            passwordHash: await bcrypt.hash(JIT_DEFAULT_PASSWORD, 10),
             lastSyncAt: new Date(),
         },
     });
