@@ -169,6 +169,50 @@ export async function pingGateway(opts: HrisRequestOptions = {}): Promise<{ ok: 
     return { ok: result?.status === "ok", status: result?.status ?? "unknown" };
 }
 
+// ---------------------------------------------------------------------------
+// GET /employees — daftar seluruh karyawan (TASK-39, pull-based sync).
+// Shape per row god-verified via curl 2026-08-31. eligible ditentukan dari
+// tgl_keluar === null (bukan field `eligible` — lookup /auth/lookup beda sumber).
+// ---------------------------------------------------------------------------
+export interface HrisEmployeeRow {
+    nik_hris?: string;
+    nik_santos?: string;
+    nama_karyawan?: string;
+    id_departemen?: string;
+    nama_departemen?: string;
+    nama_jabatan?: string;
+    email?: string;
+    email_notif?: string;
+    hari_kerja?: string;
+    tgl_bergabung?: string | null;
+    /** Tanggal keluar dari HRIS; null = masih aktif (eligible). */
+    tgl_keluar?: string | null;
+    lokasi?: string;
+    gender?: string;
+    [key: string]: unknown; // gateway bisa menambah field — toleran
+}
+
+export interface HrisEmployeePage {
+    data: HrisEmployeeRow[];
+    total: number;
+}
+
+/** GET /employees?page&limit — pagination 1-based; gateway membatasi limit max 50. */
+export async function listEmployees(
+    page = 1,
+    limit = 50,
+    opts: HrisRequestOptions = {}
+): Promise<HrisEmployeePage> {
+    const result = (await request("GET", `/employees?page=${page}&limit=${limit}`, undefined, opts)) as {
+        data?: unknown;
+        total?: unknown;
+    };
+    return {
+        data: Array.isArray(result?.data) ? (result.data as HrisEmployeeRow[]) : [],
+        total: typeof result?.total === "number" ? result.total : 0,
+    };
+}
+
 /** POST /auth/lookup { nik } — cek validitas+eligible NIK; tidak pernah log NIK utuh. */
 export async function lookupNIK(nik: string, opts: HrisRequestOptions = {}): Promise<HrisLookupResult> {
     const result = (await request("POST", "/auth/lookup", { nik }, opts)) as Record<string, unknown>;

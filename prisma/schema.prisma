@@ -590,6 +590,8 @@ model PortalUser {
   nikSantos        String?   // identifier SANTOS dari response (nik_santos)
   eligible         Boolean   @default(true) // source-of-truth dari HRIS; false = blokir akses
   lastSyncAt       DateTime? // timestamp sinkronisasi HRIS terakhir yang sukses
+  departemen       String?   // nama_departemen dari HRIS (TASK-39)
+  jabatan          String?   // nama_jabatan dari HRIS (TASK-39)
 
   // Lockout (anti brute-force)
   failedLoginCount Int        @default(0)
