@@ -22,9 +22,36 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
     const visitedRoots = new Set();
     const passwordCandidates = [];
 
-    const hasUsableIdentifier = (input) => Boolean(input.getAttribute("name") || input.id);
+    const hasSemanticIdentity = (input) => {
+        const type = (input.getAttribute("type") || input.type || "").toLowerCase();
+        const autocomplete = (input.getAttribute("autocomplete") || input.autocomplete || "")
+            .toLowerCase()
+            .split(/\s+/)
+            .filter(Boolean);
+        const hint = [
+            input.getAttribute("name"),
+            input.id,
+            input.getAttribute("aria-label"),
+            input.getAttribute("placeholder"),
+            input.getAttribute("title"),
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+        return (
+            Boolean(input.getAttribute("name") || input.id) ||
+            type === "password" ||
+            autocomplete.includes("username") ||
+            autocomplete.includes("email") ||
+            autocomplete.includes("current-password") ||
+            autocomplete.includes("password") ||
+            /(?:username|user[ _-]?id|login|email|password|passwd|passcode|kata[ _-]?sandi|\bpass\b|\bpwd\b)/i.test(hint)
+        );
+    };
+
     const isPasswordCandidate = (input) => {
-        if (!hasUsableIdentifier(input) || input.disabled || input.readOnly || input.getAttribute("aria-disabled") === "true") {
+        if (!hasSemanticIdentity(input) || input.disabled || input.readOnly || input.getAttribute("aria-disabled") === "true") {
             return false;
         }
 
@@ -58,7 +85,14 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
         const inputs = root.querySelectorAll ? root.querySelectorAll("input") : [];
         for (const input of inputs) {
             if (isPasswordCandidate(input)) {
-                passwordCandidates.push({ input, baseUrl, needsProjection });
+                passwordCandidates.push({
+                    input,
+                    baseUrl,
+                    // Kontrol tanpa name/id perlu diproyeksikan ke snapshot dengan
+                    // nama sintetis dari autocomplete/type agar parser server bisa
+                    // menghasilkan kunci yang dapat diuji.
+                    needsProjection: needsProjection || !input.getAttribute("name") && !input.id,
+                });
             }
         }
 
@@ -96,6 +130,11 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
     const copyControl = (control) => {
         const isButton = control.tagName.toLowerCase() === "button";
         const copy = document.createElement(isButton ? "button" : "input");
+        const type = isButton ? "submit" : (control.getAttribute("type") || control.type || "text").toLowerCase();
+        const autocomplete = (control.getAttribute("autocomplete") || control.autocomplete || "")
+            .toLowerCase()
+            .split(/\s+/)
+            .filter(Boolean);
         const attributeNames = [
             "name",
             "id",
@@ -112,12 +151,26 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
             if (value !== null) copy.setAttribute(attributeName, value);
         }
 
+        // React/Vue controlled inputs frequently omit name/id. Infer stable keys
+        // from HTML autocomplete semantics so detectLoginFields can consume the
+        // rendered snapshot without pretending the original DOM had those attrs.
+        if (!isButton && !control.getAttribute("name") && !control.id) {
+            const inferredName =
+                type === "password" || autocomplete.includes("current-password") || autocomplete.includes("password")
+                    ? "password"
+                    : autocomplete.includes("email") || type === "email"
+                      ? "email"
+                      : autocomplete.includes("username")
+                        ? "username"
+                        : null;
+            if (inferredName) copy.setAttribute("name", inferredName);
+        }
+
         if (isButton) {
             copy.setAttribute("type", control.getAttribute("type") || "submit");
             copy.setAttribute("value", control.getAttribute("value") || control.value || "");
             copy.textContent = control.textContent || "";
         } else {
-            const type = (control.getAttribute("type") || control.type || "text").toLowerCase();
             copy.setAttribute("type", type);
             // Nilai field password TIDAK pernah disalin: snapshot ini dikirim ke server
             // portal, dan deteksi hanya butuh nama field, bukan isinya.

@@ -80,49 +80,178 @@ function fetchSpec(specUrl: URL): Promise<{ status: number; body: string } | nul
     });
 }
 
-/** Cari operasi POST yang menerima {username,password} (atau "password"|"pwd"). */
-export function extractContracts(spec: unknown): ApiContract[] {
-    if (!spec || typeof spec !== "object") return [];
-    const root = spec as { paths?: Record<string, unknown> };
-    if (!root.paths || typeof root.paths !== "object") return [];
+type JsonObject = Record<string, unknown>;
 
-    const out: ApiContract[] = [];
-    // Pencocokan nama field tolerant underscore. Token diapit (^|_) di kiri
-    // dan (_,|$) di kanan — whole-token, bukan prefix. Tanpa ini "pass" akan
-    // cocok pada "passcode" / "user" pada "username-id" → kontrak palsu.
-    const tokenRe = (alts: string[]): RegExp =>
-        new RegExp(`(?:^|_)(?:${alts.join("|")})(?=_|$)`, "i");
-    const userRe = tokenRe(["username", "user_name", "user", "email", "nik", "login"]);
-    const passRe = tokenRe(["password", "passwd", "pass_word", "pwd", "sandi"]);
+function isObject(value: unknown): value is JsonObject {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
 
-    for (const [path, methodsRaw] of Object.entries(root.paths)) {
-        if (typeof path !== "string" || !path.startsWith("/")) continue;
-        if (!methodsRaw || typeof methodsRaw !== "object") continue;
-        const methods = methodsRaw as Record<string, unknown>;
-        const post = methods.post;
-        if (!post || typeof post !== "object") continue;
+function decodeJsonPointerSegment(segment: string): string {
+    return segment.replace(/~1/g, "/").replace(/~0/g, "~");
+}
 
-        // Ambil nama field dari requestBody.schema.properties (OpenAPI 3) atau
-        // parameters[].name (OpenAPI 2 / Swagger).
-        const params = new Set<string>();
-        const op = post as { requestBody?: { content?: { "application/json"?: { schema?: { properties?: Record<string, unknown> } } } }; parameters?: Array<{ name?: string; in?: string }> };
-        const props = op.requestBody?.content?.["application/json"]?.schema?.properties;
-        if (props && typeof props === "object") {
-            for (const name of Object.keys(props)) params.add(name);
-        }
-        if (Array.isArray(op.parameters)) {
-            for (const p of op.parameters) {
-                if (p && typeof p === "object" && typeof p.name === "string") params.add(p.name);
-            }
-        }
-        const names = Array.from(params);
-        const hasUser = names.some((n) => userRe.test(n));
-        const hasPass = names.some((n) => passRe.test(n));
-        if (hasUser && hasPass) {
-            out.push({ method: "POST", path, params: names });
+/** Resolve only local OpenAPI references; external refs are intentionally ignored. */
+function resolveLocalRef(root: JsonObject, ref: string, seen = new Set<string>()): unknown {
+    if (!ref.startsWith("#/") || seen.has(ref)) return undefined;
+    seen.add(ref);
+
+    let current: unknown = root;
+    for (const segment of ref.slice(2).split("/").map(decodeJsonPointerSegment)) {
+        if (!isObject(current) || !(segment in current)) return undefined;
+        current = current[segment];
+    }
+
+    if (isObject(current) && typeof current.$ref === "string") {
+        return resolveLocalRef(root, current.$ref, seen);
+    }
+    return current;
+}
+
+function resolveRefObject(root: JsonObject, value: unknown): JsonObject | null {
+    if (!isObject(value)) return null;
+    if (typeof value.$ref === "string") {
+        const resolved = resolveLocalRef(root, value.$ref);
+        return isObject(resolved) ? resolved : null;
+    }
+    return value;
+}
+
+function isJsonMediaType(mediaType: string): boolean {
+    const normalized = mediaType.toLowerCase().split(";")[0].trim();
+    return normalized === "application/json" || normalized === "*/*" || normalized.endsWith("+json");
+}
+
+/** Collect property names through `$ref`, allOf/oneOf/anyOf, and required fields. */
+function collectSchemaProperties(root: JsonObject, schema: unknown, out: Set<string>, seenRefs = new Set<string>()): void {
+    if (!isObject(schema)) return;
+
+    if (typeof schema.$ref === "string") {
+        if (seenRefs.has(schema.$ref)) return;
+        seenRefs.add(schema.$ref);
+        collectSchemaProperties(root, resolveLocalRef(root, schema.$ref), out, seenRefs);
+    }
+
+    const properties = schema.properties;
+    if (isObject(properties)) {
+        for (const name of Object.keys(properties)) out.add(name);
+    }
+    if (Array.isArray(schema.required)) {
+        for (const name of schema.required) {
+            if (typeof name === "string") out.add(name);
         }
     }
-    return out;
+
+    for (const composition of ["allOf", "oneOf", "anyOf"]) {
+        const members = schema[composition];
+        if (Array.isArray(members)) {
+            for (const member of members) collectSchemaProperties(root, member, out, seenRefs);
+        }
+    }
+}
+
+function collectRequestBodyProperties(root: JsonObject, requestBody: unknown, out: Set<string>): void {
+    const body = resolveRefObject(root, requestBody);
+    if (!body) return;
+
+    const content = body.content;
+    if (isObject(content)) {
+        for (const [mediaType, mediaValue] of Object.entries(content)) {
+            if (!isJsonMediaType(mediaType)) continue;
+            const media = resolveRefObject(root, mediaValue);
+            collectSchemaProperties(root, media?.schema, out);
+        }
+    }
+
+    // Swagger 2.0 body parameters can expose the schema directly.
+    collectSchemaProperties(root, body.schema, out);
+}
+
+/** Cari operasi POST yang menerima kredensial username/password, termasuk schema `$ref`. */
+export function extractContracts(spec: unknown): ApiContract[] {
+    if (!isObject(spec) || !isObject(spec.paths)) return [];
+    const root = spec;
+    const paths = spec.paths;
+    const likelyAuthContracts: ApiContract[] = [];
+    const genericCredentialContracts: ApiContract[] = [];
+
+    // Field names from real APIs vary widely. Boundaries include `_` and `-` so
+    // user_id, user-id, username, and userId (lowercased) are all handled.
+    const tokenRe = (alts: string[]): RegExp =>
+        new RegExp(`(?:^|[_-])(?:${alts.join("|")})(?=[_-]|$)`, "i");
+    const userRe = tokenRe([
+        "username",
+        "user_name",
+        "userid",
+        "user_id",
+        "user",
+        "email",
+        "email_address",
+        "emailaddress",
+        "account",
+        "account_id",
+        "identifier",
+        "nik",
+        "login",
+        "login_id",
+        "loginid",
+    ]);
+    const passRe = tokenRe([
+        "password",
+        "passwd",
+        "pass_word",
+        "pwd",
+        "passcode",
+        "sandi",
+        "secret",
+        "pin",
+    ]);
+
+    for (const [path, methodsRaw] of Object.entries(paths)) {
+        if (!path.startsWith("/") || !isObject(methodsRaw)) continue;
+        const post = resolveRefObject(root, methodsRaw.post);
+        if (!post) continue;
+
+        const params = new Set<string>();
+        collectRequestBodyProperties(root, post.requestBody, params);
+
+        if (Array.isArray(post.parameters)) {
+            for (const rawParameter of post.parameters) {
+                const parameter = resolveRefObject(root, rawParameter);
+                if (!parameter) continue;
+
+                // OpenAPI 2 body parameter: inspect its schema instead of adding
+                // the generic parameter name "body".
+                if (parameter.in === "body") {
+                    collectSchemaProperties(root, parameter.schema, params);
+                } else if (typeof parameter.name === "string" && parameter.name.trim()) {
+                    params.add(parameter.name);
+                }
+            }
+        }
+
+        const names = Array.from(params);
+        const hasUser = names.some((name) => userRe.test(name.toLowerCase()));
+        const hasPass = names.some((name) => passRe.test(name.toLowerCase()));
+        if (hasUser && hasPass) {
+            const contract = { method: "POST" as const, path, params: names };
+            const operationHint = [
+                path,
+                typeof post.summary === "string" ? post.summary : "",
+                typeof post.operationId === "string" ? post.operationId : "",
+                Array.isArray(post.tags) ? post.tags.join(" ") : "",
+            ].join(" ");
+            // Prefer actual authentication operations. User creation, password
+            // rotation, and credential-management endpoints often also contain
+            // username/password but must never become the first "Uji JSON" target.
+            if (/(?:login|log[-_ ]?in|signin|sign[-_ ]?in|authenticate|authentication|oauth|token|session|sso)/i.test(operationHint)) {
+                likelyAuthContracts.push(contract);
+            } else {
+                genericCredentialContracts.push(contract);
+            }
+        }
+    }
+
+    return likelyAuthContracts.length > 0 ? likelyAuthContracts : genericCredentialContracts;
 }
 
 /**

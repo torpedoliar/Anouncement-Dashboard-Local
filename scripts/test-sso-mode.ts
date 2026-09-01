@@ -6,6 +6,7 @@
  * (`__RequestVerificationToken_L0lkZW50aXR5...`) → POST; form polos → FORM.
  */
 import { classifySsoMode, type ModeEvidence } from "../lib/portal-sso-mode";
+import { looksLikeClientRenderedApp } from "../lib/portal-sso-relay";
 
 function assertEq(actual: unknown, expected: unknown, label: string) {
     const ok = JSON.stringify(actual) === JSON.stringify(expected);
@@ -75,6 +76,13 @@ function base(): ModeEvidence {
     const v = classifySsoMode(b);
     assertEq(v.mode, "VAULT", "SPA tanpa form → VAULT");
     assertEq(v.signals.some((s) => /JavaScript|dirakit/i.test(s)), true, "SPA memberi sinyal client-render");
+}
+
+// Vite/React production shell target 192.168.2.3: satu module script + modulepreload,
+// bukan tiga script tag. Tetap harus dikenali sebagai SPA agar OpenAPI probe berjalan.
+{
+    const viteShell = `<html><head><script type="module" crossorigin src="/assets/index.js"></script><link rel="modulepreload" href="/assets/react.js"></head><body><div id="root"></div></body></html>`;
+    assertEq(looksLikeClientRenderedApp(viteShell), true, "Vite shell dengan satu module script → SPA");
 }
 
 // Oracle EBS → REROUTE

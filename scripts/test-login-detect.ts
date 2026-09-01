@@ -148,8 +148,25 @@ const r22 = detectLoginFields(`<form action="/ghost"><input type="text" placehol
 assertEq(r22.passwordField, "sandi", "22a form dengan field bernama dipilih");
 assertEq(r22.formAction, "/nyata", "22b action form yang bisa dikirim");
 
-// 23. Field yang benar-benar tidak punya name/id sama sekali → jujur null, bukan konfigurasi kosong
+// 23. Password semantic tanpa name/id tetap dapat diidentifikasi untuk SPA.
 const r23 = detectLoginFields(`<form><input type="text"><input type="password"></form>`);
-assertEq(r23.passwordField, null, "23 password tanpa name/id → null");
+assertEq(r23.usernameField, null, "23a username tanpa petunjuk → null");
+assertEq(r23.passwordField, "password", "23b password tanpa name/id → kunci sintetis");
+assertEq((r23.warnings ?? []).some((w) => /name\/id/i.test(w)), true, "23c field sintetis diberi peringatan");
+
+// 24. Pola target React/Vite NCM: controlled inputs hanya punya autocomplete,
+//     tidak punya name/id, tetapi tetap merupakan pasangan login.
+const r24 = detectLoginFields(`<form class="login-form">
+<label>Username<input autocomplete="username" value=""></label>
+<label>Password<input type="password" autocomplete="current-password" value=""></label>
+<button type="submit">Enter terminal</button></form>`);
+assertEq(r24.usernameField, "username", "24a React autocomplete username tanpa name/id");
+assertEq(r24.passwordField, "password", "24b React current-password tanpa name/id");
+assertEq((r24.warnings ?? []).some((w) => /SPA/i.test(w)), true, "24c SPA inference diberi peringatan");
+
+// 25. Label pembungkus memberi petunjuk meski input hanya type=text.
+const r25 = detectLoginFields(`<form><label>Login user<input type="text"></label><label>Password<input type="text" placeholder="Password"></label></form>`);
+assertEq(r25.usernameField, "username", "25a label login menginfer username");
+assertEq(r25.passwordField, "password", "25b placeholder password menginfer password");
 
 console.log("=== ALL PASS ===");

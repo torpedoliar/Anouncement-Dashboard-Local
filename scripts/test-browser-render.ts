@@ -94,6 +94,8 @@ async function main() {
     assertEq(typeof waitForFunction?.timeout === "number" && waitForFunction.timeout > 0, true, "waitForFunction punya timeout");
     assertEq(/shadowRoot/.test(waitForFunction?.fn ?? ""), true, "predikat memeriksa Shadow DOM");
     assertEq(/IFRAME/.test(waitForFunction?.fn ?? ""), true, "predikat memeriksa iframe");
+    assertEq(/autocomplete.includes\("username"\)/.test(waitForFunction?.fn ?? ""), true, "predikat menerima input autocomplete tanpa name/id");
+    assertEq(/inferredName/.test(waitForFunction?.fn ?? ""), true, "snapshot memberi nama sintetis pada input SPA");
 
     // Fungsi ini dieksekusi di Chromium, jadi salah sintaksis tidak akan terlihat di
     // build TypeScript. Diuji di sini supaya kegagalan tidak muncul sebagai "form

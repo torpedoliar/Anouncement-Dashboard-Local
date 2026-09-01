@@ -260,13 +260,37 @@ export default function PortalAppsPage() {
                 // Tampilkan rekomendasi sebagai diagnosis, tetapi pertahankan pilihan
                 // admin sampai form benar-benar terdeteksi atau admin mengubahnya sendiri.
                 const notes: string[] = Array.isArray(data.layerNotes) ? data.layerNotes : [];
+                const apiContracts = Array.isArray(data.apiContracts)
+                    ? (data.apiContracts as Array<{ method: string; path: string; params: string[] }>)
+                    : [];
+                const hasJsonLogin = data.apiLayer === "OPENAPI" && apiContracts.length > 0;
+
+                // Probe API dikembalikan bersama 422 saat SPA tidak bisa dirender.
+                // Simpan ke state modal agar tombol "Uji JSON" tetap tersedia; sebelumnya
+                // hasil ini hilang di error path sehingga target React selalu tampak VAULT.
+                if (hasJsonLogin) {
+                    setFormData((prev) => ({
+                        ...prev,
+                        apiLayer: data.apiLayer,
+                        apiContracts,
+                    }));
+                }
+
                 const recommendation = data.recommendationReason
                     ? `Rekomendasi ${data.recommendedMode ?? "SSO"}: ${data.recommendationReason} Mode saat ini (${formData.ssoMode}) tidak diubah.`
                     : undefined;
+                const apiNote = hasJsonLogin
+                    ? `Kontrak login JSON terdeteksi: ${apiContracts.map((c) => `${c.method} ${c.path}`).join(", ")}. Gunakan "Uji JSON"; mode saat ini tidak diubah otomatis.`
+                    : data.apiProbeNote
+                      ? String(data.apiProbeNote)
+                      : undefined;
                 setDetectMsg({
-                    type: "err",
-                    text: data.error || "Deteksi gagal",
+                    type: hasJsonLogin ? "ok" : "err",
+                    text: hasJsonLogin
+                        ? "Form belum ada di HTML statis, tetapi endpoint login aplikasi berhasil terdeteksi."
+                        : data.error || "Deteksi gagal",
                     warnings: [
+                        ...(apiNote ? [apiNote] : []),
                         ...(recommendation ? [recommendation] : []),
                         ...notes,
                     ],

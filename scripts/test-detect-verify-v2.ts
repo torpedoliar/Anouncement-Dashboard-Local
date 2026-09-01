@@ -71,20 +71,81 @@ expect(
     swaggerContracts
 );
 
-// AC #4 negative: "passcode" / "userid" tidak boleh false-positive
+// AC #4 negative: field yang bukan kredensial tidak boleh false-positive
 const trickySpec = {
     openapi: "3.0.0",
     paths: {
         "/login": {
             post: {
                 requestBody: {
-                    content: { "application/json": { schema: { type: "object", properties: { passcode: { type: "string" } } } } },
+                    content: { "application/json": { schema: { type: "object", properties: { confirmation_code: { type: "string" } } } } },
                 },
             },
         },
     },
 };
-expect("AC#4: field 'passcode' saja TIDAK dianggap password (whole-token)", extractContracts(trickySpec).length === 0);
+expect("AC#4: field confirmation_code saja TIDAK dianggap password", extractContracts(trickySpec).length === 0);
+
+// Target 192.168.2.3/NCM: FastAPI menaruh LoginRequest di components dan operasi
+// hanya menyimpan `$ref`. Probe harus mengikuti referensi lokal ini.
+const referencedSpec = {
+    openapi: "3.1.0",
+    paths: {
+        "/api/v1/auth/login": {
+            post: {
+                requestBody: {
+                    content: {
+                        "application/json": {
+                            schema: { $ref: "#/components/schemas/LoginRequest" },
+                        },
+                    },
+                },
+            },
+        },
+    },
+    components: {
+        schemas: {
+            LoginRequest: {
+                type: "object",
+                properties: { username: { type: "string" }, password: { type: "string" } },
+                required: ["username", "password"],
+            },
+        },
+    },
+};
+const referencedContracts = extractContracts(referencedSpec);
+expect(
+    "AC#4: OpenAPI 3.1 `$ref` LoginRequest ter-resolve",
+    referencedContracts.length === 1 &&
+        referencedContracts[0].path === "/api/v1/auth/login" &&
+        JSON.stringify(referencedContracts[0].params) === JSON.stringify(["username", "password"]),
+    referencedContracts
+);
+
+// Composition refs yang umum pada schema enterprise.
+const composedSpec = {
+    openapi: "3.0.0",
+    paths: {
+        "/auth": {
+            post: {
+                requestBody: {
+                    content: {
+                        "application/problem+json": {
+                            schema: { allOf: [{ $ref: "#/components/schemas/UserPart" }, { $ref: "#/components/schemas/PasswordPart" }] },
+                        },
+                    },
+                },
+            },
+        },
+    },
+    components: {
+        schemas: {
+            UserPart: { properties: { user_id: { type: "string" } } },
+            PasswordPart: { properties: { passcode: { type: "string" } } },
+        },
+    },
+};
+expect("AC#4: allOf + application/*+json ter-resolve", extractContracts(composedSpec).length === 1);
 
 // AC #4 input rusak
 expect("AC#4: spec null → []", extractContracts(null).length === 0);

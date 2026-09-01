@@ -280,10 +280,9 @@ export function looksLikeOracleEbs(html: string, finalUrl: string): boolean {
 /**
  * Halaman yang form login-nya dirakit JavaScript — HTML mentah tidak memuat inputnya.
  *
- * Daftar root sengaja mencakup lebih dari React/Next: Nuxt, SvelteKit, Quasar, dan
- * Angular (yang memakai elemen kustom `<app-root>`, bukan div ber-id). Tanpa itu,
- * SPA di luar React salah dibaca sebagai halaman biasa sehingga alasan fallback yang
- * ditampilkan ke admin tidak menyebutkan penyebab sebenarnya.
+ * Vite/React production shell sering hanya memiliki satu `type="module"` dan satu
+ * atau dua `modulepreload`, jadi jumlah tag `<script>` bukan indikator yang cukup.
+ * App root + module bundle + tanpa form adalah bukti SPA yang lebih lintas framework.
  */
 export function looksLikeClientRenderedApp(html: string): boolean {
     if (!html) return false;
@@ -291,8 +290,11 @@ export function looksLikeClientRenderedApp(html: string): boolean {
         /<div[^>]+id=["'](?:root|app|__next|ng-app|__nuxt|__layout|q-app|svelte|app-container|root-container)["']/i.test(html) ||
         /<(?:app-root|nuxt-root)[\s>]/i.test(html);
     const hasNoForm = !/<form[\s>]/i.test(html);
-    const heavyScript = (html.match(/<script[\s>]/gi) ?? []).length >= 3;
-    return hasAppRoot && hasNoForm && heavyScript;
+    const scriptCount = (html.match(/<script[\s>]/gi) ?? []).length;
+    const hasModuleScript = /<script[^>]+type=["']module["']/i.test(html);
+    const hasModulePreload = /<link[^>]+rel=["']modulepreload["']/i.test(html);
+    const hasClientBundle = /<script[^>]+src=["'][^"']*(?:assets|_next|static|chunk|bundle)[^"']*["']/i.test(html);
+    return hasAppRoot && hasNoForm && (scriptCount >= 3 || hasModuleScript || hasModulePreload || hasClientBundle);
 }
 
 /**

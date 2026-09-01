@@ -281,12 +281,56 @@ function scorePassword(f: FieldInfo): number {
 }
 
 /**
- * Field tanpa `name` maupun `id` tidak dapat dikirim — tidak ada kunci yang bisa
- * dipakai portal. Kandidat seperti ini harus kalah dari kandidat bernama di form
- * lain, bukan menang lalu menghasilkan konfigurasi kosong yang jatuh ke VAULT.
+ * React/Vue/Svelte forms sering tidak menulis `name` atau `id` karena nilai input
+ * dikirim lewat state/JSON. Atribut autocomplete, tipe, dan label tetap memberi
+ * identitas yang cukup untuk deteksi. Nama sintetis hanya dipakai sebagai kunci
+ * konfigurasi (`username`/`email`/`password`); warning menjelaskan bahwa admin perlu
+ * menguji transport JSON atau form sebelum menyimpan konfigurasi.
  */
-function hasSubmittableIdentifier(f: FieldInfo): boolean {
-    return Boolean(f.name || f.id);
+type DetectedRole = "username" | "password";
+
+function fieldHint(f: FieldInfo): string {
+    return [f.name, f.id, f.autocomplete, f.placeholder, f.ariaLabel, f.title, f.labelText]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+}
+
+function detectedFieldKey(f: FieldInfo, role: DetectedRole): string | null {
+    const explicit = f.name?.trim() || f.id?.trim();
+    if (explicit) return explicit;
+
+    const hint = fieldHint(f);
+    if (role === "password") {
+        if (
+            f.type === "password" ||
+            f.autocomplete === "current-password" ||
+            f.autocomplete === "password" ||
+            /(?:password|passwd|passcode|kata[ _-]?sandi|\\bpass\\b|\\bpwd\\b|\\bpin\\b)/i.test(hint)
+        ) {
+            return "password";
+        }
+        return null;
+    }
+
+    if (f.autocomplete === "email" || f.type === "email" || /(?:email|e-mail|mail_address)/i.test(hint)) {
+        return "email";
+    }
+    if (
+        f.autocomplete === "username" ||
+        /(?:username|user[ _-]?id|userid|login|account|identifier|id pengguna|nama pengguna|nik|nip|nrp)/i.test(hint)
+    ) {
+        return "username";
+    }
+    return null;
+}
+
+function hasDetectableField(f: FieldInfo): boolean {
+    return Boolean(detectedFieldKey(f, "username") || detectedFieldKey(f, "password"));
+}
+
+function isInferredField(f: FieldInfo): boolean {
+    return !f.name?.trim() && !f.id?.trim();
 }
 
 export function detectLoginFields(html: string): DetectedFields {
@@ -369,7 +413,7 @@ export function detectLoginFields(html: string): DetectedFields {
     collectLabelsAndStructure(doc);
 
     // Second pass: collect form inputs with contextual metadata
-    function walkDom(node: Node): void {
+    function walkDom(node: Node, ancestorLabelText: string | null = null): void {
         if (!node) return;
 
         if (isElement(node)) {
@@ -442,6 +486,7 @@ export function detectLoginFields(html: string): DetectedFields {
                                 .join(" ") || null;
                     }
                 }
+                if (!labelText && ancestorLabelText) labelText = ancestorLabelText;
 
                 allInputs.push({
                     name,
@@ -463,8 +508,12 @@ export function detectLoginFields(html: string): DetectedFields {
         }
 
         if ("childNodes" in node && Array.isArray(node.childNodes)) {
+            const nextLabelText =
+                isElement(node) && node.tagName.toLowerCase() === "label"
+                    ? extractText(node)
+                    : ancestorLabelText;
             for (const child of node.childNodes) {
-                walkDom(child);
+                walkDom(child, nextLabelText);
             }
         }
     }
@@ -499,7 +548,7 @@ export function detectLoginFields(html: string): DetectedFields {
         let formBestPassScore = -1;
 
         for (const input of inputs) {
-            if (!hasSubmittableIdentifier(input)) continue;
+            if (!hasDetectableField(input)) continue;
 
             const uScore = scoreUsername(input);
             if (uScore > formBestUserScore) {
@@ -524,6 +573,10 @@ export function detectLoginFields(html: string): DetectedFields {
             if (formIdx >= 0) {
                 pairScore += 100; // Standard <form> wrapper bonus
             }
+            // Bila dua form sama-sama valid, pilih field bernama/id nyata di atas
+            // nama sintetis. SPA tanpa name/id tetap lolos bila itu satu-satunya form.
+            if (!isInferredField(formBestPass)) pairScore += 120;
+            if (formBestUser && !isInferredField(formBestUser)) pairScore += 60;
         }
 
         // Hanya terima kalau kandidat password benar-benar bernilai positif.
@@ -532,8 +585,8 @@ export function detectLoginFields(html: string): DetectedFields {
         if (pairScore > highestPairScore && formBestPass && formBestPassScore > 0) {
             highestPairScore = pairScore;
             // Prefer name attribute for form submission, fallback to id
-            bestPasswordField = formBestPass.name ?? formBestPass.id;
-            bestUsernameField = formBestUser ? (formBestUser.name ?? formBestUser.id) : null;
+            bestPasswordField = detectedFieldKey(formBestPass, "password");
+            bestUsernameField = formBestUser ? detectedFieldKey(formBestUser, "username") : null;
             bestMethod = formBestPass.formMethod || "POST";
             bestAction = formBestPass.formAction;
             bestFormIndex = formIdx;
@@ -551,7 +604,7 @@ export function detectLoginFields(html: string): DetectedFields {
         let globalBestPassScore = -1;
 
         for (const input of allInputs) {
-            if (!hasSubmittableIdentifier(input)) continue;
+            if (!hasDetectableField(input)) continue;
 
             const uScore = scoreUsername(input);
             if (uScore > globalBestUserScore) {
@@ -567,8 +620,8 @@ export function detectLoginFields(html: string): DetectedFields {
         }
 
         if (globalBestPass && globalBestPassScore > 0) {
-            bestPasswordField = globalBestPass.name ?? globalBestPass.id;
-            bestUsernameField = globalBestUser ? (globalBestUser.name ?? globalBestUser.id) : null;
+            bestPasswordField = detectedFieldKey(globalBestPass, "password");
+            bestUsernameField = globalBestUser ? detectedFieldKey(globalBestUser, "username") : null;
             bestMethod = globalBestPass.formMethod || "POST";
             bestAction = globalBestPass.formAction;
             bestFormIndex = globalBestPass.formIndex;
@@ -614,6 +667,17 @@ export function detectLoginFields(html: string): DetectedFields {
                 `Field ${blockedNames.join(", ")} berstatus disabled/readonly saat halaman diambil. ` +
                 `Ini normal pada aplikasi yang mematikan autofill atau baru mengaktifkan form setelah JavaScript selesai; ` +
                 `nama field tetap dipakai. Jalankan "Uji Login" untuk memastikan aplikasi menerimanya.`
+            );
+        }
+
+        const inferredNames = [
+            chosenUsername && isInferredField(chosenUsername) ? bestUsernameField : null,
+            chosenPassword && isInferredField(chosenPassword) ? bestPasswordField : null,
+        ].filter((name): name is string => Boolean(name));
+        if (inferredNames.length > 0) {
+            warnings.push(
+                `Field ${inferredNames.join(", ")} tidak memiliki atribut name/id; nama dideteksi dari autocomplete, tipe, atau label. ` +
+                `Ini umum pada SPA yang mengirim JSON. Gunakan kontrak API yang terdeteksi atau jalankan "Uji Login" sebelum menyimpan.`
             );
         }
     }
