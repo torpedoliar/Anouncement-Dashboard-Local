@@ -277,10 +277,19 @@ export function looksLikeOracleEbs(html: string, finalUrl: string): boolean {
     return /AppsLocalLogin\.jsp|AuthenticateUser|OA_HTML/i.test(`${html.slice(0, 20000)} ${finalUrl}`);
 }
 
-/** Halaman yang form login-nya dirakit JavaScript — HTML mentah tidak memuat inputnya. */
+/**
+ * Halaman yang form login-nya dirakit JavaScript — HTML mentah tidak memuat inputnya.
+ *
+ * Daftar root sengaja mencakup lebih dari React/Next: Nuxt, SvelteKit, Quasar, dan
+ * Angular (yang memakai elemen kustom `<app-root>`, bukan div ber-id). Tanpa itu,
+ * SPA di luar React salah dibaca sebagai halaman biasa sehingga alasan fallback yang
+ * ditampilkan ke admin tidak menyebutkan penyebab sebenarnya.
+ */
 export function looksLikeClientRenderedApp(html: string): boolean {
     if (!html) return false;
-    const hasAppRoot = /<div[^>]+id=["'](?:root|app|__next|ng-app)["']/i.test(html);
+    const hasAppRoot =
+        /<div[^>]+id=["'](?:root|app|__next|ng-app|__nuxt|__layout|q-app|svelte|app-container|root-container)["']/i.test(html) ||
+        /<(?:app-root|nuxt-root)[\s>]/i.test(html);
     const hasNoForm = !/<form[\s>]/i.test(html);
     const heavyScript = (html.match(/<script[\s>]/gi) ?? []).length >= 3;
     return hasAppRoot && hasNoForm && heavyScript;

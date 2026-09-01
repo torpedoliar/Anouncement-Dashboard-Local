@@ -254,21 +254,20 @@ export default function PortalAppsPage() {
             });
             const data = await res.json();
             if (!res.ok) {
-                // Deteksi gagal pun tetap membawa rekomendasi mode (mis. K2 → VAULT).
-                if (data.recommendedMode) {
-                    setFormData((prev) => ({ ...prev, ssoMode: data.recommendedMode }));
-                }
-                // Catatan lapis (mis. "Layanan render browser tidak tersedia") wajib tampil:
-                // tanpa ini, SPA yang gagal terdeteksi terlihat seperti bug, padahal
-                // penyebabnya layanan browserless mati.
+                // Tidak ada field yang terdeteksi bukan bukti bahwa konfigurasi yang
+                // sedang diedit harus menjadi VAULT. Memaksa VAULT di sini membuat
+                // kegagalan snapshot browser terlihat seperti keputusan SSO final.
+                // Tampilkan rekomendasi sebagai diagnosis, tetapi pertahankan pilihan
+                // admin sampai form benar-benar terdeteksi atau admin mengubahnya sendiri.
                 const notes: string[] = Array.isArray(data.layerNotes) ? data.layerNotes : [];
+                const recommendation = data.recommendationReason
+                    ? `Rekomendasi ${data.recommendedMode ?? "SSO"}: ${data.recommendationReason} Mode saat ini (${formData.ssoMode}) tidak diubah.`
+                    : undefined;
                 setDetectMsg({
                     type: "err",
                     text: data.error || "Deteksi gagal",
                     warnings: [
-                        ...(data.recommendationReason
-                            ? [`Mode SSO otomatis diubah ke ${data.recommendedMode}. ${data.recommendationReason}`]
-                            : []),
+                        ...(recommendation ? [recommendation] : []),
                         ...notes,
                     ],
                 });

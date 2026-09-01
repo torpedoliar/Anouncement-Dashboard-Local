@@ -65,9 +65,21 @@ function hasAttr(el: Element, attr: string): boolean {
     return el.attrs.some((a) => a.name.toLowerCase() === attr.toLowerCase());
 }
 
+/**
+ * Nilai autocomplete dapat memiliki prefix section (mis. `section-login username`).
+ * Token pertama saja tidak cukup untuk banyak komponen framework/password manager.
+ */
 function firstAutocompleteWord(raw: string | null): string | null {
     if (!raw) return null;
-    return raw.toLowerCase().split(/\s+/)[0] ?? null;
+    const tokens = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    return (
+        tokens.find((token) =>
+            token === "username" ||
+            token === "email" ||
+            token === "current-password" ||
+            token === "password"
+        ) ?? tokens[0] ?? null
+    );
 }
 
 /** Semua <input> di dalam sebuah elemen (untuk label yang membungkus inputnya). */
@@ -103,10 +115,29 @@ function getControlNameKeepUnderscore(identifier: string | null): string {
 }
 
 /**
+ * Penalti untuk kontrol yang sedang tidak bisa diisi manusia saat snapshot diambil.
+ *
+ * Sebelumnya keduanya menolak kandidat secara mutlak, dan itu salah satu sebab
+ * halaman yang JELAS punya form login tetap direkomendasikan VAULT:
+ * - `readonly` dipakai banyak aplikasi enterprise untuk mematikan autofill browser
+ *   (`readonly` dilepas saat field difokuskan), jadi bukan tanda "bukan login".
+ * - `disabled` sering hanya keadaan sementara sebelum framework selesai hidrasi.
+ *
+ * Nama field-nya tetap berguna: mode FORM merakit form sendiri di browser dan mode
+ * POST menyusun body di server, sehingga atribut ini tidak menghalangi pengiriman.
+ * Penalti membuat kandidat lemah tetap kalah dari kandidat sehat, tanpa memaksa VAULT.
+ */
+const DISABLED_PENALTY = 120;
+const READONLY_PENALTY = 40;
+
+function unavailabilityPenalty(f: FieldInfo): number {
+    return (f.isDisabled ? DISABLED_PENALTY : 0) + (f.isReadOnly ? READONLY_PENALTY : 0);
+}
+
+/**
  * Heuristik deteksi username / identity field
  */
 function scoreUsername(f: FieldInfo): number {
-    if (f.isDisabled || f.isReadOnly) return -500;
     if (f.type === "password" || f.type === "hidden" || f.type === "submit" || f.type === "button" || f.type === "checkbox" || f.type === "radio") {
         return -500;
     }
@@ -181,14 +212,13 @@ function scoreUsername(f: FieldInfo): number {
     if (f.type === "email") score += 80;
     if (f.type === "text" || f.type === "tel" || f.type === "number") score += 20;
 
-    return score;
+    return score - unavailabilityPenalty(f);
 }
 
 /**
  * Heuristik deteksi password field
  */
 function scorePassword(f: FieldInfo): number {
-    if (f.isDisabled || f.isReadOnly) return -500;
     if (f.type !== "password" && f.type !== "text" && f.type !== "") return -500;
 
     const rawName = (f.name ?? "").toLowerCase();
@@ -247,7 +277,16 @@ function scorePassword(f: FieldInfo): number {
         score += 200;
     }
 
-    return score;
+    return score - unavailabilityPenalty(f);
+}
+
+/**
+ * Field tanpa `name` maupun `id` tidak dapat dikirim — tidak ada kunci yang bisa
+ * dipakai portal. Kandidat seperti ini harus kalah dari kandidat bernama di form
+ * lain, bukan menang lalu menghasilkan konfigurasi kosong yang jatuh ke VAULT.
+ */
+function hasSubmittableIdentifier(f: FieldInfo): boolean {
+    return Boolean(f.name || f.id);
 }
 
 export function detectLoginFields(html: string): DetectedFields {
@@ -446,6 +485,10 @@ export function detectLoginFields(html: string): DetectedFields {
     let bestAction: string | null = null;
     let bestFormIndex = -1;
     let highestPairScore = -1;
+    // Kontrol terpilih disimpan agar peringatan bisa menyebut kondisi nyatanya
+    // (mis. field password masih readonly saat halaman diambil).
+    let chosenPassword: FieldInfo | null = null;
+    let chosenUsername: FieldInfo | null = null;
 
     // Evaluate each form group
     for (const [formIdx, inputs] of formGroups.entries()) {
@@ -456,6 +499,8 @@ export function detectLoginFields(html: string): DetectedFields {
         let formBestPassScore = -1;
 
         for (const input of inputs) {
+            if (!hasSubmittableIdentifier(input)) continue;
+
             const uScore = scoreUsername(input);
             if (uScore > formBestUserScore) {
                 formBestUserScore = uScore;
@@ -492,6 +537,8 @@ export function detectLoginFields(html: string): DetectedFields {
             bestMethod = formBestPass.formMethod || "POST";
             bestAction = formBestPass.formAction;
             bestFormIndex = formIdx;
+            chosenPassword = formBestPass;
+            chosenUsername = formBestUser;
         }
     }
 
@@ -504,6 +551,8 @@ export function detectLoginFields(html: string): DetectedFields {
         let globalBestPassScore = -1;
 
         for (const input of allInputs) {
+            if (!hasSubmittableIdentifier(input)) continue;
+
             const uScore = scoreUsername(input);
             if (uScore > globalBestUserScore) {
                 globalBestUserScore = uScore;
@@ -523,6 +572,8 @@ export function detectLoginFields(html: string): DetectedFields {
             bestMethod = globalBestPass.formMethod || "POST";
             bestAction = globalBestPass.formAction;
             bestFormIndex = globalBestPass.formIndex;
+            chosenPassword = globalBestPass;
+            chosenUsername = globalBestUser;
         }
     }
 
@@ -548,6 +599,23 @@ export function detectLoginFields(html: string): DetectedFields {
             `Token dinamis terdeteksi (${volatileKeys.join(", ")}). Token ini berubah setiap kali halaman dibuka, ` +
             `jadi nilai yang tersimpan akan kedaluwarsa — portal mengambilnya ulang tepat sebelum setiap peluncuran SSO.`
         );
+    }
+
+    // Kondisi kontrol saat snapshot: field tetap dipakai (nama-nya sah), tetapi admin
+    // perlu tahu bahwa halaman menyajikannya dalam keadaan belum bisa diisi.
+    if (bestPasswordField) {
+        const blockedNames = [
+            chosenUsername?.isDisabled || chosenUsername?.isReadOnly ? (bestUsernameField ?? "username") : null,
+            chosenPassword?.isDisabled || chosenPassword?.isReadOnly ? bestPasswordField : null,
+        ].filter((n): n is string => Boolean(n));
+
+        if (blockedNames.length > 0) {
+            warnings.push(
+                `Field ${blockedNames.join(", ")} berstatus disabled/readonly saat halaman diambil. ` +
+                `Ini normal pada aplikasi yang mematikan autofill atau baru mengaktifkan form setelah JavaScript selesai; ` +
+                `nama field tetap dipakai. Jalankan "Uji Login" untuk memastikan aplikasi menerimanya.`
+            );
+        }
     }
 
     return {

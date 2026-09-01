@@ -115,4 +115,41 @@ const r17 = detectLoginFields(`<form action="/x"><input name="username" type="te
 <input type="submit" name="go" formaction="/real/login" value="Login"></form>`);
 assertEq(r17.formAction, "/real/login", "17 formaction overrides form action");
 
+// 18. Anti-autofill: readonly dilepas saat field difokuskan. Form NYATA, jangan jatuh ke VAULT.
+const r18 = detectLoginFields(`<form action="/login" method="post">
+<input name="user_id" type="text" readonly onfocus="this.removeAttribute('readonly')">
+<input name="user_password" type="password" readonly onfocus="this.removeAttribute('readonly')">
+<button type="submit">Masuk</button></form>`);
+assertEq(r18.usernameField, "user_id", "18a readonly username tetap terdeteksi");
+assertEq(r18.passwordField, "user_password", "18b readonly password tetap terdeteksi");
+assertEq((r18.warnings ?? []).some((w) => /readonly/i.test(w)), true, "18c kondisi readonly diberi peringatan");
+
+// 19. Form dinonaktifkan sampai hidrasi framework selesai — tetap bukti form login.
+const r19 = detectLoginFields(`<form><input name="email" type="email" disabled><input name="password" type="password" disabled></form>`);
+assertEq(r19.passwordField, "password", "19a disabled password tetap terdeteksi");
+assertEq(r19.usernameField, "email", "19b disabled username tetap terdeteksi");
+
+// 20. Field sehat menang atas field disabled di form lain (penalti, bukan penerimaan buta).
+const r20 = detectLoginFields(`<form action="/a"><input name="uDisabled" type="text" disabled><input name="pDisabled" type="password" disabled></form>
+<form action="/b"><input name="uLive" type="text"><input name="pLive" type="password"></form>`);
+assertEq(r20.passwordField, "pLive", "20a form aktif menang");
+assertEq(r20.formAction, "/b", "20b action dari form aktif");
+assertEq((r20.warnings ?? []).some((w) => /readonly/i.test(w)), false, "20c tanpa peringatan saat field sehat");
+
+// 21. autocomplete dengan prefix section (pola umum framework/password manager)
+const r21 = detectLoginFields(`<form><input name="f_a" autocomplete="section-login username" type="text">
+<input name="f_b" autocomplete="section-login current-password" type="text"></form>`);
+assertEq(r21.usernameField, "f_a", "21a autocomplete section-* username terbaca");
+assertEq(r21.passwordField, "f_b", "21b autocomplete section-* current-password terbaca");
+
+// 22. Password tanpa name/id tidak bisa dikirim → form bernama di tempat lain yang dipakai
+const r22 = detectLoginFields(`<form action="/ghost"><input type="text" placeholder="Username"><input type="password" placeholder="Password"></form>
+<form action="/nyata"><input name="login" type="text"><input name="sandi" type="password"></form>`);
+assertEq(r22.passwordField, "sandi", "22a form dengan field bernama dipilih");
+assertEq(r22.formAction, "/nyata", "22b action form yang bisa dikirim");
+
+// 23. Field yang benar-benar tidak punya name/id sama sekali → jujur null, bukan konfigurasi kosong
+const r23 = detectLoginFields(`<form><input type="text"><input type="password"></form>`);
+assertEq(r23.passwordField, null, "23 password tanpa name/id → null");
+
 console.log("=== ALL PASS ===");

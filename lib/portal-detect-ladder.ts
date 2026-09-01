@@ -83,39 +83,52 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
         };
     }
 
-    // Lapis 2: render Chromium.
+    // Lapis 2: render Chromium. Renderer menunggu form yang dapat dikirim,
+    // termasuk kontrol di open Shadow DOM dan iframe same-origin.
     const rendered = await render(url);
-    if (rendered) {
-        const jsDetected = detectLoginFields(rendered.html);
-        if (jsDetected.passwordField) {
-            notes.push("Form login tidak ada di HTML statis; terdeteksi setelah render JavaScript.");
-            return {
+    const renderedDetected = rendered ? detectLoginFields(rendered.html) : null;
+    const renderedFinalUrl = rendered?.finalUrl ?? page.finalUrl;
+    if (rendered && renderedDetected && renderedDetected.passwordField) {
+        notes.push("Form login tidak ada di HTML statis; terdeteksi setelah render JavaScript.");
+        return {
+            html: rendered.html,
+            finalUrl: renderedFinalUrl,
+            setCookies: page.setCookies,
+            cookieNames,
+            hopChain: page.hopChain,
+            redirected: page.redirected,
+            loopDetected: page.loopDetected ?? false,
+            detected: renderedDetected,
+            verdict: classifySsoMode({
+                ...evidence,
                 html: rendered.html,
-                finalUrl: page.finalUrl,
-                setCookies: page.setCookies,
-                cookieNames,
-                hopChain: page.hopChain,
-                redirected: page.redirected,
-                loopDetected: page.loopDetected ?? false,
-                detected: jsDetected,
-                verdict: classifySsoMode({ ...evidence, html: rendered.html, detected: jsDetected }),
-                layer: "BROWSER",
-                layerNotes: notes,
-                apiProbe: { layer: "NONE", contracts: [], specUrl: null, note: "Form login ditemukan setelah render JS; probe OpenAPI tidak diperlukan" },
-            };
-        }
-        notes.push("Halaman dirender dengan browser tetapi tidak memuat form login.");
+                finalUrl: renderedFinalUrl,
+                detected: renderedDetected,
+            }),
+            layer: "BROWSER",
+            layerNotes: notes,
+            apiProbe: { layer: "NONE", contracts: [], specUrl: null, note: "Form login ditemukan setelah render JS; probe OpenAPI tidak diperlukan" },
+        };
+    }
+    if (rendered) {
+        notes.push("Halaman dirender dengan browser tetapi tidak memuat form login yang dapat dikirim.");
     } else {
         notes.push("Layanan render browser tidak tersedia; deteksi terbatas pada HTML statis.");
     }
+
+    // Gunakan snapshot browser juga saat gagal menemukan form. Ini membuat alasan
+    // fallback dan probe API mencerminkan DOM aktual, bukan hanya shell SPA awal.
+    const fallbackHtml = rendered?.html ?? page.html;
+    const fallbackFinalUrl = renderedFinalUrl;
+    const fallbackDetected = renderedDetected ?? detected;
 
     // Lapis 3: probe OpenAPI/Swagger — hanya saat halaman adalah SPA dan tidak
     // ada form login di kedua lapis sebelumnya. Bukti SPA dari HTML mentah sudah
     // cukup (tidak perlu render ulang): looksLikeClientRenderedApp memeriksa
     // <div id="root"> + tidak ada <form> + script≥3.
     let apiProbe: ApiProbe = { layer: "NONE", contracts: [], specUrl: null, note: "Lapis 3 tidak dijalankan (bukan SPA atau form ditemukan)" };
-    if (looksLikeClientRenderedApp(page.html) || (rendered && looksLikeClientRenderedApp(rendered.html))) {
-        apiProbe = await probe(page.finalUrl);
+    if (looksLikeClientRenderedApp(page.html) || looksLikeClientRenderedApp(fallbackHtml)) {
+        apiProbe = await probe(fallbackFinalUrl);
         if (apiProbe.layer === "OPENAPI") {
             notes.push(apiProbe.note);
         } else if (apiProbe.note) {
@@ -124,15 +137,20 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
     }
 
     return {
-        html: page.html,
-        finalUrl: page.finalUrl,
+        html: fallbackHtml,
+        finalUrl: fallbackFinalUrl,
         setCookies: page.setCookies,
         cookieNames,
         hopChain: page.hopChain,
         redirected: page.redirected,
         loopDetected: page.loopDetected ?? false,
-        detected,
-        verdict: classifySsoMode(evidence),
+        detected: fallbackDetected,
+        verdict: classifySsoMode({
+            ...evidence,
+            html: fallbackHtml,
+            finalUrl: fallbackFinalUrl,
+            detected: fallbackDetected,
+        }),
         layer: rendered ? "BROWSER" : "HTTP",
         layerNotes: notes,
         apiProbe,
