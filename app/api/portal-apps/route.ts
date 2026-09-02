@@ -6,6 +6,13 @@ import { validatePagination } from "@/lib/pagination-utils";
 import { PortalAppCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
 import { computeLoginFingerprint } from "@/lib/portal-fingerprint";
+import {
+    LoginProfileBindingError,
+    loginProfileSummarySelect,
+    resolveApprovedProfileBinding,
+    sanitizePortalAppDiscoverySignals,
+    serializeLoginProfile,
+} from "@/lib/portal-login-profile";
 
 // GET /api/portal-apps - List portal apps (Admin & SuperAdmin)
 export async function GET(request: NextRequest) {
@@ -40,6 +47,7 @@ export async function GET(request: NextRequest) {
         const [apps, total, failed] = await Promise.all([
             prisma.portalApp.findMany({
                 where,
+                include: { loginProfile: { select: loginProfileSummarySelect } },
                 orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
                 skip,
                 take: limit,
@@ -57,8 +65,12 @@ export async function GET(request: NextRequest) {
             }),
         ]);
 
-        const failCount = new Map(failed.map((r) => [r.appId, r._count._all]));
-        const data = apps.map((a) => ({ ...a, ssoFailure24h: failCount.get(a.id) ?? 0 }));
+        const failCount = new Map(failed.map((row) => [row.appId, row._count._all]));
+        const data = apps.map(({ loginProfile, ...app }) => ({
+            ...app,
+            loginProfile: loginProfile ? serializeLoginProfile(loginProfile) : null,
+            ssoFailure24h: failCount.get(app.id) ?? 0,
+        }));
 
         return NextResponse.json({
             data,
@@ -88,30 +100,55 @@ export async function POST(request: NextRequest) {
         if (!validation.success) {
             return NextResponse.json(
                 { error: "Validation failed", details: formatZodErrors(validation.errors) },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
         const data = validation.data;
+        const { loginProfileId, loginProfileFingerprint, ...portalData } = data;
+        let profileBinding;
+        try {
+            profileBinding = await resolveApprovedProfileBinding({
+                profileId: loginProfileId,
+                fingerprint: loginProfileFingerprint,
+                loginUrl: data.loginUrl ?? data.url,
+                ssoMode: data.ssoMode,
+                httpMethod: data.httpMethod,
+                usernameField: data.usernameField,
+                passwordField: data.passwordField,
+            });
+        } catch (error) {
+            if (error instanceof LoginProfileBindingError) {
+                return NextResponse.json({ error: error.message }, { status: 409 });
+            }
+            throw error;
+        }
 
-        // Fingerprint dihitung dari apa yang benar-benar tersimpan, bukan dari nilai
-        // token yang berubah tiap akses — bandingan drift di health check memakai formula ini.
+        // Fingerprint legacy monitoring memakai builder snapshot yang sama dengan
+        // profile. Ia tetap tidak mengandung nilai token atau query URL.
         const extraNames = Object.keys((data.extraFields as Record<string, string> | null | undefined) ?? {});
+        const configuredLoginUrl = data.loginUrl ?? data.url;
         const fingerprint = computeLoginFingerprint({
-            loginUrl: data.loginUrl ?? data.url,
+            loginUrl: configuredLoginUrl,
+            recommendedMode: data.ssoMode,
+            httpMethod: data.httpMethod,
             usernameField: data.usernameField ?? "username",
             passwordField: data.passwordField ?? "password",
             extraFieldNames: extraNames,
         });
+        const safeDetectionSignals = data.detectionSignals === null || data.detectionSignals === undefined
+            ? undefined
+            : sanitizePortalAppDiscoverySignals(data.detectionSignals);
 
         const payload = {
-            ...data,
-            // Prisma Json tidak menerima null polos — ubah ke undefined (field dilewati).
-            detectionSignals: data.detectionSignals ?? undefined,
+            ...portalData,
+            detectionSignals: safeDetectionSignals,
             detectedFingerprint: fingerprint,
             // detectedAt hanya diisi bila admin baru saja menjalankan deteksi.
             detectedAt: data.detectionLayer ? new Date() : undefined,
             loginFormChanged: false,
+            loginProfileId: profileBinding?.loginProfileId ?? null,
+            loginProfileFingerprint: profileBinding?.loginProfileFingerprint ?? null,
         };
 
         // Check slug uniqueness
@@ -129,7 +166,7 @@ export async function POST(request: NextRequest) {
             action: "PORTAL_APP_CREATED",
             entityType: "PORTAL_APP",
             entityId: app.id,
-            changes: { name: app.name, slug: app.slug },
+            changes: { name: app.name, slug: app.slug, loginProfileId: app.loginProfileId },
             request,
         });
 

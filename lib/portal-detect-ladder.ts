@@ -1,4 +1,4 @@
-import { fetchLoginPage, type FetchedPage } from "@/lib/portal-fetch-html";
+import { fetchLoginPage, type CookieJar, type FetchedPage } from "@/lib/portal-fetch-html";
 import { detectLoginFields, type DetectedFields } from "@/lib/portal-login-detect";
 import { classifySsoMode, type ModeEvidence, type ModeVerdict } from "@/lib/portal-sso-mode";
 import { renderLoginPage } from "@/lib/portal-browser-render";
@@ -11,6 +11,8 @@ export interface LadderResult {
     html: string;
     finalUrl: string;
     setCookies: string[];
+    /** Cookie hidup hasil fetch ladder; dipakai langsung oleh POST relay dan tidak dipersistenkan. */
+    cookieJar?: CookieJar;
     cookieNames: string[];
     hopChain?: string[];
     redirected: boolean;
@@ -53,7 +55,7 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
 
     const page: FetchedPage = await fetchPage(url);
     const detected = detectLoginFields(page.html);
-    const cookieNames = page.setCookies.map((c) => c.split("=")[0].trim()).filter(Boolean);
+    const cookieNames = page.setCookies.map((cookie) => cookie.split("=")[0].trim()).filter(Boolean);
 
     const evidence: Omit<ModeEvidence, "detected"> & { detected: DetectedFields } = {
         html: page.html,
@@ -71,6 +73,7 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
             html: page.html,
             finalUrl: page.finalUrl,
             setCookies: page.setCookies,
+            cookieJar: page.cookieJar,
             cookieNames,
             hopChain: page.hopChain,
             redirected: page.redirected,
@@ -94,6 +97,7 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
             html: rendered.html,
             finalUrl: renderedFinalUrl,
             setCookies: page.setCookies,
+            cookieJar: page.cookieJar,
             cookieNames,
             hopChain: page.hopChain,
             redirected: page.redirected,
@@ -140,6 +144,7 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
         html: fallbackHtml,
         finalUrl: fallbackFinalUrl,
         setCookies: page.setCookies,
+        cookieJar: page.cookieJar,
         cookieNames,
         hopChain: page.hopChain,
         redirected: page.redirected,

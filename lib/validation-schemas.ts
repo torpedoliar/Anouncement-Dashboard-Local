@@ -289,6 +289,10 @@ export const PortalAppCreateSchema = z.object({
     detectionConfidence: z.number().int().nullable().optional(),
     detectionSignals: z.array(z.string()).nullable().optional(),
     detectionLayer: z.enum(["HTTP", "BROWSER", "MANUAL"]).nullable().optional(),
+    // Binding hanya diisi oleh kandidat PortalLoginProfile yang telah disetujui.
+    // Fingerprint mencegah app memakai profile yang berubah setelah admin review.
+    loginProfileId: z.string().cuid().nullable().optional(),
+    loginProfileFingerprint: z.string().regex(/^[a-f0-9]{64}$/i, "Fingerprint profile tidak valid").nullable().optional(),
 });
 
 export const PortalAppUpdateSchema = PortalAppCreateSchema.partial();

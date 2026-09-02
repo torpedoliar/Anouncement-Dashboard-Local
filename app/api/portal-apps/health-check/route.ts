@@ -20,7 +20,18 @@ export async function POST(request: NextRequest) {
         if (appId) {
             const app = await prisma.portalApp.findUnique({
                 where: { id: appId },
-                select: { id: true, name: true, url: true, loginUrl: true, healthStatus: true },
+                select: {
+                    id: true,
+                    name: true,
+                    url: true,
+                    loginUrl: true,
+                    healthStatus: true,
+                    detectedFingerprint: true,
+                    loginFormChanged: true,
+                    ssoMode: true,
+                    httpMethod: true,
+                    loginProfile: { select: { id: true, lastCheckedAt: true } },
+                },
             });
             if (!app) {
                 return NextResponse.json({ error: "Aplikasi tidak ditemukan" }, { status: 404 });

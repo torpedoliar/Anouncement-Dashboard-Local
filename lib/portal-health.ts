@@ -2,7 +2,8 @@ import prisma from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { fetchLoginPage, FetchError } from "@/lib/portal-fetch-html";
 import { detectLoginFields } from "@/lib/portal-login-detect";
-import { computeLoginFingerprint } from "@/lib/portal-fingerprint";
+import { computeLegacyLoginFingerprint, computeLoginFingerprint } from "@/lib/portal-fingerprint";
+import { revalidateLoginProfileIfDue } from "@/lib/portal-login-profile";
 
 export interface HealthCheckResult {
     appId: string;
@@ -26,6 +27,11 @@ export interface HealthSummary {
     results: HealthCheckResult[];
 }
 
+export interface LoginProfileHealthTarget {
+    id: string;
+    lastCheckedAt: Date | null;
+}
+
 /**
  * Lakukan health check ke single Portal App
  */
@@ -37,6 +43,9 @@ export async function checkAppHealth(app: {
     healthStatus?: string | null;
     detectedFingerprint?: string | null;
     loginFormChanged?: boolean | null;
+    ssoMode?: string | null;
+    httpMethod?: string | null;
+    loginProfile?: LoginProfileHealthTarget | null;
 }): Promise<HealthCheckResult> {
     const targetUrl = (app.loginUrl && app.loginUrl.trim()) ? app.loginUrl.trim() : app.url.trim();
     const startTime = performance.now();
@@ -62,20 +71,32 @@ export async function checkAppHealth(app: {
 
         // Drift form login: bandingkan struktur form saat ini dengan config tersimpan.
         // Perubahan struktur = SSO akan rusak — beri tahu admin sebelum user mengeluh.
-        if (page.html && app.detectedFingerprint) {
+        if (page.html && app.detectedFingerprint && !app.loginProfile) {
             const live = detectLoginFields(page.html);
             if (live.passwordField) {
                 const liveFp = computeLoginFingerprint({
                     loginUrl: targetUrl,
+                    recommendedMode: app.ssoMode,
+                    httpMethod: app.httpMethod,
                     usernameField: live.usernameField ?? "",
                     passwordField: live.passwordField ?? "",
                     extraFieldNames: Object.keys(live.extraFields),
                 });
-                const changed = liveFp !== app.detectedFingerprint;
-                if (changed !== (app.loginFormChanged ?? false)) {
+                const legacyFingerprintMatches = computeLegacyLoginFingerprint({
+                    loginUrl: targetUrl,
+                    usernameField: live.usernameField ?? "",
+                    passwordField: live.passwordField ?? "",
+                    extraFieldNames: Object.keys(live.extraFields),
+                }) === app.detectedFingerprint;
+                const changed = liveFp !== app.detectedFingerprint && !legacyFingerprintMatches;
+                const fingerprintNeedsMigration = !changed && app.detectedFingerprint !== liveFp;
+                if (changed !== (app.loginFormChanged ?? false) || fingerprintNeedsMigration) {
                     await prisma.portalApp.update({
                         where: { id: app.id },
-                        data: { loginFormChanged: changed },
+                        data: {
+                            loginFormChanged: changed,
+                            ...(fingerprintNeedsMigration ? { detectedFingerprint: liveFp } : {}),
+                        },
                     });
                 }
                 if (changed && !app.loginFormChanged) {
@@ -215,6 +236,33 @@ export async function checkAppHealth(app: {
         console.error(`Gagal menyimpan health log untuk app ${app.name}:`, dbErr);
     }
 
+    // Profile punya cadence sendiri (default 6 jam), lebih longgar dari health check.
+    // Ia menjalankan ladder tanpa kredensial dan hanya menandai STALE; konfigurasi
+    // PortalApp tidak pernah berubah otomatis dari hasil revalidasi ini.
+    if (status !== "OFFLINE" && app.loginProfile) {
+        const revalidation = await revalidateLoginProfileIfDue({
+            profile: app.loginProfile,
+            entryUrl: targetUrl,
+        });
+        if (revalidation?.becameStale) {
+            await logAudit({
+                actorType: "SYSTEM",
+                category: "SYSTEM",
+                action: "PORTAL_LOGIN_PROFILE_STALE",
+                severity: "WARNING",
+                entityType: "PORTAL_LOGIN_PROFILE",
+                entityId: revalidation.profile.id,
+                appId: app.id,
+                changes: {
+                    appName: app.name,
+                    origin: revalidation.profile.origin,
+                    entryPath: revalidation.profile.entryPath,
+                    fingerprint: revalidation.profile.currentFingerprint,
+                },
+            }).catch(() => {});
+        }
+    }
+
     return {
         appId: app.id,
         appName: app.name,
@@ -274,6 +322,11 @@ export async function checkAllPortalAppsHealth(): Promise<HealthSummary> {
             healthStatus: true,
             detectedFingerprint: true,
             loginFormChanged: true,
+            ssoMode: true,
+            httpMethod: true,
+            loginProfile: {
+                select: { id: true, lastCheckedAt: true },
+            },
         },
         orderBy: { displayOrder: "asc" },
     });

@@ -5,6 +5,13 @@ import prisma from "@/lib/prisma";
 import { PortalAppUpdateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
 import { computeLoginFingerprint } from "@/lib/portal-fingerprint";
+import {
+    LoginProfileBindingError,
+    loginProfileSummarySelect,
+    resolveApprovedProfileBinding,
+    sanitizePortalAppDiscoverySignals,
+    serializeLoginProfile,
+} from "@/lib/portal-login-profile";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -19,12 +26,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         }
 
         const { id } = await params;
-        const app = await prisma.portalApp.findUnique({ where: { id } });
+        const app = await prisma.portalApp.findUnique({
+            where: { id },
+            include: { loginProfile: { select: loginProfileSummarySelect } },
+        });
         if (!app) {
             return NextResponse.json({ error: "App not found" }, { status: 404 });
         }
 
-        return NextResponse.json(app);
+        const { loginProfile, ...portalApp } = app;
+        return NextResponse.json({
+            ...portalApp,
+            loginProfile: loginProfile ? serializeLoginProfile(loginProfile) : null,
+        });
     } catch (error) {
         console.error("Error fetching portal app:", error);
         return NextResponse.json({ error: "Failed to fetch portal app" }, { status: 500 });
@@ -45,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (!validation.success) {
             return NextResponse.json(
                 { error: "Validation failed", details: formatZodErrors(validation.errors) },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
@@ -62,30 +76,101 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
         }
 
+        const { loginProfileId, loginProfileFingerprint, ...patch } = validation.data;
         // Fingerprint dari hasil GABUNGAN (data lama + patch), agar mencerminkan yang
         // benar-benar tersimpan — bandingan drift di health check memakai formula ini.
+        const patchedUrl = patch.url?.trim();
+        const mergedLoginUrl = patch.loginUrl !== undefined
+            ? patch.loginUrl?.trim() || patchedUrl || existing.url
+            : existing.loginUrl?.trim() || patchedUrl || existing.url;
         const merged = {
-            loginUrl: validation.data.loginUrl ?? existing.loginUrl ?? existing.url,
-            usernameField: validation.data.usernameField ?? existing.usernameField ?? "username",
-            passwordField: validation.data.passwordField ?? existing.passwordField ?? "password",
-            extraFields: (validation.data.extraFields as Record<string, string> | null | undefined) ??
+            loginUrl: mergedLoginUrl,
+            usernameField: patch.usernameField ?? existing.usernameField ?? "username",
+            passwordField: patch.passwordField ?? existing.passwordField ?? "password",
+            ssoMode: patch.ssoMode ?? existing.ssoMode,
+            httpMethod: patch.httpMethod ?? existing.httpMethod,
+            extraFields: (patch.extraFields as Record<string, string> | null | undefined) ??
                 (existing.extraFields as Record<string, string> | null) ??
                 {},
         };
+        const bindingRequested =
+            loginProfileId !== undefined ||
+            loginProfileFingerprint !== undefined;
+        const appDestinationChanged =
+            patch.url !== undefined && patch.url.trim() !== existing.url;
+        const loginConfigChanged =
+            patch.loginUrl !== undefined ||
+            appDestinationChanged ||
+            patch.ssoMode !== undefined ||
+            patch.httpMethod !== undefined ||
+            patch.usernameField !== undefined ||
+            patch.passwordField !== undefined ||
+            patch.extraFields !== undefined;
+
+        let profileBinding: { loginProfileId: string; loginProfileFingerprint: string } | null | undefined;
+        if (appDestinationChanged) {
+            // The approved profile covers the login target, not a changed
+            // application destination. Require a separate review/bind step.
+            profileBinding = null;
+        } else if (bindingRequested) {
+            try {
+                profileBinding = await resolveApprovedProfileBinding({
+                    profileId: loginProfileId,
+                    fingerprint: loginProfileFingerprint,
+                    loginUrl: merged.loginUrl,
+                    ssoMode: merged.ssoMode,
+                    httpMethod: merged.httpMethod,
+                    usernameField: merged.usernameField,
+                    passwordField: merged.passwordField,
+                });
+            } catch (error) {
+                if (error instanceof LoginProfileBindingError) {
+                    return NextResponse.json({ error: error.message }, { status: 409 });
+                }
+                throw error;
+            }
+        } else if (loginConfigChanged && (existing.loginProfileId || existing.loginProfileFingerprint)) {
+            // Edit manual pada transport/field melepaskan binding profile lama.
+            // Jangan biarkan app tampak "approved" dengan snapshot yang sudah berubah.
+            profileBinding = null;
+        }
+
+        const safeDetectionSignals = patch.detectionSignals === undefined || patch.detectionSignals === null
+            ? undefined
+            : sanitizePortalAppDiscoverySignals(patch.detectionSignals);
         const payload = {
-            ...validation.data,
-            detectionSignals: validation.data.detectionSignals ?? undefined,
+            ...patch,
+            detectionSignals: safeDetectionSignals,
             detectedFingerprint: computeLoginFingerprint({
                 loginUrl: merged.loginUrl,
+                recommendedMode: merged.ssoMode,
+                httpMethod: merged.httpMethod,
                 usernameField: merged.usernameField,
                 passwordField: merged.passwordField,
                 extraFieldNames: Object.keys(merged.extraFields),
             }),
-            detectedAt: validation.data.detectionLayer ? new Date() : undefined,
+            detectedAt: patch.detectionLayer ? new Date() : undefined,
             loginFormChanged: false,
+            ...(profileBinding === undefined
+                ? {}
+                : {
+                    loginProfileId: profileBinding?.loginProfileId ?? null,
+                    loginProfileFingerprint: profileBinding?.loginProfileFingerprint ?? null,
+                }),
         };
 
-        const app = await prisma.portalApp.update({ where: { id }, data: payload });
+        const write = await prisma.portalApp.updateMany({
+            where: { id, updatedAt: existing.updatedAt },
+            data: payload,
+        });
+        if (write.count !== 1) {
+            return NextResponse.json(
+                { error: "Aplikasi berubah bersamaan. Muat ulang dan simpan kembali." },
+                { status: 409 },
+            );
+        }
+        const app = await prisma.portalApp.findUnique({ where: { id } });
+        if (!app) return NextResponse.json({ error: "App not found" }, { status: 404 });
 
         await logAudit({
             actorType: "ADMIN_USER",
@@ -94,7 +179,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             action: "PORTAL_APP_UPDATED",
             entityType: "PORTAL_APP",
             entityId: id,
-            changes: validation.data,
+            changes: {
+                changedFields: Object.keys(patch).sort(),
+                profileBindingChanged: profileBinding !== undefined,
+                loginProfileId: profileBinding === undefined ? existing.loginProfileId : profileBinding?.loginProfileId ?? null,
+            },
             request,
         });
 

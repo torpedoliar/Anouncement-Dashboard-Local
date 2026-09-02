@@ -20,6 +20,11 @@ import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
 import { verifyLoginSchema } from "@/lib/validation-schemas";
 import { checkVerifyLimit, type VerifySlot } from "@/lib/verify-rate-limit";
+import {
+    recordLoginProfileVerification,
+    sanitizeLoginUrlForDisplay,
+    type LoginProfileValidationOutcome,
+} from "@/lib/portal-login-profile";
 
 const VERIFY_MAX = 5;
 const VERIFY_WINDOW_MS = 10 * 60 * 1000;
@@ -27,8 +32,163 @@ const verifyAttempts = new Map<string, VerifySlot>();
 
 type SsoMode = "FORM" | "POST" | "REROUTE" | "VAULT" | "REDIRECT" | "PROXY" | "TOKEN";
 type DispatchResult =
-    | { ok: boolean; message: string; handoff: boolean; verifyMode: SsoMode; apiProbe?: ApiProbe }
+    | {
+        ok: boolean;
+        outcome: LoginProfileValidationOutcome;
+        message: string;
+        handoff: boolean;
+        verifyMode: SsoMode;
+        apiProbe?: ApiProbe;
+    }
     | { status: number; body: Record<string, unknown> };
+
+type VerifyConfig = {
+    appId?: string | null;
+    url: string;
+    ssoMode: SsoMode;
+    httpMethod: "POST" | "GET";
+    usernameField: string;
+    passwordField: string;
+    extraFields?: Record<string, string> | null;
+    testUsername: string;
+    testPassword: string;
+    jsonApi?: { path: string } | null;
+};
+
+function sortedNames(value: unknown): string[] {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+    return Object.keys(value as Record<string, unknown>).sort();
+}
+
+function normalizedContractPath(value: string): string {
+    try {
+        return new URL(value, "http://portal-profile.invalid").pathname.replace(/\/{2,}/g, "/").replace(/\/$/, "") || "/";
+    } catch {
+        return value.split(/[?#]/, 1)[0].replace(/\/{2,}/g, "/").replace(/\/$/, "") || "/";
+    }
+}
+
+function sameStringArray(left: string[], right: string[]): boolean {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function matchesSavedAppConfiguration(app: {
+    url: string;
+    loginUrl: string | null;
+    ssoMode: string;
+    httpMethod: string;
+    usernameField: string;
+    passwordField: string;
+    extraFields: unknown;
+    loginProfile?: { apiContracts: unknown } | null;
+}, data: VerifyConfig, result: Exclude<DispatchResult, { status: number }>): boolean {
+    const savedTarget = sanitizeLoginUrlForDisplay(app.loginUrl || app.url);
+    const testedTarget = sanitizeLoginUrlForDisplay(data.url);
+    const sameBasicConfig = Boolean(savedTarget) &&
+        savedTarget === testedTarget &&
+        app.ssoMode === data.ssoMode &&
+        app.httpMethod.toUpperCase() === data.httpMethod.toUpperCase() &&
+        app.usernameField === data.usernameField &&
+        app.passwordField === data.passwordField &&
+        sameStringArray(sortedNames(app.extraFields), Object.keys(data.extraFields ?? {}).sort());
+    if (!sameBasicConfig) return false;
+
+    // JSON verification is authoritative only when the exact selected contract
+    // (method, path, and parameter shape) is part of the approved profile.
+    if (data.jsonApi) {
+        const liveContract = result.apiProbe?.contracts.find((contract) =>
+            contract.method === "POST" && normalizedContractPath(contract.path) === normalizedContractPath(data.jsonApi!.path),
+        );
+        const savedContracts = Array.isArray(app.loginProfile?.apiContracts) ? app.loginProfile.apiContracts : [];
+        const savedContract = savedContracts.find((raw) => {
+            if (!raw || typeof raw !== "object") return false;
+            const contract = raw as { method?: unknown; path?: unknown; params?: unknown };
+            return contract.method === "POST" &&
+                typeof contract.path === "string" &&
+                normalizedContractPath(contract.path) === normalizedContractPath(data.jsonApi!.path);
+        }) as { method: string; path: string; params?: unknown } | undefined;
+        return Boolean(
+            liveContract &&
+            savedContract &&
+            sameStringArray(
+                [...(liveContract.params ?? [])].sort(),
+                Array.isArray(savedContract.params) ? savedContract.params.filter((item): item is string => typeof item === "string").sort() : [],
+            ),
+        );
+    }
+
+    return true;
+}
+
+async function persistVerificationResult(data: VerifyConfig, result: Exclude<DispatchResult, { status: number }>) {
+    if (!data.appId) return;
+
+    const app = await prisma.portalApp.findUnique({
+        where: { id: data.appId },
+        select: {
+            id: true,
+            url: true,
+            loginUrl: true,
+            ssoMode: true,
+            httpMethod: true,
+            usernameField: true,
+            passwordField: true,
+            extraFields: true,
+            updatedAt: true,
+            loginProfileId: true,
+            loginProfileFingerprint: true,
+            loginProfile: { select: { apiContracts: true } },
+        },
+    });
+    if (!app) return;
+
+    // Unsaved or exploratory verification remains visible in the response/audit,
+    // but cannot mutate trusted app/profile verification state.
+    const matchesSavedConfig = matchesSavedAppConfiguration(app, data, result);
+    if (!matchesSavedConfig) return;
+
+    const verificationUpdate = result.outcome === "CREDENTIAL_ACCEPTED"
+        ? { loginVerifiedAt: new Date(), loginVerifyError: null }
+        : result.outcome === "REJECTED"
+          ? { loginVerifyError: "Verifikasi login terakhir ditolak." }
+          : { loginVerifyError: null };
+
+    const hasProfileBinding = Boolean(app.loginProfileId || app.loginProfileFingerprint);
+    if (hasProfileBinding) {
+        if (!app.loginProfileId || !app.loginProfileFingerprint) return;
+        const verifiedProfile = await recordLoginProfileVerification({
+            profileId: app.loginProfileId,
+            fingerprint: app.loginProfileFingerprint,
+            outcome: result.outcome,
+            errorMessage: result.outcome === "REJECTED" ? "Verifikasi login terakhir ditolak." : null,
+            config: {
+                loginUrl: app.loginUrl || app.url,
+                ssoMode: app.ssoMode,
+                httpMethod: app.httpMethod,
+                usernameField: app.usernameField,
+                passwordField: app.passwordField,
+            },
+            appSnapshot: {
+                id: app.id,
+                updatedAt: app.updatedAt,
+                loginProfileId: app.loginProfileId,
+                loginProfileFingerprint: app.loginProfileFingerprint,
+                verificationUpdate,
+            },
+        }).catch(() => null);
+        // The profile state and app verification status are committed together;
+        // a conflict leaves both unchanged.
+        if (!verifiedProfile) return;
+        return;
+    }
+
+    // Legacy unbound apps keep their existing verification telemetry, but the
+    // write still uses the original row version to reject stale admin requests.
+    await prisma.portalApp.updateMany({
+        where: { id: app.id, updatedAt: app.updatedAt },
+        data: verificationUpdate,
+    }).catch(() => {});
+}
 
 // POST /api/portal-apps/verify-login — SuperAdmin & ADMIN. Memakai konfigurasi
 // FORM saat ini (bukan DB), sehingga admin bisa menguji sebelum Save.
@@ -45,7 +205,7 @@ export async function POST(request: NextRequest) {
         if (!limit.allowed) {
             return NextResponse.json(
                 { error: "Terlalu banyak percobaan uji login. Coba lagi beberapa menit." },
-                { status: 429 }
+                { status: 429 },
             );
         }
 
@@ -68,7 +228,11 @@ export async function POST(request: NextRequest) {
                 entityType: "PORTAL_APP",
                 outcome: "FAILURE",
                 errorMessage: "Mode belum aktif",
-                metadata: { url: data.url, ssoMode: requestedMode, handoff: false },
+                metadata: {
+                    target: sanitizeLoginUrlForDisplay(data.url),
+                    ssoMode: requestedMode,
+                    handoff: false,
+                },
                 request,
             }).catch(() => {});
             return NextResponse.json(
@@ -76,63 +240,54 @@ export async function POST(request: NextRequest) {
                     error: `Mode ${requestedMode} belum aktif di portal — verifikasi tidak dijalankan. Pilih mode lain (FORM/POST/REROUTE/VAULT/REDIRECT).`,
                     verifyMode: requestedMode,
                 },
-                { status: 422 }
+                { status: 422 },
             );
         }
 
         let result: DispatchResult;
         try {
             result = await dispatch(data);
-        } catch (err) {
-            console.error("verify-login dispatch error:", err);
+        } catch (error) {
+            console.error("verify-login dispatch error:", error);
             return NextResponse.json({ error: "Gagal menjalankan uji login" }, { status: 422 });
         }
 
         if ("status" in result) {
-            // Jalur gagal-jelas (saat ini hanya tidak dipakai — semua DispatchResult
-            // membawa payload 200, tapi biarkan sebagai escape hatch).
             return NextResponse.json(result.body, { status: result.status });
         }
 
-        // Audit metadata.ssoMode = nilai aktual mode yang dipakai eksekusi.
-        // Sebelumnya literal "verify" — tidak bisa ditelusuri per-mode.
+        // Audit memakai outcome eksplisit: transport yang sehat bukan klaim bahwa
+        // kredensial diterima, tetapi tetap bukti sukses bahwa target dapat diuji.
         await logAudit({
             actorType: "ADMIN_USER",
             actorId: adminId,
             category: "PORTAL",
             action: "SSO_VERIFY_LOGIN",
             entityType: "PORTAL_APP",
-            outcome: result.ok ? "SUCCESS" : "FAILURE",
-            errorMessage: result.ok ? undefined : result.message,
-            metadata: { url: data.url, ssoMode: result.verifyMode, handoff: result.handoff },
+            outcome: result.outcome === "REJECTED" ? "FAILURE" : "SUCCESS",
+            errorMessage: result.outcome === "REJECTED" ? result.message : undefined,
+            metadata: {
+                target: sanitizeLoginUrlForDisplay(data.url),
+                ssoMode: result.verifyMode,
+                handoff: result.handoff,
+                validationOutcome: result.outcome,
+            },
             request,
         }).catch(() => {});
 
-        // Persist bukti verifikasi pada aplikasi (khusus alur EDIT). Catatan §9:
-        // walau config belum di-Save, loginVerifiedAt tetap di-set — artinya
-        // "form ini teruji", bukan "baris DB teruji". UI wajib memberi label
-        // "menggunakan konfigurasi belum disimpan".
-        if (data.appId) {
-            await prisma.portalApp
-                .update({
-                    where: { id: data.appId },
-                    data: result.ok
-                        ? { loginVerifiedAt: new Date(), loginVerifyError: null }
-                        : { loginVerifyError: result.message },
-                })
-                .catch(() => {});
-        }
+        await persistVerificationResult(data, result);
 
         const body: Record<string, unknown> = {
             ok: result.ok,
             handoff: result.handoff,
             message: result.message,
             verifyMode: result.verifyMode,
+            validationOutcome: result.outcome,
         };
         if (result.apiProbe) body.apiProbe = result.apiProbe;
         return NextResponse.json(body);
-    } catch (err) {
-        console.error("verify-login error:", err);
+    } catch (error) {
+        console.error("verify-login error:", error);
         return NextResponse.json({ error: "Gagal menjalankan uji login" }, { status: 422 });
     }
 }
@@ -141,17 +296,7 @@ export async function POST(request: NextRequest) {
  * Dispatcher per-mode. Dipisah dari route handler agar mudah diuji mandiri
  * dari scripts/ (lihat test-detect-verify-v2.ts).
  */
-async function dispatch(data: {
-    url: string;
-    ssoMode: SsoMode;
-    httpMethod: "POST" | "GET";
-    usernameField: string;
-    passwordField: string;
-    extraFields?: Record<string, string> | null;
-    testUsername: string;
-    testPassword: string;
-    jsonApi?: { path: string } | null;
-}): Promise<DispatchResult> {
+async function dispatch(data: VerifyConfig): Promise<DispatchResult> {
     const {
         url,
         ssoMode,
@@ -169,11 +314,12 @@ async function dispatch(data: {
     // Mode tidak relevan untuk probe (senantiasa POST JSON ke path spec).
     if (jsonApi) {
         const apiProbe = await probeApiLayer(url);
-        const contract = apiProbe.contracts.find((c) => c.path === jsonApi.path && c.method === "POST");
+        const contract = apiProbe.contracts.find((item) => item.path === jsonApi.path && item.method === "POST");
         if (!contract) {
             return {
                 ok: false,
-                message: `Kontrak untuk ${jsonApi.path} tidak ditemukan di spec (${apiProbe.note})`,
+                outcome: "REJECTED",
+                message: "Kontrak API login yang dipilih tidak ditemukan pada observasi target.",
                 handoff: false,
                 verifyMode: ssoMode,
                 apiProbe,
@@ -187,22 +333,23 @@ async function dispatch(data: {
             else bodyObj[name] = testUsername;
         }
         const targetUrl = new URL(contract.path, url).href;
-        const res = await relayRequest({
+        const response = await relayRequest({
             url: targetUrl,
             method: "POST",
             body: JSON.stringify(bodyObj),
             headers: { "content-type": "application/json" },
             allowInsecureTLS: true,
         });
-        const status = res.status;
-        const ok = status >= 200 && status < 300;
+        const status = response.status;
+        const acceptedTransport = status >= 200 && status < 300;
         const denied = status === 401 || status === 403;
         return {
-            ok: ok || denied,
-            message: ok
-                ? "API menerima format — kredensial valid."
+            ok: acceptedTransport,
+            outcome: acceptedTransport ? "TRANSPORT_VALIDATED" : "REJECTED",
+            message: acceptedTransport
+                ? "API menerima format permintaan. Penerimaan kredensial belum dapat dibuktikan tanpa marker sukses khusus."
                 : denied
-                  ? "API hidup, kredensial ditolak (401/403)."
+                  ? "API hidup, tetapi kredensial ditolak (401/403)."
                   : `Respons tak terduga: HTTP ${status}.`,
             handoff: false,
             verifyMode: ssoMode,
@@ -214,10 +361,12 @@ async function dispatch(data: {
     if (ssoMode === "VAULT" || ssoMode === "REDIRECT") {
         const page = await fetchLoginPage(url);
         const apiProbe = await probeApiLayer(page.finalUrl);
+        const safeFinalUrl = sanitizeLoginUrlForDisplay(page.finalUrl) ?? "target";
         if (page.loopDetected) {
             return {
                 ok: false,
-                message: `Halaman berputar dalam pengalihan (berakhir di ${page.finalUrl}) — server tampak hidup, tetapi URL tidak mengarah ke formulir.`,
+                outcome: "REJECTED",
+                message: `Halaman berputar dalam pengalihan (berakhir di ${safeFinalUrl}) — server tampak hidup, tetapi URL tidak mengarah ke formulir.`,
                 handoff: false,
                 verifyMode: ssoMode,
                 apiProbe,
@@ -226,6 +375,7 @@ async function dispatch(data: {
         if (!page.html) {
             return {
                 ok: false,
+                outcome: "REJECTED",
                 message: "Halaman kosong / tidak dapat diambil.",
                 handoff: false,
                 verifyMode: ssoMode,
@@ -234,6 +384,7 @@ async function dispatch(data: {
         }
         return {
             ok: true,
+            outcome: "TRANSPORT_VALIDATED",
             message: `Halaman reachable; mode ${ssoMode} tidak mengirim kredensial.`,
             handoff: false,
             verifyMode: ssoMode,
@@ -264,29 +415,32 @@ async function dispatch(data: {
         });
         jar.absorb(postRes.rawSetCookies);
         const oracle = parseOracleAuthResponse(postRes.html);
-        const ok = oracle.status === "success" && !!oracle.url;
-        const failureReason = ok
+        const accepted = oracle.status === "success" && Boolean(oracle.url);
+        const failureReason = accepted
             ? null
             : oracle.status === "failed"
               ? `Oracle menolak kredensial uji (${oracle.errorCode || "unknown"}).`
               : "Respons Oracle tidak dikenali — periksa USERNAME FIELD/PASSWORD FIELD pada deteksi.";
         return {
-            ok,
-            message: ok ? "Login Oracle berhasil (REROUTE)." : (failureReason ?? "Login Oracle gagal."),
+            ok: accepted,
+            outcome: accepted ? "CREDENTIAL_ACCEPTED" : "REJECTED",
+            message: accepted ? "Login Oracle berhasil (REROUTE)." : (failureReason ?? "Login Oracle gagal."),
             handoff: false,
             verifyMode: "REROUTE",
         };
     }
 
-    // SPA tanpa form: kasih tahu admin, jangan kirim kredensial.
+    // SPA tanpa form: kasih tahu admin, jangan kirim kredensial. Halaman tetap
+    // membuktikan target dapat dijangkau, tetapi bukan penerimaan kredensial.
     if (!fresh.passwordField && looksLikeClientRenderedApp(page.html)) {
         const apiProbe = await probeApiLayer(page.finalUrl);
         return {
             ok: false,
+            outcome: "TRANSPORT_VALIDATED",
             message:
                 "Halaman ini dirakit JavaScript (SPA), jadi kredensial tidak dapat diuji dari portal. " +
                 (apiProbe.layer === "OPENAPI"
-                    ? `Kontrak API JSON terdeteksi — gunakan tombol "Uji JSON".`
+                    ? "Kontrak API JSON terdeteksi — gunakan tombol \"Uji JSON\"."
                     : "Uji manual: buka halaman login aplikasi dan login dengan akun tersimpan."),
             handoff: false,
             verifyMode: ssoMode,
@@ -301,17 +455,17 @@ async function dispatch(data: {
     const actionUrl = fresh.formAction ? new URL(fresh.formAction, page.finalUrl).href : page.finalUrl;
 
     const formExtras = { ...(extraFields ?? {}) };
-    for (const [k, v] of Object.entries(fresh.extraFields)) {
+    for (const [key, value] of Object.entries(fresh.extraFields)) {
         // Volatil: SELALU ambil dari halaman runtime (lihat aturan §3).
-        if (VOLATILE_RE.test(k)) formExtras[k] = v;
-        else if (!(k in formExtras)) formExtras[k] = v;
+        if (VOLATILE_RE.test(key)) formExtras[key] = value;
+        else if (!(key in formExtras)) formExtras[key] = value;
     }
     const finalExtras = await refreshVolatileFields(actionUrl, formExtras);
 
     const params = new URLSearchParams();
     params.append(userField, testUsername);
     params.append(passField, testPassword);
-    for (const [k, v] of Object.entries(finalExtras)) params.append(k, v);
+    for (const [key, value] of Object.entries(finalExtras)) params.append(key, value);
 
     // ponytail: relayLogin saat ini hanya jalur POST. httpMethod dipayload untuk
     // dipenuhi schema dan siap dipakai engine GET di iterasi berikut. Saat
@@ -320,6 +474,7 @@ async function dispatch(data: {
     if (httpMethod === "GET") {
         return {
             ok: false,
+            outcome: "TRANSPORT_VALIDATED",
             message:
                 "Engine untuk HTTP METHOD GET belum diaktifkan pada dispatcher ini. " +
                 "Pilih POST, atau hubungi tim bila aplikasi Anda memang hanya menerima GET.",
@@ -335,15 +490,21 @@ async function dispatch(data: {
         referer: page.finalUrl,
         allowInsecureTLS: true,
     });
+    const validationOutcome: LoginProfileValidationOutcome = !outcome.ok
+        ? "REJECTED"
+        : outcome.handoff
+          ? "CREDENTIAL_ACCEPTED"
+          : "TRANSPORT_VALIDATED";
 
     return {
         ok: outcome.ok,
+        outcome: validationOutcome,
         message: outcome.ok
             ? outcome.handoff
                 ? "Login berhasil — konfigurasi terbukti (mode POST/federasi)."
-                : "Login berhasil. Bila aplikasi berbeda domain dari portal, pastikan PORTAL_SSO_COOKIE_DOMAIN sesuai atau aplikasi memakai federasi."
+                : "Transport login berhasil. Penerimaan kredensial belum dapat dibuktikan tanpa marker sukses khusus."
             : (outcome.failureReason ?? "Login ditolak aplikasi."),
-        handoff: !!outcome.handoff,
+        handoff: Boolean(outcome.handoff),
         verifyMode: ssoMode,
     };
 }

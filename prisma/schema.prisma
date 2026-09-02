@@ -633,6 +633,22 @@ model HrisGatewayConfig {
   @@map("hris_gateway_config")
 }
 
+// Status bukti profile adaptif. Status ini terpisah dari approval supaya
+// respons 401/403 API dapat dicatat sebagai transport hidup, bukan login sukses.
+enum PortalLoginProfileState {
+  DISCOVERED
+  TRANSPORT_VALIDATED
+  CREDENTIAL_ACCEPTED
+  REJECTED
+  STALE
+}
+
+enum PortalLoginProfileApproval {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model PortalApp {
   id            String        @id @default(cuid())
   name          String
@@ -671,6 +687,12 @@ model PortalApp {
   detectedFingerprint  String?
   loginFormChanged     Boolean       @default(false) // form login berubah sejak config terakhir
 
+  // Profile yang sudah disetujui hanya menyimpan fingerprint + metadata.
+  // Konfigurasi app tetap snapshot sendiri dan tidak otomatis diubah saat profile drift.
+  loginProfileId          String?
+  loginProfileFingerprint String?
+  loginProfile            PortalLoginProfile? @relation(fields: [loginProfileId], references: [id], onDelete: SetNull)
+
   userAccess    PortalUserAppAccess[]
   credentials   PortalUserAppCredential[]
   groupApps     PortalGroupApp[]
@@ -681,7 +703,82 @@ model PortalApp {
   @@index([category])
   @@index([displayOrder])
   @@index([healthStatus])
+  @@index([loginProfileId])
   @@map("portal_apps")
+}
+
+// Profile reusable per origin + entrypoint. Tidak menyimpan HTML, cookie,
+// token, nilai hidden field, maupun kredensial; evidence hanya nama/struktur.
+model PortalLoginProfile {
+  id                       String                       @id @default(cuid())
+  origin                   String
+  entryPath                String
+  finalPath                String?
+  formActionPath           String?
+  httpMethod               String?
+  usernameField            String?
+  passwordField            String?
+  extraFieldNames          Json?
+  recommendedMode          PortalSsoMode?
+  detectionLayer           String
+  discoveryConfidence      Int?
+  discoverySignals         Json?
+  warnings                 Json?
+  apiContracts             Json?
+  apiSpecPath              String?
+  currentFingerprint       String
+  approvedFingerprint      String?
+  approvalStatus           PortalLoginProfileApproval @default(PENDING)
+  state                    PortalLoginProfileState    @default(DISCOVERED)
+  detectorVersion          String
+  lastDiscoveredAt         DateTime                    @default(now())
+  lastCheckedAt            DateTime?
+  lastTransportValidatedAt DateTime?
+  lastCredentialAcceptedAt DateTime?
+  staleAt                  DateTime?
+  lastError                String?
+  approvedAt               DateTime?
+  approvedById             String?
+  createdAt                DateTime                    @default(now())
+  updatedAt                DateTime                    @updatedAt
+
+  apps      PortalApp[]
+  evidence  PortalLoginProfileEvidence[]
+
+  @@unique([origin, entryPath])
+  @@index([approvalStatus])
+  @@index([state])
+  @@index([lastCheckedAt])
+  @@map("portal_login_profiles")
+}
+
+// Riwayat fingerprint kandidat. Ini memungkinkan admin melihat bahwa profile
+// berubah tanpa menimpa konfigurasi yang sebelumnya telah disetujui.
+model PortalLoginProfileEvidence {
+  id                  String             @id @default(cuid())
+  profileId           String
+  fingerprint         String
+  source              String
+  finalPath           String?
+  formActionPath      String?
+  httpMethod          String?
+  usernameField       String?
+  passwordField       String?
+  extraFieldNames     Json?
+  recommendedMode     PortalSsoMode?
+  detectionLayer      String
+  discoveryConfidence Int?
+  discoverySignals    Json?
+  warnings            Json?
+  apiContracts        Json?
+  apiSpecPath         String?
+  createdAt           DateTime           @default(now())
+
+  profile PortalLoginProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, createdAt])
+  @@index([fingerprint])
+  @@map("portal_login_profile_evidence")
 }
 
 model PortalUserAppAccess {

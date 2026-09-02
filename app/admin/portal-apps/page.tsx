@@ -12,6 +12,7 @@ import Button, { buttonClasses } from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Card from "@/components/ui/Card";
+import LoginProfileReview, { type LoginProfileSummary } from "@/components/portal-admin/LoginProfileReview";
 
 interface PortalApp {
     id: string;
@@ -40,8 +41,11 @@ interface PortalApp {
     detectionLayer?: string | null;
     loginFormChanged?: boolean;
     ssoFailure24h?: number;
-    apiLayer?: string | null;                    // "OPENAPI" | "NONE" (v2)
-    apiContracts?: Array<{                       // detected API contracts (v2)
+    loginProfileId?: string | null;
+    loginProfileFingerprint?: string | null;
+    loginProfile?: LoginProfileSummary | null;
+    apiLayer?: string | null;
+    apiContracts?: Array<{
         method: string;
         path: string;
         params: string[];
@@ -76,8 +80,10 @@ const emptyForm = {
     detectionConfidence: null as number | null,
     detectionSignals: null as string[] | null,
     detectionLayer: null as string | null,
-    apiLayer: null as string | null,            // v2: "OPENAPI" or "NONE"
-    apiContracts: null as Array<{               // v2: detected API contracts
+    loginProfileId: null as string | null,
+    loginProfileFingerprint: null as string | null,
+    apiLayer: null as string | null,
+    apiContracts: null as Array<{
         method: string;
         path: string;
         params: string[];
@@ -110,6 +116,8 @@ export default function PortalAppsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [detecting, setDetecting] = useState(false);
     const [detectMsg, setDetectMsg] = useState<{ type: "ok" | "err"; text: string; warnings?: string[] } | null>(null);
+    const [profileCandidate, setProfileCandidate] = useState<LoginProfileSummary | null>(null);
+    const [approvingProfile, setApprovingProfile] = useState(false);
     const [verify, setVerify] = useState<{ username: string; password: string }>({ username: "", password: "" });
     const [verifyState, setVerifyState] = useState<"idle" | "running" | "ok" | "fail">("idle");
     const [verifyMsg, setVerifyMsg] = useState("");
@@ -178,6 +186,8 @@ export default function PortalAppsPage() {
                 detectionConfidence: formData.detectionConfidence,
                 detectionSignals: formData.detectionSignals,
                 detectionLayer: formData.detectionLayer,
+                loginProfileId: formData.loginProfileId,
+                loginProfileFingerprint: formData.loginProfileFingerprint,
             };
 
             const response = await fetch(url, {
@@ -238,6 +248,98 @@ export default function PortalAppsPage() {
         }
     };
 
+    const updateLoginConfig = (patch: Partial<typeof emptyForm>) => {
+        setFormData((previous) => ({
+            ...previous,
+            ...patch,
+            // Mengedit target/field/mode secara manual tidak boleh tetap tampak
+            // sebagai konfigurasi dari profile yang sebelumnya disetujui.
+            loginProfileId: null,
+            loginProfileFingerprint: null,
+        }));
+    };
+
+    const applyProfile = (profile: LoginProfileSummary) => {
+        setFormData((previous) => {
+            // Profile hanya membawa nama field, bukan nilai hidden/token. Pertahankan
+            // nilai yang sudah diketik admin dan tambahkan nama baru dengan nilai kosong;
+            // runtime akan mengambil nilai live setelah profile bound.
+            const extraFieldsByName: Record<string, string> = {};
+            let canMergeExtraFields = true;
+            if (previous.extraFields.trim()) {
+                try {
+                    const parsed: unknown = JSON.parse(previous.extraFields);
+                    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+                        canMergeExtraFields = false;
+                    } else {
+                        for (const [name, value] of Object.entries(parsed)) {
+                            if (typeof value === "string") extraFieldsByName[name] = value;
+                        }
+                    }
+                } catch {
+                    canMergeExtraFields = false;
+                }
+            }
+            if (canMergeExtraFields) {
+                for (const rawName of profile.extraFieldNames) {
+                    const name = rawName.trim();
+                    // @json-api is a detector marker, not an HTML field.
+                    if (name && name !== "@json-api" && !(name in extraFieldsByName)) {
+                        extraFieldsByName[name] = "";
+                    }
+                }
+            }
+
+            return {
+                ...previous,
+                ssoMode: profile.recommendedMode ?? previous.ssoMode,
+                httpMethod: profile.httpMethod === "GET" || profile.httpMethod === "POST"
+                    ? profile.httpMethod
+                    : previous.httpMethod,
+                usernameField: profile.usernameField ?? previous.usernameField,
+                passwordField: profile.passwordField ?? previous.passwordField,
+                extraFields: canMergeExtraFields && Object.keys(extraFieldsByName).length > 0
+                    ? JSON.stringify(extraFieldsByName, null, 2)
+                    : previous.extraFields,
+                detectionConfidence: profile.discoveryConfidence,
+                detectionSignals: profile.discoverySignals,
+                detectionLayer: profile.detectionLayer,
+                apiLayer: profile.apiContracts.length > 0 ? "OPENAPI" : previous.apiLayer,
+                apiContracts: profile.apiContracts.length > 0 ? profile.apiContracts : previous.apiContracts,
+                loginProfileId: profile.id,
+                loginProfileFingerprint: profile.currentFingerprint,
+            };
+        });
+        setDetectMsg({
+            type: "ok",
+            text: "Profile disetujui telah diterapkan ke editor. Nama field diterapkan tanpa nilai live; simpan aplikasi untuk mengikat snapshot ini.",
+        });
+    };
+
+    const handleApproveAndApplyProfile = async () => {
+        if (!profileCandidate) return;
+        setApprovingProfile(true);
+        try {
+            const response = await fetch(`/api/portal-login-profiles/${profileCandidate.id}/approve`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ fingerprint: profileCandidate.currentFingerprint }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.profile) {
+                setDetectMsg({ type: "err", text: data.error || "Gagal menyetujui profile deteksi." });
+                return;
+            }
+            const approved = data.profile as LoginProfileSummary;
+            setProfileCandidate(approved);
+            applyProfile(approved);
+        } catch {
+            setDetectMsg({ type: "err", text: "Terjadi kesalahan jaringan saat menyetujui profile." });
+        } finally {
+            setApprovingProfile(false);
+        }
+    };
+
     const handleDetect = async () => {
         const target = (formData.loginUrl || "").trim();
         if (!target) {
@@ -246,6 +348,7 @@ export default function PortalAppsPage() {
         }
         setDetecting(true);
         setDetectMsg(null);
+        setProfileCandidate(null);
         try {
             const res = await fetch("/api/portal-apps/detect-fields", {
                 method: "POST",
@@ -253,21 +356,21 @@ export default function PortalAppsPage() {
                 body: JSON.stringify({ url: target }),
             });
             const data = await res.json();
+            const detectedProfile = data.profile && typeof data.profile === "object"
+                ? data.profile as LoginProfileSummary
+                : null;
+            if (detectedProfile) setProfileCandidate(detectedProfile);
+
             if (!res.ok) {
                 // Tidak ada field yang terdeteksi bukan bukti bahwa konfigurasi yang
-                // sedang diedit harus menjadi VAULT. Memaksa VAULT di sini membuat
-                // kegagalan snapshot browser terlihat seperti keputusan SSO final.
-                // Tampilkan rekomendasi sebagai diagnosis, tetapi pertahankan pilihan
-                // admin sampai form benar-benar terdeteksi atau admin mengubahnya sendiri.
+                // sedang diedit harus menjadi VAULT. Tampilan hanya memberi kandidat
+                // yang perlu ditinjau dan tidak mengubah konfigurasi editor otomatis.
                 const notes: string[] = Array.isArray(data.layerNotes) ? data.layerNotes : [];
                 const apiContracts = Array.isArray(data.apiContracts)
                     ? (data.apiContracts as Array<{ method: string; path: string; params: string[] }>)
                     : [];
                 const hasJsonLogin = data.apiLayer === "OPENAPI" && apiContracts.length > 0;
 
-                // Probe API dikembalikan bersama 422 saat SPA tidak bisa dirender.
-                // Simpan ke state modal agar tombol "Uji JSON" tetap tersedia; sebelumnya
-                // hasil ini hilang di error path sehingga target React selalu tampak VAULT.
                 if (hasJsonLogin) {
                     setFormData((prev) => ({
                         ...prev,
@@ -280,16 +383,17 @@ export default function PortalAppsPage() {
                     ? `Rekomendasi ${data.recommendedMode ?? "SSO"}: ${data.recommendationReason} Mode saat ini (${formData.ssoMode}) tidak diubah.`
                     : undefined;
                 const apiNote = hasJsonLogin
-                    ? `Kontrak login JSON terdeteksi: ${apiContracts.map((c) => `${c.method} ${c.path}`).join(", ")}. Gunakan "Uji JSON"; mode saat ini tidak diubah otomatis.`
+                    ? `Kontrak login JSON terdeteksi: ${apiContracts.map((contract) => `${contract.method} ${contract.path}`).join(", ")}. Gunakan "Uji JSON"; mode saat ini tidak diubah otomatis.`
                     : data.apiProbeNote
                       ? String(data.apiProbeNote)
                       : undefined;
                 setDetectMsg({
-                    type: hasJsonLogin ? "ok" : "err",
-                    text: hasJsonLogin
-                        ? "Form belum ada di HTML statis, tetapi endpoint login aplikasi berhasil terdeteksi."
+                    type: hasJsonLogin || Boolean(detectedProfile) ? "ok" : "err",
+                    text: detectedProfile
+                        ? "Kandidat profile ditemukan. Tinjau bukti lalu setujui sebelum menerapkannya."
                         : data.error || "Deteksi gagal",
                     warnings: [
+                        ...(data.profilePersistenceWarning ? [String(data.profilePersistenceWarning)] : []),
                         ...(apiNote ? [apiNote] : []),
                         ...(recommendation ? [recommendation] : []),
                         ...notes,
@@ -298,48 +402,37 @@ export default function PortalAppsPage() {
                 return;
             }
 
-            // Mode yang disarankan menang atas pilihan admin bila berbeda —
-            // rekomendasi berbasis bukti dari halaman, bukan tebakan.
-            const modeChanged =
-                data.recommendedMode && data.recommendedMode !== formData.ssoMode;
-
+            // Temuan tidak langsung ditulis ke konfigurasi. Admin harus meninjau
+            // kandidat dan menekan "Setujui & terapkan" terlebih dahulu.
             setFormData((prev) => ({
                 ...prev,
-                loginUrl: data.finalUrl || prev.loginUrl,
-                usernameField: data.usernameField ?? prev.usernameField,
-                passwordField: data.passwordField ?? prev.passwordField,
-                httpMethod: data.httpMethod ?? prev.httpMethod,
-                ssoMode: data.recommendedMode ?? prev.ssoMode,
-                extraFields: Object.keys(data.extraFields || {}).length
-                    ? JSON.stringify(data.extraFields, null, 2)
-                    : prev.extraFields,
                 detectionConfidence: data.detectionConfidence ?? prev.detectionConfidence,
                 detectionSignals: data.detectionSignals ?? prev.detectionSignals,
                 detectionLayer: data.detectionLayer ?? prev.detectionLayer,
-                // v2: Save API layer detection results
-                apiLayer: data.apiLayer ?? prev.apiLayer,              // "OPENAPI" | "NONE"
-                apiContracts: data.apiContracts ?? prev.apiContracts,  // array of contracts
+                apiLayer: data.apiLayer ?? prev.apiLayer,
+                apiContracts: data.apiContracts ?? prev.apiContracts,
             }));
             const detectedInfo = [
                 data.usernameField ? `User: ${data.usernameField}` : null,
                 data.passwordField ? `Pass: ${data.passwordField}` : null,
             ].filter(Boolean).join(" | ");
 
-            const allWarnings = [...(data.warnings ?? []), ...(data.layerNotes ?? [])];
-            if (modeChanged) {
-                allWarnings.unshift(
-                    `SSO Mode diubah dari ${formData.ssoMode} ke ${data.recommendedMode}. ${data.recommendationReason ?? ""}`.trim()
-                );
-            }
-            // Add API contract warning/info
-            if (data.apiLayer === "OPENAPI" && data.apiContracts && data.apiContracts.length > 0) {
-                const contracts = data.apiContracts.map((c: any) => `${c.method} ${c.path}`).join(", ");
+            const allWarnings = [
+                ...(data.profilePersistenceWarning ? [String(data.profilePersistenceWarning)] : []),
+                ...(data.warnings ?? []),
+                ...(data.layerNotes ?? []),
+            ];
+            if (data.apiLayer === "OPENAPI" && Array.isArray(data.apiContracts) && data.apiContracts.length > 0) {
+                const contracts = (data.apiContracts as Array<{ method: string; path: string }>).
+                    map((contract) => `${contract.method} ${contract.path}`).join(", ");
                 allWarnings.push(`Kontrak API JSON terdeteksi: ${contracts} — tombol "Uji JSON" tersedia`);
             }
 
             setDetectMsg({
                 type: "ok",
-                text: `Berhasil terdeteksi: ${detectedInfo}`,
+                text: detectedProfile
+                    ? "Kandidat profile ditemukan. Tinjau bukti lalu setujui sebelum menerapkannya."
+                    : `Berhasil terdeteksi: ${detectedInfo}`,
                 warnings: allWarnings.length ? allWarnings : undefined,
             });
         } catch {
@@ -440,6 +533,8 @@ export default function PortalAppsPage() {
     const openAddModal = () => {
         setEditingApp(null);
         setFormData(emptyForm);
+        setProfileCandidate(null);
+        setApprovingProfile(false);
         setError("");
         setShowModal(true);
     };
@@ -459,7 +554,10 @@ export default function PortalAppsPage() {
             }
         }
 
+        const profileContracts = app.loginProfile?.apiContracts ?? app.apiContracts ?? null;
         setEditingApp(app);
+        setProfileCandidate(app.loginProfile ?? null);
+        setApprovingProfile(false);
         setFormData({
             name: app.name,
             slug: app.slug,
@@ -476,11 +574,13 @@ export default function PortalAppsPage() {
             isActive: app.isActive,
             isPublic: app.isPublic ?? true,
             displayOrder: app.displayOrder,
-            detectionConfidence: app.detectionConfidence ?? null,
-            detectionSignals: app.detectionSignals ?? null,
-            detectionLayer: app.detectionLayer ?? null,
-            apiLayer: app.apiLayer ?? null,
-            apiContracts: app.apiContracts ?? null,
+            detectionConfidence: app.detectionConfidence ?? app.loginProfile?.discoveryConfidence ?? null,
+            detectionSignals: app.detectionSignals ?? app.loginProfile?.discoverySignals ?? null,
+            detectionLayer: app.detectionLayer ?? app.loginProfile?.detectionLayer ?? null,
+            loginProfileId: app.loginProfileId ?? null,
+            loginProfileFingerprint: app.loginProfileFingerprint ?? null,
+            apiLayer: profileContracts?.length ? "OPENAPI" : app.apiLayer ?? null,
+            apiContracts: profileContracts,
         });
         setError("");
         setShowModal(true);
@@ -490,14 +590,17 @@ export default function PortalAppsPage() {
     const isFormUnsaved = (): boolean => {
         if (!editingApp) return true; // never saved
         const keyFields = [
+            ["url", formData.url, editingApp.url],
             ["loginUrl", formData.loginUrl, editingApp.loginUrl || ""],
             ["ssoMode", formData.ssoMode, editingApp.ssoMode],
             ["usernameField", formData.usernameField, editingApp.usernameField || ""],
             ["passwordField", formData.passwordField, editingApp.passwordField || ""],
             ["httpMethod", formData.httpMethod, editingApp.httpMethod],
+            ["loginProfileId", formData.loginProfileId, editingApp.loginProfileId || null],
+            ["loginProfileFingerprint", formData.loginProfileFingerprint, editingApp.loginProfileFingerprint || null],
         ] as const;
         
-        for (const [field, current, saved] of keyFields) {
+        for (const [, current, saved] of keyFields) {
             if (current !== saved) return true;
         }
         
@@ -536,6 +639,8 @@ export default function PortalAppsPage() {
         setShowModal(false);
         setEditingApp(null);
         setFormData(emptyForm);
+        setProfileCandidate(null);
+        setApprovingProfile(false);
         setError("");
         setApiProbeResult(null);
     };
@@ -654,6 +759,14 @@ export default function PortalAppsPage() {
             {app.loginFormChanged && (
                 <Badge tone="warning">Form berubah</Badge>
             )}
+            {app.loginProfile?.state === "STALE" && (
+                <Badge tone="warning">Profile perlu review</Badge>
+            )}
+            {app.loginProfile && app.loginProfile.state !== "STALE" && (
+                <Badge tone={app.loginProfile.approvalStatus === "APPROVED" ? "info" : "neutral"}>
+                    {app.loginProfile.approvalStatus === "APPROVED" ? "Profile disetujui" : "Profile pending"}
+                </Badge>
+            )}
             {(app.ssoFailure24h ?? 0) >= 3 && (
                 <Badge tone="danger">Gagal ×{app.ssoFailure24h}/24h</Badge>
             )}
@@ -700,7 +813,6 @@ export default function PortalAppsPage() {
             {/* Header */}
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
                     <h1 className="font-display text-2xl font-semibold text-text-1">Aplikasi Portal</h1>
                 </div>
                 <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
@@ -876,7 +988,7 @@ export default function PortalAppsPage() {
                                     label="URL *"
                                     type="text"
                                     value={formData.url}
-                                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                                    onChange={(e) => updateLoginConfig({ url: e.target.value })}
                                     required
                                     placeholder="https://app.example.com"
                                 />
@@ -896,11 +1008,11 @@ export default function PortalAppsPage() {
                                     <Input
                                         type="text"
                                         value={formData.loginUrl}
-                                        onChange={(e) => setFormData({ ...formData, loginUrl: e.target.value })}
+                                        onChange={(e) => updateLoginConfig({ loginUrl: e.target.value })}
                                         placeholder="https://app.example.com/login"
                                     />
                                     {detectMsg && (
-                                        <div className="mt-1 space-y-1">
+                                        <div className="mt-1 space-y-1" aria-live="polite">
                                             <p className={`text-xs ${detectMsg.type === "ok" ? "text-success" : "text-danger"}`}>
                                                 {detectMsg.text}
                                             </p>
@@ -929,12 +1041,21 @@ export default function PortalAppsPage() {
                                 </div>
                             </div>
 
+                            {profileCandidate && (
+                                <LoginProfileReview
+                                    profile={profileCandidate}
+                                    isApproving={approvingProfile}
+                                    onApproveAndApply={handleApproveAndApplyProfile}
+                                    onApply={() => applyProfile(profileCandidate)}
+                                />
+                            )}
+
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
                                     <Select
                                         label="SSO MODE"
                                         value={formData.ssoMode}
-                                        onChange={(e) => setFormData({ ...formData, ssoMode: e.target.value })}
+                                        onChange={(e) => updateLoginConfig({ ssoMode: e.target.value })}
                                         options={[
                                             // Label guardrail TASK-14: REDIRECT aktif
                                             // (tanpa penanda); PROXY/TOKEN belum siap.
@@ -955,7 +1076,7 @@ export default function PortalAppsPage() {
                                 <Select
                                     label="HTTP METHOD"
                                     value={formData.httpMethod}
-                                    onChange={(e) => setFormData({ ...formData, httpMethod: e.target.value })}
+                                    onChange={(e) => updateLoginConfig({ httpMethod: e.target.value })}
                                     options={[
                                         { value: "POST", label: "POST" },
                                         { value: "GET", label: "GET" },
@@ -968,14 +1089,14 @@ export default function PortalAppsPage() {
                                     label="USERNAME FIELD"
                                     type="text"
                                     value={formData.usernameField}
-                                    onChange={(e) => setFormData({ ...formData, usernameField: e.target.value })}
+                                    onChange={(e) => updateLoginConfig({ usernameField: e.target.value })}
                                     placeholder="username"
                                 />
                                 <Input
                                     label="PASSWORD FIELD"
                                     type="text"
                                     value={formData.passwordField}
-                                    onChange={(e) => setFormData({ ...formData, passwordField: e.target.value })}
+                                    onChange={(e) => updateLoginConfig({ passwordField: e.target.value })}
                                     placeholder="password"
                                 />
                             </div>
@@ -984,7 +1105,7 @@ export default function PortalAppsPage() {
                                 <span className="mb-2 block text-sm font-semibold text-text-1">EXTRA FIELDS (JSON)</span>
                                 <textarea
                                     value={formData.extraFields}
-                                    onChange={(e) => setFormData({ ...formData, extraFields: e.target.value })}
+                                    onChange={(e) => updateLoginConfig({ extraFields: e.target.value })}
                                     placeholder='{"key": "value"}'
                                     rows={3}
                                     className="w-full resize-y rounded-control border border-border bg-surface-1 px-3 py-2 font-mono text-sm text-text-1 placeholder:text-text-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"

@@ -5,6 +5,13 @@ import prisma from "@/lib/prisma";
 import { compare } from "bcryptjs";
 import { decryptCredential } from "@/lib/portal-crypto";
 import { logAudit } from "@/lib/audit";
+import {
+    LoginProfileLaunchBlockedError,
+    revalidateBoundProfileBeforeCredentialRelease,
+    type ProfileBoundPortalApp,
+    withAuthorizedPortalAppCredentialRelease,
+    PortalAppCredentialReleaseDeniedError,
+} from "@/lib/portal-login-profile";
 
 // POST /api/portal/credentials/reveal - Decrypt and reveal password after re-authenticating with portal password
 export async function POST(request: NextRequest) {
@@ -49,15 +56,112 @@ export async function POST(request: NextRequest) {
         // 2. Fetch the target credential belonging to this user
         const credential = await prisma.portalUserAppCredential.findFirst({
             where: { id: credentialId, portalUserId: userId },
-            include: { app: { select: { id: true, name: true } } },
+            select: {
+                id: true,
+                label: true,
+                app: {
+                    select: {
+                        id: true,
+                        name: true,
+                        url: true,
+                        loginUrl: true,
+                        ssoMode: true,
+                        httpMethod: true,
+                        usernameField: true,
+                        passwordField: true,
+                        extraFields: true,
+                        updatedAt: true,
+                        isActive: true,
+                        isPublic: true,
+                        loginProfileId: true,
+                        loginProfileFingerprint: true,
+                        loginProfile: true,
+                    },
+                },
+            },
         });
 
         if (!credential) {
             return NextResponse.json({ error: "Kredensial tidak ditemukan" }, { status: 404 });
         }
 
-        // 3. Decrypt credential blob
-        const decrypted = decryptCredential(credential.credentialBlob);
+        let releaseApp: ProfileBoundPortalApp = {
+            ...credential.app,
+            loginUrl: credential.app.loginUrl || credential.app.url,
+        };
+        try {
+            const preparation = await revalidateBoundProfileBeforeCredentialRelease(releaseApp);
+            if (preparation) releaseApp = preparation.app;
+        } catch (error) {
+            if (!(error instanceof LoginProfileLaunchBlockedError)) throw error;
+            await logAudit({
+                actorType: "PORTAL_USER",
+                actorId: userId,
+                category: "SECURITY",
+                action: "CREDENTIAL_REVEAL_BLOCKED_PROFILE",
+                entityType: "PORTAL_CREDENTIAL",
+                entityId: credential.id,
+                outcome: "FAILURE",
+                severity: "WARNING",
+                changes: { appId: releaseApp.id, appName: credential.app.name },
+                request,
+            }).catch((err) => console.error("Audit log error:", err));
+            return NextResponse.json(
+                { error: "Profile login aplikasi perlu ditinjau admin sebelum kredensial dibuka" },
+                { status: 409 },
+            );
+        }
+
+        // The shared release boundary is authoritative for bound and unbound
+        // apps, including active-user/app and current portal access checks.
+        let decrypted: { username: string; password: string; extra?: Record<string, string> };
+        try {
+            const released = await withAuthorizedPortalAppCredentialRelease(
+                { app: releaseApp, portalUserId: userId, credentialId },
+                (credentialBlob, authorizedApp) => ({
+                    app: authorizedApp,
+                    credential: decryptCredential(credentialBlob),
+                }),
+            );
+            if (!released) {
+                return NextResponse.json({ error: "Kredensial tidak ditemukan" }, { status: 404 });
+            }
+            releaseApp = released.app;
+            decrypted = released.credential;
+        } catch (error) {
+            if (error instanceof PortalAppCredentialReleaseDeniedError) {
+                await logAudit({
+                    actorType: "PORTAL_USER",
+                    actorId: userId,
+                    category: "SECURITY",
+                    action: "CREDENTIAL_REVEAL_ACCESS_DENIED",
+                    entityType: "PORTAL_CREDENTIAL",
+                    entityId: credential.id,
+                    outcome: "FAILURE",
+                    severity: "WARNING",
+                    changes: { appId: releaseApp.id, appName: credential.app.name },
+                    request,
+                }).catch((err) => console.error("Audit log error:", err));
+                return NextResponse.json({ error: "Akses ke aplikasi tidak tersedia" }, { status: 403 });
+            }
+            if (!(error instanceof LoginProfileLaunchBlockedError)) throw error;
+            await logAudit({
+                actorType: "PORTAL_USER",
+                actorId: userId,
+                category: "SECURITY",
+                action: "CREDENTIAL_REVEAL_BLOCKED_PROFILE",
+                entityType: "PORTAL_CREDENTIAL",
+                entityId: credential.id,
+                outcome: "FAILURE",
+                severity: "WARNING",
+                changes: { appId: releaseApp.id, appName: credential.app.name },
+                request,
+            }).catch((err) => console.error("Audit log error:", err));
+            return NextResponse.json(
+                { error: "Profile login aplikasi perlu ditinjau admin sebelum kredensial dibuka" },
+                { status: 409 },
+            );
+        }
 
         // 4. Log security audit event
         await logAudit({
@@ -67,7 +171,7 @@ export async function POST(request: NextRequest) {
             action: "CREDENTIAL_REVEALED",
             entityType: "PORTAL_CREDENTIAL",
             entityId: credential.id,
-            changes: { appId: credential.appId, label: credential.label, appName: credential.app.name },
+            changes: { appId: releaseApp.id, label: credential.label, appName: credential.app.name },
             request,
         }).catch((err) => console.error("Audit log error:", err));
 

@@ -7,6 +7,14 @@ import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
 import { relayRequest } from "@/lib/portal-fetch-html";
 import { parseOracleAuthResponse, sharedCookieDomain } from "@/lib/portal-sso-relay";
+import {
+    assertPortalAppProfileLaunchEligible,
+    revalidateBoundProfileBeforeCredentialRelease,
+    LoginProfileLaunchBlockedError,
+    type ProfileBoundPortalApp,
+    withAuthorizedPortalAppCredentialRelease,
+    PortalAppCredentialReleaseDeniedError,
+} from "@/lib/portal-login-profile";
 
 export async function POST(request: NextRequest) {
     try {
@@ -30,6 +38,7 @@ export async function POST(request: NextRequest) {
 
         const app = await prisma.portalApp.findUnique({
             where: { slug: appSlug },
+            include: { loginProfile: true },
         });
 
         if (!app || !app.isActive || app.ssoMode !== "REROUTE") {
@@ -41,25 +50,104 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
-        let credential;
-        if (credentialId) {
-            credential = await prisma.portalUserAppCredential.findFirst({
-                where: { id: credentialId, portalUserId },
+        const profileBlockedRedirect = () =>
+            NextResponse.redirect(new URL(`/portal?error=sso_profile_review&app=${appSlug}`, baseUrl), 302);
+
+        // Endpoint bisa dipanggil langsung setelah launch page dirender, sehingga
+        // eligibility profile wajib diverifikasi ulang tepat sebelum credential dibaca.
+        try {
+            assertPortalAppProfileLaunchEligible({
+                ...app,
+                loginUrl: app.loginUrl || app.url,
             });
-        } else {
-            // fallback: akun pertama (kompatibilitas pemanggil lama tanpa credentialId)
-            credential = await prisma.portalUserAppCredential.findFirst({
-                where: { portalUserId, appId: app.id },
-                orderBy: { createdAt: "asc" },
-            });
+        } catch (error) {
+            if (!(error instanceof LoginProfileLaunchBlockedError)) throw error;
+            await logAudit({
+                actorType: "PORTAL_USER",
+                actorId: portalUserId,
+                category: "SECURITY",
+                action: "SSO_LAUNCH_BLOCKED_PROFILE",
+                entityType: "PORTAL_APP",
+                entityId: app.id,
+                appId: app.id,
+                outcome: "FAILURE",
+                severity: "WARNING",
+                metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" },
+            }).catch(() => {});
+            return profileBlockedRedirect();
         }
 
-        if (!credential) {
-            return NextResponse.json({ error: "No credential" }, { status: 400 });
+        let releaseApp: ProfileBoundPortalApp = {
+            ...app,
+            loginUrl: app.loginUrl || app.url,
+        };
+        try {
+            const preparation = await revalidateBoundProfileBeforeCredentialRelease(releaseApp);
+            if (preparation) releaseApp = preparation.app;
+        } catch (error) {
+            if (!(error instanceof LoginProfileLaunchBlockedError)) throw error;
+            await logAudit({
+                actorType: "PORTAL_USER",
+                actorId: portalUserId,
+                category: "SECURITY",
+                action: "SSO_LAUNCH_BLOCKED_PROFILE",
+                entityType: "PORTAL_APP",
+                entityId: app.id,
+                appId: app.id,
+                outcome: "FAILURE",
+                severity: "WARNING",
+                metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE", reason: "PROFILE_RELEASE_CAS_FAILED" },
+            }).catch(() => {});
+            return profileBlockedRedirect();
         }
 
-        const cred = decryptCredential(credential.credentialBlob);
-        const loginUrl = app.loginUrl || app.url;
+        let cred: { username: string; password: string; extra?: Record<string, string> };
+        try {
+            const released = await withAuthorizedPortalAppCredentialRelease(
+                { app: releaseApp, portalUserId, credentialId },
+                (credentialBlob, authorizedApp) => ({
+                    app: authorizedApp,
+                    credential: decryptCredential(credentialBlob),
+                }),
+            );
+            if (!released) {
+                return NextResponse.json({ error: "No credential" }, { status: 400 });
+            }
+            releaseApp = released.app;
+            cred = released.credential;
+        } catch (error) {
+            if (error instanceof PortalAppCredentialReleaseDeniedError) {
+                await logAudit({
+                    actorType: "PORTAL_USER",
+                    actorId: portalUserId,
+                    category: "SECURITY",
+                    action: "SSO_LAUNCH_ACCESS_DENIED",
+                    entityType: "PORTAL_APP",
+                    entityId: app.id,
+                    appId: app.id,
+                    outcome: "FAILURE",
+                    severity: "WARNING",
+                    metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" },
+                }).catch(() => {});
+                return NextResponse.json({ error: "Access denied" }, { status: 403 });
+            }
+            if (!(error instanceof LoginProfileLaunchBlockedError)) throw error;
+            await logAudit({
+                actorType: "PORTAL_USER",
+                actorId: portalUserId,
+                category: "SECURITY",
+                action: "SSO_LAUNCH_BLOCKED_PROFILE",
+                entityType: "PORTAL_APP",
+                entityId: app.id,
+                appId: app.id,
+                outcome: "FAILURE",
+                severity: "WARNING",
+                metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE", reason: "PROFILE_RELEASE_LOCK_FAILED" },
+            }).catch(() => {});
+            return profileBlockedRedirect();
+        }
+
+        const loginUrl = releaseApp.loginUrl;
 
         // Oracle EBS AppsLocalLogin.jsp login is an XHR-style POST to the SAME url with
         // a custom header X-Service: AuthenticateUser. Response is a JS object literal (not JSON,
@@ -71,16 +159,16 @@ export async function POST(request: NextRequest) {
         // Build POST body. Oracle param names are literally "username"/"password" regardless of the
         // DOM input name= attributes; usernameField/passwordField config must be set to those literals.
         const formBody = new URLSearchParams();
-        formBody.append(app.usernameField || "username", cred.username);
-        formBody.append(app.passwordField || "password", cred.password);
+        formBody.append(releaseApp.usernameField || "username", cred.username);
+        formBody.append(releaseApp.passwordField || "password", cred.password);
 
         const extraFields: Record<string, string> = {};
         if (cred.extra) Object.assign(extraFields, cred.extra);
-        if (app.extraFields && typeof app.extraFields === "object") {
-            Object.assign(extraFields, app.extraFields as Record<string, string>);
+        if (releaseApp.extraFields && typeof releaseApp.extraFields === "object") {
+            Object.assign(extraFields, releaseApp.extraFields as Record<string, string>);
         }
-        for (const [k, v] of Object.entries(extraFields)) {
-            formBody.append(k, v as string);
+        for (const [key, value] of Object.entries(extraFields)) {
+            formBody.append(key, value as string);
         }
 
         // POST AuthenticateUser (server-to-server; Origin/Referer spoofed to target domain).
@@ -97,7 +185,7 @@ export async function POST(request: NextRequest) {
             headers: { "X-Service": "AuthenticateUser" },
         });
 
-        const finalCookiePairs: string[] = postRes.rawSetCookies.map((c) => c.split(";")[0]);
+        const finalCookiePairs: string[] = postRes.rawSetCookies.map((cookie) => cookie.split(";")[0]);
 
         // Parse Oracle's JS-object-literal response (keys unquoted, hex-escaped values).
         // login.js uses eval(); we extract fields with regex to avoid eval.
@@ -115,7 +203,7 @@ export async function POST(request: NextRequest) {
                 appId: app.id, // KPI /admin/portal-audit memfilter appId
                 outcome: "FAILURE",
                 errorMessage: `Oracle login rejected credentials (${errorCode || "unknown"})`,
-                metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" }
+                metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" },
             }).catch(() => {});
 
             return NextResponse.redirect(new URL(`/portal?error=sso_failed&app=${appSlug}`, baseUrl), 302);
@@ -124,11 +212,11 @@ export async function POST(request: NextRequest) {
         const cookieMap = new Map<string, string>();
         for (const pair of finalCookiePairs) {
             if (pair.includes("=")) {
-                const [k, ...v] = pair.split("=");
-                cookieMap.set(k.trim(), v.join("="));
+                const [key, ...value] = pair.split("=");
+                cookieMap.set(key.trim(), value.join("="));
             }
         }
-        
+
         // Direct-redirect mode (Laporan Investigasi SSO Oracle):
         // Re-issue Oracle's session cookies to the browser scoped to the shared domain,
         // then redirect to Oracle's REAL landing URL. No reverse proxy → no 502 (proxy
@@ -162,7 +250,7 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.redirect(
                 new URL(`/portal?error=sso_cross_domain&app=${appSlug}`, baseUrl),
-                302
+                302,
             );
         }
 
@@ -171,13 +259,13 @@ export async function POST(request: NextRequest) {
 
         // Build one Set-Cookie header per Oracle cookie, scoped to the shared TLD so the
         // browser sends them to appsprod.santos.co.id (Oracle) directly.
-        const setCookieHeaders = Array.from(cookieMap.entries()).map(([k, v]) => {
+        const setCookieHeaders = Array.from(cookieMap.entries()).map(([key, value]) => {
             const parts = [
-                `${k}=${v}`,
-                `Path=/`,
+                `${key}=${value}`,
+                "Path=/",
                 `Domain=${cookieDomain}`,
-                `HttpOnly`,
-                `SameSite=Lax`,
+                "HttpOnly",
+                "SameSite=Lax",
             ];
             if (isHttps) parts.push("Secure");
             parts.push("Max-Age=28800"); // 8 hours, matches Oracle session lifetime
@@ -194,16 +282,16 @@ export async function POST(request: NextRequest) {
             entityId: app.id,
             appId: app.id, // KPI /admin/portal-audit memfilter appId
             outcome: "SUCCESS",
-            metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" }
+            metadata: { appSlug: app.slug, appName: app.name, ssoMode: "REROUTE" },
         }).catch(() => {});
 
-        const res = NextResponse.redirect(new URL(destinationUrl, baseUrl), 302);
-        for (const sc of setCookieHeaders) {
-            res.headers.append("Set-Cookie", sc);
+        const response = NextResponse.redirect(new URL(destinationUrl, baseUrl), 302);
+        for (const setCookie of setCookieHeaders) {
+            response.headers.append("Set-Cookie", setCookie);
         }
-        return res;
-    } catch (err) {
-        console.error("REROUTE SSO Error:", err);
-        return NextResponse.json({ error: "Internal Server Error", details: err instanceof Error ? err.message : String(err) }, { status: 500 });
+        return response;
+    } catch (error) {
+        console.error("REROUTE SSO Error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
