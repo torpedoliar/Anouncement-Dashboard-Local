@@ -113,30 +113,18 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
     // itu (filter/pagination) yang tampil hanya masthead + feed terfilter.
     const isFrontPage = !categorySlug && currentPage === 1;
 
-    // Prioritaskan artikel hero; jika kurang dari 4, lengkapi dengan artikel
-    // terbaru/pinned agar halaman depan punya lead + 3 story sekunder.
+    // Prioritaskan artikel hero; jika kurang dari 5, lengkapi dengan artikel
+    // terbaru/pinned — pool rotasi hero (diputar klien tiap 5 detik).
     const heroMap = new Map<string, (typeof announcements)[number]>();
     publishedHeroAnnouncements.forEach((a) => heroMap.set(a.id, a));
-    if (heroMap.size < 4) {
+    if (heroMap.size < 5) {
         announcements.forEach((a) => {
-            if (heroMap.size < 4 && !heroMap.has(a.id)) {
+            if (heroMap.size < 5 && !heroMap.has(a.id)) {
                 heroMap.set(a.id, a);
             }
         });
     }
     const frontStories = Array.from(heroMap.values());
-
-    // Rotasi halaman depan per 15 menit, murni server-side (tanpa JS/timer):
-    // lead berganti antar kunjungan supaya tidak bosan, tapi stabil dalam satu
-    // bucket waktu sehingga refresh tidak mengacak urutan.
-    if (frontStories.length > 1) {
-        const bucket = Math.floor(Date.now() / (15 * 60 * 1000));
-        const offset = bucket % frontStories.length;
-        frontStories.push(...frontStories.splice(0, offset));
-    }
-
-    const lead = frontStories[0] ?? null;
-    const secondary = frontStories.slice(1, 4);
     const frontIds = new Set(frontStories.map((a) => a.id));
 
     // Story yang tampil di halaman depan tidak diulang di feed bawahnya.
@@ -180,24 +168,11 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
                 tagline={settings?.heroSubtitle || `Informasi terbaru dari ${site.name}`}
             />
 
-            {/* Halaman depan editorial: lead + story sekunder (tanpa timer/JS) */}
-            {isFrontPage && lead && (
+            {/* Halaman depan editorial: pool hero berotasi 5 detik di klien */}
+            {isFrontPage && frontStories.length > 0 && (
                 <FrontPage
                     siteSlug={siteSlug}
-                    lead={{
-                        id: lead.id,
-                        slug: lead.slug,
-                        title: lead.title,
-                        excerpt: lead.excerpt,
-                        imagePath: lead.imagePath,
-                        videoPath: lead.videoPath,
-                        videoType: lead.videoType,
-                        youtubeUrl: lead.youtubeUrl,
-                        wordCount: lead.wordCount,
-                        category: lead.category,
-                        createdAt: lead.createdAt,
-                    }}
-                    secondary={secondary.map((a) => ({
+                    stories={frontStories.map((a) => ({
                         id: a.id,
                         slug: a.slug,
                         title: a.title,
