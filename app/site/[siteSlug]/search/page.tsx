@@ -100,7 +100,8 @@ export default async function SiteSearchPage({ params, searchParams }: PageProps
 
             {/* Header Pencarian */}
             <div style={{
-                padding: "48px 24px",
+                // 80px atas = ruang Navbar fixed (h-20).
+                padding: "calc(80px + 48px) 24px 48px",
                 textAlign: "center",
                 background: `linear-gradient(180deg, ${site.primaryColor}15 0%, transparent 100%)`,
             }}>

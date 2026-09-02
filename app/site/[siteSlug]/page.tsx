@@ -125,6 +125,16 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
         });
     }
     const frontStories = Array.from(heroMap.values());
+
+    // Rotasi halaman depan per 15 menit, murni server-side (tanpa JS/timer):
+    // lead berganti antar kunjungan supaya tidak bosan, tapi stabil dalam satu
+    // bucket waktu sehingga refresh tidak mengacak urutan.
+    if (frontStories.length > 1) {
+        const bucket = Math.floor(Date.now() / (15 * 60 * 1000));
+        const offset = bucket % frontStories.length;
+        frontStories.push(...frontStories.splice(0, offset));
+    }
+
     const lead = frontStories[0] ?? null;
     const secondary = frontStories.slice(1, 4);
     const frontIds = new Set(frontStories.map((a) => a.id));
@@ -161,7 +171,9 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
     ];
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "var(--surface-0)", color: "var(--text-1)" }}>
+        // paddingTop 80px = tinggi Navbar fixed (h-20) — Masthead tidak lagi
+        // tertutup navbar seperti hero full-bleed sebelumnya.
+        <div style={{ minHeight: "100vh", paddingTop: "80px", backgroundColor: "var(--surface-0)", color: "var(--text-1)" }}>
             {/* Nameplate koran — selalu tampil, juga saat feed kosong */}
             <Masthead
                 siteName={site.name}
