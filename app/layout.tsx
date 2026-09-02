@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat, Sora, JetBrains_Mono } from "next/font/google";
+import { Inter, Lora, Sora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/contexts/ToastContext";
 const inter = Inter({
@@ -8,11 +8,12 @@ const inter = Inter({
   display: "swap",
 });
 
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
+// Serif editorial — headline permukaan publik (suara "koran pagi").
+const lora = Lora({
+  variable: "--font-serif",
   subsets: ["latin"],
   display: "swap",
-  weight: ["500", "600", "700", "800"],
+  weight: ["600", "700"],
 });
 
 // Masthead / display / headings — the newsroom voice (spec §3.2)
@@ -88,7 +89,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_PREPAINT_SCRIPT }} />
       </head>
       <body
-        className={`${inter.variable} ${montserrat.variable} ${sora.variable} ${mono.variable} font-sans antialiased min-h-screen`}
+        className={`${inter.variable} ${lora.variable} ${sora.variable} ${mono.variable} font-sans antialiased min-h-screen`}
         suppressHydrationWarning
       >
         <ToastProvider>

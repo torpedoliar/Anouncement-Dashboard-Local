@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FiMessageSquare, FiSend, FiUser, FiMail, FiCornerDownRight } from "react-icons/fi";
+import { ChatCircle, PaperPlaneTilt, User, EnvelopeSimple, ArrowBendDownRight } from "@phosphor-icons/react";
 
 interface Comment {
     id: string;
@@ -107,13 +107,12 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                 display: "flex",
                 alignItems: "center",
                 gap: "12px",
-                fontFamily: "Montserrat, sans-serif",
                 fontSize: "24px",
                 fontWeight: 700,
                 color: "var(--text-primary)",
                 marginBottom: "32px",
             }}>
-                <FiMessageSquare size={24} />
+                <ChatCircle size={24} />
                 Komentar ({comments.length})
             </h2>
 
@@ -165,7 +164,7 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                             fontSize: "13px",
                             marginBottom: "6px",
                         }}>
-                            <FiUser size={14} />
+                            <User size={14} />
                             Nama *
                         </label>
                         <input
@@ -193,7 +192,7 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                             fontSize: "13px",
                             marginBottom: "6px",
                         }}>
-                            <FiMail size={14} />
+                            <EnvelopeSimple size={14} />
                             Email (opsional)
                         </label>
                         <input
@@ -261,7 +260,7 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                         opacity: isSubmitting ? 0.6 : 1,
                     }}
                 >
-                    <FiSend size={16} />
+                    <PaperPlaneTilt size={16} />
                     {isSubmitting ? "Mengirim..." : "Kirim Komentar"}
                 </button>
             </form>
@@ -279,7 +278,7 @@ export default function CommentSection({ announcementId }: CommentSectionProps) 
                     backgroundColor: "var(--bg-secondary)",
                     border: "1px solid var(--bg-tertiary)",
                 }}>
-                    <FiMessageSquare size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
+                    <ChatCircle size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
                     <p>Belum ada komentar. Jadilah yang pertama!</p>
                 </div>
             ) : (
@@ -342,7 +341,7 @@ function CommentCard({ comment, formatDate, onReply, isReply }: CommentCardProps
                             cursor: "pointer",
                         }}
                     >
-                        <FiCornerDownRight size={12} />
+                        <ArrowBendDownRight size={12} />
                         Balas
                     </button>
                 )}

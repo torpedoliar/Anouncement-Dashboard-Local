@@ -6,7 +6,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { FiSearch } from "react-icons/fi";
+import { MagnifyingGlass } from "@/components/ui/client-icons";
 import AnnouncementCard from "@/components/AnnouncementCard";
 
 // Thumbnail/reading helpers sekarang hidup di dalam AnnouncementCard (T4).
@@ -68,7 +68,7 @@ function chipStyle(active: boolean): React.CSSProperties {
         borderRadius: "999px",
         textDecoration: "none",
         border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
-        backgroundColor: active ? "var(--accent-subtle)" : "transparent",
+        backgroundColor: active ? "var(--site-primary-alpha)" : "transparent",
         color: active ? "var(--accent)" : "var(--text-2)",
     };
 }
@@ -105,7 +105,7 @@ export default async function SiteSearchPage({ params, searchParams }: PageProps
                 background: `linear-gradient(180deg, ${site.primaryColor}15 0%, transparent 100%)`,
             }}>
                 <h1 style={{ fontSize: "32px", fontWeight: 700, marginBottom: "24px" }}>
-                    <FiSearch style={{ marginRight: "12px", verticalAlign: "middle" }} aria-hidden="true" />
+                    <MagnifyingGlass style={{ marginRight: "12px", verticalAlign: "middle" }} aria-hidden="true" />
                     Pencarian
                 </h1>
 
@@ -211,7 +211,7 @@ export default async function SiteSearchPage({ params, searchParams }: PageProps
                         borderRadius: "12px",
                         border: "1px solid var(--border)",
                     }}>
-                        <FiSearch size={48} style={{ color: "var(--text-3)", marginBottom: "16px" }} aria-hidden="true" />
+                        <MagnifyingGlass size={48} style={{ color: "var(--text-3)", marginBottom: "16px" }} aria-hidden="true" />
                         <p style={{ color: "var(--text-3)" }}>
                             {query ? `Tidak ada hasil untuk "${query}"` : "Masukkan kata kunci pencarian"}
                         </p>

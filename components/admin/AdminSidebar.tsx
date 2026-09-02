@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -62,6 +62,37 @@ export default function AdminSidebar({
     };
 
     const activeHref = findActiveAdminItem(pathname, adminNavGroups, isSuperAdmin)?.href;
+
+    // Marker aktif yang MELUNCUR ke item terpilih — diukur dari DOM seperti
+    // CategoryStrip publik, tapi vertikal. Posisi relatif terhadap nav yang
+    // scrollable: getBoundingClientRect + scrollTop supaya marker ikut konten.
+    const navRef = useRef<HTMLElement>(null);
+    const [marker, setMarker] = useState<{ top: number; height: number; visible: boolean }>({
+        top: 0,
+        height: 0,
+        visible: false,
+    });
+
+    useEffect(() => {
+        const measure = () => {
+            const nav = navRef.current;
+            const active = nav?.querySelector('[aria-current="page"]');
+            if (nav && active) {
+                const navRect = nav.getBoundingClientRect();
+                const rect = active.getBoundingClientRect();
+                setMarker({
+                    top: rect.top - navRect.top + nav.scrollTop,
+                    height: rect.height,
+                    visible: true,
+                });
+            } else {
+                setMarker((m) => ({ ...m, visible: false }));
+            }
+        };
+        measure();
+        window.addEventListener("resize", measure);
+        return () => window.removeEventListener("resize", measure);
+    }, [activeHref]);
 
     return (
         <aside
@@ -167,7 +198,21 @@ export default function AdminSidebar({
             </div>
 
             {/* Navigasi */}
-            <nav className="flex-1 overflow-y-auto py-4" aria-label="Menu utama">
+            <nav ref={navRef} className="relative flex-1 overflow-y-auto py-4" aria-label="Menu utama">
+                {/* Marker item aktif — batang aksen yang meluncur antar item.
+                    Tanpa JS ia tak tampil; state aktif tetap terbaca dari
+                    bg-accent-subtle + aria-current. */}
+                <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-0 w-[3px] rounded-r-full bg-accent"
+                    style={{
+                        top: marker.top,
+                        height: marker.height,
+                        opacity: marker.visible ? 1 : 0,
+                        transition:
+                            "top var(--motion-standard) var(--motion-ease), height var(--motion-standard) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease)",
+                    }}
+                />
                 <ul className="m-0 list-none p-0">
                     {adminNavGroups.map((group) => {
                         const items = group.items.filter(

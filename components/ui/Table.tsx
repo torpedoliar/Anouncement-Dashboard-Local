@@ -45,7 +45,8 @@ export default function Table({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm" aria-label={ariaLabel}>
+      {/* tabular-nums: kolom angka rata digit, tidak bergeser saat nilai berubah. */}
+      <table className="w-full border-collapse text-sm tabular-nums" aria-label={ariaLabel}>
         <thead>
           <tr className="border-b border-border">
             {columns.map((col) => {

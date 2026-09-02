@@ -57,10 +57,10 @@ export default function AppCard({
                             height={40}
                             src={logoPath}
                             alt={name}
-                            className="h-10 w-10 shrink-0 rounded-card object-cover border border-border"
+                            className="h-10 w-10 shrink-0 rounded-card object-cover border border-border transition-colors duration-150 group-hover:border-accent/50"
                         />
                     ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-surface-3 text-base font-bold text-text-2 border border-border">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-card bg-surface-3 text-base font-bold text-text-2 border border-border transition-colors duration-150 group-hover:border-accent/50 group-hover:text-accent">
                             {name.charAt(0).toUpperCase()}
                         </div>
                     )}
@@ -77,8 +77,10 @@ export default function AppCard({
                 {/* Baris status — lebar penuh, tidak bersaing ruang dengan nama */}
                 <div className="mt-3">
                     {isOnline && (
+                        /* Dot statis saat sehat — pulse/ping direservasi untuk
+                           masalah (degraded/offline) supaya berarti. */
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success border border-success/20">
-                            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-success" />
                             Online{healthLatencyMs ? ` (${healthLatencyMs}ms)` : ""}
                         </span>
                     )}
@@ -93,7 +95,7 @@ export default function AppCard({
                     )}
                     {isDegraded && (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning border border-warning/20">
-                            <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" />
                             Lambat{healthLatencyMs ? ` (${healthLatencyMs}ms)` : ""}
                         </span>
                     )}
@@ -107,7 +109,7 @@ export default function AppCard({
 
                 {/* Offline Warning Notice if server is down */}
                 {isOffline && (
-                    <div className="mt-3 flex items-start gap-2 rounded-control border border-danger/30 bg-danger-subtle/30 p-2.5 text-xs text-danger font-medium">
+                    <div className="mt-3 flex items-start gap-2 rounded-control border border-danger/30 bg-danger/10 p-2.5 text-xs text-danger font-medium">
                         <Warning size={15} className="shrink-0 mt-0.5" />
                         <span>Server target tidak merespon ({healthError || "Offline"}). Akses mungkin terkendala.</span>
                     </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FiMenu, FiX } from "react-icons/fi";
+import { List, X } from "@phosphor-icons/react";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -105,7 +105,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                                 aria-expanded={isMobileMenuOpen}
                                 className="cursor-pointer p-2 text-text-1 transition-colors duration-150 hover:text-accent lg:hidden"
                             >
-                                {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+                                {isMobileMenuOpen ? <X size={24} /> : <List size={24} />}
                             </button>
                         </div>
                     </div>

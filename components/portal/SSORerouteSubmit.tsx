@@ -85,7 +85,7 @@ export default function SSORerouteSubmit({ app, cred, credentialId }: SSOReroute
                             <div className="sso-ring sso-ring-middle"></div>
                             <div className="sso-ring sso-ring-inner"></div>
                         </div>
-                        <span className="text-sm text-text-2 animate-sso-glow">
+                        <span className="text-sm text-text-2">
                             {status === "preparing" ? "Menghubungkan..." : "Mengalihkan..."}
                         </span>
                     </>

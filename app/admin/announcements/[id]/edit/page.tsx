@@ -68,26 +68,12 @@ export default async function EditAnnouncementPage({
 
     return (
         <div style={{ padding: '32px' }}>
-            {/* Header */}
+            {/* Header — judul + deskripsi, tanpa eyebrow. */}
             <div style={{ marginBottom: '32px' }}>
-                <p style={{
-                    color: 'var(--brand-red)',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    letterSpacing: '0.2em',
-                    marginBottom: '4px',
-                }}>
-                    EDIT
-                </p>
-                <h1 style={{
-                    fontFamily: 'Montserrat, sans-serif',
-                    fontSize: '24px',
-                    fontWeight: 700,
-                    color: 'var(--text-primary)',
-                }}>
+                <h1 className="font-display text-title font-bold" style={{ color: 'var(--text-primary)' }}>
                     Edit Pengumuman
                 </h1>
-                <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
+                <p className="text-small" style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
                     Perbarui pengumuman yang sudah ada
                 </p>
             </div>

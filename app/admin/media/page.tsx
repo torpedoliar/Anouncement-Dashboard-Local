@@ -139,9 +139,6 @@ export default function MediaGalleryPage() {
             {/* Header */}
             <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
                 <div>
-                    <p className="text-accent text-xs font-semibold tracking-widest mb-1">
-                        MEDIA
-                    </p>
                     <h1 className="text-2xl font-bold text-text-1 flex items-center gap-3">
                         <ImageIcon size={24} weight="duotone" className="text-accent" />
                         Galeri Media

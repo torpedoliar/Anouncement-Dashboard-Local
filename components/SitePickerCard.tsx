@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { FiArrowRight, FiFileText, FiTag } from "react-icons/fi";
+import { ArrowRight, FileText, Tag } from "@phosphor-icons/react";
 
 interface SitePickerCardProps {
     site: {
@@ -137,7 +137,7 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
                         color: "var(--text-tertiary)",
                     }}
                 >
-                    <FiFileText size={14} />
+                    <FileText size={14} />
                     <span>{articleCount} artikel</span>
                 </div>
                 <div
@@ -149,7 +149,7 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
                         color: "var(--text-tertiary)",
                     }}
                 >
-                    <FiTag size={14} />
+                    <Tag size={14} />
                     <span>{categoryCount} kategori</span>
                 </div>
             </div>
@@ -166,7 +166,7 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
                 }}
             >
                 Kunjungi Site
-                <FiArrowRight size={16} />
+                <ArrowRight size={16} />
             </div>
         </Link>
     );

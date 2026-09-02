@@ -144,7 +144,6 @@ export default function NewsletterPage() {
         <div className="mx-auto max-w-[1400px] p-6 md:p-8">
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">NEWSLETTER</p>
                     <h1 className="font-display text-2xl font-bold text-text-1">Subscriber</h1>
                     <p className="mt-1 text-sm text-text-3">Kelola daftar penerima newsletter situs.</p>
                 </div>

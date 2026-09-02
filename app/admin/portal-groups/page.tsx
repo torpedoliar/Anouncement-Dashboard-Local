@@ -297,7 +297,6 @@ export default function PortalGroupsPage() {
             {/* Header */}
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">PORTAL</p>
                     <h1 className="font-display text-2xl font-semibold text-text-1">Grup Portal</h1>
                 </div>
                 <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>

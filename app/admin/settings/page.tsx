@@ -595,21 +595,7 @@ export default function SettingsPage() {
                 marginBottom: '32px',
             }}>
                 <div>
-                    <p style={{
-                        color: 'var(--brand-red)',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        letterSpacing: '0.2em',
-                        marginBottom: '4px',
-                    }}>
-                        KONFIGURASI
-                    </p>
-                    <h1 style={{
-                        fontFamily: 'Montserrat, sans-serif',
-                        fontSize: '24px',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                    }}>
+                    <h1 className="font-display text-title font-bold" style={{ color: 'var(--text-primary)' }}>
                         Pengaturan
                     </h1>
                 </div>
@@ -662,15 +648,7 @@ export default function SettingsPage() {
                     padding: '24px',
                     overflow: 'hidden',
                 }}>
-                    <p style={{
-                        color: 'var(--brand-red)',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        letterSpacing: '0.2em',
-                        marginBottom: '4px',
-                    }}>UMUM</p>
                     <h2 style={{
-                        fontFamily: 'Montserrat, sans-serif',
                         fontWeight: 700,
                         color: 'var(--text-primary)',
                         marginBottom: '24px',
@@ -780,7 +758,6 @@ export default function SettingsPage() {
                     padding: '24px',
                 }}>
                     <h2 style={{
-                        fontFamily: 'Montserrat, sans-serif',
                         fontSize: '16px',
                         fontWeight: 700,
                         color: 'var(--text-primary)',
@@ -813,7 +790,6 @@ export default function SettingsPage() {
                     padding: '24px',
                 }}>
                     <h2 style={{
-                        fontFamily: 'Montserrat, sans-serif',
                         fontSize: '16px',
                         fontWeight: 700,
                         color: 'var(--text-primary)',

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FaSun, FaMoon } from 'react-icons/fa';
+import { Sun, Moon } from '@phosphor-icons/react';
 
 export function ThemeToggle() {
   const [isLight, setIsLight] = useState(false);
@@ -40,9 +40,9 @@ export function ThemeToggle() {
       className="p-2 rounded-control hover:bg-surface-2 transition-colors focus-visible:ring-2 focus-visible:ring-accent"
     >
       {isLight ? (
-        <FaMoon className="text-text-2" />
+        <Moon className="text-text-2" />
       ) : (
-        <FaSun className="text-brand-red" />
+        <Sun className="text-brand-red" />
       )}
     </button>
   );

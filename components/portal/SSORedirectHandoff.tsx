@@ -82,7 +82,7 @@ export default function SSORedirectHandoff({ app }: SSORedirectHandoffProps) {
                                 <div className="sso-ring sso-ring-middle"></div>
                                 <div className="sso-ring sso-ring-inner"></div>
                             </div>
-                            <span className="text-sm text-text-2 animate-sso-glow">Menyiapkan...</span>
+                            <span className="text-sm text-text-2">Menyiapkan...</span>
                         </>
                     ) : failed ? (
                         <span className="text-sm text-warning">Hubungi admin atau coba lagi.</span>

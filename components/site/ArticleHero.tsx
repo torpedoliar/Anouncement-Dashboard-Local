@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { FiCalendar, FiUser, FiEye, FiClock, FiVolume2, FiVolumeX, FiArrowLeft } from "react-icons/fi";
+import { CalendarBlank, User, Eye, Clock, SpeakerHigh, SpeakerSlash, ArrowLeft } from "@phosphor-icons/react";
 import Link from "next/link";
 
 interface ArticleHeroProps {
@@ -125,7 +125,7 @@ export default function ArticleHero({
                                 transition: "all 0.2s"
                             }}
                         >
-                            {isMuted ? <FiVolumeX size={20} /> : <FiVolume2 size={20} />}
+                            {isMuted ? <SpeakerSlash size={20} /> : <SpeakerHigh size={20} />}
                         </button>
                     </>
                 )}
@@ -205,7 +205,7 @@ export default function ArticleHero({
                             marginBottom: "12px",
                         }}
                     >
-                        <FiArrowLeft size={16} aria-hidden="true" />
+                        <ArrowLeft size={16} aria-hidden="true" />
                         <span style={{ lineHeight: 1.35 }}>{backLabel}</span>
                     </Link>
                 )}
@@ -234,9 +234,10 @@ export default function ArticleHero({
 
                 {/* Title */}
                 <h1
+                    className="font-serif"
                     style={{
                         fontSize: "clamp(32px, 5vw, 56px)", // Responsive font size
-                        fontWeight: 800,
+                        fontWeight: 700,
                         lineHeight: 1.1,
                         marginBottom: "24px",
                         // ponytail: fixed-light, bukan token tema — judul selalu di
@@ -264,21 +265,21 @@ export default function ArticleHero({
                     {author && (
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             <div style={{ width: "24px", height: "24px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <FiUser size={14} />
+                                <User size={14} />
                             </div>
                             <span>{author.name}</span>
                         </div>
                     )}
                     <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <FiCalendar size={16} style={{ opacity: 0.7 }} />
+                        <CalendarBlank size={16} style={{ opacity: 0.7 }} />
                         {format(new Date(createdAt), "dd MMMM yyyy", { locale: id })}
                     </span>
                     <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <FiClock size={16} style={{ opacity: 0.7 }} />
+                        <Clock size={16} style={{ opacity: 0.7 }} />
                         {calculateReadingTime(wordCount)}
                     </span>
                     <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <FiEye size={16} style={{ opacity: 0.7 }} />
+                        <Eye size={16} style={{ opacity: 0.7 }} />
                         {viewCount} views
                     </span>
                 </div>

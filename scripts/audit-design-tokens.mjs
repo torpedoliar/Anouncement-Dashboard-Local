@@ -54,7 +54,7 @@ const COLOR_PREFIXES = [
 const STANDALONE = [
   "shadow-lvl-1", "shadow-lvl-2", "shadow-lvl-3",
   "rounded-control", "rounded-card", "rounded-sheet", "rounded-accent",
-  "font-display", "font-mono", "font-heading",
+  "font-display", "font-mono", "font-serif",
   "z-dropdown", "z-sticky", "z-scrim", "z-sidebar", "z-drawer-toggle",
   "z-modal-scrim", "z-modal", "z-toast", "z-tooltip",
 ];
@@ -83,7 +83,7 @@ const definedVars = new Set(
 
 /** Variabel yang disuntikkan runtime, bukan dideklarasikan di globals.css. */
 const runtimeVars = new Set([
-  "--font-inter", "--font-montserrat", "--font-sora", "--font-mono",
+  "--font-inter", "--font-serif", "--font-sora", "--font-mono",
   // Disuntikkan SiteThemeProvider lewat <style jsx global>.
   "--site-primary", "--site-primary-light", "--site-primary-dark",
   "--site-primary-alpha", "--site-primary-rgb", "--site-text-on-primary",

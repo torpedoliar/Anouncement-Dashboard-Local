@@ -472,7 +472,7 @@ export default function CredentialsPage() {
                                                                         type="button"
                                                                         onClick={() => setCredToDelete({ account: acc, appName: app.appName })}
                                                                         aria-label={`Hapus akun ${acc.label}`}
-                                                                        className="inline-flex min-h-9 items-center justify-center rounded-control border border-danger/30 bg-danger-subtle/40 px-2.5 py-1.5 text-xs font-semibold text-danger hover:bg-danger/20 transition-colors"
+                                                                        className="inline-flex min-h-9 items-center justify-center rounded-control border border-danger/30 bg-danger/10 px-2.5 py-1.5 text-xs font-semibold text-danger hover:bg-danger/20 transition-colors"
                                                                         title="Hapus Akun"
                                                                     >
                                                                         <Trash size={15} />

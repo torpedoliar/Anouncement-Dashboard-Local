@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 
 interface PaginationProps {
     currentPage: number;
@@ -91,11 +91,11 @@ export default function Pagination({
                     style={buttonStyle}
                     aria-label="Halaman sebelumnya"
                 >
-                    <FiChevronLeft size={16} />
+                    <CaretLeft size={16} />
                 </Link>
             ) : (
                 <span style={disabledStyle} aria-disabled="true">
-                    <FiChevronLeft size={16} />
+                    <CaretLeft size={16} />
                 </span>
             )}
 
@@ -127,11 +127,11 @@ export default function Pagination({
                     style={buttonStyle}
                     aria-label="Halaman berikutnya"
                 >
-                    <FiChevronRight size={16} />
+                    <CaretRight size={16} />
                 </Link>
             ) : (
                 <span style={disabledStyle} aria-disabled="true">
-                    <FiChevronRight size={16} />
+                    <CaretRight size={16} />
                 </span>
             )}
         </nav>

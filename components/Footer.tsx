@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FiInstagram, FiLinkedin, FiFacebook, FiTwitter, FiYoutube } from "react-icons/fi";
+import { InstagramLogo, LinkedinLogo, FacebookLogo, TwitterLogo, YoutubeLogo } from "@phosphor-icons/react";
 import NewsletterSubscribe from "./NewsletterSubscribe";
 
 interface Settings {
@@ -46,11 +46,11 @@ export default function Footer({ settings: initialSettings }: FooterProps) {
     }, [initialSettings]);
 
     const socialLinks = [
-        { icon: FiInstagram, href: settings.instagramUrl, label: "Instagram" },
-        { icon: FiFacebook, href: settings.facebookUrl, label: "Facebook" },
-        { icon: FiTwitter, href: settings.twitterUrl, label: "Twitter" },
-        { icon: FiLinkedin, href: settings.linkedinUrl, label: "LinkedIn" },
-        { icon: FiYoutube, href: settings.youtubeUrl, label: "YouTube" },
+        { icon: InstagramLogo, href: settings.instagramUrl, label: "Instagram" },
+        { icon: FacebookLogo, href: settings.facebookUrl, label: "Facebook" },
+        { icon: TwitterLogo, href: settings.twitterUrl, label: "Twitter" },
+        { icon: LinkedinLogo, href: settings.linkedinUrl, label: "LinkedIn" },
+        { icon: YoutubeLogo, href: settings.youtubeUrl, label: "YouTube" },
     ].filter(link => link.href);
 
     return (

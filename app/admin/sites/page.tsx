@@ -156,9 +156,6 @@ export default function SitesPage() {
             {/* Header */}
             <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <p className="mb-1 text-xs font-semibold tracking-widest text-accent">
-                        Sites
-                    </p>
                     <h1 className="font-display text-2xl font-semibold text-text-1">
                         Site Management
                     </h1>
@@ -357,7 +354,7 @@ export default function SitesPage() {
                                                 key={i}
                                                 className={`rounded-card border p-4 ${
                                                     r.level === "critical"
-                                                        ? "border-danger/30 bg-danger-subtle/20"
+                                                        ? "border-danger/30 bg-danger/5"
                                                         : "border-warning/30 bg-warning/5"
                                                 }`}
                                             >

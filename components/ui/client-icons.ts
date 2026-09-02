@@ -6,11 +6,18 @@
 // createContext), import langsung dari server module crash. Re-export lewat
 // modul "use client" membuat server hanya menerima client referencendle.
 export {
+  ArrowRight,
   Files,
   Eye,
+  Globe,
+  MagnifyingGlass,
   PencilSimple,
+  Play,
+  PlusCircle,
   Broadcast,
+  PushPin,
   SquaresFour,
   WarningCircle,
   X,
+  YoutubeLogo,
 } from "@phosphor-icons/react";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FiMail, FiCheck, FiX, FiSend } from "react-icons/fi";
+import { EnvelopeSimple, Check, X, PaperPlaneTilt } from "@phosphor-icons/react";
 
 interface NewsletterSubscribeProps {
     variant?: "inline" | "card";
@@ -69,7 +69,7 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                         alignItems: "center",
                         justifyContent: "center",
                     }}>
-                        <FiMail size={20} color="#dc2626" />
+                        <EnvelopeSimple size={20} color="#dc2626" />
                     </div>
                     <div>
                         <h3 style={{ color: "var(--text-primary)", fontSize: "16px", fontWeight: 600, margin: 0 }}>
@@ -136,7 +136,7 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                             "Memproses..."
                         ) : (
                             <>
-                                <FiSend size={14} />
+                                <PaperPlaneTilt size={14} />
                                 Berlangganan
                             </>
                         )}
@@ -155,7 +155,7 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                         alignItems: "center",
                         gap: "8px",
                     }}>
-                        {status === "success" ? <FiCheck size={14} /> : <FiX size={14} />}
+                        {status === "success" ? <Check size={14} /> : <X size={14} />}
                         {message}
                     </div>
                 )}
@@ -225,7 +225,7 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                         "MEMPROSES..."
                     ) : (
                         <>
-                            <FiMail size={14} />
+                            <EnvelopeSimple size={14} />
                             SUBSCRIBE
                         </>
                     )}
@@ -245,7 +245,7 @@ export default function NewsletterSubscribe({ variant = "inline" }: NewsletterSu
                     gap: "8px",
                     maxWidth: "280px",
                 }}>
-                    {status === "success" ? <FiCheck size={14} /> : <FiX size={14} />}
+                    {status === "success" ? <Check size={14} /> : <X size={14} />}
                     {message}
                 </div>
             )}

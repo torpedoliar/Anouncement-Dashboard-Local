@@ -89,7 +89,7 @@ export default function SSOAutoSubmit({ app, cred, extraFields }: SSOAutoSubmitP
                                 <div className="sso-ring sso-ring-middle"></div>
                                 <div className="sso-ring sso-ring-inner"></div>
                             </div>
-                            <span className="text-sm text-text-2 animate-sso-glow">Menghubungkan...</span>
+                            <span className="text-sm text-text-2">Menghubungkan...</span>
                         </>
                     ) : failed ? (
                         <span className="text-sm text-warning">Hubungi admin atau coba lagi.</span>

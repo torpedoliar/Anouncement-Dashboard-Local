@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FiVolume2, FiVolumeX, FiPlay, FiPause } from "react-icons/fi";
+import { SpeakerHigh, SpeakerSlash, Play, Pause } from "@phosphor-icons/react";
 
 interface ArticleVideoPlayerProps {
     videoPath?: string | null;
@@ -125,7 +125,7 @@ export default function ArticleVideoPlayer({ videoPath, youtubeUrl, title }: Art
                         }}
                         title={isPlaying ? 'Pause' : 'Play'}
                     >
-                        {isPlaying ? <FiPause size={20} /> : <FiPlay size={20} />}
+                        {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                     </button>
                     <button
                         onClick={toggleMute}
@@ -143,7 +143,7 @@ export default function ArticleVideoPlayer({ videoPath, youtubeUrl, title }: Art
                         }}
                         title={isMuted ? 'Unmute' : 'Mute'}
                     >
-                        {isMuted ? <FiVolumeX size={20} /> : <FiVolume2 size={20} />}
+                        {isMuted ? <SpeakerSlash size={20} /> : <SpeakerHigh size={20} />}
                     </button>
                 </div>
             </>

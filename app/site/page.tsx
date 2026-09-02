@@ -1,6 +1,6 @@
 // This is a server component
 import { prisma } from "@/lib/prisma";
-import { FiGlobe } from "react-icons/fi";
+import { Globe } from "@/components/ui/client-icons";
 import SitePickerCard from "@/components/SitePickerCard";
 import Image from "next/image";
 
@@ -82,7 +82,7 @@ export default async function SitePickerPage() {
                             boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
                         }}
                     >
-                        <FiGlobe size={32} color="#C41920" />
+                        <Globe size={32} color="#C41920" />
                     </div>
                 )}
                 <h1
@@ -141,7 +141,7 @@ export default async function SitePickerPage() {
                         }}
                     >
                         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-card border border-accent/30 bg-accent-subtle">
-                            <FiGlobe size={24} className="text-accent" aria-hidden="true" />
+                            <Globe size={24} className="text-accent" aria-hidden="true" />
                         </div>
                         <h2 className="mt-4 font-display text-lg font-semibold text-text-1">
                             Belum Ada Site

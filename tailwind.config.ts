@@ -78,9 +78,18 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        heading: ["Montserrat", "system-ui", "sans-serif"],
-        display: ["var(--font-sora)", "var(--font-montserrat)", "system-ui", "sans-serif"],
+        display: ["var(--font-sora)", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+      },
+      // Type scale — satu ramp untuk semua permukaan. Nilai di globals.css.
+      fontSize: {
+        display: ["var(--text-display)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        title: ["var(--text-title)", { lineHeight: "1.2", letterSpacing: "-0.015em" }],
+        heading: ["var(--text-heading)", { lineHeight: "1.3" }],
+        body: ["var(--text-body)", { lineHeight: "1.6" }],
+        small: ["var(--text-small)", { lineHeight: "1.5" }],
+        caption: ["var(--text-caption)", { lineHeight: "1.4" }],
       },
       borderRadius: {
         control: "var(--radius-control)",
@@ -109,9 +118,9 @@ const config: Config = {
         tooltip: "800",
       },
       animation: {
-        "fade-in": "fadeIn 0.5s ease-out",
-        "slide-up": "slideUp 0.5s ease-out",
-        "scale-in": "scaleIn 0.3s ease-out",
+        "fade-in": "fadeIn var(--motion-slow) var(--motion-ease)",
+        "slide-up": "slideUp var(--motion-slow) var(--motion-ease)",
+        "scale-in": "scaleIn var(--motion-standard) var(--motion-ease)",
       },
       keyframes: {
         fadeIn: {

@@ -362,7 +362,7 @@ export default function PortalAuditPage() {
     if (error) {
         return (
             <div className="p-8">
-                <div className="flex items-center gap-3 rounded-card border border-danger/30 bg-danger-subtle/50 p-4 text-sm text-danger">
+                <div className="flex items-center gap-3 rounded-card border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
                     <WarningCircle size={20} className="shrink-0" />
                     <span>{error}</span>
                     <Button variant="secondary" size="sm" onClick={fetchData} className="ml-auto">
@@ -411,9 +411,8 @@ export default function PortalAuditPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div className="flex items-center gap-2">
-                        <p className="text-xs font-semibold tracking-widest text-accent">ISO 27001 COMPLIANCE</p>
                         <span className="rounded bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent border border-accent/20">
-                            A.9 Access Control & A.12 Operations Security
+                            ISO 27001 — A.9 Access Control & A.12 Operations Security
                         </span>
                     </div>
                     <h1 className="font-display text-2xl font-bold text-text-1">Portal Audit & Monitoring Sistem</h1>
@@ -447,7 +446,7 @@ export default function PortalAuditPage() {
 
                 <div className={`rounded-card border p-4 shadow-lvl-1 ${
                     summary?.totalOfflineApps > 0
-                        ? "border-danger/40 bg-danger-subtle/30"
+                        ? "border-danger/40 bg-danger/10"
                         : "border-border bg-surface-1"
                 }`}>
                     <div className="flex items-center justify-between">
@@ -464,7 +463,7 @@ export default function PortalAuditPage() {
 
                 <div className={`rounded-card border p-4 shadow-lvl-1 ${
                     summary?.totalSharedAccounts > 0
-                        ? "border-danger/40 bg-danger-subtle/30"
+                        ? "border-danger/40 bg-danger/10"
                         : "border-border bg-surface-1"
                 }`}>
                     <div className="flex items-center justify-between">
@@ -591,7 +590,7 @@ export default function PortalAuditPage() {
                             </div>
 
                             {sharedAccounts?.length === 0 ? (
-                                <div className="flex items-center gap-3 rounded-card border border-success/30 bg-success-subtle/30 p-4 text-sm text-text-1">
+                                <div className="flex items-center gap-3 rounded-card border border-success/30 bg-success/10 p-4 text-sm text-text-1">
                                     <CheckCircle size={20} className="text-success" />
                                     <span>Tidak ditemukan account sharing. Semua kredensial unik per user.</span>
                                 </div>
@@ -630,7 +629,7 @@ export default function PortalAuditPage() {
                             </div>
 
                             {dormantAccounts?.length === 0 ? (
-                                <div className="flex items-center gap-3 rounded-card border border-success/30 bg-success-subtle/30 p-4 text-sm text-text-1">
+                                <div className="flex items-center gap-3 rounded-card border border-success/30 bg-success/10 p-4 text-sm text-text-1">
                                     <CheckCircle size={20} className="text-success" />
                                     <span>Semua akun kredensial portal aktif digunakan secara berkala.</span>
                                 </div>

@@ -75,8 +75,8 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
     return (
         <div className="mx-auto max-w-[1200px] p-8">
             <div className="mb-8">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">PORTAL SSO</p>
-                <h1 className="font-display text-2xl font-semibold text-text-1">Aplikasi Saya</h1>
+                <h1 className="font-display text-title font-semibold text-text-1">Aplikasi Saya</h1>
+                <p className="mt-1 text-small text-text-2">Satu klik menuju aplikasi kerjamu.</p>
             </div>
 
             {ssoError && <SsoErrorBanner error={ssoError} appSlug={ssoErrorApp} />}

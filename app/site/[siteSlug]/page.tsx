@@ -6,7 +6,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import FullscreenHero from "@/components/FullscreenHero";
+import Masthead from "@/components/site/Masthead";
+import FrontPage from "@/components/site/FrontPage";
+import CategoryStrip from "@/components/site/CategoryStrip";
 import AnnouncementCard from "@/components/AnnouncementCard";
 import Pagination from "@/components/Pagination";
 
@@ -107,31 +109,41 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
     const { site, announcements, heroAnnouncements: publishedHeroAnnouncements, totalPages } = data;
     const settings = site.settings;
 
-    // Prioritaskan artikel hero; jika kurang dari 5, lengkapi dengan artikel terbaru/pinned
-    // agar hero carousel selalu memiliki konten rotasi otomatis (hingga 5 artikel).
+    // Halaman depan murni = tanpa filter kategori & halaman pertama. Di luar
+    // itu (filter/pagination) yang tampil hanya masthead + feed terfilter.
+    const isFrontPage = !categorySlug && currentPage === 1;
+
+    // Prioritaskan artikel hero; jika kurang dari 4, lengkapi dengan artikel
+    // terbaru/pinned agar halaman depan punya lead + 3 story sekunder.
     const heroMap = new Map<string, (typeof announcements)[number]>();
     publishedHeroAnnouncements.forEach((a) => heroMap.set(a.id, a));
-    if (heroMap.size < 5) {
+    if (heroMap.size < 4) {
         announcements.forEach((a) => {
-            if (heroMap.size < 5 && !heroMap.has(a.id)) {
+            if (heroMap.size < 4 && !heroMap.has(a.id)) {
                 heroMap.set(a.id, a);
             }
         });
     }
-    const heroAnnouncements = Array.from(heroMap.values());
-    const heroAnnouncement = heroAnnouncements[0] ?? null;
+    const frontStories = Array.from(heroMap.values());
+    const lead = frontStories[0] ?? null;
+    const secondary = frontStories.slice(1, 4);
+    const frontIds = new Set(frontStories.map((a) => a.id));
+
+    // Story yang tampil di halaman depan tidak diulang di feed bawahnya.
+    const feedItems = isFrontPage
+        ? announcements.filter((a) => !frontIds.has(a.id))
+        : announcements;
 
     // Pinned di-render sebagai baris lebar penuh di atas grid kronologis (T5.C).
     // Saat filter kategori aktif, pinned juga difilter agar konsisten dengan feed.
-    const pinnedFeedItems = announcements.filter((a) => a.isPinned && a.id !== heroAnnouncement?.id);
-    const chronologicalFeed = announcements.filter((a) => !a.isPinned && a.id !== heroAnnouncement?.id);
+    const pinnedFeedItems = feedItems.filter((a) => a.isPinned);
+    const chronologicalFeed = feedItems.filter((a) => !a.isPinned);
 
     // Parameter pagination meneruskan kategori aktif supaya pindah halaman tak
     // mereset filter (T5.B).
     const paginationParams: Record<string, string> = {};
     if (categorySlug) paginationParams.category = categorySlug;
 
-    // Chip kategori aktif (T5.B) — link navigasi, aria-pressed menyatakan state.
     const buildCategoryUrl = (slug: string | null) => {
         const params = new URLSearchParams();
         if (slug) params.set("category", slug);
@@ -139,105 +151,65 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
         return `/site/${siteSlug}${params.toString() ? `?${params.toString()}` : ""}`;
     };
 
+    const stripItems = [
+        { label: "Semua", href: buildCategoryUrl(null), active: !categorySlug },
+        ...site.categories.map((cat) => ({
+            label: cat.name,
+            href: buildCategoryUrl(cat.slug),
+            active: categorySlug === cat.slug,
+        })),
+    ];
+
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "var(--surface-0)", color: "var(--text-1)" }}>
-            {/* Navbar removed - handled by layout */}
+            {/* Nameplate koran — selalu tampil, juga saat feed kosong */}
+            <Masthead
+                siteName={site.name}
+                tagline={settings?.heroSubtitle || `Informasi terbaru dari ${site.name}`}
+            />
 
-            {/* Fullscreen Hero Section */}
-            {heroAnnouncements.length > 0 ? (
-                <FullscreenHero
+            {/* Halaman depan editorial: lead + story sekunder (tanpa timer/JS) */}
+            {isFrontPage && lead && (
+                <FrontPage
                     siteSlug={siteSlug}
-                    announcements={heroAnnouncements.map(a => ({
+                    lead={{
+                        id: lead.id,
+                        slug: lead.slug,
+                        title: lead.title,
+                        excerpt: lead.excerpt,
+                        imagePath: lead.imagePath,
+                        videoPath: lead.videoPath,
+                        videoType: lead.videoType,
+                        youtubeUrl: lead.youtubeUrl,
+                        wordCount: lead.wordCount,
+                        category: lead.category,
+                        createdAt: lead.createdAt,
+                    }}
+                    secondary={secondary.map((a) => ({
                         id: a.id,
                         slug: a.slug,
                         title: a.title,
                         excerpt: a.excerpt,
                         imagePath: a.imagePath,
                         videoPath: a.videoPath,
+                        videoType: a.videoType,
                         youtubeUrl: a.youtubeUrl,
+                        wordCount: a.wordCount,
                         category: a.category,
+                        createdAt: a.createdAt,
                     }))}
-                    primaryColor={site.primaryColor}
                 />
-            ) : (
-                // Fallback simple hero when no hero announcements
-                <div
-                    style={{
-                        padding: "80px 24px",
-                        textAlign: "center",
-                        background: `linear-gradient(180deg, ${site.primaryColor}20 0%, transparent 100%)`,
-                    }}
-                >
-                    {/* Garis aksen tumbuh + judul naik — pembuka editorial (Varian C) */}
-                    <div
-                        aria-hidden="true"
-                        style={{
-                            width: "56px",
-                            height: "3px",
-                            backgroundColor: site.primaryColor,
-                            margin: "0 auto 16px",
-                            transformOrigin: "left center",
-                            transform: "scaleX(0)",
-                            animation: "cine-grow-line 500ms var(--motion-ease) 100ms forwards",
-                        }}
-                    />
-                    <h1
-                        style={{
-                            fontSize: "42px",
-                            fontWeight: 800,
-                            marginBottom: "12px",
-                            animation: "cine-rise 550ms var(--motion-ease) 200ms both",
-                        }}
-                    >
-                        {settings?.heroTitle || "Berita & Pengumuman"}
-                    </h1>
-                    <p
-                        style={{
-                            fontSize: "18px",
-                            color: "#888",
-                            maxWidth: "600px",
-                            margin: "0 auto",
-                            animation: "cine-fade-in var(--motion-standard) var(--motion-ease) 420ms both",
-                        }}
-                    >
-                        {settings?.heroSubtitle || "Informasi terbaru dari " + site.name}
-                    </p>
-                </div>
             )}
 
             {/* Announcements Grid */}
-            <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px 80px" }}>
-                {/* Category chips (T5.B) — di halaman ini sendiri, bukan hanya
-                    link navbar yang runtuh jadi hamburger di mobile. */}
-                <nav aria-label="Filter kategori" style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "24px" }}>
-                    <Link
-                        href={buildCategoryUrl(null)}
-                        aria-pressed={!categorySlug}
-                        style={chipStyle(!categorySlug)}
-                    >
-                        Semua
-                    </Link>
-                    {site.categories.map((cat) => (
-                        <Link
-                            key={cat.id}
-                            href={buildCategoryUrl(cat.slug)}
-                            aria-pressed={categorySlug === cat.slug}
-                            style={chipStyle(categorySlug === cat.slug)}
-                        >
-                            {cat.name}
-                        </Link>
-                    ))}
-                </nav>
-
-                <h2 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}>
-                    Artikel Terbaru
-                </h2>
+            <div className="mx-auto max-w-[1200px] px-6 pb-20 pt-6">
+                <CategoryStrip items={stripItems} />
 
                 {announcements.length > 0 ? (
-                    <>
+                    <div className="pt-8">
                         {/* Pinned row (T5.C) — lebar penuh di atas grid kronologis */}
                         {pinnedFeedItems.length > 0 && (
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "24px", marginBottom: "32px" }}>
+                            <div className="mb-8 grid grid-cols-1 gap-6">
                                 {pinnedFeedItems.map((announcement) => (
                                     <AnnouncementCard
                                         key={announcement.id}
@@ -253,39 +225,54 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
                                         category={announcement.category}
                                         createdAt={announcement.createdAt}
                                         isPinned={announcement.isPinned}
+                                        wordCount={announcement.wordCount}
+                                        featured
                                     />
                                 ))}
                             </div>
                         )}
 
-                        {/* Grid kronologis murni — stagger entrance (Varian C) */}
+                        {/* Grid kronologis murni — stagger entrance (Varian C).
+                            Kartu pertama tampil featured hanya di halaman depan. */}
                         {chronologicalFeed.length > 0 && (
                             <div
-                                className="cine-stagger"
+                                className="cine-stagger grid gap-6"
                                 style={{
-                                    display: "grid",
                                     gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
-                                    gap: "24px",
                                 }}
                             >
-                                {chronologicalFeed.map((announcement, i) => (
-                                    <AnnouncementCard
-                                        key={announcement.id}
-                                        style={{ "--i": Math.min(i, 11) } as React.CSSProperties}
-                                        id={announcement.id}
-                                        title={announcement.title}
-                                        excerpt={announcement.excerpt || undefined}
-                                        slug={announcement.slug}
-                                        siteSlug={siteSlug}
-                                        imagePath={announcement.imagePath || undefined}
-                                        videoPath={announcement.videoPath}
-                                        videoType={announcement.videoType}
-                                        youtubeUrl={announcement.youtubeUrl}
-                                        category={announcement.category}
-                                        createdAt={announcement.createdAt}
-                                    />
-                                ))}
+                                {chronologicalFeed.map((announcement, i) => {
+                                    const featured = isFrontPage && i === 0;
+                                    return (
+                                        <AnnouncementCard
+                                            key={announcement.id}
+                                            style={{
+                                                "--i": Math.min(i, 11),
+                                                gridColumn: featured ? "1 / -1" : undefined,
+                                            } as React.CSSProperties}
+                                            id={announcement.id}
+                                            title={announcement.title}
+                                            excerpt={announcement.excerpt || undefined}
+                                            slug={announcement.slug}
+                                            siteSlug={siteSlug}
+                                            imagePath={announcement.imagePath || undefined}
+                                            videoPath={announcement.videoPath}
+                                            videoType={announcement.videoType}
+                                            youtubeUrl={announcement.youtubeUrl}
+                                            category={announcement.category}
+                                            createdAt={announcement.createdAt}
+                                            wordCount={announcement.wordCount}
+                                            featured={featured}
+                                        />
+                                    );
+                                })}
                             </div>
+                        )}
+
+                        {feedItems.length === 0 && (
+                            <p className="py-12 text-center text-small text-text-3">
+                                Semua artikel sudah tampil di halaman depan.
+                            </p>
                         )}
 
                         <Pagination
@@ -294,26 +281,23 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
                             baseUrl={`/site/${siteSlug}`}
                             searchParams={paginationParams}
                         />
-                    </>
+                    </div>
                 ) : (
-                    <div
-                        style={{
-                            textAlign: "center",
-                            padding: "60px 20px",
-                        }}
-                    >
+                    <div className="py-16 text-center">
                         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-card border border-accent/30 bg-accent-subtle">
-                            <span className="text-xl font-semibold text-accent">SJA</span>
+                            <span className="font-serif text-xl font-bold text-accent">
+                                {site.name.charAt(0).toUpperCase()}
+                            </span>
                         </div>
-                        <h2 className="mt-4 font-display text-lg font-semibold text-text-1">
+                        <h2 className="mt-4 font-serif text-heading font-semibold text-text-1">
                             Belum ada artikel untuk {site.name}
                         </h2>
-                        <p className="mx-auto mt-3 max-w-[420px] text-sm text-text-2">
+                        <p className="mx-auto mt-3 max-w-[420px] text-small text-text-2">
                             Setelah artikel dipublikasikan, entri akan muncul di sini.
                         </p>
                         <Link
                             href="/site"
-                            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-control border border-border px-4 text-sm font-semibold text-text-1 transition-colors duration-150 hover:bg-surface-2"
+                            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-control border border-border px-4 text-small font-semibold text-text-1 transition-colors duration-150 hover:bg-surface-2"
                         >
                             Pilih site lain
                         </Link>
@@ -324,20 +308,4 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
             {/* Footer removed - handled by layout */}
         </div>
     );
-}
-
-function chipStyle(active: boolean): React.CSSProperties {
-    return {
-        display: "inline-flex",
-        alignItems: "center",
-        minHeight: "36px",
-        padding: "6px 14px",
-        fontSize: "13px",
-        fontWeight: 600,
-        borderRadius: "999px",
-        textDecoration: "none",
-        border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
-        backgroundColor: active ? "var(--accent-subtle)" : "transparent",
-        color: active ? "var(--accent)" : "var(--text-2)",
-    };
 }

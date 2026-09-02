@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { formatDateShort } from "@/lib/utils";
-import { FiClock, FiPlay, FiYoutube } from "react-icons/fi";
-import { getContrastColor } from "@/components/SiteThemeProvider";
+import { extractYoutubeId, formatDateShort, readingTimeLabel } from "@/lib/utils";
+import { Clock, Play, PushPin, YoutubeLogo } from "@phosphor-icons/react";
 import { useRef, useState, useEffect } from "react";
 
 interface AnnouncementCardProps {
@@ -26,22 +25,13 @@ interface AnnouncementCardProps {
     };
     createdAt: Date | string;
     isPinned?: boolean;
+    /** wordCount dari DB — menampilkan label "N menit baca" di meta. */
+    wordCount?: number;
+    /** Varian lebar: media kiri, konten kanan (dipakai kartu pertama feed). */
+    featured?: boolean;
     /** Kelas/properti tambahan untuk wrapper — dipakai stagger motion (Varian C). */
     style?: React.CSSProperties;
 }
-
-// Extract YouTube video ID for thumbnail
-const extractYoutubeId = (url: string): string | null => {
-    const patterns = [
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-        /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
-    ];
-    for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match) return match[1];
-    }
-    return null;
-};
 
 export default function AnnouncementCard({
     title,
@@ -55,6 +45,8 @@ export default function AnnouncementCard({
     category,
     createdAt,
     isPinned,
+    wordCount,
+    featured,
     style,
 }: AnnouncementCardProps) {
     const youtubeId = youtubeUrl ? extractYoutubeId(youtubeUrl) : null;
@@ -67,7 +59,7 @@ export default function AnnouncementCard({
     const imageThumb = imagePath || null;
     const showVideoFrame = !!videoPath && !imageThumb && !youtubeThumb;
     const hasVideo = videoPath || videoType === 'youtube';
-    
+
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isHovered, setIsHovered] = useState(false);
 
@@ -120,188 +112,113 @@ export default function AnnouncementCard({
     }, [isHovered, showVideoFrame]);
 
     const href = siteSlug ? `/site/${siteSlug}/${slug}` : `/${slug}`;
+
+    const mediaBlock = (
+        <div
+            className={`relative overflow-hidden bg-surface-2 ${
+                featured ? "aspect-[16/10] md:aspect-auto md:h-full md:w-1/2" : "aspect-[16/10]"
+            }`}
+        >
+            {imageThumb ? (
+                <Image
+                    src={imageThumb}
+                    alt={title}
+                    fill
+                    sizes={featured ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 1024px) 33vw, 100vw"}
+                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+                />
+            ) : youtubeThumb ? (
+                <Image
+                    src={youtubeThumb}
+                    alt={title}
+                    fill
+                    sizes={featured ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 1024px) 33vw, 100vw"}
+                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+                    // YouTube hqdefault ditarik dari host eksternal.
+                    unoptimized
+                />
+            ) : showVideoFrame ? (
+                <video
+                    ref={videoRef}
+                    src={videoPath}
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    aria-label={`Video preview: ${title}`}
+                    role="img"
+                    className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+                    autoPlay={isHovered}
+                />
+            ) : (
+                // Placeholder bertoken tanpa teks — bukan literal "SJA".
+                <div aria-hidden="true" className="h-full w-full bg-surface-2" />
+            )}
+
+            {/* Badge play untuk kartu video */}
+            {hasVideo && (imageThumb || youtubeThumb || showVideoFrame) && (
+                <div
+                    className="absolute left-1/2 top-1/2 z-[5] flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-accent"
+                    aria-hidden="true"
+                >
+                    {videoType === 'youtube'
+                        ? <YoutubeLogo size={24} style={{ color: 'var(--site-text-on-primary)' }} />
+                        : <Play size={24} weight="fill" style={{ color: 'var(--site-text-on-primary)' }} />}
+                </div>
+            )}
+        </div>
+    );
+
     return (
         <Link href={href} style={{ display: 'block', textDecoration: 'none', ...style }}>
-            <article style={{
-                backgroundColor: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                overflow: 'hidden',
-                transition: 'transform var(--motion-standard) var(--motion-ease), border-color var(--motion-standard) var(--motion-ease)',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-            }}
-                className="group hover:border-accent hover:-translate-y-2"
+            <article
+                className={`group h-full overflow-hidden border border-border bg-surface-1 transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-accent ${
+                    featured ? "flex flex-col md:flex-row" : "flex flex-col"
+                }`}
+                style={{ transitionTimingFunction: "var(--motion-ease)" }}
             >
-                {/* Media - Image, YouTube thumbnail, or Video frame */}
-                <div style={{
-                    position: 'relative',
-                    aspectRatio: '16/10',
-                    overflow: 'hidden',
-                    backgroundColor: 'var(--bg-card)',
-                }}>
-                    {imageThumb ? (
-                        <Image
-                            src={imageThumb}
-                            alt={title}
-                            fill
-                            style={{ objectFit: 'cover', transition: 'transform 0.5s' }}
-                            className="group-hover:scale-110"
-                        />
-                    ) : youtubeThumb ? (
-                        <Image
-                            src={youtubeThumb}
-                            alt={title}
-                            fill
-                            style={{ objectFit: 'cover', transition: 'transform 0.5s' }}
-                            className="group-hover:scale-110"
-                            // YouTube hqdefault ditarik dari host eksternal.
-                            unoptimized
-                        />
-                    ) : showVideoFrame ? (
-                        <video
-                            ref={videoRef}
-                            src={videoPath}
-                            muted
-                            loop
-                            playsInline
-                            preload="metadata"
-                            aria-label={`Video preview: ${title}`}
-                            role="img"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
-                            className="group-hover:scale-110"
-                            autoPlay={isHovered}
-                        />
-                    ) : (
-                        // Placeholder bertoken tanpa teks — bukan literal "SJA".
-                        <div style={{
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: 'var(--bg-tertiary)',
-                        }} />
-                    )}
-
-                    {/* Overlay */}
-                    <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%)',
-                        opacity: 0.6,
-                        pointerEvents: 'none',
-                    }} />
-
-                    {/* Badge play untuk kartu video */}
-                    {hasVideo && (imageThumb || youtubeThumb || showVideoFrame) && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '50%',
-                            backgroundColor: 'var(--accent)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 5,
-                        }} aria-hidden="true">
-                            {videoType === 'youtube'
-                                ? <FiYoutube size={24} style={{ color: 'var(--site-text-on-primary)' }} />
-                                : <FiPlay size={24} style={{ color: 'var(--site-text-on-primary)' }} />}
-                        </div>
-                    )}
-                </div>
+                {mediaBlock}
 
                 {/* Content */}
-                <div style={{
-                    flex: 1,
-                    padding: '24px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    backgroundColor: 'var(--bg-primary)',
-                    borderTop: '1px solid var(--bg-tertiary)',
-                }}>
-                    {/* Urutan baca: kategori -> judul -> excerpt -> tanggal.
-                        Meta dulu di atas judul; kategori pindah ke atas judul
-                        supaya kedekatan mengikat label ke objeknya. T7: teks
-                        badge dipilih runtime lewat getContrastColor agar kontras
-                        lolos AA juga di kategori kuning/cerah. */}
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                        <span style={{
-                            padding: '4px 10px',
-                            backgroundColor: category.color,
-                            color: getContrastColor(category.color),
-                            fontSize: '10px',
-                            fontWeight: 700,
-                            letterSpacing: '0.1em',
-                            textTransform: 'uppercase',
-                        }}>
+                <div className={`flex flex-1 flex-col border-t border-border p-6 ${featured ? "md:border-l md:border-t-0" : ""}`}>
+                    {/* Urutan baca: kategori -> judul -> excerpt -> meta. Kategori
+                        berupa kotak warna kecil + teks, bukan pill isian — lebih
+                        editorial dan tak perlu kalkulasi kontras warna kategori. */}
+                    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption">
+                        <span className="inline-flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-text-2">
+                            <span aria-hidden="true" className="h-2 w-2" style={{ backgroundColor: category.color }} />
                             {category.name}
                         </span>
                         {isPinned && (
-                            /* Badge PINNED sebelumnya memakai --brand-red polos sehingga
-                               menyatu dengan badge kategori yang warnanya mirip merah.
-                               Sekarang dibedakan lewat outline + latar netral, bukan
-                               mengandalkan warna isian yang bisa bertabrakan. */
-                            <span style={{
-                                padding: '3px 9px',
-                                backgroundColor: 'transparent',
-                                color: 'var(--brand-red)',
-                                border: '1.5px solid var(--brand-red)',
-                                fontSize: '10px',
-                                fontWeight: 700,
-                                letterSpacing: '0.1em',
-                                textTransform: 'uppercase',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                            }}>
-                                <span aria-hidden="true">📌</span>
-                                PINNED
+                            <span className="inline-flex items-center gap-1 font-semibold uppercase tracking-[0.08em] text-accent">
+                                <PushPin size={12} weight="fill" />
+                                Pinned
                             </span>
                         )}
                     </div>
 
                     {/* Title */}
-                    <h3 style={{
-                        fontFamily: 'Montserrat, sans-serif',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        fontSize: '16px',
-                        marginBottom: '12px',
-                        lineHeight: 1.4,
-                    }} className="line-clamp-2 group-hover:text-accent transition-colors">
+                    <h3
+                        className={`font-serif font-bold leading-snug text-text-1 line-clamp-2 transition-colors duration-150 group-hover:text-accent ${
+                            featured ? "text-title" : "text-heading"
+                        }`}
+                    >
                         {title}
                     </h3>
 
                     {/* Excerpt */}
                     {excerpt && (
-                        <p style={{
-                            color: 'var(--text-muted)',
-                            fontSize: '14px',
-                            marginBottom: '16px',
-                            flex: 1,
-                            lineHeight: 1.6,
-                        }} className="line-clamp-2">
+                        <p className={`mb-4 mt-2 flex-1 text-small leading-relaxed text-text-2 ${featured ? "line-clamp-3" : "line-clamp-2"}`}>
                             {excerpt}
                         </p>
                     )}
 
                     {/* Meta — di bawah excerpt. viewCount dibuang (popularitas
                         internal bukan info yang dipakai pembaca memutuskan). */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        color: 'var(--text-tertiary)',
-                        fontSize: '12px',
-                        marginTop: 'auto',
-                    }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <FiClock size={12} />
-                            {formatDateShort(createdAt)}
-                        </span>
+                    <div className="mt-auto flex items-center gap-2 font-mono text-caption tabular-nums text-text-3">
+                        <Clock size={12} />
+                        {formatDateShort(createdAt)}
+                        {wordCount ? <span>· {readingTimeLabel(wordCount)}</span> : null}
                     </div>
                 </div>
             </article>

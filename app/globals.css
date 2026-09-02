@@ -98,10 +98,30 @@
   --shadow-2: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
   --shadow-3: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
 
-  /* ---- Motion timing (150–300ms, spring-ish ease, transform/opacity only) ---- */
-  --motion-fast: 150ms;
-  --motion-standard: 300ms;
+  /* ---- Motion roles — empat peran bernama, semua durasi lewat sini.
+     reveal    : entrance konten, sekali jalan (cine-rise dkk.)
+     shift     : micro-interaction hover/press/focus
+     page      : transisi permukaan (modal, drawer, crossfade)
+     ambient   : hal yang hidup terus (marquee, ken-burns) — mati total di
+                 prefers-reduced-motion lewat kill-switch global di bawah. ---- */
+  --motion-fast: 150ms;          /* shift */
+  --motion-standard: 300ms;      /* page */
+  --motion-slow: 500ms;          /* reveal */
+  --motion-ambient: 8s;          /* ambient */
   --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Default stagger cine-stagger — dioverride inline per pemakaian (--i). */
+  --stagger-base: 280ms;
+  --i: 0;
+
+  /* ---- Type scale — satu ramp clamp() untuk semua permukaan (spec rework).
+     Dipetakan ke Tailwind fontSize: text-display/title/heading/body/small/caption. ---- */
+  --text-display: clamp(2rem, 1.4rem + 2.5vw, 3rem);
+  --text-title: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+  --text-heading: 1.25rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-caption: 0.75rem;
 
   /* ---- Legacy aliases (backward compat — remove after full migration) ---- */
   --santos-red: var(--brand-red);
@@ -310,7 +330,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-sora), var(--font-montserrat), system-ui, sans-serif;
+  font-family: var(--font-sora), system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   text-wrap: balance;
@@ -389,15 +409,15 @@ a {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn var(--motion-slow) var(--motion-ease) forwards;
 }
 
 .animate-slide-up {
-  animation: slideUp 0.6s ease-out forwards;
+  animation: slideUp var(--motion-slow) var(--motion-ease) forwards;
 }
 
 .animate-slide-in-left {
-  animation: slideInLeft 0.6s ease-out forwards;
+  animation: slideInLeft var(--motion-slow) var(--motion-ease) forwards;
 }
 
 /* Dipakai toast. Keyframes slideInRight sudah ada di bawah tapi tidak pernah
@@ -451,7 +471,7 @@ a {
 .prose-santos h2,
 .prose-santos h3 {
   color: var(--text-1);
-  font-family: var(--font-sora), var(--font-montserrat), system-ui, sans-serif;
+  font-family: var(--font-sora), system-ui, sans-serif;
 }
 
 /* Heading global (h1..h6) tidak punya margin atas, jadi heading artikel
@@ -676,10 +696,6 @@ a {
   }
 }
 
-.animate-sso-glow {
-  animation: sso-glow-pulse 2s ease-in-out infinite;
-}
-
 /* Concentric Ring Rotation - Stylized instead of basic spinner */
 @keyframes sso-ring-spin {
   0% {
@@ -762,128 +778,6 @@ a {
 .shimmer-delay-6 { animation-delay: 600ms; }
 .shimmer-delay-7 { animation-delay: 700ms; }
 
-/* Progress Bar Shimmer - Alternative loading indicator */
-@keyframes progress-shimmer {
-  0% {
-    background-position: -100% center;
-  }
-  100% {
-    background-position: 100% center;
-  }
-}
-
-.progress-bar-loading {
-  background: linear-gradient(
-    90deg,
-    var(--surface-2) 0%,
-    var(--surface-3) 50%,
-    var(--surface-2) 100%
-  );
-  background-size: 100% 100%;
-  animation: progress-shimmer 1.2s ease-in-out infinite;
-}
-
-/* Gradient Flow Animation - For logo container */
-@keyframes gradient-flow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.gradient-flow-bg {
-  background: linear-gradient(
-    90deg,
-    var(--brand-red),
-    var(--brand-red-light),
-    var(--brand-red),
-    var(--brand-red-dark)
-  );
-  background-size: 200% 100%;
-  animation: gradient-flow 3s ease infinite;
-}
-
-/* Particle Float Animation - Geometric elements */
-@keyframes particle-float {
-  0%, 100% {
-    transform: translateY(0) translateX(0);
-    opacity: 0.6;
-  }
-  25% {
-    transform: translateY(-8px) translateX(4px);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(-4px) translateX(0);
-    opacity: 0.8;
-  }
-  75% {
-    transform: translateY(-12px) translateX(-4px);
-    opacity: 0.7;
-  }
-}
-
-.particle {
-  width: 6px;
-  height: 6px;
-  background: var(--brand-red);
-  border-radius: 50%;
-  animation: particle-float 3s ease-in-out infinite;
-}
-
-.particle:nth-child(2) { animation-delay: 0.5s; }
-.particle:nth-child(3) { animation-delay: 1s; }
-.particle:nth-child(4) { animation-delay: 1.5s; }
-
-/* Wave SVG Animation - Inline wave pattern */
-@keyframes wave-sinusoid {
-  0% {
-    transform: translateX(0) translateY(0);
-  }
-  25% {
-    transform: translateX(-10px) translateY(5px);
-  }
-  50% {
-    transform: translateX(-20px) translateY(0);
-  }
-  75% {
-    transform: translateX(-10px) translateY(-5px);
-  }
-  100% {
-    transform: translateX(0) translateY(0);
-  }
-}
-
-.wave-animation {
-  animation: wave-sinusoid 2s ease-in-out infinite;
-}
-
-/* Scale Fade Sequence - For text elements */
-@keyframes text-reveal-sequence {
-  0% {
-    opacity: 0;
-    transform: translateY(10px) scale(0.95);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.text-reveal {
-  opacity: 0;
-  animation: text-reveal-sequence 0.4s ease-out forwards;
-}
-
-.text-reveal-delay-1 { animation-delay: 0.1s; }
-.text-reveal-delay-2 { animation-delay: 0.2s; }
-.text-reveal-delay-3 { animation-delay: 0.3s; }
-
 /* Toast Slide Animation */
 @keyframes slideInRight {
   from {
@@ -963,6 +857,13 @@ a {
   padding-left: 2rem;
   animation: marquee-scroll 30s linear infinite;
   will-change: transform;
+}
+/* WCAG 2.2.2 — konten bergerak harus bisa dijeda. Hover & fokus keyboard
+   sama-sama menghentikan track; reduced-motion sudah mematikannya lewat
+   kill-switch global. */
+.marquee-wrap:hover .marquee-track,
+.marquee-wrap:focus-within .marquee-track {
+  animation-play-state: paused;
 }
 .marquee-item {
   margin-right: 3rem;

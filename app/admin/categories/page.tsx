@@ -167,9 +167,6 @@ export default function CategoriesPage() {
             {/* Header */}
             <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
                 <div>
-                    <p className="text-accent text-xs font-semibold tracking-widest mb-1">
-                        KATEGORI
-                    </p>
                     <h1 className="text-2xl font-bold text-text-1">
                         Manajemen Kategori
                     </h1>

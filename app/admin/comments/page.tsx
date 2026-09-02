@@ -235,10 +235,7 @@ export default function CommentsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <p className="text-xs font-semibold tracking-widest mb-2" style={{ color: "var(--brand-red)" }}>
-                        KOMENTAR
-                    </p>
-                    <h1 className="text-[28px] font-bold" style={{ fontFamily: "Montserrat, sans-serif", color: "var(--text-primary)" }}>
+                    <h1 className="text-[28px] font-bold" style={{ color: "var(--text-primary)" }}>
                         Moderasi Komentar
                     </h1>
                 </div>
