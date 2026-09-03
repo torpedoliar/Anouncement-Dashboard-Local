@@ -26,7 +26,8 @@ const PRODUCT_REGISTRY: ProductEntry[] = [
     {
         product: "unifi-os",
         titleRe: /<title[^>]*>\s*UniFi OS\s*<\/title>/i,
-        htmlRe: [/<(ng-view|ui-view)[\s/>]/i, /\/angular\//i],
+        // titleRe sudah mengunci produk; marker HTML boleh longgar (tag/attr AngularJS).
+        htmlRe: [/(?:ng-view|ui-view)/i, /\/angular\//i],
         versionRe: /UniFi OS\s+([\d.]+)/i,
     },
     {
