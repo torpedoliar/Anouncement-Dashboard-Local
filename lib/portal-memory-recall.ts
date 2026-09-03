@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import prisma from "@/lib/prisma";
 import { fingerprintLoginProduct } from "@/lib/portal-product-registry";
 import { getLearnedSuggestion, type CorrectedLoginConfig } from "@/lib/portal-detection-feedback";
@@ -23,8 +24,19 @@ const realDb: MemoryDb = {
         });
         return row ? { ...row, ssoMode: null } : null;
     },
-    async latestFingerprint() {
-        return null;
+    async latestFingerprint(origin: string) {
+        try {
+            const row = await prisma.portalProductFingerprint.findFirst({
+                where: { origin },
+                orderBy: { createdAt: "desc" },
+                select: { config: true },
+            });
+            if (!row) return null;
+            const config = row.config as unknown as CorrectedLoginConfig;
+            return config && (config.usernameField || config.passwordField) ? config : null;
+        } catch {
+            return null;
+        }
     },
 };
 
@@ -41,6 +53,15 @@ function originOf(url: string): string | null {
     } catch {
         return null;
     }
+}
+
+/**
+ * Tanda struktur form: sha256 dari nama field terurut + method.
+ * TIDAK memuat nilai — aman disimpan sebagai kunci fingerprint generik.
+ */
+export function formSignatureHash(fieldNames: string[], method: string | null): string {
+    const normalized = fieldNames.map((n) => n.trim().toLowerCase()).filter(Boolean).sort().join("|");
+    return crypto.createHash("sha256").update(`${(method ?? "POST").toUpperCase()}::${normalized}`).digest("hex");
 }
 
 /** Recall berurutan: koreksi admin > fingerprint generik > profile > registry. */

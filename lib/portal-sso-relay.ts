@@ -288,13 +288,32 @@ export function looksLikeClientRenderedApp(html: string): boolean {
     if (!html) return false;
     const hasAppRoot =
         /<div[^>]+id=["'](?:root|app|__next|ng-app|__nuxt|__layout|q-app|svelte|app-container|root-container)["']/i.test(html) ||
-        /<(?:app-root|nuxt-root)[\s>]/i.test(html);
+        /<(?:app-root|nuxt-root)[\s>]/i.test(html) ||
+        // AngularJS / UI-Router (UniFi OS, aplikasi enterprise lama).
+        /<(?:ng-view|ui-view)[\s/>]/i.test(html) ||
+        /<(div|main)[^>]+(?:ng-view|ui-view|data-ng-view|data-ui-view)\s*=/i.test(html);
     const hasNoForm = !/<form[\s>]/i.test(html);
     const scriptCount = (html.match(/<script[\s>]/gi) ?? []).length;
     const hasModuleScript = /<script[^>]+type=["']module["']/i.test(html);
     const hasModulePreload = /<link[^>]+rel=["']modulepreload["']/i.test(html);
-    const hasClientBundle = /<script[^>]+src=["'][^"']*(?:assets|_next|static|chunk|bundle)[^"']*["']/i.test(html);
-    return hasAppRoot && hasNoForm && (scriptCount >= 3 || hasModuleScript || hasModulePreload || hasClientBundle);
+    const hasClientBundle = /<script[^>]+src=["'][^"']*(?:assets|_next|static|chunk|bundle|angular|vendor|app)[^"']*["']/i.test(html);
+    if (hasAppRoot && hasNoForm && (scriptCount >= 3 || hasModuleScript || hasModulePreload || hasClientBundle)) {
+        return true;
+    }
+
+    // Shell tanpa marker root standar (mis. UniFi OS): tidak ada form/input sama
+    // sekali, ada script, dan teks yang terlihat nyaris kosong (judul + spinner).
+    // Konsekuensi false-positive hanya menjalankan probe API (GET) — aman.
+    if (hasNoForm && !/<input[\s>]/i.test(html) && scriptCount >= 1) {
+        const visibleText = html
+            .replace(/<script[\s\S]*?<\/script>/gi, " ")
+            .replace(/<style[\s\S]*?<\/style>/gi, " ")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        if (visibleText.length < 120) return true;
+    }
+    return false;
 }
 
 /**

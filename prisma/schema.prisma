@@ -667,6 +667,23 @@ model PortalDetectionFeedback {
   @@map("portal_detection_feedback")
 }
 
+// Fingerprint struktur form generik yang terbukti lolos Uji Login.
+// Produk tak dikenal yang sukses diverifikasi otomatis terdaftar di sini
+// sehingga aplikasi mirip berikutnya langsung dikenali (tanpa coding).
+model PortalProductFingerprint {
+  id          String   @id @default(cuid())
+  origin      String
+  product     String   // nama produk registry, atau "generic"
+  formHash    String   // sha256 nama field terurut + method (tanpa nilai)
+  config      Json     // CorrectedLoginConfig (tanpa kredensial)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([origin])
+  @@index([product, formHash])
+  @@map("portal_product_fingerprint")
+}
+
 // Status bukti profile adaptif. Status ini terpisah dari approval supaya
 // respons 401/403 API dapat dicatat sebagai transport hidup, bukan login sukses.
 enum PortalLoginProfileState {

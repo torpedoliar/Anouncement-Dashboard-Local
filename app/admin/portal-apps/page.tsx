@@ -372,6 +372,12 @@ export default function PortalAppsPage() {
             const learnedNote = learned
                 ? `Hasil belajar dari koreksi admin sebelumnya di situs ini: user=${learned.usernameField ?? "-"}, pass=${learned.passwordField ?? "-"}, mode=${learned.ssoMode ?? "-"}.`
                 : undefined;
+            // Recall memori (fingerprint generik / registry produk) bila tidak
+            // ada koreksi langsung.
+            const memory = !learned && data.memory && typeof data.memory === "object" ? data.memory : null;
+            const memoryNote = memory?.label
+                ? `${String(memory.label)}${memory.product ? ` (produk: ${memory.product})` : ""}.`
+                : undefined;
 
             if (!res.ok) {
                 // Tidak ada field yang terdeteksi bukan bukti bahwa konfigurasi yang
@@ -381,7 +387,7 @@ export default function PortalAppsPage() {
                 const apiContracts = Array.isArray(data.apiContracts)
                     ? (data.apiContracts as Array<{ method: string; path: string; params: string[] }>)
                     : [];
-                const hasJsonLogin = data.apiLayer === "OPENAPI" && apiContracts.length > 0;
+                const hasJsonLogin = (data.apiLayer === "OPENAPI" || data.apiLayer === "KNOWN_ENDPOINT") && apiContracts.length > 0;
 
                 if (hasJsonLogin) {
                     setFormData((prev) => ({
@@ -410,6 +416,7 @@ export default function PortalAppsPage() {
                         ...(llmNote ? [llmNote] : []),
                         ...(llmSkipNote ? [llmSkipNote] : []),
                         ...(learnedNote ? [learnedNote] : []),
+                        ...(memoryNote ? [memoryNote] : []),
                         ...(recommendation ? [recommendation] : []),
                         ...notes,
                     ],
@@ -439,8 +446,9 @@ export default function PortalAppsPage() {
                 ...(llmNote ? [llmNote] : []),
                 ...(llmSkipNote ? [llmSkipNote] : []),
                 ...(learnedNote ? [learnedNote] : []),
+                ...(memoryNote ? [memoryNote] : []),
             ];
-            if (data.apiLayer === "OPENAPI" && Array.isArray(data.apiContracts) && data.apiContracts.length > 0) {
+            if ((data.apiLayer === "OPENAPI" || data.apiLayer === "KNOWN_ENDPOINT") && Array.isArray(data.apiContracts) && data.apiContracts.length > 0) {
                 const contracts = (data.apiContracts as Array<{ method: string; path: string }>).
                     map((contract) => `${contract.method} ${contract.path}`).join(", ");
                 allWarnings.push(`Kontrak API JSON terdeteksi: ${contracts} — tombol "Uji JSON" tersedia`);
@@ -1158,8 +1166,8 @@ export default function PortalAppsPage() {
                                     >
                                         {verifyState === "running" ? "Menguji..." : "Uji Login"}
                                     </button>
-                                    {/* Uji JSON button - only show when apiLayer is OPENAPI */}
-                                    {formData.apiLayer === "OPENAPI" && formData.apiContracts && formData.apiContracts.length > 0 && (
+                                    {/* Uji JSON button - tampil bila ada kontrak API (OpenAPI / endpoint dikenal) */}
+                                    {(formData.apiLayer === "OPENAPI" || formData.apiLayer === "KNOWN_ENDPOINT") && formData.apiContracts && formData.apiContracts.length > 0 && (
                                         <button
                                             type="button" onClick={() => handleVerifyLogin(true)} disabled={verifyState === "running"}
                                             className="inline-flex h-9 items-center justify-center rounded-control border border-border px-3 text-sm font-medium text-text-1 hover:bg-surface-3 disabled:opacity-50"

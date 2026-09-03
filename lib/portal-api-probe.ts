@@ -23,7 +23,7 @@ import http from "http";
 import https from "https";
 import { URL } from "url";
 
-export type ApiLayer = "OPENAPI" | "NONE";
+export type ApiLayer = "OPENAPI" | "KNOWN_ENDPOINT" | "NONE";
 
 export interface ApiContract {
     method: "POST" | "GET";
@@ -53,7 +53,32 @@ const SPEC_PATHS = [
     "/swagger/v1/swagger.json",
 ];
 
-function fetchSpec(specUrl: URL, timeoutMs = TIMEOUT_MS): Promise<{ status: number; body: string } | null> {
+/**
+ * Endpoint login JSON yang lokasinya sudah dikenal dari produk nyata dan tidak
+ * diekspos lewat OpenAPI. GET saja (aturan keras §2): 405 Method Not Allowed
+ * dengan Allow: POST, atau 4xx yang menyebut username/password, adalah bukti
+ * endpoint ada — tanpa mengirim apa pun.
+ */
+const KNOWN_LOGIN_ENDPOINTS = [
+    { path: "/api/auth/login", params: ["username", "password"], product: "UniFi OS" },
+];
+
+/**
+ * Interpretasi bukti GET pada endpoint dikenal. Murni agar bisa diuji.
+ * 405 + Allow POST = endpoint ada tapi hanya menerima POST.
+ * 400/401/415/422 dengan body menyebut username/password = endpoint auth hidup.
+ */
+export function knownEndpointEvidence(status: number, allowHeader: string | null, body: string): boolean {
+    if (status === 405) {
+        return /POST/i.test(allowHeader ?? "");
+    }
+    if (status === 400 || status === 401 || status === 415 || status === 422) {
+        return /(?:username|password|user[_-]?name|credential)/i.test(body.slice(0, 2000));
+    }
+    return false;
+}
+
+function fetchSpec(specUrl: URL, timeoutMs = TIMEOUT_MS): Promise<{ status: number; body: string; allow: string | null } | null> {
     return new Promise((resolve) => {
         const transport = specUrl.protocol === "https:" ? https : http;
         const req = transport.request(
@@ -70,13 +95,14 @@ function fetchSpec(specUrl: URL, timeoutMs = TIMEOUT_MS): Promise<{ status: numb
                 },
             },
             (res) => {
+                const allow = typeof res.headers.allow === "string" ? res.headers.allow : null;
                 let data = "";
                 res.setEncoding("utf8");
                 res.on("data", (chunk) => {
                     data += chunk;
                     if (data.length > MAX_BYTES) req.destroy();
                 });
-                res.on("end", () => resolve({ status: res.statusCode ?? 0, body: data.slice(0, MAX_BYTES) }));
+                res.on("end", () => resolve({ status: res.statusCode ?? 0, body: data.slice(0, MAX_BYTES), allow }));
                 res.on("error", () => resolve(null));
             }
         );
@@ -327,5 +353,34 @@ export async function probeApiLayer(pageUrl: string): Promise<ApiProbe> {
         };
     }
 
+    // OpenAPI tidak ada — coba endpoint login JSON yang lokasinya dikenal.
+    const known = await probeKnownLoginEndpoints(origin, deadline);
+    if (known) return known;
+
     return { layer: "NONE", contracts: [], specUrl: null, note: "Tidak ada /openapi.json atau /swagger.json same-origin" };
+}
+
+/**
+ * Probe endpoint login JSON yang lokasinya dikenal (UniFi OS dsb.) — GET saja,
+ * bukti keberadaan dari status 405/4xx. Dipanggil setelah probe OpenAPI gagal.
+ */
+async function probeKnownLoginEndpoints(origin: URL, deadline: number): Promise<ApiProbe | null> {
+    for (const known of KNOWN_LOGIN_ENDPOINTS) {
+        const remainingMs = deadline - Date.now();
+        if (remainingMs < 250) break;
+        const endpointUrl = new URL(known.path, origin);
+        if (endpointUrl.host !== origin.host || endpointUrl.protocol !== origin.protocol) continue;
+        const res = await fetchSpec(endpointUrl, Math.min(TIMEOUT_MS, remainingMs));
+        if (!res) continue;
+        if (!knownEndpointEvidence(res.status, res.allow, res.body)) continue;
+        return {
+            layer: "KNOWN_ENDPOINT",
+            contracts: [{ method: "POST", path: known.path, params: known.params }],
+            specUrl: null,
+            note:
+                `Endpoint login ${known.product} dikenali (${known.path}, bukti GET ${res.status}). ` +
+                "Parameter {username,password} sesuai konvensi produk — jalankan Uji JSON untuk memastikan.",
+        };
+    }
+    return null;
 }

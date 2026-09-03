@@ -5,6 +5,7 @@ import { logAudit } from "@/lib/audit";
 import { detectWithLadder } from "@/lib/portal-detect-ladder";
 import { analyzeLoginWithLlm } from "@/lib/portal-llm-analyze";
 import { getLearnedSuggestion } from "@/lib/portal-detection-feedback";
+import { recallLoginMemory } from "@/lib/portal-memory-recall";
 import {
     getSafeLoginProfileDiscoveryPresentation,
     recordLoginProfileCandidate,
@@ -34,6 +35,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Format URL tidak valid" }, { status: 400 });
         }
 
+        // MEMORI dulu: koreksi admin sebelumnya pada origin/path yang sama.
+        // (Tanpa HTML — hanya koreksi yang bisa di-recall sebelum fetch.)
+        const learned = await getLearnedSuggestion(parsed.href);
+
         // Deteksi berlapis: HTTP → (bila perlu) browser. Semua evidence yang
         // dikembalikan ke editor telah disaring agar tidak dapat dipersistenkan
         // kembali sebagai query redirect atau metadata cookie.
@@ -41,15 +46,22 @@ export async function POST(request: NextRequest) {
         const { detected, verdict } = result;
         const presentation = getSafeLoginProfileDiscoveryPresentation(result);
 
-        // Saran hasil belajar: koreksi admin sebelumnya pada origin/path yang sama.
-        const learned = await getLearnedSuggestion(parsed.href);
+        // Recall penuh dengan HTML hasil ladder: fingerprint generik dan
+        // registry produk ikut dipertimbangkan setelah koreksi.
+        const memory = learned
+            ? null
+            : await recallLoginMemory({ loginUrl: parsed.href, html: result.html });
 
         // Lapis LLM opsional: hanya saat heuristik belum yakin (tanpa password
-        // field, multi-step, atau confidence rendah). Fail-closed — null bila
-        // AI nonaktif/gagal, dan saran field diverifikasi terhadap DOM nyata.
+        // field, multi-step, atau confidence rendah). Dilewati bila recall
+        // koreksi admin sudah memberi jawaban penuh (hemat biaya).
         const LOW_CONFIDENCE = 400;
+        const skipLlmForMemory = Boolean(
+            learned?.usernameField && learned?.passwordField,
+        );
         const needsLlm =
-            !detected.passwordField || detected.multiStep === true || (detected.confidence ?? 0) < LOW_CONFIDENCE;
+            !skipLlmForMemory &&
+            (!detected.passwordField || detected.multiStep === true || (detected.confidence ?? 0) < LOW_CONFIDENCE);
         const llmOutcome = needsLlm
             ? await analyzeLoginWithLlm({
                   url: result.finalUrl,
@@ -167,6 +179,7 @@ export async function POST(request: NextRequest) {
                     llm: llmBlock,
                     llmNote,
                     learned,
+                    memory,
                     profile: profile?.profile ?? null,
                     profilePersistenceWarning,
                 },
@@ -194,8 +207,9 @@ export async function POST(request: NextRequest) {
             layerNotes: presentation.layerNotes,
             multiStep: detected.multiStep ?? false,
             llm: llmBlock,
-                    llmNote,
+            llmNote,
             learned,
+            memory,
             // Lapis 3 probe. NONE saat form login ditemukan di HTTP/BROWSER —
             // apiContracts kosong sehingga UI tidak menampilkan tombol "Uji JSON".
             apiLayer: result.apiProbe.layer,

@@ -16,6 +16,8 @@ import {
     relayLogin,
 } from "@/lib/portal-sso-relay";
 import { probeApiLayer, type ApiProbe } from "@/lib/portal-api-probe";
+import { fingerprintLoginProduct } from "@/lib/portal-product-registry";
+import { formSignatureHash } from "@/lib/portal-memory-recall";
 import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
 import { verifyLoginSchema } from "@/lib/validation-schemas";
@@ -120,8 +122,39 @@ function matchesSavedAppConfiguration(app: {
     return true;
 }
 
-async function persistVerificationResult(data: VerifyConfig, result: Exclude<DispatchResult, { status: number }>) {
+async function persistVerificationResult(data: VerifyConfig, result: Exclude<DispatchResult, { status: number }>, createdBy?: string | null) {
     if (!data.appId) return;
+
+    // Auto-register: Uji Login SUKSES pada produk tak dikenal mendaftarkan
+    // fingerprint generik (satu GET pasif tambahan). Non-fatal.
+    if (result.outcome === "CREDENTIAL_ACCEPTED") {
+        try {
+            const page = await fetchLoginPage(data.url);
+            const finalUrl = page.finalUrl || data.url;
+            if (!fingerprintLoginProduct(page.html, finalUrl)) {
+                const origin = new URL(finalUrl).origin.toLowerCase();
+                const existing = await prisma.portalProductFingerprint.findFirst({ where: { origin }, select: { id: true } });
+                if (!existing) {
+                    await prisma.portalProductFingerprint.create({
+                        data: {
+                            origin,
+                            product: "generic",
+                            formHash: formSignatureHash([data.usernameField, data.passwordField], data.httpMethod),
+                            config: {
+                                usernameField: data.usernameField,
+                                passwordField: data.passwordField,
+                                httpMethod: data.httpMethod,
+                                ssoMode: data.ssoMode,
+                            },
+                            createdBy: createdBy ?? null,
+                        },
+                    });
+                }
+            }
+        } catch {
+            // Gagal fetch/DB tidak boleh menggagalkan hasil verifikasi.
+        }
+    }
 
     const app = await prisma.portalApp.findUnique({
         where: { id: data.appId },
@@ -275,7 +308,7 @@ export async function POST(request: NextRequest) {
             request,
         }).catch(() => {});
 
-        await persistVerificationResult(data, result);
+        await persistVerificationResult(data, result, adminId);
 
         const body: Record<string, unknown> = {
             ok: result.ok,
@@ -439,7 +472,7 @@ async function dispatch(data: VerifyConfig): Promise<DispatchResult> {
             outcome: "TRANSPORT_VALIDATED",
             message:
                 "Halaman ini dirakit JavaScript (SPA), jadi kredensial tidak dapat diuji dari portal. " +
-                (apiProbe.layer === "OPENAPI"
+                (apiProbe.layer === "OPENAPI" || apiProbe.layer === "KNOWN_ENDPOINT"
                     ? "Kontrak API JSON terdeteksi — gunakan tombol \"Uji JSON\"."
                     : "Uji manual: buka halaman login aplikasi dan login dengan akun tersimpan."),
             handoff: false,

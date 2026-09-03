@@ -131,7 +131,7 @@ function safeApiObservation(apiProbe: ApiProbe, baseUrl: string): DeepApiObserva
         layer: apiProbe.layer,
         specPath,
         contracts,
-        note: apiProbe.layer === "OPENAPI"
+        note: apiProbe.layer === "OPENAPI" || apiProbe.layer === "KNOWN_ENDPOINT"
             ? `Kontrak API credentialless terdeteksi (${contracts.length} kandidat). Verifikasi JSON tetap harus dijalankan eksplisit.`
             : apiProbe.specUrl
               ? "Spesifikasi API ditemukan, tetapi belum ada kontrak login yang cukup kuat."
@@ -518,7 +518,7 @@ export async function analyzeLoginDeeply(url: string, deps: LadderDeps = {}): Pr
     const notes = [
         "Deep analysis menjalankan HTML statis, browser render, dan probe OpenAPI secara credentialless.",
         rendered ? "DOM browser berhasil diamati." : "DOM browser tidak tersedia; kesimpulan browser bersifat terbatas.",
-        api.layer === "OPENAPI" ? "Kontrak API login ditemukan dan ditambahkan sebagai kandidat terpisah." : "Tidak ada kontrak API login kuat yang ditemukan.",
+        api.layer === "OPENAPI" || api.layer === "KNOWN_ENDPOINT" ? "Kontrak API login ditemukan dan ditambahkan sebagai kandidat terpisah." : "Tidak ada kontrak API login kuat yang ditemukan.",
     ];
     if (selected.source === "BROWSER" && selected.passwordDetected && !selected.formActionPath) {
         notes.push("Bukti terkuat berasal dari browser dan tidak memiliki action server eksplisit; native FORM/POST diblokir sampai endpoint dikonfirmasi.");
