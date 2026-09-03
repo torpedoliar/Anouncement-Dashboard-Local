@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en" class="text-size-normal anon">
+  <head>
+    <meta charset="utf-8">
+    <title>Discourse Demo</title>
+    <meta name="description" content="Demonstration sandbox for Discourse">
+    <meta name="discourse_theme_id" content="-2">
+    <meta name="discourse_current_homepage" content="latest">
+
+    <meta name="generator" content="Discourse 2026.9.0-latest - https://github.com/discourse/discourse version 542b65070ad2144dd335f0ec771670994162b31c">
+<link rel="icon" type="image/png" href="https://global.discourse-cdn.com/try/optimized/1X/9af9456df3a40537038643d987ffcbd553ad3296_2_32x32.svg">
+<link rel="apple-touch-icon" type="image/png" href="https://global.discourse-cdn.com/try/optimized/1X/9af9456df3a40537038643d987ffcbd553ad3296_2_180x180.svg">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#222222">
+
+<meta name="color-scheme" content="light dark">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
+<link rel="canonical" href="https://try.discourse.org/login" />
+
+<meta name="discourse-track-view-session-id" content="q4tKc3YeFUn84KMd1PFr9G3gEuAKpy83"><meta name="discourse-beacon-pageview-enabled" content="true"><meta name="discourse-engagement-tracking-enabled" content="true">
+<link rel="search" type="application/opensearchdescription+xml" href="https://try.discourse.org/opensearch.xml" title="Discourse Demo Search">
+
+    
+
+      <meta name="fragment" content="!">
+
+
+    
+  <script type="importmap" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+    {
+  "imports": {
+    "discourse/plugins/automation": "https://global.discourse-cdn.com/try/assets/js/plugins/automation_main.j-gi7s-ivdm7a4p.digested.js",
+    "discourse/plugins/chat": "https://global.discourse-cdn.com/try/assets/js/plugins/chat_main.G-Bd5e-vkr0pka5.digested.js",
+    "discourse/plugins/checklist": "https://global.discourse-cdn.com/try/assets/js/plugins/checklist_main.BKKlTB-7qlr536q.digested.js",
+    "discourse/plugins/discourse-adplugin": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-adplugin_main.5CJZav-fuu86ulu.digested.js",
+    "discourse/plugins/discourse-ai": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-ai_main.RfYGfT-5ti18lc6.digested.js",
+    "discourse/plugins/discourse-akismet": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-akismet_main.D6Lfjl-hc8p532a.digested.js",
+    "discourse/plugins/discourse-assign": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-assign_main.RwwWbg-eka8b3b0.digested.js",
+    "discourse/plugins/discourse-cakeday": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-cakeday_main.wbK6Ri-xplixxrl.digested.js",
+    "discourse/plugins/discourse-data-explorer": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-data-explorer_main.DUIPmE-sjvddq5c.digested.js",
+    "discourse/plugins/discourse-deprecation-collector": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-deprecation-collector_main.BTDz3x-l8pu6xh9.digested.js",
+    "discourse/plugins/discourse-details": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-details_main.DwvW5a-78429ij8.digested.js",
+    "discourse/plugins/discourse-docs": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-docs_main.DJdvsR-fz9tua8w.digested.js",
+    "discourse/plugins/discourse-events": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-events_main.BPhyPa-qhxnob4x.digested.js",
+    "discourse/plugins/discourse-github": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-github_main.DPzaQZ-4dom2mgr.digested.js",
+    "discourse/plugins/discourse-lazy-videos": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-lazy-videos_main.BGA6_t-g5qd1ki4.digested.js",
+    "discourse/plugins/discourse-local-dates": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-local-dates_main.B8ehpj-poeku5p3.digested.js",
+    "discourse/plugins/discourse-math": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-math_main.Dgzavx-2cm4rkln.digested.js",
+    "discourse/plugins/discourse-narrative-bot": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-narrative-bot_main.D260cb-hnuxjp3y.digested.js",
+    "discourse/plugins/discourse-policy": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-policy_main.D9rABJ-bbnkzubb.digested.js",
+    "discourse/plugins/discourse-presence": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-presence_main.Dl8_5h-osi4j1us.digested.js",
+    "discourse/plugins/discourse-reactions": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-reactions_main.B-VLT9-suef34rm.digested.js",
+    "discourse/plugins/discourse-solved": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-solved_main.BJPr2M-1mhu81jz.digested.js",
+    "discourse/plugins/discourse-templates": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-templates_main.D40Gut-oh5ie6zo.digested.js",
+    "discourse/plugins/discourse-topic-voting": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-topic-voting_main.e03gsE-hg40bc7h.digested.js",
+    "discourse/plugins/discourse-user-notes": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-user-notes_main.CRQhcc-qgjvfdwj.digested.js",
+    "discourse/plugins/footnote": "https://global.discourse-cdn.com/try/assets/js/plugins/footnote_main.DkGdMC-7mkovd3l.digested.js",
+    "discourse/plugins/hosted-site": "https://global.discourse-cdn.com/try/assets/js/plugins/hosted-site_main.BLd_Yh-psqjfvdq.digested.js",
+    "discourse/plugins/poll": "https://global.discourse-cdn.com/try/assets/js/plugins/poll_main.DZHBDX-lq3kfhay.digested.js",
+    "discourse/plugins/spoiler-alert": "https://global.discourse-cdn.com/try/assets/js/plugins/spoiler-alert_main.Bf6mLH-mu3t84sa.digested.js",
+    "discourse/plugins/discourse-lazy-videos?": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-lazy-videos_main.BGA6_t-g5qd1ki4.digested.js",
+    "discourse/plugins/discourse-local-dates?": "https://global.discourse-cdn.com/try/assets/js/plugins/discourse-local-dates_main.B8ehpj-poeku5p3.digested.js",
+    "discourse/plugins/styleguide?": "data:text/javascript,/* autogenerated missing optional plugin stub */const m=new Proxy({},{get:()=>null});export default new Proxy({},{get:()=>m});",
+    "discourse/plugins/styleguide": "data:text/javascript, /* autogenerated missing required plugin stub */ export default null; throw new Error(\"Plugin 'styleguide' is imported by another bundle, but it is not installed on this site. If this dependency is optional, import it with `with { discourseImport: \\\"optional\\\" }`.\");",
+    "discourse/plugins/spoiler-alert?": "https://global.discourse-cdn.com/try/assets/js/plugins/spoiler-alert_main.Bf6mLH-mu3t84sa.digested.js",
+    "discourse/plugins/chat?": "https://global.discourse-cdn.com/try/assets/js/plugins/chat_main.G-Bd5e-vkr0pka5.digested.js"
+  }
+}
+  </script>
+
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/automation_main.j-gi7s-ivdm7a4p.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="automation"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/chat_main.G-Bd5e-vkr0pka5.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="chat"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/checklist_main.BKKlTB-7qlr536q.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="checklist"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-adplugin_main.5CJZav-fuu86ulu.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-adplugin"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-ai_main.RfYGfT-5ti18lc6.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-ai"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-akismet_main.D6Lfjl-hc8p532a.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="false" data-plugin-name="discourse-akismet"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-assign_main.RwwWbg-eka8b3b0.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-assign"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-cakeday_main.wbK6Ri-xplixxrl.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-cakeday"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-data-explorer_main.DUIPmE-sjvddq5c.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-data-explorer"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-deprecation-collector_main.BTDz3x-l8pu6xh9.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="false" data-preinstalled="false" data-plugin-name="discourse-deprecation-collector"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-details_main.DwvW5a-78429ij8.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-details"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-docs_main.DJdvsR-fz9tua8w.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="false" data-plugin-name="discourse-docs"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-events_main.BPhyPa-qhxnob4x.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-events"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-github_main.DPzaQZ-4dom2mgr.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-github"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-lazy-videos_main.BGA6_t-g5qd1ki4.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-lazy-videos"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-local-dates_main.B8ehpj-poeku5p3.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-local-dates"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-math_main.Dgzavx-2cm4rkln.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-math"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-narrative-bot_main.D260cb-hnuxjp3y.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-narrative-bot"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-policy_main.D9rABJ-bbnkzubb.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-policy"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-presence_main.Dl8_5h-osi4j1us.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-presence"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-reactions_main.B-VLT9-suef34rm.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-reactions"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-solved_main.BJPr2M-1mhu81jz.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-solved"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-templates_main.D40Gut-oh5ie6zo.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-templates"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-topic-voting_main.e03gsE-hg40bc7h.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-topic-voting"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-user-notes_main.CRQhcc-qgjvfdwj.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="discourse-user-notes"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/footnote_main.DkGdMC-7mkovd3l.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="footnote"
+      >
+      <script defer src="https://global.discourse-cdn.com/try/assets/plugins/footnote_extra-95ffab71.js" data-discourse-entrypoint="plugins/footnote_extra" data-official="true" data-preinstalled="true" data-plugin-name="footnote" nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/hosted-site_main.BLd_Yh-psqjfvdq.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="false" data-preinstalled="false" data-plugin-name="hosted-site"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/poll_main.DZHBDX-lq3kfhay.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="poll"
+      >
+      <link
+        rel="modulepreload"
+        href="https://global.discourse-cdn.com/try/assets/js/plugins/spoiler-alert_main.Bf6mLH-mu3t84sa.digested.js"
+        nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+        data-official="true" data-preinstalled="true" data-plugin-name="spoiler-alert"
+      >
+
+    <link
+      rel="modulepreload"
+      href="https://global.discourse-cdn.com/try/assets/js/plugins/automation_chunk.DvFpQj-ivdm7a4p.digested.js"
+      nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+    >
+    <link
+      rel="modulepreload"
+      href="https://global.discourse-cdn.com/try/assets/js/plugins/chat_chunk.yGmGT5-vkr0pka5.digested.js"
+      nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+    >
+    <link
+      rel="modulepreload"
+      href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-ai_chunk.D3S7-9-5ti18lc6.digested.js"
+      nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+    >
+    <link
+      rel="modulepreload"
+      href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-data-explorer_chunk.BZJFYo-sjvddq5c.digested.js"
+      nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+    >
+    <link
+      rel="modulepreload"
+      href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-solved_chunk.DL-z0A-1mhu81jz.digested.js"
+      nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+    >
+    <link
+      rel="modulepreload"
+      href="https://global.discourse-cdn.com/try/assets/js/plugins/discourse-user-notes_chunk.CTqVz5-qgjvfdwj.digested.js"
+      nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+    >
+    <link
+      rel="modulepreload"
+      href="https://global.discourse-cdn.com/try/assets/js/plugins/hosted-site_chunk.CTNWwT-psqjfvdq.digested.js"
+      nonce="MZCNTu4GyUIjibYNc9U24zPl5"
+    >
+
+
+    
+
+
+    <script nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+      window.EmberENV ??= {};
+      window.EmberENV._DEFAULT_ASYNC_OBSERVERS = true;
+    </script>
+
+    <script type="module" src="https://sea1.discourse-cdn.com/try/extra-locales/dad6ccb22e24b662b72fd1796cd356ec7e869bfd/en/main.js"  nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+    <script type="module" src="https://sea1.discourse-cdn.com/try/extra-locales/0ffe7a21317d2af4f704e60d5a6802a6b9fa84f4/en/mf.js?__ws=try.discourse.org"  nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+      <script type="module" src="https://sea1.discourse-cdn.com/try/extra-locales/7041ad6c9ea5abf5693050faa62592065eebeacf/en/overrides.js?__ws=try.discourse.org"  nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+      <script type="module" src="https://sea1.discourse-cdn.com/try/theme-javascripts/5f7ea291bd7a34bc754eacf2f2e3c7423d261662.js?__ws=try.discourse.org" data-theme-id="-2" nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+
+    <link rel="preload" href="https://global.discourse-cdn.com/try/assets/js/browser-update-91688f13.js" as="script" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+    <script defer src="https://global.discourse-cdn.com/try/assets/js/browser-detect-47cf9e6d.js" data-discourse-entrypoint="js/browser-detect" nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+
+    <script type="module" src="https://global.discourse-cdn.com/try/assets/js/vendor-gvfzcitk.digested.js" data-discourse-entrypoint="vendor" nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+
+    <link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/discourse-ku3plz5f.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-f96lzs6p.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-lydzdng2.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-ogwxu87d.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-j4wgom3f.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-o412iwhn.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-e5r0wf8a.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-i7leavdy.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-m4ctdigl.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-b01di0l9.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-hgkf19ck.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-lcbypavo.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-kavfrktc.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-k8w4gdq5.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-f8xa5xgc.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-f3glksav.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-6m4jm9um.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-hf8l846v.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-evvb3785.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-mva3ky07.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-hwvhwclz.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-bfdzg3p6.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+<link rel="modulepreload" href="https://global.discourse-cdn.com/try/assets/js/chunk-e746ai9z.digested.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+
+
+        <link rel="modulepreload" href="https://sea1.discourse-cdn.com/try/theme-javascripts/b9fd7ea166cd0bc2583f284d13e32022c0c34dc4.js?__ws=try.discourse.org" data-theme-id="-2" nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+      
+
+    
+    
+    
+
+    <link id="manifest-link" rel="manifest" href=/manifest.webmanifest crossorigin="use-credentials">
+
+
+      <meta property="og:site_name" content="Discourse Demo" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="og:image" content="https://global.discourse-cdn.com/try/original/1X/9af9456df3a40537038643d987ffcbd553ad3296.svg" />
+<meta property="og:url" content="https://try.discourse.org/login" />
+<meta name="twitter:url" content="https://try.discourse.org/login" />
+<meta property="og:title" content="Discourse Demo" />
+<meta name="twitter:title" content="Discourse Demo" />
+<meta property="og:description" content="Demonstration sandbox for Discourse" />
+<meta name="twitter:description" content="Demonstration sandbox for Discourse" />
+
+
+    <script async src="/plugins/discourse-client-performance/javascripts/discourse-client-performance.js?v=a7b922e8787e07682fc55636ddbe93c4307c315489def4c7a44d5d46bf814e3c" nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+
+
+
+    <meta id="data-discourse-setup" data-cdn="https://sea1.discourse-cdn.com/try" data-base-url="https://try.discourse.org" data-base-uri="" data-environment="production" data-letter-avatar-version="5_5575768a8748004e209b776fc1b2916d" data-service-worker-url="service-worker.js" data-default-locale="en" data-asset-version="98b43e214510c6ad5f471f5a7a916a23" data-disable-custom-css="false" data-highlight-js-path="/highlight-js/try.discourse.org/d125c3422119592da271b68fa9500c957dd748c0.js" data-svg-sprite-path="/svg-sprite/try.discourse.org/svg--2-ad3bd2e401ade0087e198d2f37788b9bfecef5f8.js" data-color-scheme-is-dark="false" data-user-color-scheme-id="-1" data-user-dark-scheme-id="-1" data-s3-cdn="https://global.discourse-cdn.com/try" data-s3-base-url="//cdck-file-uploads-global.s3.dualstack.us-west-2.amazonaws.com/try">
+
+    <meta name="discourse/config/environment" content="%7B%22modulePrefix%22%3A%22discourse%22%2C%22environment%22%3A%22production%22%2C%22rootURL%22%3A%22%22%2C%22locationType%22%3A%22history%22%2C%22EmberENV%22%3A%7B%22FEATURES%22%3A%7B%7D%2C%22EXTEND_PROTOTYPES%22%3Afalse%7D%2C%22APP%22%3A%7B%22name%22%3A%22discourse%22%2C%22version%22%3A%222026.9.0-latest%20542b65070ad2144dd335f0ec771670994162b31c%22%7D%7D" />
+  </head>
+
+  <body class="">
+      <section id="d-splash">
+  <style>
+    html {
+      overflow-y: hidden !important;
+    }
+
+    /* user picked a theme where the "regular" scheme is dark */
+      /* user picked a theme a light scheme and also enabled a dark scheme */
+
+      /* deal with light scheme first */
+      @media (prefers-color-scheme: light) {
+        html {
+          background-color: #ffffff;
+        }
+
+        #d-splash {
+          --dot-color: #595bca;
+        }
+      }
+
+      /* then deal with dark scheme */
+      @media (prefers-color-scheme: dark) {
+        html {
+          background-color: #222222;
+        }
+
+        #d-splash {
+          --dot-color: #0f82af;
+        }
+      }
+
+    #d-splash {
+      display: grid;
+      place-items: center;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100dvh;
+      z-index: 1001;
+    }
+
+    #d-splash .preloader-image {
+      --splash-dot-size: max(1vw, 25px);
+      --splash-dot-spacing: calc(var(--splash-dot-size) * 1.5);
+      width: calc((var(--splash-dot-size) + var(--splash-dot-spacing)) * 5);
+      height: 100dvh;
+      background-size: cover;
+    }
+
+    @keyframes d-splash-fade-in {
+      0% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+
+
+    .dots {
+      animation-name: d-splash-loader;
+      animation-timing-function: ease-in-out;
+      animation-duration: 3s;
+      animation-iteration-count: infinite;
+      animation-delay: calc(var(--n) * 0.15s);
+
+      position: absolute;
+      top: calc(50% - var(--splash-dot-size) / 2);
+      left: calc((50% - var(--splash-dot-size) / 2) + (var(--n) * var(--splash-dot-spacing)));
+      transform-origin: calc((var(--splash-dot-spacing) * var(--n) * -1) + var(--splash-dot-size)/2) center;
+
+      width: var(--splash-dot-size);
+      height: var(--splash-dot-size);
+      border-radius: 50%;
+
+      background-color: var(--dot-color);
+      filter: saturate(2) opacity(0.85);
+      opacity: 0;
+    }
+
+    @keyframes d-splash-loader {
+      0% {
+        opacity: 0;
+        transform: scale(1);
+      }
+      45% {
+        opacity: 1;
+        transform: scale(0.7);
+      }
+      65% {
+        opacity: 1;
+        transform: scale(0.7);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1);
+      }
+    }
+
+  </style>
+
+  <div class="preloader-image" elementtiming="discourse-splash-visible">
+      <div class="dots" style="--n:-2;"></div>
+      <div class="dots" style="--n:-1;"></div>
+      <div class="dots" style="--n:0;"></div>
+      <div class="dots" style="--n:1;"></div>
+      <div class="dots" style="--n:2;"></div>
+  </div>
+  <script nonce="MZCNTu4GyUIjibYNc9U24zPl5">
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"><!-- LCP candidate image ${".".repeat(5000)} --></svg>`;
+    document.querySelector("#d-splash .preloader-image").style.backgroundImage = `url('data:image/svg+xml,${svg}')`
+  </script>
+
+  <noscript>
+    <style>
+      html {
+        overflow-y: revert !important;
+      }
+
+      #d-splash {
+        display: none;
+      }
+    </style>
+  </noscript>
+</section>
+
+
+    <discourse-assets>
+      <discourse-assets-stylesheets>
+        <link href="https://sea1.discourse-cdn.com/try/stylesheets/color_definitions_horizon_78_-2_046b7550840a0bfc1533a23ca9cc1855481d75c2.css?__ws=try.discourse.org" media="(prefers-color-scheme: light)" rel="stylesheet" class="light-scheme" data-scheme-id="78"/><link href="https://sea1.discourse-cdn.com/try/stylesheets/color_definitions_dark_4_-2_a62acc25c6b36ff270ccd1c59e69aa934e6bc8f7.css?__ws=try.discourse.org" media="(prefers-color-scheme: dark)" rel="stylesheet" class="dark-scheme" data-scheme-id="4"/>
+
+<link href="https://sea1.discourse-cdn.com/try/stylesheets/common_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="common"  />
+
+
+
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/automation_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="automation"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/chat_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="chat"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/checklist_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="checklist"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-adplugin_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-adplugin"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-ai_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-ai"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-akismet_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-akismet"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-assign_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-assign"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-cakeday_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-cakeday"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-data-explorer_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-data-explorer"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-details_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-details"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-docs_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-docs"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-events_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-events"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-github_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-github"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-lazy-videos_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-lazy-videos"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-local-dates_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-local-dates"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-math_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-math"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-narrative-bot_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-narrative-bot"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-policy_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-policy"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-presence_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-presence"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-reactions_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-reactions"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-solved_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-solved"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-templates_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-templates"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-topic-voting_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-topic-voting"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-user-notes_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="discourse-user-notes"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/footnote_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="footnote"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/hosted-site_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="hosted-site"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/poll_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="poll"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/spoiler-alert_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="spoiler-alert"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/chat_mobile_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width < 40rem)" rel="stylesheet" data-target="chat_mobile"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-ai_mobile_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width < 40rem)" rel="stylesheet" data-target="discourse-ai_mobile"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-assign_mobile_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width < 40rem)" rel="stylesheet" data-target="discourse-assign_mobile"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-events_mobile_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width < 40rem)" rel="stylesheet" data-target="discourse-events_mobile"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-reactions_mobile_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width < 40rem)" rel="stylesheet" data-target="discourse-reactions_mobile"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/chat_desktop_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width >= 40rem)" rel="stylesheet" data-target="chat_desktop"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-ai_desktop_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width >= 40rem)" rel="stylesheet" data-target="discourse-ai_desktop"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-events_desktop_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width >= 40rem)" rel="stylesheet" data-target="discourse-events_desktop"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/discourse-reactions_desktop_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width >= 40rem)" rel="stylesheet" data-target="discourse-reactions_desktop"  />
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/poll_desktop_4b3d94d2e4117be9e887e9f9872b78380d6bef4b.css?__ws=try.discourse.org" media="(width >= 40rem)" rel="stylesheet" data-target="poll_desktop"  />
+
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/common_theme_-2_5e31f7d25d238dbd88ef25f62a69028f6c397fb0.css?__ws=try.discourse.org" media="all" rel="stylesheet" data-target="common_theme" data-theme-id="-2" data-theme-name="horizon"/>
+  
+  <link href="https://sea1.discourse-cdn.com/try/stylesheets/desktop_theme_-2_bde52cf207fa0a49c72bd02980fdac222611dc9a.css?__ws=try.discourse.org" media="(width >= 40rem)" rel="stylesheet" data-target="desktop_theme" data-theme-id="-2" data-theme-name="horizon"/>
+
+      </discourse-assets-stylesheets>
+      <discourse-assets-json>
+        <script type="application/json" id="data-preloaded">{"site":"{\"default_archetype\":\"regular\",\"notification_types\":{\"mentioned\":1,\"replied\":2,\"quoted\":3,\"edited\":4,\"liked\":5,\"private_message\":6,\"invited_to_private_message\":7,\"invitee_accepted\":8,\"posted\":9,\"moved_post\":10,\"linked\":11,\"granted_badge\":12,\"invited_to_topic\":13,\"custom\":14,\"group_mentioned\":15,\"group_message_summary\":16,\"watching_first_post\":17,\"topic_reminder\":18,\"liked_consolidated\":19,\"post_approved\":20,\"code_review_commit_approved\":21,\"membership_request_accepted\":22,\"membership_request_consolidated\":23,\"bookmark_reminder\":24,\"reaction\":25,\"votes_released\":26,\"event_reminder\":27,\"event_invitation\":28,\"chat_mention\":29,\"chat_message\":30,\"chat_invitation\":31,\"chat_group_mention\":32,\"chat_quoted\":33,\"assigned\":34,\"question_answer_user_commented\":35,\"watching_category_or_tag\":36,\"new_features\":37,\"admin_problems\":38,\"linked_consolidated\":39,\"chat_watched_thread\":40,\"upcoming_change_available\":41,\"upcoming_change_automatically_promoted\":42,\"boost\":43,\"suggested_edit_created\":44,\"suggested_edit_accepted\":45,\"following\":800,\"following_created_topic\":801,\"following_replied\":802,\"circles_activity\":900,\"voice_invitation\":1000},\"post_types\":{\"regular\":1,\"moderator_action\":2,\"small_action\":3,\"whisper\":4},\"trust_levels\":{\"newuser\":0,\"basic\":1,\"member\":2,\"regular\":3,\"leader\":4},\"groups\":[],\"filters\":[\"latest\",\"unread\",\"new\",\"unseen\",\"top\",\"read\",\"posted\",\"bookmarks\",\"hot\",\"votes\"],\"anonymous_list_filters\":[\"latest\",\"top\",\"hot\",\"votes\"],\"homepage_choices\":[\"latest\",\"new\",\"unseen\",\"top\",\"categories\",\"read\",\"posted\",\"bookmarks\",\"hot\",\"votes\"],\"homepage_options\":[],\"periods\":[\"all\",\"yearly\",\"quarterly\",\"monthly\",\"weekly\",\"daily\"],\"top_menu_items\":[\"latest\",\"unread\",\"new\",\"unseen\",\"top\",\"read\",\"posted\",\"bookmarks\",\"hot\",\"categories\",\"votes\"],\"anonymous_top_menu_items\":[\"latest\",\"top\",\"categories\",\"hot\",\"categories\",\"top\",\"votes\"],\"uncategorized_category_id\":13,\"user_field_max_length\":2048,\"post_action_types\":[{\"id\":6,\"name\":\"Send @%{username} a message\",\"name_key\":\"notify_user\",\"description\":\"I want to talk to this person directly and personally about their post.\",\"short_description\":\"I want to talk to this person directly and personally about their post.\",\"applies_to\":[\"Post\",\"Chat::Message\"],\"position\":0,\"require_message\":true,\"enabled\":true,\"is_flag\":true,\"is_used\":true,\"auto_action_type\":false,\"system\":true},{\"id\":3,\"name\":\"Off-Topic\",\"name_key\":\"off_topic\",\"description\":\"This post is not relevant to the current discussion as defined by the title and first post, and should probably be moved elsewhere.\",\"short_description\":\"Not relevant to the discussion\",\"applies_to\":[\"Post\",\"Chat::Message\"],\"position\":1,\"require_message\":false,\"enabled\":true,\"is_flag\":true,\"is_used\":false,\"auto_action_type\":true,\"system\":true},{\"id\":4,\"name\":\"Inappropriate\",\"name_key\":\"inappropriate\",\"description\":\"This post contains content that a reasonable person would consider offensive, abusive, to be hateful conduct or a violation of \\u003ca href=\\\"/guidelines\\\"\\u003eour community guidelines\\u003c/a\\u003e.\",\"short_description\":\"A violation of \\u003ca href=\\\"/guidelines\\\"\\u003eour community guidelines\\u003c/a\\u003e\",\"applies_to\":[\"Post\",\"Topic\",\"Chat::Message\"],\"position\":2,\"require_message\":false,\"enabled\":true,\"is_flag\":true,\"is_used\":false,\"auto_action_type\":true,\"system\":true},{\"id\":8,\"name\":\"Spam\",\"name_key\":\"spam\",\"description\":\"This post is an advertisement, or vandalism. It is not useful or relevant to the current topic.\",\"short_description\":\"This is an advertisement or vandalism\",\"applies_to\":[\"Post\",\"Topic\",\"Chat::Message\"],\"position\":3,\"require_message\":false,\"enabled\":true,\"is_flag\":true,\"is_used\":true,\"auto_action_type\":true,\"system\":true},{\"id\":10,\"name\":\"Illegal\",\"name_key\":\"illegal\",\"description\":\"This post requires staff attention because I believe it contains content that is illegal.\",\"short_description\":\"This is illegal\",\"applies_to\":[\"Post\",\"Topic\",\"Chat::Message\"],\"position\":4,\"require_message\":true,\"enabled\":true,\"is_flag\":true,\"is_used\":false,\"auto_action_type\":false,\"system\":true},{\"id\":7,\"name\":\"Something Else\",\"name_key\":\"notify_moderators\",\"description\":\"This post requires staff attention for another reason not listed above.\",\"short_description\":\"Requires staff attention for another reason\",\"applies_to\":[\"Post\",\"Topic\",\"Chat::Message\"],\"position\":5,\"require_message\":true,\"enabled\":true,\"is_flag\":true,\"is_used\":false,\"auto_action_type\":false,\"system\":true},{\"id\":2,\"name\":\"Like\",\"name_key\":\"like\",\"description\":\"Like this post\",\"short_description\":\"Like this post\",\"applies_to\":[\"Post\"],\"position\":7,\"require_message\":false,\"enabled\":true,\"is_flag\":false,\"is_used\":true,\"auto_action_type\":false,\"system\":true}],\"topic_flag_types\":[{\"id\":4,\"name\":\"Inappropriate\",\"name_key\":\"inappropriate\",\"description\":\"This topic contains content that a reasonable person would consider offensive, abusive, to be hateful conduct or a violation of \\u003ca href=\\\"/guidelines\\\"\\u003eour community guidelines\\u003c/a\\u003e.\",\"short_description\":\"A violation of \\u003ca href=\\\"/guidelines\\\"\\u003eour community guidelines\\u003c/a\\u003e\",\"applies_to\":[\"Post\",\"Topic\",\"Chat::Message\"],\"position\":2,\"require_message\":false,\"enabled\":true,\"is_flag\":true,\"is_used\":false,\"auto_action_type\":true,\"system\":true},{\"id\":8,\"name\":\"Spam\",\"name_key\":\"spam\",\"description\":\"This topic is an advertisement. It is not useful or relevant to this site, but promotional in nature.\",\"short_description\":\"This is an advertisement\",\"applies_to\":[\"Post\",\"Topic\",\"Chat::Message\"],\"position\":3,\"require_message\":false,\"enabled\":true,\"is_flag\":true,\"is_used\":true,\"auto_action_type\":true,\"system\":true},{\"id\":10,\"name\":\"Illegal\",\"name_key\":\"illegal\",\"description\":\"This topic requires staff attention because I believe it contains content that is illegal.\",\"short_description\":\"This is illegal\",\"applies_to\":[\"Post\",\"Topic\",\"Chat::Message\"],\"position\":4,\"require_message\":true,\"enabled\":true,\"is_flag\":true,\"is_used\":false,\"auto_action_type\":false,\"system\":true},{\"id\":7,\"name\":\"Something Else\",\"name_key\":\"notify_moderators\",\"description\":\"\",\"short_description\":\"Requires staff attention for another reason\",\"applies_to\":[\"Post\",\"Topic\",\"Chat::Message\"],\"position\":5,\"require_message\":true,\"enabled\":true,\"is_flag\":true,\"is_used\":false,\"auto_action_type\":false,\"system\":true}],\"can_create_tag\":false,\"can_tag_topics\":false,\"can_tag_pms\":false,\"tags_filter_regexp\":\"[/\\\\?#\\\\[\\\\]@!\\\\$\\u0026'\\\\(\\\\)\\\\*\\\\+,;=%\\\\\\\\`^\\\\s|\\\\{\\\\}\\\"\\u003c\\u003e]+\",\"top_tags\":[{\"id\":2,\"name\":\"art\",\"slug\":\"art\"},{\"id\":1,\"name\":\"code\",\"slug\":\"code\"}],\"navigation_menu_site_top_tags\":[{\"id\":2,\"name\":\"art\",\"slug\":\"art\",\"description\":null,\"pm_only\":false},{\"id\":1,\"name\":\"code\",\"slug\":\"code\",\"description\":null,\"pm_only\":false}],\"topic_featured_link_allowed_category_ids\":[1,8,4,2,6,9,12,13,51,49,52,53,50,5,86],\"user_themes\":[{\"theme_id\":50,\"name\":\"Air\",\"default\":false,\"color_scheme_id\":43,\"dark_color_scheme_id\":4,\"only_theme_color_schemes\":false},{\"theme_id\":57,\"name\":\"Default\",\"default\":false,\"color_scheme_id\":null,\"dark_color_scheme_id\":4,\"only_theme_color_schemes\":false},{\"theme_id\":40,\"name\":\"Fully\",\"default\":false,\"color_scheme_id\":null,\"dark_color_scheme_id\":4,\"only_theme_color_schemes\":false},{\"theme_id\":-2,\"name\":\"Horizon\",\"default\":true,\"color_scheme_id\":78,\"dark_color_scheme_id\":4,\"only_theme_color_schemes\":false},{\"theme_id\":55,\"name\":\"Minima\",\"default\":false,\"color_scheme_id\":null,\"dark_color_scheme_id\":4,\"only_theme_color_schemes\":false},{\"theme_id\":45,\"name\":\"Mint\",\"default\":false,\"color_scheme_id\":41,\"dark_color_scheme_id\":4,\"only_theme_color_schemes\":false}],\"user_color_schemes\":[{\"id\":78,\"name\":\"Horizon\",\"is_dark\":false,\"theme_id\":-2,\"colors\":[{\"name\":\"primary\",\"hex\":\"1a1a1a\",\"default_hex\":\"1a1a1a\",\"is_advanced\":false},{\"name\":\"secondary\",\"hex\":\"ffffff\",\"default_hex\":\"ffffff\",\"is_advanced\":false},{\"name\":\"tertiary\",\"hex\":\"595bca\",\"default_hex\":\"595bca\",\"is_advanced\":false},{\"name\":\"quaternary\",\"hex\":\"e45735\",\"default_hex\":\"e45735\",\"is_advanced\":false},{\"name\":\"header_background\",\"hex\":\"ffffff\",\"default_hex\":\"ffffff\",\"is_advanced\":false},{\"name\":\"header_primary\",\"hex\":\"1a1a1a\",\"default_hex\":\"1a1a1a\",\"is_advanced\":false},{\"name\":\"highlight\",\"hex\":\"ffff4d\",\"default_hex\":\"ffff4d\",\"is_advanced\":false},{\"name\":\"selected\",\"hex\":\"d7dfff\",\"default_hex\":\"d7dfff\",\"is_advanced\":false},{\"name\":\"hover\",\"hex\":\"e1e8ff\",\"default_hex\":\"e1e8ff\",\"is_advanced\":false},{\"name\":\"danger\",\"hex\":\"c80001\",\"default_hex\":\"c80001\",\"is_advanced\":false},{\"name\":\"success\",\"hex\":\"090\",\"default_hex\":\"090\",\"is_advanced\":false},{\"name\":\"love\",\"hex\":\"fa6c8d\",\"default_hex\":\"fa6c8d\",\"is_advanced\":false},{\"name\":\"tertiary-med-or-tertiary\",\"hex\":\"595bca\",\"default_hex\":\"595bca\",\"is_advanced\":true}]},{\"id\":79,\"name\":\"Horizon Dark\",\"is_dark\":true,\"theme_id\":-2,\"colors\":[{\"name\":\"primary\",\"hex\":\"ffffff\",\"default_hex\":\"ffffff\",\"is_advanced\":false},{\"name\":\"secondary\",\"hex\":\"1a1a1a\",\"default_hex\":\"1a1a1a\",\"is_advanced\":false},{\"name\":\"tertiary\",\"hex\":\"6568e6\",\"default_hex\":\"6568e6\",\"is_advanced\":false},{\"name\":\"quaternary\",\"hex\":\"e45735\",\"default_hex\":\"e45735\",\"is_advanced\":false},{\"name\":\"header_background\",\"hex\":\"1a1a1a\",\"default_hex\":\"1a1a1a\",\"is_advanced\":false},{\"name\":\"header_primary\",\"hex\":\"ffffff\",\"default_hex\":\"ffffff\",\"is_advanced\":false},{\"name\":\"highlight\",\"hex\":\"ffff4d\",\"default_hex\":\"ffff4d\",\"is_advanced\":false},{\"name\":\"selected\",\"hex\":\"3b3e56\",\"default_hex\":\"3b3e56\",\"is_advanced\":false},{\"name\":\"hover\",\"hex\":\"333548\",\"default_hex\":\"333548\",\"is_advanced\":false},{\"name\":\"danger\",\"hex\":\"c80001\",\"default_hex\":\"c80001\",\"is_advanced\":false},{\"name\":\"success\",\"hex\":\"090\",\"default_hex\":\"090\",\"is_advanced\":false},{\"name\":\"love\",\"hex\":\"fa6c8d\",\"default_hex\":\"fa6c8d\",\"is_advanced\":false},{\"name\":\"tertiary-med-or-tertiary\",\"hex\":\"6568e6\",\"default_hex\":\"6568e6\",\"is_advanced\":true}]}],\"default_light_color_scheme\":{\"id\":78,\"name\":\"Horizon\",\"is_base\":null,\"base_scheme_id\":null,\"theme_id\":-2,\"theme_name\":\"Horizon\",\"user_selectable\":true,\"is_builtin_default\":null,\"is_dark\":false,\"colors\":[{\"name\":\"primary\",\"hex\":\"1a1a1a\",\"default_hex\":\"1a1a1a\",\"is_advanced\":false},{\"name\":\"secondary\",\"hex\":\"ffffff\",\"default_hex\":\"ffffff\",\"is_advanced\":false},{\"name\":\"tertiary\",\"hex\":\"595bca\",\"default_hex\":\"595bca\",\"is_advanced\":false},{\"name\":\"quaternary\",\"hex\":\"e45735\",\"default_hex\":\"e45735\",\"is_advanced\":false},{\"name\":\"header_background\",\"hex\":\"ffffff\",\"default_hex\":\"ffffff\",\"is_advanced\":false},{\"name\":\"header_primary\",\"hex\":\"1a1a1a\",\"default_hex\":\"1a1a1a\",\"is_advanced\":false},{\"name\":\"selected\",\"hex\":\"d7dfff\",\"default_hex\":\"d7dfff\",\"is_advanced\":false},{\"name\":\"hover\",\"hex\":\"e1e8ff\",\"default_hex\":\"e1e8ff\",\"is_advanced\":false},{\"name\":\"highlight\",\"hex\":\"ffff4d\",\"default_hex\":\"ffff4d\",\"is_advanced\":false},{\"name\":\"danger\",\"hex\":\"c80001\",\"default_hex\":\"c80001\",\"is_advanced\":false},{\"name\":\"success\",\"hex\":\"090\",\"default_hex\":\"090\",\"is_advanced\":false},{\"name\":\"love\",\"hex\":\"fa6c8d\",\"default_hex\":\"fa6c8d\",\"is_advanced\":false},{\"name\":\"tertiary-med-or-tertiary\",\"hex\":\"595bca\",\"default_hex\":\"595bca\",\"is_advanced\":true}]},\"default_dark_color_scheme\":{\"id\":4,\"name\":\"Dark\",\"is_base\":null,\"base_scheme_id\":-2,\"theme_id\":null,\"theme_name\":null,\"user_selectable\":false,\"is_builtin_default\":null,\"is_dark\":true,\"colors\":[{\"name\":\"primary\",\"hex\":\"dddddd\",\"default_hex\":\"dddddd\",\"is_advanced\":false},{\"name\":\"secondary\",\"hex\":\"222222\",\"default_hex\":\"222222\",\"is_advanced\":false},{\"name\":\"tertiary\",\"hex\":\"0f82af\",\"default_hex\":\"099dd7\",\"is_advanced\":false},{\"name\":\"quaternary\",\"hex\":\"c14924\",\"default_hex\":\"c14924\",\"is_advanced\":false},{\"name\":\"header_background\",\"hex\":\"222222\",\"default_hex\":\"111111\",\"is_advanced\":false},{\"name\":\"header_primary\",\"hex\":\"dddddd\",\"default_hex\":\"dddddd\",\"is_advanced\":false},{\"name\":\"selected\",\"hex\":\"2c2c2c\",\"default_hex\":\"052e3d\",\"is_advanced\":false},{\"name\":\"hover\",\"hex\":\"313131\",\"default_hex\":\"313131\",\"is_advanced\":false},{\"name\":\"highlight\",\"hex\":\"a87137\",\"default_hex\":\"a87137\",\"is_advanced\":false},{\"name\":\"danger\",\"hex\":\"e45735\",\"default_hex\":\"e45735\",\"is_advanced\":false},{\"name\":\"success\",\"hex\":\"1ca551\",\"default_hex\":\"1ca551\",\"is_advanced\":false},{\"name\":\"love\",\"hex\":\"fa6c8d\",\"default_hex\":\"fa6c8d\",\"is_advanced\":false}]},\"censored_regexp\":[],\"custom_emoji_translation\":{},\"watched_words_replace\":null,\"watched_words_link\":null,\"categories\":[{\"id\":1,\"name\":\"discourse\",\"color\":\"00B355\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"discourse\",\"topic_count\":13,\"post_count\":48,\"position\":1,\"description\":\"Topics about the Discourse forum software itself: how it works, how to use it, discussion about culture, UI, and design.\",\"description_text\":\"Topics about the Discourse forum software itself: how it works, how to use it, discussion about culture, UI, and design.\",\"description_excerpt\":\"Topics about the Discourse forum software itself: how it works, how to use it, discussion about culture, UI, and design.\",\"topic_url\":\"/t/category-definition-for-discourse/10\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":null,\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":13,\"name\":\"Uncategorized\",\"color\":\"AB9364\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"uncategorized\",\"topic_count\":0,\"post_count\":0,\"position\":1,\"description\":\"\",\"description_text\":\"Topics that don't need a category, or don't fit into any other existing category.\",\"description_excerpt\":\"Topics that don't need a category, or don't fit into any other existing category.\",\"topic_url\":\"/t/\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":null,\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":2,\"name\":\"tech\",\"color\":\"444\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"tech\",\"topic_count\":3,\"post_count\":15,\"position\":2,\"description\":\"Topics about technology: computers, gadgets, phones, cameras, the Intertubes, or any other IT aspects of the world.\",\"description_text\":\"Topics about technology: computers, gadgets, phones, cameras, the Intertubes, or any other IT aspects of the world.\",\"description_excerpt\":\"Topics about technology: computers, gadgets, phones, cameras, the Intertubes, or any other IT aspects of the world.\",\"topic_url\":\"/t/category-definition-for-tech/11\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":null,\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":4,\"name\":\"videos\",\"color\":\"258af1\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"videos\",\"topic_count\":5,\"post_count\":32,\"position\":4,\"description\":\"Topics about any aspect of online video. Discussions about movies and TV should be in the Movies category.\",\"description_text\":\"Topics about any aspect of online video. Discussions about movies and TV should be in the Movies category.\",\"description_excerpt\":\"Topics about any aspect of online video. Discussions about movies and TV should be in the Movies category.\",\"topic_url\":\"/t/category-definition-for-videos/13\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":null,\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":5,\"name\":\"general\",\"color\":\"25AAE2\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"general\",\"topic_count\":18,\"post_count\":1073,\"position\":5,\"description\":\"General discussion topics not specifically fitting any other category. If you're not sure what to pick, either select no category at all, or use this one!\",\"description_text\":\"General discussion topics not specifically fitting any other category. If you\\u0026#39;re not sure what to pick, either select no category at all, or use this one!\",\"description_excerpt\":\"General discussion topics not specifically fitting any other category. If you\\u0026#39;re not sure what to pick, either select no category at all, or use this one!\",\"topic_url\":\"/t/category-definition-for-general/41\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":null,\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":6,\"name\":\"gaming\",\"color\":\"800080\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"gaming\",\"topic_count\":5,\"post_count\":24,\"position\":6,\"description\":\"Topics about gaming of any kind: videogames, board games, card games, role playing games, you name it.\",\"description_text\":\"Topics about gaming of any kind: videogames, board games, card games, role playing games, you name it.\",\"description_excerpt\":\"Topics about gaming of any kind: videogames, board games, card games, role playing games, you name it.\",\"topic_url\":\"/t/category-definition-for-gaming/42\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":null,\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":8,\"name\":\"movies\",\"color\":\"B22222\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"movies\",\"topic_count\":4,\"post_count\":34,\"position\":8,\"description\":\"Topics about movies and television, including reviews, news, commentary and other discussion.\",\"description_text\":\"Topics about movies and television, including reviews, news, commentary and other discussion.\",\"description_excerpt\":\"Topics about movies and television, including reviews, news, commentary and other discussion.\",\"topic_url\":\"/t/category-definition-for-movies/44\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":\"I saw: *insert movie title*\\n\\nI think it was worth: *how many stars* out of 4 stars\\n\\nReview here:\",\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":9,\"name\":\"sports\",\"color\":\"0000FF\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"sports\",\"topic_count\":1,\"post_count\":13,\"position\":9,\"description\":\"Topics about the wide wide world of sports, professional or amateur, real or fantasy.\",\"description_text\":\"Topics about the wide wide world of sports, professional or amateur, real or fantasy.\",\"description_excerpt\":\"Topics about the wide wide world of sports, professional or amateur, real or fantasy.\",\"topic_url\":\"/t/category-definition-for-sports/45\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":null,\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":50,\"name\":\"support\",\"color\":\"F1592A\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"support\",\"topic_count\":1,\"post_count\":1,\"position\":10,\"description\":\"Many communities use Discourse for support as well as discussion. Here you can find examples of what that may look like.\",\"description_text\":\"Many communities use Discourse for support as well as discussion. Here you can find examples of what that may look like.\",\"description_excerpt\":\"Many communities use Discourse for support as well as discussion. Here you can find examples of what that may look like.\",\"topic_url\":\"/t/about-the-support-category/1404\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":null,\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null,\"enable_accepted_answers\":\"true\",\"enable_unassigned_filter\":\"true\",\"notify_on_staff_accept_solved\":\"false\",\"empty_box_on_unsolved\":\"false\"},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}},\"support\":{\"id\":\"support\",\"name\":\"Support\",\"title\":\"support\",\"description\":\"Where members can ask questions and mark replies as solutions.\",\"icon\":\"person_raising_hand\",\"available\":true,\"visible\":true,\"configuration_schema\":{\"general_category_settings\":[{\"key\":\"name\",\"default\":\"Support\",\"type\":\"string\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"style_type\",\"default\":\"emoji\",\"type\":\"string\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"emoji\",\"default\":\"red_question_mark\",\"type\":\"string\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true}],\"site_settings\":[{\"key\":\"show_filter_by_solved_status\",\"default\":true,\"current\":false,\"overridden\":false,\"type\":\"bool\",\"label\":\"Show filter by solved status\",\"choices\":null,\"description\":\"Show a dropdown to filter a topic list by solved status.\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"prioritize_solved_topics_in_search\",\"default\":false,\"current\":false,\"overridden\":false,\"type\":\"bool\",\"label\":\"Prioritize solved topics in search\",\"choices\":null,\"description\":\"Prioritize solved topics in search results.\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"show_who_marked_solved\",\"default\":false,\"current\":false,\"overridden\":false,\"type\":\"bool\",\"label\":\"Show who marked solved\",\"choices\":null,\"description\":\"Show who marked the topic as solved. This is indicated in the topic's first post, and the answer post in a tooltip.\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true}],\"category_settings\":[],\"category_custom_fields\":[{\"key\":\"enable_accepted_answers\",\"default\":true,\"type\":\"bool\",\"subtype\":null,\"label\":\"Allow topic owner and staff to mark a reply as the solution\",\"description\":null,\"choices\":null,\"required\":true,\"show_on_create\":false,\"show_on_edit\":false},{\"key\":\"solved_topics_auto_close_hours\",\"default\":48,\"type\":\"integer\",\"subtype\":\"duration\",\"label\":\"Auto close solved topics\",\"description\":\"Automatically close solved topics after this duration from the last reply. Set to 0 to disable.\",\"choices\":null,\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"notify_on_staff_accept_solved\",\"default\":true,\"type\":\"bool\",\"subtype\":null,\"label\":\"Notify topic creator when staff marks a solution\",\"description\":null,\"choices\":null,\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"enable_shared_issues\",\"default\":true,\"type\":\"bool\",\"subtype\":null,\"label\":\"Enable shared issues\",\"description\":\"Adds a button to unsolved topics in this category that members can use to signal they're experiencing the same issue and opt in to notifications about the solution.\",\"choices\":null,\"required\":null,\"show_on_create\":true,\"show_on_edit\":true}],\"site_texts\":[{\"key\":\"js.solved.shared_issue.label\",\"name\":\"js_solved_shared_issue_label\",\"label\":\"Shared issue label\",\"description\":\"The label shown on the shared issue button.\",\"current\":\"Me too\",\"show_on_create\":true,\"show_on_edit\":true,\"depends_on\":\"enable_shared_issues\"}]},\"required_plugin\":\"Solved\",\"can_enable_plugin\":true,\"upgrade_prompt_text\":\"Upgrade to our Pro plan to unlock this category type.\",\"required_tier\":\"standard\",\"required_tier_name\":\"Pro\"}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":53,\"name\":\"Topic Voting\",\"color\":\"F7941D\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"topic-voting\",\"topic_count\":2,\"post_count\":2,\"position\":13,\"description\":\"A category to demonstrate the \\u003ca href=\\\"https://www.discourse.org/plugins/topic-voting.html\\\" rel=\\\"noopener nofollow ugc\\\"\\u003eTopic Voting\\u003c/a\\u003e plugin\",\"description_text\":\"A category to demonstrate the Topic Voting plugin\",\"description_excerpt\":\"A category to demonstrate the \\u003ca href=\\\"https://www.discourse.org/plugins/topic-voting.html\\\" rel=\\\"noopener nofollow ugc\\\"\\u003eTopic Voting\\u003c/a\\u003e plugin\",\"topic_url\":\"/t/about-the-topic-voting-category/1418\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":null,\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}},\"ideas\":{\"id\":\"ideas\",\"name\":\"Ideas\",\"title\":\"ideas\",\"description\":\"Where members can submit ideas and vote on the ones they want most.\",\"icon\":\"bulb\",\"available\":true,\"visible\":true,\"configuration_schema\":{\"general_category_settings\":[{\"key\":\"name\",\"default\":\"Ideas\",\"type\":\"string\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"style_type\",\"default\":\"emoji\",\"type\":\"string\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"emoji\",\"default\":\"bulb\",\"type\":\"string\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true}],\"site_settings\":[{\"key\":\"topic_voting_show_who_voted\",\"default\":true,\"current\":true,\"overridden\":false,\"type\":\"bool\",\"label\":\"Show who voted\",\"choices\":null,\"description\":\"Allow users to see who voted?\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"topic_voting_show_votes_on_profile\",\"default\":true,\"current\":true,\"overridden\":false,\"type\":\"bool\",\"label\":\"Show votes on profile\",\"choices\":null,\"description\":\"Allow users to see their votes in their activity feed?\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"topic_voting_enable_vote_limits\",\"default\":true,\"current\":true,\"overridden\":false,\"type\":\"bool\",\"label\":\"Limit member votes\",\"choices\":null,\"description\":\"Limit the number of votes per user based on trust level\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true},{\"key\":\"topic_voting_tl0_vote_limit\",\"default\":2,\"current\":2,\"overridden\":false,\"type\":\"integer\",\"label\":\"TL0 vote limit\",\"choices\":null,\"description\":\"How many active votes are TL0 users allowed?\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true,\"depends_on\":\"topic_voting_enable_vote_limits\",\"min\":0},{\"key\":\"topic_voting_tl1_vote_limit\",\"default\":4,\"current\":4,\"overridden\":false,\"type\":\"integer\",\"label\":\"TL1 vote limit\",\"choices\":null,\"description\":\"How many active votes are TL1 users allowed?\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true,\"depends_on\":\"topic_voting_enable_vote_limits\",\"min\":0},{\"key\":\"topic_voting_tl2_vote_limit\",\"default\":6,\"current\":6,\"overridden\":false,\"type\":\"integer\",\"label\":\"TL2 vote limit\",\"choices\":null,\"description\":\"How many active votes are TL2 users allowed?\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true,\"depends_on\":\"topic_voting_enable_vote_limits\",\"min\":0},{\"key\":\"topic_voting_tl3_vote_limit\",\"default\":8,\"current\":8,\"overridden\":false,\"type\":\"integer\",\"label\":\"TL3 vote limit\",\"choices\":null,\"description\":\"How many active votes are TL3 users allowed?\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true,\"depends_on\":\"topic_voting_enable_vote_limits\",\"min\":0},{\"key\":\"topic_voting_tl4_vote_limit\",\"default\":10,\"current\":10,\"overridden\":false,\"type\":\"integer\",\"label\":\"TL4 vote limit\",\"choices\":null,\"description\":\"How many active votes are TL4 users allowed?\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true,\"depends_on\":\"topic_voting_enable_vote_limits\",\"min\":0},{\"key\":\"topic_voting_alert_votes_left\",\"default\":1,\"current\":1,\"overridden\":false,\"type\":\"integer\",\"label\":\"Alert when votes remaining\",\"choices\":null,\"description\":\"Alert user when this many votes are left\",\"required\":null,\"show_on_create\":true,\"show_on_edit\":true,\"depends_on\":\"topic_voting_enable_vote_limits\",\"min\":0}],\"category_settings\":[],\"category_custom_fields\":[],\"site_texts\":[]},\"required_plugin\":\"Topic Voting\",\"can_enable_plugin\":true,\"upgrade_prompt_text\":\"Upgrade to our Business plan to unlock this category type.\",\"required_tier\":\"business\",\"required_tier_name\":\"Business\"}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"can_vote\":true,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false},{\"id\":86,\"name\":\"calendar\",\"color\":\"12A89D\",\"text_color\":\"FFFFFF\",\"style_type\":\"square\",\"icon\":null,\"emoji\":null,\"slug\":\"calendar\",\"topic_count\":2,\"post_count\":3,\"position\":14,\"description\":\"A category to demonstrate the Discourse Calendar plugin.\",\"description_text\":\"A category to demonstrate the Discourse Calendar plugin.\",\"description_excerpt\":\"A category to demonstrate the Discourse Calendar plugin.\",\"topic_url\":\"/t/about-the-calendar-category/1460\",\"read_restricted\":false,\"permission\":null,\"notification_level\":1,\"topic_template\":\"\\u003c--! To create a calendar topic, simply include the following code in the first post of a topic --\\u003e\\n\\n[calendar]\\n\\n[/calendar]\\n\\n\\u003c--! You can find more information on what other variables you can use in --\\u003e\",\"topic_title_placeholder\":null,\"has_children\":false,\"subcategory_count\":null,\"sort_order\":null,\"sort_ascending\":null,\"show_subcategory_list\":false,\"num_featured_topics\":3,\"default_view\":null,\"subcategory_list_style\":\"rows_with_featured_topics\",\"default_top_period\":\"all\",\"default_list_filter\":\"all\",\"minimum_required_tags\":0,\"navigate_to_first_post_after_read\":false,\"custom_fields\":{\"has_chat_enabled\":null,\"enable_unassigned_filter\":null,\"additional_assign_allowed_on_groups\":null,\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"create_as_post_voting_default\":null,\"only_post_voting_in_this_category\":null,\"enable_accepted_answers\":null,\"notify_on_staff_accept_solved\":null,\"empty_box_on_unsolved\":null,\"enable_shared_issues\":null,\"enable_topic_voting\":null},\"allow_global_tags\":false,\"read_only_banner\":null,\"form_template_ids\":[],\"required_tag_groups\":[],\"category_types\":{\"discussion\":{\"id\":\"discussion\",\"name\":\"Discussion\",\"title\":\"discussion\",\"description\":\"A standard category with all the essentials for conversation.\",\"icon\":\"memo\",\"available\":true,\"visible\":true,\"configuration_schema\":{}}},\"sort_topics_by_event_start_date\":null,\"disable_topic_resorting\":null,\"uploaded_logo\":null,\"uploaded_logo_dark\":null,\"uploaded_background\":null,\"uploaded_background_dark\":null,\"can_edit\":false}],\"markdown_additional_options\":{\"chat\":{\"limited_pretty_text_features\":[\"anchor\",\"bbcode-block\",\"bbcode-inline\",\"code\",\"category-hashtag\",\"censored\",\"chat-transcript\",\"discourse-local-dates\",\"emoji\",\"inlineEmoji\",\"html-img\",\"hashtag-autocomplete\",\"mentions\",\"unicodeUsernames\",\"onebox\",\"quotes\",\"spoiler-alert\",\"table\",\"text-post-process\",\"upload-protocol\",\"watched-words\",\"chat-html-inline\"],\"limited_pretty_text_markdown_rules\":[\"autolink\",\"list\",\"backticks\",\"newline\",\"code\",\"fence\",\"image\",\"table\",\"linkify\",\"link\",\"strikethrough\",\"blockquote\",\"emphasis\",\"replacements\",\"escape\",\"entity\"],\"hashtag_configurations\":{\"topic-composer\":[\"category\",\"tag\",\"channel\"],\"chat-composer\":[\"channel\",\"category\",\"tag\"]}}},\"hashtag_configurations\":{\"topic-composer\":[\"category\",\"tag\",\"channel\"],\"chat-composer\":[\"channel\",\"category\",\"tag\"]},\"hashtag_icons\":{\"category\":\"folder\",\"tag\":\"tag\",\"channel\":\"comment\"},\"anonymous_default_navigation_menu_tags\":[{\"id\":2,\"name\":\"art\",\"slug\":\"art\",\"description\":null,\"pm_only\":false},{\"id\":1,\"name\":\"code\",\"slug\":\"code\",\"description\":null,\"pm_only\":false}],\"anonymous_sidebar_sections\":[{\"id\":1,\"title\":\"Community\",\"links\":[{\"id\":1,\"name\":\"Topics\",\"value\":\"/latest\",\"icon\":\"layer-group\",\"external\":false,\"segment\":\"primary\",\"locale\":null},{\"id\":2,\"name\":\"My posts\",\"value\":\"/my/activity\",\"icon\":\"user\",\"external\":false,\"segment\":\"primary\",\"locale\":null},{\"id\":35,\"name\":\"My messages\",\"value\":\"/my/messages\",\"icon\":\"inbox\",\"external\":false,\"segment\":\"primary\",\"locale\":null},{\"id\":3,\"name\":\"Review\",\"value\":\"/review\",\"icon\":\"flag\",\"external\":false,\"segment\":\"primary\",\"locale\":null},{\"id\":4,\"name\":\"Admin\",\"value\":\"/admin\",\"icon\":\"wrench\",\"external\":false,\"segment\":\"primary\",\"locale\":null},{\"id\":34,\"name\":\"Invite\",\"value\":\"/new-invite\",\"icon\":\"paper-plane\",\"external\":false,\"segment\":\"primary\",\"locale\":null},{\"id\":5,\"name\":\"Users\",\"value\":\"/u\",\"icon\":\"users\",\"external\":false,\"segment\":\"secondary\",\"locale\":null},{\"id\":6,\"name\":\"About\",\"value\":\"/about\",\"icon\":\"circle-info\",\"external\":false,\"segment\":\"secondary\",\"locale\":null},{\"id\":7,\"name\":\"FAQ\",\"value\":\"/faq\",\"icon\":\"circle-question\",\"external\":false,\"segment\":\"secondary\",\"locale\":null},{\"id\":8,\"name\":\"Groups\",\"value\":\"/g\",\"icon\":\"user-group\",\"external\":false,\"segment\":\"secondary\",\"locale\":null},{\"id\":9,\"name\":\"Badges\",\"value\":\"/badges\",\"icon\":\"certificate\",\"external\":false,\"segment\":\"secondary\",\"locale\":null},{\"id\":36,\"name\":\"Filter\",\"value\":\"/filter\",\"icon\":\"filter\",\"external\":false,\"segment\":\"secondary\",\"locale\":null}],\"slug\":\"community\",\"public\":true,\"section_type\":\"community\",\"locale\":null}],\"tos_url\":\"/tos\",\"privacy_policy_url\":\"https://meta.discourse.org/privacy\",\"full_name_required_for_signup\":false,\"full_name_visible_in_signup\":true,\"email_configured\":true,\"upcoming_changes_with_css\":[\"enable_composer_redesign\",\"enable_new_checkbox_style\",\"floating_dismiss_topics_on_mobile\",\"modernize_foundation_theme\"],\"access_control\":{\"mandatory_acl\":{\"Boards::Board\":[{\"type\":\"group\",\"id\":1,\"permission\":\"manage\"}]},\"banned_acl\":{\"Boards::Board\":[{\"type\":\"group\",\"id\":4,\"permission\":\"manage\"},{\"type\":\"group\",\"id\":4,\"permission\":\"edit\"},{\"type\":\"group\",\"id\":0,\"permission\":\"manage\"},{\"type\":\"group\",\"id\":0,\"permission\":\"edit\"},{\"type\":\"group\",\"id\":0,\"permission\":\"view\"}]}},\"house_creatives\":{\"settings\":{\"topic_list_top\":\"\",\"topic_above_post_stream\":\"\",\"topic_above_suggested\":\"\",\"post_bottom\":\"\",\"topic_list_between\":\"\",\"nested_roots_between\":\"\",\"above_site_header\":\"\",\"after_nth_post\":20,\"after_nth_topic\":20,\"after_nth_root\":5,\"house_ads_frequency\":100},\"creatives\":{}},\"ad_types\":{\"house\":0,\"adsense\":1,\"dfp\":2,\"amazon\":3,\"carbon\":4,\"adbutler\":5},\"docs_path\":\"docs\",\"discourse_math_bundle_url\":\"/plugins/discourse-math/1.0.1\",\"hosting_tier\":\"enterprise\",\"archetypes\":[{\"id\":\"regular\",\"name\":\"Regular Topic\",\"options\":[]},{\"id\":\"banner\",\"name\":\"Banner Topic\",\"options\":[]}],\"user_fields\":[],\"auth_providers\":[{\"can_connect\":true,\"can_revoke\":true,\"custom_url\":null,\"frame_height\":null,\"frame_width\":null,\"icon_override\":\"fab-discourse\",\"name\":\"discourse_id\",\"pretty_name_override\":null,\"provider_url\":\"https://id.discourse.com\",\"title_override\":null}]}","siteSettings":"{\"default_locale\":\"en\",\"title\":\"Discourse Demo\",\"short_site_description\":\"\",\"contact_email\":\"\",\"exclude_rel_nofollow_domains\":\"\",\"logo\":\"//cdck-file-uploads-global.s3.dualstack.us-west-2.amazonaws.com/try/original/1X/5e1e3b3cada2d7fbae4734d4bc53999933d71c95.svg\",\"logo_small\":\"//cdck-file-uploads-global.s3.dualstack.us-west-2.amazonaws.com/try/original/1X/9af9456df3a40537038643d987ffcbd553ad3296.svg\",\"digest_logo\":\"\",\"mobile_logo\":\"\",\"logo_dark\":\"//cdck-file-uploads-global.s3.dualstack.us-west-2.amazonaws.com/try/original/1X/be79971eb6f0b4c1c8ec0f3c78f2fe4148d06a65.png\",\"logo_small_dark\":\"//cdck-file-uploads-global.s3.dualstack.us-west-2.amazonaws.com/try/original/1X/2948aa8888d91dc106273821b1d78a804838cab3.png\",\"mobile_logo_dark\":\"\",\"large_icon\":\"\",\"manifest_icon\":\"\",\"manifest_screenshots\":\"\",\"favicon\":\"\",\"apple_touch_icon\":\"\",\"generate_topic_og_image\":false,\"opengraph_image\":\"\",\"x_summary_large_image\":\"\",\"display_local_time_in_user_card\":false,\"support_mixed_text_direction\":false,\"suggested_topics\":5,\"ga_universal_tracking_code\":\"\",\"ga_universal_domain_name\":\"auto\",\"gtm_container_id\":\"\",\"top_menu\":\"latest|new|hot|categories\",\"default_homepage\":\"\",\"post_menu\":\"read|like|copyLink|flag|edit|bookmark|delete|admin|reply\",\"post_menu_hidden_items\":\"flag|bookmark|edit|delete|admin\",\"share_links\":\"twitter|facebook|email\",\"allow_username_in_share_links\":true,\"share_quote_visibility\":\"all\",\"share_quote_buttons\":\"twitter|email\",\"desktop_category_page_style\":\"categories_boxes\",\"mobile_category_page_style\":\"categories_with_featured_topics\",\"category_colors\":\"BF1E2E|F1592A|F7941D|9EB83B|3AB54A|12A89D|25AAE2|0E76BD|652D90|92278F|ED207B|8C6238|231F20|808281|B3B5B4|E45735\",\"max_category_nesting\":2,\"enable_direct_s3_uploads\":true,\"enable_upload_debug_mode\":false,\"relative_date_duration\":30,\"top_page_default_timeframe\":\"yearly\",\"fixed_category_positions\":false,\"fixed_category_positions_on_create\":false,\"enable_badges\":true,\"show_badges_in_post_header\":true,\"enable_badge_sql\":false,\"max_favorite_badges\":2,\"push_notifications_prompt\":true,\"enable_desktop_push_notifications\":true,\"vapid_public_key_bytes\":\"4|109|80|78|93|96|14|122|46|87|139|87|97|220|208|128|153|164|78|201|129|115|145|197|85|247|73|131|245|160|16|228|119|179|118|177|244|235|189|110|25|174|178|170|122|85|116|27|108|158|0|73|80|94|106|208|140|50|27|168|225|253|168|174|129\",\"base_font\":\"open_sans\",\"heading_font\":\"open_sans\",\"enable_user_tips\":false,\"page_loading_indicator\":\"slider\",\"show_user_menu_avatars\":false,\"about_page_extra_groups\":\"\",\"about_page_extra_groups_initial_members\":6,\"about_page_extra_groups_order\":\"alphabetically\",\"about_page_extra_groups_show_description\":false,\"use_legacy_pageviews\":false,\"browser_pageview_max_engaged_seconds\":1800,\"interface_color_selector\":\"sidebar_footer\",\"login_required\":false,\"must_approve_users\":false,\"invite_only\":false,\"enable_local_logins\":true,\"enable_local_logins_via_email\":true,\"enable_local_logins_via_code\":false,\"enable_random_usernames\":true,\"enable_passkeys\":false,\"allow_passkeys_for_2fa\":false,\"allow_new_registrations\":true,\"enable_signup_cta\":true,\"facebook_app_id\":\"1924359344255283\",\"auth_skip_create_confirm\":false,\"auth_immediately\":true,\"auth_overrides_email\":false,\"enable_discourse_connect\":false,\"discourse_connect_overrides_avatar\":false,\"hide_email_address_taken\":true,\"show_signup_form_email_instructions\":true,\"show_signup_form_username_instructions\":false,\"show_signup_form_full_name_instructions\":false,\"show_signup_form_password_instructions\":false,\"min_username_length\":3,\"max_username_length\":20,\"unicode_usernames\":false,\"min_password_length\":10,\"min_admin_password_length\":15,\"email_editable\":true,\"logout_redirect\":\"\",\"enable_names\":true,\"invite_expiry_days\":90,\"invites_per_page\":40,\"delete_user_max_post_age\":365,\"delete_all_posts_max\":15,\"delete_all_posts_background_threshold\":200,\"prioritize_username_in_ux\":true,\"prioritize_full_name_in_ux\":false,\"enable_user_directory\":true,\"allow_anonymous_mode\":true,\"allow_likes_in_anonymous_mode\":false,\"allow_users_to_hide_profile\":true,\"hide_user_profiles_from_public\":false,\"allow_featured_topic_on_user_profiles\":true,\"hide_suspension_reasons\":false,\"hide_silencing_reasons\":false,\"ignored_users_count_message_threshold\":5,\"ignored_users_message_gap_days\":365,\"user_selected_primary_groups\":false,\"gravatar_enabled\":true,\"gravatar_name\":\"Gravatar\",\"gravatar_base_url\":\"www.gravatar.com\",\"gravatar_login_url\":\"/emails\",\"hide_user_activity_tab\":false,\"enable_user_status\":true,\"enable_group_directory\":true,\"enable_category_group_moderation\":false,\"min_post_length\":20,\"min_first_post_length\":20,\"prevent_uploads_only_posts\":false,\"min_personal_message_post_length\":3,\"max_post_length\":32000,\"topic_featured_link_enabled\":true,\"min_topic_views_for_delete_confirm\":5000,\"min_topic_title_length\":15,\"max_topic_title_length\":128,\"enable_filtered_replies_view\":false,\"min_personal_message_title_length\":2,\"default_emoji_reactions\":\"+1|heart|tada\",\"allow_uncategorized_topics\":false,\"remove_and_replace_uncategorized\":false,\"min_title_similar_length\":10,\"edit_history_visible_to_public\":true,\"delete_removed_posts_after\":24,\"traditional_markdown_linebreaks\":false,\"enable_markdown_typographer\":true,\"enable_markdown_linkify\":true,\"markdown_linkify_tlds\":\"com|net|org|io|onion|co|tv|ru|cn|us|uk|me|de|fr|fi|gov\",\"markdown_typographer_quotation_marks\":\"“|”|‘|’\",\"suppress_reply_directly_below\":true,\"suppress_reply_directly_above\":true,\"max_reply_history\":1,\"enable_mentions\":true,\"max_users_notified_per_group_mention\":100,\"here_mention\":\"here\",\"newuser_max_embedded_media\":5,\"newuser_max_attachments\":0,\"default_subcategory_on_read_only_category\":false,\"hide_disabled_create_topic_button\":false,\"show_pinned_excerpt_mobile\":true,\"show_pinned_excerpt_desktop\":true,\"display_name_on_posts\":false,\"show_time_gap_days\":7,\"short_progress_text_threshold\":10000,\"default_code_lang\":\"auto\",\"autohighlight_all_code\":false,\"highlighted_languages\":\"bash|c|cpp|csharp|css|diff|go|graphql|ini|java|javascript|json|kotlin|lua|makefile|markdown|objectivec|perl|php|php-template|plaintext|python|python-repl|r|ruby|rust|scss|shell|sql|swift|typescript|xml|yaml|wasm\",\"show_copy_button_on_codeblocks\":true,\"enable_emoji\":true,\"enable_emoji_shortcuts\":true,\"emoji_set\":\"twitter\",\"emoji_autocomplete_min_chars\":0,\"enable_inline_emoji_translation\":false,\"emoji_deny_list\":\"\",\"emoji_picker_pinned_groups\":\"\",\"enable_gifs\":true,\"klipy_file_detail\":\"webp\",\"klipy_content_filter\":\"low\",\"klipy_country\":\"US\",\"klipy_locale\":\"en_US\",\"klipy_limit_infinite_search_results\":false,\"klipy_max_results_limit\":240,\"code_formatting_style\":\"code-fences\",\"allowed_href_schemes\":\"\",\"watched_words_regular_expressions\":false,\"enable_fast_edit\":true,\"old_post_notice_days\":14,\"blur_tl0_flagged_posts_media\":true,\"show_preview_for_form_templates\":true,\"allow_user_locale\":true,\"content_localization_enabled\":false,\"content_localization_supported_locales\":\"\",\"content_localization_language_switcher\":\"none\",\"content_localization_allowed_groups\":\"1|2\",\"content_localization_allow_author_localization\":true,\"content_localization_max_locales\":10,\"set_locale_from_accept_language_header\":false,\"set_locale_from_cookie\":false,\"set_locale_from_param\":false,\"nested_replies_enabled\":false,\"nested_replies_default\":false,\"nested_replies_hot_sort_enabled\":false,\"nested_replies_default_sort\":\"top\",\"nested_replies_max_depth\":3,\"nested_replies_cap_nesting_depth\":true,\"email_time_window_mins\":10,\"disable_digest_emails\":true,\"simple_email_subject\":false,\"email_in\":false,\"enable_smtp\":false,\"disable_emails\":\"no\",\"bounce_score_threshold\":4,\"enable_secondary_emails\":true,\"allow_email_invites\":true,\"max_image_size_kb\":10240,\"max_attachment_size_kb\":10240,\"authorized_extensions\":\"jpg|jpeg|png|gif|heic|heif|webp|avif|svg|jxl\",\"authorized_extensions_for_staff\":\"mp3\",\"max_image_width\":690,\"max_image_height\":500,\"prevent_anons_from_downloading_files\":false,\"secure_uploads\":false,\"secure_uploads_pm_only\":false,\"enable_s3_uploads\":false,\"allow_profile_backgrounds\":true,\"default_avatars\":\"\",\"avatar_sizes\":\"24|48|72|96|144|288\",\"external_system_avatars_enabled\":true,\"external_system_avatars_url\":\"https://avatars.discourse-cdn.com/v4/letter/{first_letter}/{color}/{size}.png\",\"external_emoji_url\":\"https://emoji.discourse-cdn.com\",\"selectable_avatars_mode\":\"disabled\",\"selectable_avatars\":[],\"image_quality\":90,\"allow_staff_to_upload_any_file_in_pm\":true,\"simultaneous_uploads\":15,\"composer_media_optimization_image_enabled\":true,\"composer_media_optimization_image_bytes_optimization_threshold\":524288,\"composer_media_optimization_image_resize_dimensions_threshold\":1920,\"composer_media_optimization_image_resize_width_target\":1920,\"composer_media_optimization_image_resize_pre_multiply\":false,\"composer_media_optimization_image_resize_linear_rgb\":false,\"composer_media_optimization_image_encode_quality\":0,\"composer_media_optimization_image_convert_enabled\":false,\"composer_media_optimization_gif_conversion_threshold\":512000,\"composer_media_optimization_debug_mode\":false,\"composer_ios_media_optimisation_image_enabled\":true,\"video_thumbnails_enabled\":true,\"allow_all_users_to_flag_illegal_content\":false,\"email_address_to_report_illegal_content\":\"\",\"tl1_requires_read_posts\":0,\"tl3_links_no_follow\":false,\"enforce_second_factor_on_external_auth\":true,\"enforce_second_factor\":\"no\",\"moderators_manage_categories\":false,\"moderators_manage_groups\":false,\"moderators_change_post_ownership\":false,\"moderators_view_emails\":false,\"moderators_view_ips\":true,\"moderators_view_sso_details\":false,\"use_admin_ip_allowlist\":false,\"allowed_iframes\":\"https://www.google.com/maps/embed?|https://www.openstreetmap.org/export/embed.html?|https://calendar.google.com/calendar/embed?|https://codepen.io/*/embed/preview/|https://www.instagram.com/|http://try.discourse.org/discobot/certificate.svg\",\"can_permanently_delete\":false,\"cache_control_bfcache_compatibility\":false,\"max_oneboxes_per_post\":50,\"reviewable_claiming\":\"disabled\",\"reviewable_default_topics\":false,\"reviewable_default_visibility\":\"low\",\"reviewable_revision_reasons\":\"Duplicate|Does not meet posting guidelines\",\"alert_admins_if_errors_per_minute\":0,\"alert_admins_if_errors_per_hour\":0,\"max_prints_per_hour_per_user\":5,\"invite_link_max_redemptions_limit\":5000,\"invite_link_max_redemptions_limit_users\":10,\"max_allowed_secondary_emails\":10,\"enable_chunked_encoding\":true,\"long_polling_base_url\":\"/\",\"background_polling_interval\":60000,\"polling_interval\":3000,\"anon_polling_interval\":25000,\"verbose_localization\":false,\"max_new_topics\":500,\"enable_safe_mode\":true,\"warn_critical_js_deprecations\":true,\"warn_critical_js_deprecations_message\":\"\",\"custom_flags_limit\":50,\"site_setting_verbose_client_logging\":false,\"navigation_menu\":\"sidebar\",\"default_navigation_menu_categories\":\"1|4|6|8\",\"default_navigation_menu_tags\":\"art|code\",\"default_sidebar_switch_panel_position\":\"bottom\",\"embed_full_app\":false,\"embed_full_app_signin_flow\":true,\"tos_url\":\"\",\"privacy_policy_url\":\"https://meta.discourse.org/privacy\",\"faq_url\":\"\",\"display_eu_visitor_stats\":false,\"enable_backups\":true,\"backup_location\":\"s3\",\"maximum_backups\":3,\"remove_older_backups\":\"\",\"include_s3_uploads_in_backups\":true,\"use_pg_headlines_for_excerpt\":false,\"min_search_term_length\":3,\"log_search_queries\":true,\"search_default_sort_order\":0,\"version_checks\":false,\"suppress_uncategorized_badge\":true,\"header_dropdown_category_count\":8,\"slug_generation_method\":\"ascii\",\"summary_timeline_button\":false,\"topic_views_heat_low\":1000,\"topic_views_heat_medium\":2000,\"topic_views_heat_high\":3500,\"topic_post_like_heat_low\":0.5,\"topic_post_like_heat_medium\":1.0,\"topic_post_like_heat_high\":2.0,\"history_hours_low\":12,\"history_hours_medium\":24,\"history_hours_high\":48,\"cold_age_days_low\":14,\"cold_age_days_medium\":90,\"cold_age_days_high\":180,\"global_notice\":\"\",\"general_category_id\":5,\"default_composer_category\":\"5\",\"moderator_guide_topic\":\"\",\"view_user_route\":\"summary\",\"admin_quick_start_topic_id\":-1,\"automatically_unpin_topics\":true,\"read_time_word_count\":500,\"topic_page_title_includes_category\":true,\"enable_powered_by_discourse\":false,\"penalty_include_post_message\":false,\"svg_icon_subset\":\"\",\"allow_bulk_invite\":true,\"show_category_definitions_in_topic_lists\":false,\"suggest_weekends_in_date_pickers\":true,\"show_bottom_topic_map\":true,\"show_topic_map_in_topics_without_replies\":true,\"enable_site_owner_onboarding\":true,\"welcome_banner_image\":\"\",\"welcome_banner_text_color\":\"\",\"welcome_banner_location\":\"above_topic_content\",\"welcome_banner_page_visibility\":\"homepage\",\"disable_mailing_list_mode\":true,\"default_topics_automatic_unpin\":true,\"mute_all_categories_by_default\":false,\"default_text_size\":\"normal\",\"enable_offline_indicator\":false,\"default_watched_precedence_over_muted\":false,\"tagging_enabled\":true,\"tag_style\":\"simple\",\"max_tags_per_topic\":5,\"enable_max_tags_per_email_subject\":false,\"max_tags_per_email_subject\":5,\"max_tag_length\":20,\"tag_topic_allowed_groups\":\"1|2|10\",\"max_tag_search_results\":5,\"max_tags_in_filter_list\":30,\"tags_sort_alphabetically\":false,\"tags_listed_by_group\":false,\"suppress_overlapping_tags_in_list\":false,\"remove_muted_tags_from_latest\":\"always\",\"force_lowercase_tags\":true,\"dashboard_hidden_reports\":\"\",\"dashboard_visible_tabs\":\"moderation|security|reports|features\",\"dashboard_general_tab_activity_metrics\":\"page_view_total_reqs|visits|time_to_first_response|likes|flags|user_to_user_private_messages_with_replies\",\"admin_allow_filter_untranslated_text\":false,\"enable_generated_llms_txt\":false,\"reporting_improvements\":true,\"enable_auto_grid_images\":true,\"enable_new_checkbox_style\":true,\"enable_new_post_reactions_menu\":true,\"enable_composer_redesign\":false,\"prioritize_recently_used_tags\":false,\"rename_faq_to_guidelines\":true,\"enable_form_templates\":true,\"enable_unified_new\":true,\"enable_rich_text_paste\":true,\"reviewable_old_moderator_actions\":true,\"floating_dismiss_topics_on_mobile\":true,\"enable_simplified_category_creation\":true,\"enable_new_defaults_for_trust_level_3_requirements\":true,\"modernize_foundation_theme\":false,\"enable_horizon_high_context_topic_cards\":true,\"granular_anonymous_and_logged_in_groups_permissions\":false,\"dashboard_improvements\":true,\"improved_crawler_detection\":false,\"enable_invite_modal_with_roles\":false,\"update_pending_users_reminder_default\":false,\"discourse_automation_enabled\":true,\"boards_enabled\":false,\"boards_manage_board_allowed_groups\":\"1|2\",\"chat_enabled\":true,\"chat_pinned_messages\":true,\"enable_new_chat_reactions_popup\":true,\"enable_public_channels\":true,\"chat_allowed_groups\":\"1|2|11\",\"chat_threads_enabled\":false,\"chat_search_enabled\":true,\"chat_channel_retention_days\":90,\"chat_max_direct_message_users\":20,\"chat_dm_retention_days\":0,\"chat_allow_archiving_channels\":false,\"chat_minimum_message_length\":1,\"chat_maximum_message_length\":6000,\"chat_allow_uploads\":true,\"chat_show_copy_button_on_codeblocks\":true,\"max_chat_auto_joined_users\":10000,\"max_mentions_per_chat_message\":5,\"chat_separate_sidebar_mode\":\"never\",\"chat_editing_grace_period\":30,\"chat_editing_grace_period_max_diff_low_trust\":10,\"chat_editing_grace_period_max_diff_high_trust\":40,\"chat_preferred_index\":\"channels\",\"checklist_enabled\":true,\"discourse_adplugin_enabled\":true,\"no_ads_for_personal_messages\":true,\"no_ads_for_restricted_categories\":false,\"no_ads_for_categories\":\"\",\"no_ads_for_tags\":\"\",\"house_ads_after_nth_topic\":20,\"house_ads_after_nth_post\":20,\"house_ads_after_nth_root\":5,\"house_ads_frequency\":100,\"ad_plugin_enable_tracking\":false,\"ad_plugin_routes_enabled\":false,\"adsense_publisher_code\":\"\",\"adsense_through_trust_level\":2,\"adsense_topic_list_top_code\":\"\",\"adsense_topic_list_top_ad_sizes\":\"728*90 - leaderboard\",\"adsense_mobile_topic_list_top_code\":\"\",\"adsense_mobile_topic_list_top_ad_size\":\"responsive\",\"adsense_above_site_header_code\":\"\",\"adsense_above_site_header_ad_sizes\":\"728*90 - leaderboard\",\"adsense_mobile_above_site_header_code\":\"\",\"adsense_mobile_above_site_header_ad_size\":\"responsive\",\"adsense_topic_above_post_stream_code\":\"\",\"adsense_topic_above_post_stream_ad_sizes\":\"728*90 - leaderboard\",\"adsense_mobile_topic_above_post_stream_code\":\"\",\"adsense_mobile_topic_above_post_stream_ad_size\":\"responsive\",\"adsense_topic_above_suggested_code\":\"\",\"adsense_topic_above_suggested_ad_sizes\":\"728*90 - leaderboard\",\"adsense_mobile_topic_above_suggested_code\":\"\",\"adsense_mobile_topic_above_suggested_ad_size\":\"responsive\",\"adsense_post_bottom_code\":\"\",\"adsense_post_bottom_ad_sizes\":\"728*90 - leaderboard\",\"adsense_mobile_post_bottom_code\":\"\",\"adsense_mobile_post_bottom_ad_size\":\"responsive\",\"adsense_nth_post_code\":\"\",\"dfp_publisher_id\":\"\",\"dfp_publisher_id_mobile\":\"\",\"dfp_through_trust_level\":2,\"dfp_topic_list_top_code\":\"\",\"dfp_topic_list_top_ad_sizes\":\"728*90 - leaderboard\",\"dfp_mobile_topic_list_top_code\":\"\",\"dfp_mobile_topic_list_top_ad_sizes\":\"320*50 - mobile leaderboard\",\"dfp_target_topic_list_top_key_code\":\"\",\"dfp_target_topic_list_top_value_code\":\"\",\"dfp_above_site_header_code\":\"\",\"dfp_above_site_header_ad_sizes\":\"728*90 - leaderboard\",\"dfp_mobile_above_site_header_code\":\"\",\"dfp_mobile_above_site_header_ad_sizes\":\"320*50 - mobile leaderboard\",\"dfp_target_above_site_header_key_code\":\"\",\"dfp_target_above_site_header_value_code\":\"\",\"dfp_topic_above_post_stream_code\":\"\",\"dfp_topic_above_post_stream_ad_sizes\":\"728*90 - leaderboard\",\"dfp_mobile_topic_above_post_stream_code\":\"\",\"dfp_mobile_topic_above_post_stream_ad_sizes\":\"320*50 - mobile leaderboard\",\"dfp_target_topic_above_post_stream_key_code\":\"\",\"dfp_target_topic_above_post_stream_value_code\":\"\",\"dfp_topic_above_suggested_code\":\"\",\"dfp_topic_above_suggested_ad_sizes\":\"728*90 - leaderboard\",\"dfp_mobile_topic_above_suggested_code\":\"\",\"dfp_mobile_topic_above_suggested_ad_sizes\":\"320*50 - mobile leaderboard\",\"dfp_target_topic_above_suggested_key_code\":\"\",\"dfp_target_topic_above_suggested_value_code\":\"\",\"dfp_nth_post_code\":\"\",\"dfp_post_bottom_code\":\"\",\"dfp_post_bottom_ad_sizes\":\"728*90 - leaderboard\",\"dfp_mobile_post_bottom_code\":\"\",\"dfp_mobile_post_bottom_ad_sizes\":\"320*50 - mobile leaderboard\",\"dfp_target_post_bottom_key_code\":\"\",\"dfp_target_post_bottom_value_code\":\"\",\"amazon_through_trust_level\":2,\"amazon_display_groups\":\"10|11|12\",\"amazon_topic_list_top_src_code\":\"\",\"amazon_topic_list_top_ad_width_code\":\"\",\"amazon_topic_list_top_ad_height_code\":\"\",\"amazon_mobile_topic_list_top_src_code\":\"\",\"amazon_mobile_topic_list_top_ad_width_code\":\"\",\"amazon_mobile_topic_list_top_ad_height_code\":\"\",\"amazon_above_site_header_src_code\":\"\",\"amazon_above_site_header_ad_width_code\":\"\",\"amazon_above_site_header_ad_height_code\":\"\",\"amazon_mobile_above_site_header_src_code\":\"\",\"amazon_mobile_above_site_header_ad_width_code\":\"\",\"amazon_mobile_above_site_header_ad_height_code\":\"\",\"amazon_topic_above_post_stream_src_code\":\"\",\"amazon_topic_above_post_stream_ad_width_code\":\"\",\"amazon_topic_above_post_stream_ad_height_code\":\"\",\"amazon_mobile_topic_above_post_stream_src_code\":\"\",\"amazon_mobile_topic_above_post_stream_ad_width_code\":\"\",\"amazon_mobile_topic_above_post_stream_ad_height_code\":\"\",\"amazon_topic_above_suggested_src_code\":\"\",\"amazon_topic_above_suggested_ad_width_code\":\"\",\"amazon_topic_above_suggested_ad_height_code\":\"\",\"amazon_mobile_topic_above_suggested_src_code\":\"\",\"amazon_mobile_topic_above_suggested_ad_width_code\":\"\",\"amazon_mobile_topic_above_suggested_ad_height_code\":\"\",\"amazon_post_bottom_src_code\":\"\",\"amazon_nth_post_code\":\"\",\"amazon_post_bottom_ad_width_code\":\"\",\"amazon_post_bottom_ad_height_code\":\"\",\"amazon_mobile_post_bottom_src_code\":\"\",\"amazon_mobile_post_bottom_ad_width_code\":\"\",\"amazon_mobile_post_bottom_ad_height_code\":\"\",\"carbonads_serve_id\":\"\",\"carbonads_placement\":\"\",\"carbonads_through_trust_level\":2,\"carbonads_display_groups\":\"10|11|12\",\"carbonads_above_site_header_enabled\":false,\"carbonads_topic_list_top_enabled\":false,\"carbonads_above_post_stream_enabled\":false,\"adbutler_publisher_id\":\"\",\"adbutler_through_trust_level\":2,\"adbutler_display_groups\":\"10|11|12\",\"adbutler_topic_list_top_zone_id\":\"\",\"adbutler_mobile_topic_list_top_zone_id\":\"\",\"adbutler_above_site_header_zone_id\":\"\",\"adbutler_mobile_above_site_header_zone_id\":\"\",\"adbutler_topic_above_post_stream_zone_id\":\"\",\"adbutler_mobile_topic_above_post_stream_zone_id\":\"\",\"adbutler_topic_above_suggested_zone_id\":\"\",\"adbutler_mobile_topic_above_suggested_zone_id\":\"\",\"adbutler_post_bottom_zone_id\":\"\",\"adbutler_mobile_post_bottom_zone_id\":\"\",\"adbutler_nth_post\":4,\"adbutler_adserver_hostname\":\"servedbyadbutler.com\",\"affiliate_enabled\":false,\"affiliate_amazon_ca\":\"\",\"affiliate_amazon_cn\":\"\",\"affiliate_amazon_co_jp\":\"\",\"affiliate_amazon_co_uk\":\"\",\"affiliate_amazon_com\":\"\",\"affiliate_amazon_com_au\":\"\",\"affiliate_amazon_com_br\":\"\",\"affiliate_amazon_com_mx\":\"\",\"affiliate_amazon_de\":\"\",\"affiliate_amazon_es\":\"\",\"affiliate_amazon_fr\":\"\",\"affiliate_amazon_in\":\"\",\"affiliate_amazon_it\":\"\",\"affiliate_amazon_nl\":\"\",\"affiliate_amazon_eu\":\"\",\"affiliate_ldlc_com\":\"\",\"discourse_ai_enabled\":true,\"ai_artifact_security\":\"strict\",\"ai_sentiment_enabled\":true,\"ai_llm_temperature_top_p_enabled\":false,\"ai_helper_enabled\":false,\"ai_helper_allowed_in_pm\":false,\"ai_helper_enabled_features\":\"suggestions|context_menu\",\"ai_post_image_captions_enabled\":false,\"ai_embeddings_enabled\":false,\"ai_embeddings_semantic_related_topics_enabled\":true,\"ai_embeddings_semantic_search_enabled\":false,\"ai_embeddings_semantic_quick_search_enabled\":false,\"ai_admin_dashboard_enabled\":false,\"ai_summarization_enabled\":false,\"ai_summary_gists_enabled\":false,\"ai_bot_enabled\":false,\"enable_ai_bot_starred_conversations\":true,\"ai_bot_enabled_llms\":\"-4\",\"ai_bot_enable_chat_warning\":false,\"ai_bot_add_to_header\":false,\"ai_bot_add_to_community_section\":true,\"ai_bot_enable_docked_composer\":true,\"ai_discover_enabled\":false,\"ai_discover_agent\":\"-34\",\"ai_ask_ai_enabled\":false,\"ai_ask_ai_summary_detail\":\"balanced\",\"ai_ask_ai_related_count\":2,\"ai_ask_ai_agent\":\"-41\",\"ai_ask_ai_follow_up_agent\":\"-1\",\"ai_discord_search_enabled\":false,\"ai_translation_enabled\":false,\"inferred_concepts_enabled\":false,\"assign_enabled\":true,\"assigns_public\":false,\"assigns_user_url_path\":\"/u/{username}/activity/assigned\",\"remind_assigns_frequency\":0,\"pending_assign_reminder_threshold\":2,\"max_assigned_topics\":10,\"assign_allowed_on_groups\":\"44\",\"enable_assign_status\":false,\"assign_statuses\":\"New|In Progress|Done\",\"cakeday_enabled\":true,\"cakeday_emoji\":\"cake\",\"cakeday_birthday_enabled\":true,\"cakeday_birthday_emoji\":\"birthday\",\"discourse_captcha_enabled\":false,\"discourse_captcha_provider\":\"none\",\"hcaptcha_site_key\":\"\",\"recaptcha_site_key\":\"\",\"data_explorer_enabled\":true,\"data_explorer_ai_queries_enabled\":true,\"details_enabled\":true,\"doc_categories_enabled\":false,\"doc_categories_simple_mode\":false,\"doc_categories_homepage\":\"\",\"docs_enabled\":true,\"docs_categories\":\"\",\"show_tags_by_group\":false,\"docs_tag_groups\":\"\",\"docs_tags\":\"\",\"docs_add_solved_filter\":false,\"docs_add_to_top_menu\":false,\"docs_add_search_menu_tip\":true,\"discourse_events_enabled\":true,\"holiday_calendar_topic_id\":\"\",\"holiday_status_emoji\":\"date\",\"all_day_event_start_time\":\"\",\"all_day_event_end_time\":\"\",\"calendar_categories\":\"categoryId=86;postId=3832\",\"calendar_event_display\":\"auto\",\"calendar_categories_outlet\":\"before-topic-list-body\",\"working_days\":\"Monday|Tuesday|Wednesday|Thursday|Friday\",\"working_day_start_hour\":8,\"working_day_end_hour\":17,\"close_to_working_day_hours_extension\":2,\"split_grouped_events_by_timezone_threshold\":0,\"event_participation_buttons\":\"going|interested|not going\",\"discourse_post_event_enabled\":true,\"discourse_post_event_allowed_on_groups\":\"1|2|11\",\"display_post_event_date_on_topic_title\":true,\"use_local_event_date\":false,\"discourse_post_event_allowed_custom_fields\":\"\",\"events_calendar_categories\":\"\",\"sort_categories_by_event_start_date_enabled\":false,\"disable_resorting_on_categories_enabled\":false,\"sidebar_show_upcoming_events\":true,\"map_events_to_color\":\"[]\",\"map_events_title\":\"\",\"calendar_first_day_of_week\":\"monday\",\"calendar_upcoming_events_default_view\":\"month\",\"enable_events_category_type_setup\":true,\"livestream_allowed_hosts\":\"youtube.com|youtu.be|twitch.tv|zoom.us|kick.com|tiktok.com|instagram.com|facebook.com\",\"livestream_zoom_enabled\":false,\"livestream_embeddable_chat_allowed_paths\":\"/t\",\"livestream_enable_modal_chat_on_mobile\":true,\"discourse_gamification_enabled\":false,\"discourse_graphviz_enabled\":false,\"discourse_interstitial_enabled\":false,\"show_interstitials_to_ungrouped_members\":true,\"show_snooze_cta_button\":true,\"allow_custom_cta_button_classes\":false,\"mark_as_seen_after_displaying\":true,\"enable_time_spent_on_site_trigger\":true,\"enable_exit_intent_trigger\":false,\"enable_interstitial_types\":false,\"enable_ab_testing\":false,\"enable_desktop_only_mode\":false,\"enable_custom_styling\":false,\"display_next_after_n_hours\":1,\"enable_mobile_only_per_interstitial\":false,\"enable_interstitial_analytics\":true,\"discourse_interstitial_enable_debug_mode\":false,\"lazy_videos_enabled\":true,\"lazy_youtube_enabled\":true,\"lazy_vimeo_enabled\":true,\"lazy_tiktok_enabled\":false,\"discourse_local_dates_email_timezone\":\"Etc/UTC\",\"discourse_local_dates_email_format\":\"llll z\",\"discourse_local_dates_enabled\":true,\"discourse_local_dates_default_formats\":\"LLL|LTS|LL|LLLL\",\"discourse_local_dates_default_timezones\":\"Europe/Paris|America/Los_Angeles\",\"discourse_math_enabled\":true,\"discourse_math_provider\":\"mathjax\",\"discourse_math_enable_latex_delimiters\":true,\"discourse_math_mathjax_output\":\"html\",\"discourse_math_enable_menu\":true,\"discourse_math_zoom_on_click\":false,\"discourse_math_enable_accessibility\":false,\"discourse_math_enable_asciimath\":false,\"microsoft_auth_enabled\":false,\"discourse_narrative_bot_enabled\":true,\"oauth2_enabled\":false,\"oauth2_button_title\":\"with OAuth2\",\"patreon_enabled\":false,\"patreon_login_enabled\":false,\"patreon_donation_prompt_enabled\":false,\"patreon_donation_prompt_show_after_topics\":20,\"patreon_donation_prompt_campaign_url\":\"\",\"policy_enabled\":true,\"policy_restrict_to_staff_posts\":true,\"create_policy_allowed_groups\":\"1|2\",\"post_voting_enabled\":false,\"post_voting_comment_enabled\":true,\"post_voting_comment_limit_per_post\":10,\"post_voting_comment_max_raw_length\":600,\"post_voting_enable_likes_on_answers\":false,\"presence_enabled\":true,\"presence_max_users_shown\":5,\"discourse_reactions_enabled\":true,\"discourse_reactions_like_icon\":\"heart\",\"discourse_reactions_reaction_for_like\":\"heart\",\"discourse_reactions_enabled_reactions\":\"+1|laughing|open_mouth|clap|confetti_ball|hugs\",\"discourse_reactions_desaturated_reaction_panel\":false,\"discourse_reactions_allow_any_emoji\":false,\"enable_discourse_reactions_by_default\":true,\"enable_new_post_reply_count_position\":true,\"discourse_rewind_enabled\":false,\"solved_enabled\":true,\"solved_allow_multiple_solutions\":false,\"show_who_marked_solved\":false,\"allow_solved_on_all_topics\":false,\"accept_all_solutions_trust_level\":4,\"solved_quote_length\":700,\"show_filter_by_solved_status\":false,\"enable_solved_tags\":\"\",\"enable_support_category_type_setup\":true,\"enable_solved_shared_issues\":true,\"enable_solved_badges\":true,\"discourse_subscriptions_extra_nav_subscribe\":false,\"discourse_subscriptions_pricing_table_id\":\"\",\"discourse_subscriptions_pricing_table_enabled\":false,\"discourse_subscriptions_public_key\":\"\",\"discourse_subscriptions_currency\":\"USD\",\"discourse_subscriptions_campaign_enabled\":false,\"discourse_subscriptions_campaign_goal\":100,\"discourse_subscriptions_campaign_type\":\"Amount\",\"discourse_subscriptions_campaign_banner_location\":\"Top\",\"discourse_subscriptions_campaign_banner_bg_image\":\"\",\"discourse_subscriptions_campaign_banner_shadow_color\":\"2F70AC\",\"discourse_subscriptions_campaign_show_contributors\":true,\"discourse_subscriptions_campaign_product\":\"\",\"discourse_subscriptions_campaign_amount_raised\":0.0,\"discourse_subscriptions_campaign_subscribers\":0,\"discourse_templates_enabled\":true,\"topic_voting_enabled\":true,\"topic_voting_enable_vote_limits\":true,\"topic_voting_show_who_voted\":true,\"topic_voting_show_votes_on_profile\":true,\"enable_ideas_category_type_setup\":true,\"enable_topic_voting_badges\":true,\"user_notes_enabled\":true,\"user_notes_icon_placement\":\"name\",\"enable_discourse_workflows\":false,\"discourse_workflows_ai_authoring_enabled\":false,\"yearly_review_enabled\":false,\"zendesk_url\":\"https://your-url.zendesk.com/api/v2\",\"zendesk_enabled\":false,\"enable_markdown_footnotes\":true,\"display_footnotes_inline\":true,\"discourse_tier\":\"enterprise\",\"discourse_disable_email_customizations\":false,\"hide_admin_customize_themes\":false,\"hide_admin_web_hooks\":false,\"hide_admin_api_keys\":false,\"hide_admin_customize_colors\":false,\"hosted_site_force_show_debug_bar\":false,\"poll_enabled\":true,\"poll_maximum_options\":20,\"poll_minimum_trust_level_to_create\":1,\"poll_groupable_user_fields\":\"\",\"poll_export_data_explorer_query_id\":-16,\"poll_export_ranked_choice_data_explorer_query_id\":-19,\"poll_default_public\":true,\"spoiler_enabled\":true,\"voice_enabled\":false,\"voice_livekit_recording_enabled\":false,\"voice_video_enabled\":true,\"voice_video_max_publishers\":8,\"voice_video_background_blur_enabled\":true,\"voice_subtitles_enabled\":false,\"voice_stt_model_base_url\":\"\",\"voice_max_voice_quality\":\"maximum\",\"voice_max_camera_quality\":\"maximum\",\"voice_max_screen_share_quality\":\"maximum\",\"voice_idle_threshold_minutes\":5,\"voice_afk_auto_mute_threshold_minutes\":15,\"voice_afk_disconnect_threshold_minutes\":30,\"voice_auto_status_enabled\":true,\"voice_mesh_privacy_warning_enabled\":true,\"voice_chat_enabled\":true,\"available_locales\":\"[{\\\"native_name\\\":\\\"اللغة العربية\\\",\\\"value\\\":\\\"ar\\\",\\\"name\\\":\\\"languages.ar.name\\\"},{\\\"native_name\\\":\\\"беларуская мова\\\",\\\"value\\\":\\\"be\\\",\\\"name\\\":\\\"languages.be.name\\\"},{\\\"native_name\\\":\\\"български език\\\",\\\"value\\\":\\\"bg\\\",\\\"name\\\":\\\"languages.bg.name\\\"},{\\\"native_name\\\":\\\"bosanski jezik\\\",\\\"value\\\":\\\"bs_BA\\\",\\\"name\\\":\\\"languages.bs_BA.name\\\"},{\\\"native_name\\\":\\\"català\\\",\\\"value\\\":\\\"ca\\\",\\\"name\\\":\\\"languages.ca.name\\\"},{\\\"native_name\\\":\\\"čeština\\\",\\\"value\\\":\\\"cs\\\",\\\"name\\\":\\\"languages.cs.name\\\"},{\\\"native_name\\\":\\\"dansk\\\",\\\"value\\\":\\\"da\\\",\\\"name\\\":\\\"languages.da.name\\\"},{\\\"native_name\\\":\\\"Deutsch\\\",\\\"value\\\":\\\"de\\\",\\\"name\\\":\\\"languages.de.name\\\"},{\\\"native_name\\\":\\\"ελληνικά\\\",\\\"value\\\":\\\"el\\\",\\\"name\\\":\\\"languages.el.name\\\"},{\\\"native_name\\\":\\\"English\\\",\\\"value\\\":\\\"en\\\",\\\"name\\\":\\\"languages.en.name\\\"},{\\\"native_name\\\":\\\"English (UK)\\\",\\\"value\\\":\\\"en_GB\\\",\\\"name\\\":\\\"languages.en_GB.name\\\"},{\\\"native_name\\\":\\\"Español\\\",\\\"value\\\":\\\"es\\\",\\\"name\\\":\\\"languages.es.name\\\"},{\\\"native_name\\\":\\\"eesti\\\",\\\"value\\\":\\\"et\\\",\\\"name\\\":\\\"languages.et.name\\\"},{\\\"native_name\\\":\\\"فارسی\\\",\\\"value\\\":\\\"fa_IR\\\",\\\"name\\\":\\\"languages.fa_IR.name\\\"},{\\\"native_name\\\":\\\"suomi\\\",\\\"value\\\":\\\"fi\\\",\\\"name\\\":\\\"languages.fi.name\\\"},{\\\"native_name\\\":\\\"Français\\\",\\\"value\\\":\\\"fr\\\",\\\"name\\\":\\\"languages.fr.name\\\"},{\\\"native_name\\\":\\\"galego\\\",\\\"value\\\":\\\"gl\\\",\\\"name\\\":\\\"languages.gl.name\\\"},{\\\"native_name\\\":\\\"עברית\\\",\\\"value\\\":\\\"he\\\",\\\"name\\\":\\\"languages.he.name\\\"},{\\\"native_name\\\":\\\"hrvatski jezik\\\",\\\"value\\\":\\\"hr\\\",\\\"name\\\":\\\"languages.hr.name\\\"},{\\\"native_name\\\":\\\"magyar\\\",\\\"value\\\":\\\"hu\\\",\\\"name\\\":\\\"languages.hu.name\\\"},{\\\"native_name\\\":\\\"Հայերեն\\\",\\\"value\\\":\\\"hy\\\",\\\"name\\\":\\\"languages.hy.name\\\"},{\\\"native_name\\\":\\\"Indonesian\\\",\\\"value\\\":\\\"id\\\",\\\"name\\\":\\\"languages.id.name\\\"},{\\\"native_name\\\":\\\"Italiano\\\",\\\"value\\\":\\\"it\\\",\\\"name\\\":\\\"languages.it.name\\\"},{\\\"native_name\\\":\\\"日本語\\\",\\\"value\\\":\\\"ja\\\",\\\"name\\\":\\\"languages.ja.name\\\"},{\\\"native_name\\\":\\\"한국어\\\",\\\"value\\\":\\\"ko\\\",\\\"name\\\":\\\"languages.ko.name\\\"},{\\\"native_name\\\":\\\"lietuvių kalba\\\",\\\"value\\\":\\\"lt\\\",\\\"name\\\":\\\"languages.lt.name\\\"},{\\\"native_name\\\":\\\"latviešu valoda\\\",\\\"value\\\":\\\"lv\\\",\\\"name\\\":\\\"languages.lv.name\\\"},{\\\"native_name\\\":\\\"Norsk bokmål\\\",\\\"value\\\":\\\"nb_NO\\\",\\\"name\\\":\\\"languages.nb_NO.name\\\"},{\\\"native_name\\\":\\\"Nederlands\\\",\\\"value\\\":\\\"nl\\\",\\\"name\\\":\\\"languages.nl.name\\\"},{\\\"native_name\\\":\\\"polski\\\",\\\"value\\\":\\\"pl_PL\\\",\\\"name\\\":\\\"languages.pl_PL.name\\\"},{\\\"native_name\\\":\\\"Português\\\",\\\"value\\\":\\\"pt\\\",\\\"name\\\":\\\"languages.pt.name\\\"},{\\\"native_name\\\":\\\"Português (BR)\\\",\\\"value\\\":\\\"pt_BR\\\",\\\"name\\\":\\\"languages.pt_BR.name\\\"},{\\\"native_name\\\":\\\"limba română\\\",\\\"value\\\":\\\"ro\\\",\\\"name\\\":\\\"languages.ro.name\\\"},{\\\"native_name\\\":\\\"Русский\\\",\\\"value\\\":\\\"ru\\\",\\\"name\\\":\\\"languages.ru.name\\\"},{\\\"native_name\\\":\\\"slovenčina\\\",\\\"value\\\":\\\"sk\\\",\\\"name\\\":\\\"languages.sk.name\\\"},{\\\"native_name\\\":\\\"slovenščina\\\",\\\"value\\\":\\\"sl\\\",\\\"name\\\":\\\"languages.sl.name\\\"},{\\\"native_name\\\":\\\"Shqip\\\",\\\"value\\\":\\\"sq\\\",\\\"name\\\":\\\"languages.sq.name\\\"},{\\\"native_name\\\":\\\"српски језик\\\",\\\"value\\\":\\\"sr\\\",\\\"name\\\":\\\"languages.sr.name\\\"},{\\\"native_name\\\":\\\"svenska\\\",\\\"value\\\":\\\"sv\\\",\\\"name\\\":\\\"languages.sv.name\\\"},{\\\"native_name\\\":\\\"Kiswahili\\\",\\\"value\\\":\\\"sw\\\",\\\"name\\\":\\\"languages.sw.name\\\"},{\\\"native_name\\\":\\\"తెలుగు\\\",\\\"value\\\":\\\"te\\\",\\\"name\\\":\\\"languages.te.name\\\"},{\\\"native_name\\\":\\\"ไทย\\\",\\\"value\\\":\\\"th\\\",\\\"name\\\":\\\"languages.th.name\\\"},{\\\"native_name\\\":\\\"Türkçe\\\",\\\"value\\\":\\\"tr_TR\\\",\\\"name\\\":\\\"languages.tr_TR.name\\\"},{\\\"native_name\\\":\\\"ئۇيغۇرچە\\\",\\\"value\\\":\\\"ug\\\",\\\"name\\\":\\\"languages.ug.name\\\"},{\\\"native_name\\\":\\\"українська мова\\\",\\\"value\\\":\\\"uk\\\",\\\"name\\\":\\\"languages.uk.name\\\"},{\\\"native_name\\\":\\\"اردو\\\",\\\"value\\\":\\\"ur\\\",\\\"name\\\":\\\"languages.ur.name\\\"},{\\\"native_name\\\":\\\"tiếng Việt\\\",\\\"value\\\":\\\"vi\\\",\\\"name\\\":\\\"languages.vi.name\\\"},{\\\"native_name\\\":\\\"简体中文\\\",\\\"value\\\":\\\"zh_CN\\\",\\\"name\\\":\\\"languages.zh_CN.name\\\"},{\\\"native_name\\\":\\\"繁體中文\\\",\\\"value\\\":\\\"zh_TW\\\",\\\"name\\\":\\\"languages.zh_TW.name\\\"}]\",\"available_content_localization_locales\":[],\"require_invite_code\":false,\"site_logo_url\":\"https://global.discourse-cdn.com/try/original/1X/5e1e3b3cada2d7fbae4734d4bc53999933d71c95.svg\",\"site_logo_small_url\":\"https://global.discourse-cdn.com/try/original/1X/9af9456df3a40537038643d987ffcbd553ad3296.svg\",\"site_mobile_logo_url\":\"https://global.discourse-cdn.com/try/original/1X/5e1e3b3cada2d7fbae4734d4bc53999933d71c95.svg\",\"site_favicon_url\":\"https://global.discourse-cdn.com/try/optimized/1X/9af9456df3a40537038643d987ffcbd553ad3296_2_32x32.svg\",\"site_logo_dark_url\":\"https://global.discourse-cdn.com/try/original/1X/be79971eb6f0b4c1c8ec0f3c78f2fe4148d06a65.png\",\"site_logo_small_dark_url\":\"https://global.discourse-cdn.com/try/original/1X/2948aa8888d91dc106273821b1d78a804838cab3.png\",\"site_mobile_logo_dark_url\":\"https://global.discourse-cdn.com/try/original/1X/be79971eb6f0b4c1c8ec0f3c78f2fe4148d06a65.png\"}","themeSiteSettingOverrides":"{\"enable_welcome_banner\":false,\"search_experience\":\"search_field\"}","customHTML":"{\"top\":\"\",\"footer\":\"\"}","banner":"{}","customEmoji":"[{\"name\":\"discourse\",\"url\":\"https://global.discourse-cdn.com/try/original/1X/0e65eeb3631702ee91807a5f302a3f10f099dd11.png\",\"group\":\"custom\",\"created_by\":\"system\"}]","isReadOnly":"false","isStaffWritesOnly":"false","activatedThemes":"{\"-2\":{\"name\":\"Horizon\",\"settings\":{\"topic_card_high_context\":true}}}","upcomingChanges":"{\"ai_bot_enable_docked_composer\":true,\"boards_enabled\":false,\"chat_pinned_messages\":true,\"composer_media_optimization_image_convert_enabled\":false,\"dashboard_improvements\":true,\"doc_categories_simple_mode\":false,\"enable_ai_bot_starred_conversations\":true,\"enable_composer_redesign\":false,\"enable_discourse_reactions_by_default\":true,\"enable_discourse_workflows\":false,\"enable_events_category_type_setup\":true,\"enable_generated_llms_txt\":false,\"enable_horizon_high_context_topic_cards\":true,\"enable_ideas_category_type_setup\":true,\"enable_invite_modal_with_roles\":false,\"enable_local_logins_via_code\":false,\"enable_new_chat_reactions_popup\":true,\"enable_new_checkbox_style\":true,\"enable_new_defaults_for_trust_level_3_requirements\":true,\"enable_new_post_reactions_menu\":true,\"enable_new_post_reply_count_position\":true,\"enable_simplified_category_creation\":true,\"enable_solved_badges\":true,\"enable_solved_shared_issues\":true,\"enable_support_category_type_setup\":true,\"enable_topic_voting_badges\":true,\"enable_unified_new\":true,\"floating_dismiss_topics_on_mobile\":true,\"granular_anonymous_and_logged_in_groups_permissions\":false,\"improved_crawler_detection\":false,\"modernize_foundation_theme\":false,\"prioritize_recently_used_tags\":false,\"remove_and_replace_uncategorized\":false,\"rename_faq_to_guidelines\":true,\"reporting_improvements\":true,\"update_pending_users_reminder_default\":false,\"voice_enabled\":false}"}</script>
+      </discourse-assets-json>
+      <discourse-assets-icons></discourse-assets-icons>
+    </discourse-assets>
+
+      
+
+    
+    <noscript data-path="/login">
+      
+        <header>
+  <a href="/">Discourse Demo</a>
+</header>
+
+
+        <div id="main-outlet" class="wrap" role="main">
+          <!-- preload-content: -->
+            <picture class="logo-container">
+      <source srcset="https://global.discourse-cdn.com/try/original/1X/be79971eb6f0b4c1c8ec0f3c78f2fe4148d06a65.png" media="(prefers-color-scheme: dark)" />
+    <img src="https://global.discourse-cdn.com/try/original/1X/5e1e3b3cada2d7fbae4734d4bc53999933d71c95.svg" alt="Discourse Demo" class="site-logo" />
+  </picture>
+
+<div class='login-welcome__title'>
+  <h1><a name="welcome-to-discourse-demo-1" class="anchor" href="#welcome-to-discourse-demo-1" aria-label="Heading link"></a>Welcome to Discourse Demo</h1>
+
+  <p class='login-welcome__description'>Demonstration sandbox for Discourse</p>
+</div>
+
+
+
+          <!-- :preload-content -->
+        </div>
+
+        <footer class="container wrap">
+  <nav class='crawler-nav'>
+    <ul>
+      <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+        <span itemprop='name'>
+          <a href='/' itemprop="url">Home </a>
+        </span>
+      </li>
+      <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+        <span itemprop='name'>
+          <a href='/categories' itemprop="url">Categories </a>
+        </span>
+      </li>
+      <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+        <span itemprop='name'>
+          <a href='/guidelines' itemprop="url">Guidelines </a>
+        </span>
+      </li>
+        <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+          <span itemprop='name'>
+            <a href='/tos' itemprop="url">Terms of Service </a>
+          </span>
+        </li>
+        <li itemscope itemtype='http://schema.org/SiteNavigationElement'>
+          <span itemprop='name'>
+            <a href='https://meta.discourse.org/privacy' itemprop="url">Privacy Policy </a>
+          </span>
+        </li>
+    </ul>
+  </nav>
+  <p class='powered-by-link'>Powered by <a href="https://www.discourse.org">Discourse</a>, best viewed with JavaScript enabled</p>
+</footer>
+
+    </noscript>
+
+      
+
+      
+
+    <section id='main'>
+    </section>
+
+      <form id='hidden-login-form' method="post" action="/login" style="display: none;">
+        <input name="username" type="text"     id="signin_username">
+        <input name="password" type="password" id="signin_password">
+        <input name="redirect" type="hidden">
+        <input type="submit" id="signin-button" value="Log In">
+      </form>
+
+    <script type="module" src="https://global.discourse-cdn.com/try/assets/js/discourse-ku3plz5f.digested.js" data-discourse-entrypoint="discourse" nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+
+    <script defer src="https://global.discourse-cdn.com/try/assets/js/browser-update-91688f13.js" nonce="MZCNTu4GyUIjibYNc9U24zPl5"></script>
+
+    
+
+      
+
+      
+
+    <script nonce="MZCNTu4GyUIjibYNc9U24zPl5">/* Workaround for https://bugs.webkit.org/show_bug.cgi?id=209261 */</script>
+  </body>
+</html>

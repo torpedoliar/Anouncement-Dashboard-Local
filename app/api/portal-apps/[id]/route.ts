@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { PortalAppUpdateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
 import { computeLoginFingerprint } from "@/lib/portal-fingerprint";
+import { recordPortalAppCorrection } from "@/lib/portal-detection-feedback";
 import {
     LoginProfileBindingError,
     loginProfileSummarySelect,
@@ -186,6 +187,21 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             },
             request,
         });
+
+        // Feedback belajar: koreksi manual admin atas hasil deteksi otomatis
+        // dicatat; hanya saat konfigurasi login memang berubah.
+        if (loginConfigChanged) {
+            await recordPortalAppCorrection({
+                loginUrl: merged.loginUrl,
+                corrected: {
+                    usernameField: merged.usernameField ?? null,
+                    passwordField: merged.passwordField ?? null,
+                    httpMethod: merged.httpMethod ?? null,
+                    ssoMode: merged.ssoMode ?? null,
+                },
+                createdBy: session.user.id,
+            });
+        }
 
         return NextResponse.json(app);
     } catch (error) {

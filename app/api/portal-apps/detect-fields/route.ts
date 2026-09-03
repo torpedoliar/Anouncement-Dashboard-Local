@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { detectWithLadder } from "@/lib/portal-detect-ladder";
+import { analyzeLoginWithLlm } from "@/lib/portal-llm-analyze";
+import { getLearnedSuggestion } from "@/lib/portal-detection-feedback";
 import {
     getSafeLoginProfileDiscoveryPresentation,
     recordLoginProfileCandidate,
@@ -38,6 +40,56 @@ export async function POST(request: NextRequest) {
         const result = await detectWithLadder(parsed.href);
         const { detected, verdict } = result;
         const presentation = getSafeLoginProfileDiscoveryPresentation(result);
+
+        // Saran hasil belajar: koreksi admin sebelumnya pada origin/path yang sama.
+        const learned = await getLearnedSuggestion(parsed.href);
+
+        // Lapis LLM opsional: hanya saat heuristik belum yakin (tanpa password
+        // field, multi-step, atau confidence rendah). Fail-closed — null bila
+        // AI nonaktif/gagal, dan saran field diverifikasi terhadap DOM nyata.
+        const LOW_CONFIDENCE = 400;
+        const needsLlm =
+            !detected.passwordField || detected.multiStep === true || (detected.confidence ?? 0) < LOW_CONFIDENCE;
+        const llm = needsLlm
+            ? await analyzeLoginWithLlm({
+                  url: result.finalUrl,
+                  html: result.html,
+                  layer: result.layer,
+                  heuristic: detected,
+              })
+            : null;
+
+        // Heuristik gagal menemukan form tetapi LLM menemukan field yang
+        // terverifikasi ada di DOM → adopsi sebagai hasil deteksi.
+        let adoptedLlm = false;
+        if (!detected.passwordField && llm?.passwordField) {
+            detected.usernameField = llm.usernameField ?? learned?.usernameField ?? detected.usernameField;
+            detected.passwordField = llm.passwordField;
+            detected.httpMethod = llm.httpMethod ?? detected.httpMethod;
+            if (llm.formAction) detected.formAction = llm.formAction;
+            detected.confidence = Math.max(detected.confidence ?? 0, llm.confidence);
+            adoptedLlm = true;
+            if (llm.recommendedMode && llm.recommendedMode !== verdict.mode) {
+                verdict.mode = llm.recommendedMode;
+                verdict.reason = `Dianalisis AI: ${llm.rationale || verdict.reason}`;
+                verdict.signals.push("Field login ditemukan oleh analisis AI (terverifikasi ada di DOM).");
+            }
+        }
+
+        const llmBlock = llm
+            ? {
+                  assisted: adoptedLlm,
+                  usernameField: llm.usernameField,
+                  passwordField: llm.passwordField,
+                  formAction: llm.formAction,
+                  httpMethod: llm.httpMethod,
+                  multiStep: llm.multiStep,
+                  loginApiEndpoint: llm.loginApiEndpoint,
+                  recommendedMode: llm.recommendedMode,
+                  confidence: llm.confidence,
+                  rationale: llm.rationale,
+              }
+            : null;
 
         // Candidate disimpan terpisah dari PortalApp. Kegagalan persistence tidak
         // boleh membuat fungsi diagnosis hilang; admin tetap mendapat hasil ladder.
@@ -84,15 +136,20 @@ export async function POST(request: NextRequest) {
             const loopNote = result.loopDetected
                 ? ` URL memantul dalam loop pengalihan (berakhir di ${safeFinalUrl}) — server tampak hidup, tapi halaman tidak pernah berhenti dialihkan.`
                 : "";
-            const detail = !result.loopDetected && result.redirected
+            const multiStepNote = detected.multiStep
+                ? " Halaman ini memakai login dua langkah (identifier dulu, password menyusul) — pengiriman form tunggal tidak bisa menyelesaikannya."
+                : "";
+            const detail = !result.loopDetected && result.redirected && !detected.multiStep
                 ? ` Halaman dialihkan ke ${safeFinalUrl}. Periksa kembali halaman login yang sebenarnya sebelum menerapkan konfigurasi.`
                 : "";
             return NextResponse.json(
                 {
-                    error: `Tidak ditemukan form login (input password) di halaman tersebut.${loopNote}${detail}`,
+                    error: `Tidak ditemukan form login (input password) di halaman tersebut.${loopNote}${multiStepNote}${detail}`,
                     finalUrl: presentation.finalUrl,
+                    clientRoute: presentation.clientRoute,
                     redirected: result.redirected,
                     loopDetected: result.loopDetected,
+                    multiStep: detected.multiStep ?? false,
                     recommendedMode: verdict.mode,
                     recommendationReason: verdict.reason,
                     detectionSignals: presentation.discoverySignals,
@@ -103,6 +160,8 @@ export async function POST(request: NextRequest) {
                     apiLayer: result.apiProbe.layer,
                     apiContracts: result.apiProbe.contracts,
                     apiProbeNote: result.apiProbe.note,
+                    llm: llmBlock,
+                    learned,
                     profile: profile?.profile ?? null,
                     profilePersistenceWarning,
                 },
@@ -118,6 +177,7 @@ export async function POST(request: NextRequest) {
             httpMethod: detected.httpMethod ?? "POST",
             warnings: presentation.warnings,
             finalUrl: presentation.finalUrl,
+            clientRoute: presentation.clientRoute,
             redirected: result.redirected,
             loopDetected: result.loopDetected,
             cookiePaired: verdict.mode === "POST",
@@ -127,6 +187,9 @@ export async function POST(request: NextRequest) {
             detectionConfidence: detected.confidence ?? 0,
             detectionLayer: result.layer,
             layerNotes: presentation.layerNotes,
+            multiStep: detected.multiStep ?? false,
+            llm: llmBlock,
+            learned,
             // Lapis 3 probe. NONE saat form login ditemukan di HTTP/BROWSER —
             // apiContracts kosong sehingga UI tidak menampilkan tombol "Uji JSON".
             apiLayer: result.apiProbe.layer,

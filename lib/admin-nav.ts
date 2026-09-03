@@ -21,6 +21,7 @@ import {
   PaperPlane,
   Gear,
   Plugs,
+  Robot,
 } from "@phosphor-icons/react";
 
 export interface AdminNavItem {
@@ -84,6 +85,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { href: "/admin/newsletter", label: "Newsletter", icon: PaperPlane },
       { href: "/admin/settings", label: "Pengaturan", icon: Gear },
       { href: "/admin/hris-gateway", label: "HRIS Gateway", icon: Plugs, superAdminOnly: true },
+      { href: "/admin/portal-ai", label: "AI Portal", icon: Robot, superAdminOnly: true },
     ],
   },
 ];

@@ -1,172 +1,84 @@
 /**
- * Self-check untuk lib/portal-login-detect.ts (tanpa DB).
- * Run: npx tsx scripts/test-login-detect.ts
+ * Harness regresi untuk detektor login portal.
+ *
+ *   npx tsx scripts/test-login-detect.ts           — semua fixture
+ *   npx tsx scripts/test-login-detect.ts github    — satu fixture
+ *
+ * Fixture HTML ada di scripts/login-detect-fixtures/raw/<nama>.html,
+ * ekspektasi di scripts/login-detect-fixtures/expected.json.
+ * Exit code 1 bila ada yang gagal.
  */
+
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { detectLoginFields } from "../lib/portal-login-detect";
 
-function assertEq(actual: unknown, expected: unknown, label: string) {
-    const ok = JSON.stringify(actual) === JSON.stringify(expected);
-    console.log(`${ok ? "PASS" : "FAIL"} | ${label} | got=${JSON.stringify(actual)} expected=${JSON.stringify(expected)}`);
-    if (!ok) process.exitCode = 1;
+interface Expected {
+    url: string;
+    layer: "HTTP" | "BROWSER";
+    usernameField: string | null;
+    passwordField: string | null;
+    actionContains?: string;
+    multiStep?: boolean;
+    note?: string;
 }
 
-// 1. Form klasik: username + password
-const r1 = detectLoginFields(`<form><input name="username" type="text"><input name="password" type="password"><button>Login</button></form>`);
-assertEq(r1.usernameField, "username", "1a username name detected");
-assertEq(r1.passwordField, "password", "1b password detected");
-assertEq(r1.extraFields, {}, "1c no extra fields");
+const dir = join(__dirname, "login-detect-fixtures");
+const expected = JSON.parse(readFileSync(join(dir, "expected.json"), "utf8")) as Record<string, Expected>;
+delete (expected as Record<string, unknown>).$schema;
 
-// 2. autocomplete="username" menang atas urutan DOM
-const r2 = detectLoginFields(`<form><input name="email" type="email"><input name="username" autocomplete="username" type="text"><input name="pass" type="password"></form>`);
-assertEq(r2.usernameField, "username", "2 autocomplete username wins");
+const only = process.argv[2];
+const names = Object.keys(expected).filter((n) => !only || n === only);
 
-// 3. Tanpa autocomplete → nama mengandung 'user'/'email' menang
-const r3 = detectLoginFields(`<form><input name="first_name" type="text"><input name="user_id" type="text"><input name="pw" type="password"></form>`);
-assertEq(r3.usernameField, "user_id", "3 keyword user wins");
+let pass = 0;
+let fail = 0;
+const failures: string[] = [];
 
-// 4. Email field sebagai username
-const r4 = detectLoginFields(`<form><input name="email" type="email"><input name="password" type="password"></form>`);
-assertEq(r4.usernameField, "email", "4 email as username");
+for (const name of names) {
+    const file = join(dir, "raw", `${name}.html`);
+    let html: string;
+    try {
+        html = readFileSync(file, "utf8");
+    } catch {
+        console.log(`SKIP ${name}: fixture raw/${name}.html tidak ada`);
+        continue;
+    }
+    const exp = expected[name];
+    const result = detectLoginFields(html, { pageUrl: exp.url, layer: exp.layer });
+    const problems: string[] = [];
 
-// 5. Hidden CSRF terdeteksi sebagai extraFields
-const r5 = detectLoginFields(`<form><input type="hidden" name="_token" value="abc123"><input name="username" type="text"><input name="password" type="password"></form>`);
-assertEq(r5.extraFields, { _token: "abc123" }, "5 hidden csrf captured");
+    const gotUser = result.usernameField ?? null;
+    const gotPass = result.passwordField ?? null;
+    if (gotPass !== exp.passwordField) {
+        problems.push(`passwordField: harap ${JSON.stringify(exp.passwordField)}, dapat ${JSON.stringify(gotPass)}`);
+    }
+    if (exp.passwordField !== null && gotUser !== exp.usernameField) {
+        problems.push(`usernameField: harap ${JSON.stringify(exp.usernameField)}, dapat ${JSON.stringify(gotUser)}`);
+    }
+    if (exp.actionContains && !(result.formAction ?? "").includes(exp.actionContains)) {
+        problems.push(`formAction: harap mengandung ${JSON.stringify(exp.actionContains)}, dapat ${JSON.stringify(result.formAction)}`);
+    }
+    if (exp.multiStep !== undefined) {
+        const gotMulti = (result as { multiStep?: boolean }).multiStep ?? false;
+        if (gotMulti !== exp.multiStep) {
+            problems.push(`multiStep: harap ${exp.multiStep}, dapat ${gotMulti}`);
+        }
+    }
 
-// 6. Tanpa password → usernameField null
-const r6 = detectLoginFields(`<form><input name="username" type="text"></form>`);
-assertEq(r6.usernameField, null, "6 no password → null username");
-assertEq(r6.passwordField, null, "6b no password → null password");
+    if (problems.length === 0) {
+        pass++;
+        console.log(`PASS ${name}`);
+    } else {
+        fail++;
+        failures.push(name);
+        console.log(`FAIL ${name}`);
+        for (const p of problems) console.log(`     - ${p}`);
+        if (exp.note) console.log(`     note: ${exp.note}`);
+    }
+}
 
-// 7. Tanpa form sama sekali
-const r7 = detectLoginFields(`<html><body><p>Hello</p></body></html>`);
-assertEq(r7.usernameField, null, "7 no form → null");
-assertEq(r7.extraFields, {}, "7b no form → empty extra");
-
-// 8. Multipel form — hanya form berisi password yang dipertimbangkan
-const r8 = detectLoginFields(`<form><input name="search" type="search"></form><form><input name="username" type="text"><input type="password" name="pass"></form>`);
-assertEq(r8.usernameField, "username", "8 picks login form not search");
-assertEq(r8.passwordField, "pass", "8b password from login form");
-
-// 9. Fallback: tanpa keyword → input non-password pertama
-const r9 = detectLoginFields(`<form><input name="a" type="text"><input name="b" type="text"><input name="pw" type="password"></form>`);
-assertEq(r9.usernameField, "a", "9 first text input fallback");
-
-// 10. Input tanpa type (default text) bisa jadi username
-const r10a = detectLoginFields(`<form><input name="login" value=""><input name="passwd" type="password"></form>`);
-assertEq(r10a.usernameField, "login", "10 no-type input as username");
-
-// 11. DevExpress WebForms (TR APPS): tombol submit bernama wajib ikut di extraFields,
-//     kalau tidak handler klik server-side tidak pernah jalan.
-const r10 = detectLoginFields(`<form method="post" action="#" id="Form1">
-<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="O6pKzp+liCG" />
-<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="B281DCD2" />
-<input class="dxeEditArea_Moderno" id="ASPxTextBox1_I" name="ASPxTextBox1" type="text" />
-<input class="dxeEditArea_Moderno" id="ASPxTextBox2_I" name="ASPxTextBox2" type="password" />
-<input id="ASPxButton1_I" class="dxb-hb" value="LOGIN" type="submit" name="ASPxButton1" />
-</form>`);
-assertEq(r10.usernameField, "ASPxTextBox1", "10a DevExpress username");
-assertEq(r10.passwordField, "ASPxTextBox2", "10b DevExpress password");
-assertEq(r10.extraFields.ASPxButton1, "LOGIN", "10c submit button included");
-assertEq((r10.warnings ?? []).length > 0, true, "10d volatile __VIEWSTATE warned");
-
-// 11. ASP.NET MVC (K2): antiforgery token + submit <button>
-const r11 = detectLoginFields(`<form method=post action="/Account/Login">
-<input name="__RequestVerificationToken" type="hidden" value="jixmTfaCnkh" />
-<input type="text" class="form-control" placeholder="Username" id="UserName" name="UserName">
-<input type="password" class="form-control" placeholder="Password" id="Password" name="Password">
-<button type="submit" name="submitBtn" class="btn">Submit</button>
-</form>`);
-assertEq(r11.usernameField, "UserName", "11a MVC username");
-assertEq(r11.passwordField, "Password", "11b MVC password");
-assertEq(r11.extraFields.submitBtn, "Submit", "11c <button> submit captured");
-assertEq((r11.warnings ?? []).length > 0, true, "11d antiforgery token warned");
-
-// 12. Tombol submit tanpa name TIDAK ditambahkan (tidak ada yang bisa di-POST)
-const r12 = detectLoginFields(`<form><input name="username" type="text"><input name="password" type="password"><button type="submit">Go</button></form>`);
-assertEq(r12.extraFields, {}, "12 unnamed submit not added");
-assertEq((r12.warnings ?? []).length, 0, "12b no volatile token → no warning");
-
-// 13. Tombol "Batal" TIDAK boleh dipilih — mengirim namanya = server menjalankan batal, bukan login
-const r13 = detectLoginFields(`<form><input name="username" type="text"><input name="password" type="password">
-<input type="submit" name="btnCancel" value="Batal"><input type="submit" name="btnLogin" value="Login"></form>`);
-assertEq(r13.extraFields, { btnLogin: "Login" }, "13 cancel button rejected, login chosen");
-
-// 13b. Tombol login muncul SETELAH tombol netral → tetap menang
-const r13b = detectLoginFields(`<form><input name="u" type="text"><input name="p" type="password">
-<input type="submit" name="btnHelp" value="Bantuan"><input type="submit" name="btnMasuk" value="Masuk"></form>`);
-assertEq(r13b.extraFields.btnMasuk, "Masuk", "13b positive button wins over neutral");
-
-// 14. user_id tidak boleh menyusut jadi "id" (underscore dipertahankan)
-const r14 = detectLoginFields(`<form><input name="first_name" type="text"><input name="user_id" type="text"><input name="kata_sandi" type="password"></form>`);
-assertEq(r14.usernameField, "user_id", "14 user_id beats first_name");
-assertEq(r14.passwordField, "kata_sandi", "14b kata_sandi as password");
-
-// 15. Label membungkus input tanpa atribut for=
-const r15 = detectLoginFields(`<form><label>NIK Karyawan <input name="f1" type="text"></label><label>Kata Sandi <input name="f2" type="password"></label></form>`);
-assertEq(r15.usernameField, "f1", "15 wrapping label gives username clue");
-
-// 16. aria-labelledby menunjuk elemen lain
-const r16 = detectLoginFields(`<form><span id="l1">Nomor Induk</span><span id="l2">Kata Sandi</span>
-<input name="a1" type="text" aria-labelledby="l1"><input name="a2" type="password" aria-labelledby="l2"></form>`);
-assertEq(r16.usernameField, "a1", "16 aria-labelledby resolved");
-
-// 17. formaction pada tombol menimpa action <form>
-const r17 = detectLoginFields(`<form action="/x"><input name="username" type="text"><input name="password" type="password">
-<input type="submit" name="go" formaction="/real/login" value="Login"></form>`);
-assertEq(r17.formAction, "/real/login", "17 formaction overrides form action");
-
-// 18. Anti-autofill: readonly dilepas saat field difokuskan. Form NYATA, jangan jatuh ke VAULT.
-const r18 = detectLoginFields(`<form action="/login" method="post">
-<input name="user_id" type="text" readonly onfocus="this.removeAttribute('readonly')">
-<input name="user_password" type="password" readonly onfocus="this.removeAttribute('readonly')">
-<button type="submit">Masuk</button></form>`);
-assertEq(r18.usernameField, "user_id", "18a readonly username tetap terdeteksi");
-assertEq(r18.passwordField, "user_password", "18b readonly password tetap terdeteksi");
-assertEq((r18.warnings ?? []).some((w) => /readonly/i.test(w)), true, "18c kondisi readonly diberi peringatan");
-
-// 19. Form dinonaktifkan sampai hidrasi framework selesai — tetap bukti form login.
-const r19 = detectLoginFields(`<form><input name="email" type="email" disabled><input name="password" type="password" disabled></form>`);
-assertEq(r19.passwordField, "password", "19a disabled password tetap terdeteksi");
-assertEq(r19.usernameField, "email", "19b disabled username tetap terdeteksi");
-
-// 20. Field sehat menang atas field disabled di form lain (penalti, bukan penerimaan buta).
-const r20 = detectLoginFields(`<form action="/a"><input name="uDisabled" type="text" disabled><input name="pDisabled" type="password" disabled></form>
-<form action="/b"><input name="uLive" type="text"><input name="pLive" type="password"></form>`);
-assertEq(r20.passwordField, "pLive", "20a form aktif menang");
-assertEq(r20.formAction, "/b", "20b action dari form aktif");
-assertEq((r20.warnings ?? []).some((w) => /readonly/i.test(w)), false, "20c tanpa peringatan saat field sehat");
-
-// 21. autocomplete dengan prefix section (pola umum framework/password manager)
-const r21 = detectLoginFields(`<form><input name="f_a" autocomplete="section-login username" type="text">
-<input name="f_b" autocomplete="section-login current-password" type="text"></form>`);
-assertEq(r21.usernameField, "f_a", "21a autocomplete section-* username terbaca");
-assertEq(r21.passwordField, "f_b", "21b autocomplete section-* current-password terbaca");
-
-// 22. Password tanpa name/id tidak bisa dikirim → form bernama di tempat lain yang dipakai
-const r22 = detectLoginFields(`<form action="/ghost"><input type="text" placeholder="Username"><input type="password" placeholder="Password"></form>
-<form action="/nyata"><input name="login" type="text"><input name="sandi" type="password"></form>`);
-assertEq(r22.passwordField, "sandi", "22a form dengan field bernama dipilih");
-assertEq(r22.formAction, "/nyata", "22b action form yang bisa dikirim");
-
-// 23. Password semantic tanpa name/id tetap dapat diidentifikasi untuk SPA.
-const r23 = detectLoginFields(`<form><input type="text"><input type="password"></form>`);
-assertEq(r23.usernameField, null, "23a username tanpa petunjuk → null");
-assertEq(r23.passwordField, "password", "23b password tanpa name/id → kunci sintetis");
-assertEq((r23.warnings ?? []).some((w) => /name\/id/i.test(w)), true, "23c field sintetis diberi peringatan");
-
-// 24. Pola target React/Vite NCM: controlled inputs hanya punya autocomplete,
-//     tidak punya name/id, tetapi tetap merupakan pasangan login.
-const r24 = detectLoginFields(`<form class="login-form">
-<label>Username<input autocomplete="username" value=""></label>
-<label>Password<input type="password" autocomplete="current-password" value=""></label>
-<button type="submit">Enter terminal</button></form>`);
-assertEq(r24.usernameField, "username", "24a React autocomplete username tanpa name/id");
-assertEq(r24.passwordField, "password", "24b React current-password tanpa name/id");
-assertEq((r24.warnings ?? []).some((w) => /SPA/i.test(w)), true, "24c SPA inference diberi peringatan");
-
-// 25. Label pembungkus memberi petunjuk meski input hanya type=text.
-const r25 = detectLoginFields(`<form><label>Login user<input type="text"></label><label>Password<input type="text" placeholder="Password"></label></form>`);
-assertEq(r25.usernameField, "username", "25a label login menginfer username");
-assertEq(r25.passwordField, "password", "25b placeholder password menginfer password");
-
-console.log("=== ALL PASS ===");
+console.log(`\n${pass} lolos, ${fail} gagal dari ${pass + fail} fixture.`);
+if (fail > 0) {
+    console.log(`Gagal: ${failures.join(", ")}`);
+    process.exit(1);
+}

@@ -6,6 +6,7 @@ import { validatePagination } from "@/lib/pagination-utils";
 import { PortalAppCreateSchema, validateInput, formatZodErrors } from "@/lib/validation-schemas";
 import { logAudit } from "@/lib/audit";
 import { computeLoginFingerprint } from "@/lib/portal-fingerprint";
+import { recordPortalAppCorrection } from "@/lib/portal-detection-feedback";
 import {
     LoginProfileBindingError,
     loginProfileSummarySelect,
@@ -168,6 +169,19 @@ export async function POST(request: NextRequest) {
             entityId: app.id,
             changes: { name: app.name, slug: app.slug, loginProfileId: app.loginProfileId },
             request,
+        });
+
+        // Feedback belajar: bila konfigurasi admin berbeda dari hasil deteksi
+        // otomatis, perbedaan itu menjadi saran pada deteksi berikutnya.
+        await recordPortalAppCorrection({
+            loginUrl: configuredLoginUrl,
+            corrected: {
+                usernameField: data.usernameField ?? null,
+                passwordField: data.passwordField ?? null,
+                httpMethod: data.httpMethod ?? null,
+                ssoMode: data.ssoMode ?? null,
+            },
+            createdBy: session.user.id,
         });
 
         return NextResponse.json(app, { status: 201 });

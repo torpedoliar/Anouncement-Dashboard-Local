@@ -12,18 +12,34 @@ export interface DetectedFields {
     formAction?: string | null;
     extraFields: Record<string, string>;
     confidence?: number;
+    /**
+     * Login dua langkah (identifier-first): halaman ini hanya meminta
+     * username/email; field password baru muncul setelah submit pertama
+     * (MantisBT, Microsoft, Google, Yahoo). passwordField tetap null.
+     */
+    multiStep?: boolean;
     /** Peringatan konfigurasi yang ditemukan saat deteksi (bukan error fatal). */
     warnings?: string[];
+}
+
+export interface LoginDetectionContext {
+    /** URL yang terlihat oleh browser, termasuk hash route bila ada. */
+    pageUrl?: string | null;
+    layer?: "HTTP" | "BROWSER";
 }
 
 interface FieldInfo {
     name: string | null;
     id: string | null;
     type: string;
+    tagName: string;
     autocomplete: string | null;
     placeholder: string | null;
     ariaLabel: string | null;
+    ariaLabelledBy: string | null;
+    role: string | null;
     title: string | null;
+    dataHints: string[];
     labelText: string | null;
     value: string;
     isDisabled: boolean;
@@ -65,6 +81,57 @@ function hasAttr(el: Element, attr: string): boolean {
     return el.attrs.some((a) => a.name.toLowerCase() === attr.toLowerCase());
 }
 
+function attrValues(el: Element, names: string[]): string[] {
+    return names
+        .map((name) => elementAttr(el, name))
+        .filter((value): value is string => Boolean(value?.trim()))
+        .map((value) => value.trim());
+}
+
+/**
+ * Normalize both snake/kebab names and camelCase test IDs into the same search
+ * surface. This makes `loginUser`, `login-user`, `login_user`, and
+ * `data-testid="loginUsername"` rank consistently.
+ */
+function normalizeHint(value: string): string {
+    return value
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .replace(/[._:$#/@-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+const USERNAME_HINT_RE = /(?:username|user\s*(?:name|id|code)?|userid|login|logon|sign\s*in|signin|account|email|e\s*mail|identifier|identity|employee|staff|worker|operator|member|customer|client|nik|nip|nrp|badge|matric|registration|card|cpf|cnpj|uid|uname|usr|pengguna|nama\s*pengguna|akun|pegawai|karyawan|nomor\s*induk|kode\s*user|id\s*pengguna|sso)/i;
+const PASSWORD_HINT_RE = /(?:password|passwd|pass\s*(?:word|code)?|pwd|secret|credential|passphrase|pin|sandi|kata\s*sandi|senha|contrase(?:ña|na)|mot\s*de\s*passe|wachtwoord|hasło|kennwort|clave|kunci|access\s*code|security\s*key)/i;
+const NEGATIVE_PASSWORD_HINT_RE = /(?:confirm|repeat|retype|ulang|konfirmasi|verifikasi|second|otp|one\s*time|verification\s*code|captcha|security\s*code)/i;
+const LOGIN_ROUTE_HINT_RE = /(?:login|logon|signin|sign\s*in|auth|authenticate|session|sso|masuk|masuklah|portal)/i;
+/** Form pemulihan akun BUKAN kandidat login — field-nya sering bernama mirip. */
+const RECOVERY_CONTEXT_RE = /(?:forgot|reset|recover|lupa|pemulihan|retrieve)/i;
+/**
+ * Marker halaman login dua langkah yang form-nya tidak terlihat di HTML statis:
+ * PPFT = Microsoft (login.live.com/ppsecure), acrumb = Yahoo. Host kanonik
+ * dilacak lewat pageUrl; marker konten membantu domain kustom (ADFS dsb.).
+ */
+const MULTISTEP_HOST_RE = /(?:^|\.)(?:login\.live\.com|login\.microsoftonline\.com|accounts\.google\.com|login\.yahoo\.com|login\.apple\.com)$/i;
+const MULTISTEP_CONTENT_RE = /(?:\bPPFT\b|\bacrumb\b|signin\/v2\/identifier|challenge\/identifier)/i;
+
+function semanticHaystack(f: FieldInfo): string {
+    return normalizeHint([
+        f.name,
+        f.id,
+        f.autocomplete,
+        f.placeholder,
+        f.ariaLabel,
+        f.ariaLabelledBy,
+        f.role,
+        f.title,
+        f.labelText,
+        ...f.dataHints,
+        f.value,
+    ].filter(Boolean).join(" "));
+}
+
 /**
  * Nilai autocomplete dapat memiliki prefix section (mis. `section-login username`).
  * Token pertama saja tidak cukup untuk banyak komponen framework/password manager.
@@ -86,7 +153,10 @@ function firstAutocompleteWord(raw: string | null): string | null {
 function descendantInputs(node: Node): Element[] {
     const out: Element[] = [];
     const walk = (n: Node) => {
-        if (isElement(n) && n.tagName.toLowerCase() === "input") out.push(n);
+        if (isElement(n)) {
+            const tag = n.tagName.toLowerCase();
+            if (tag === "input" || tag === "textarea" || hasAttr(n, "contenteditable")) out.push(n);
+        }
         if ("childNodes" in n && Array.isArray(n.childNodes)) n.childNodes.forEach(walk);
     };
     walk(node);
@@ -155,7 +225,8 @@ function scoreUsername(f: FieldInfo): number {
     const label = (f.labelText ?? "").toLowerCase();
     const value = (f.value ?? "").toLowerCase();
 
-    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label} ${value}`.toLowerCase();
+    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label} ${value} ${f.dataHints.join(" ")} ${f.role ?? ""}`.toLowerCase();
+    const semanticHints = semanticHaystack(f);
 
     // 1. Filter out search / query / captcha / OTP boxes
     if (/\b(?:search|cari|filter|query|keyword|find|pencarian|q)\b/i.test(fullHaystack) || /^q$/i.test(rawName)) {
@@ -193,7 +264,13 @@ function scoreUsername(f: FieldInfo): number {
         score += 200;
     }
 
-    // 5. DevExpress / ASP.NET canonical primary control pattern
+    // 5. Accessible/test-id and multilingual hints used by modern component libraries.
+    if (USERNAME_HINT_RE.test(semanticHints)) score += 190;
+    if (/(?:data[_ -]?(?:testid|test|qa|cy)|login[_ -]?(?:user|username|email)|user[_ -]?(?:input|field))/i.test(semanticHints)) {
+        score += 120;
+    }
+
+    // 6. DevExpress / ASP.NET canonical primary control pattern
     // Examples: ASPxTextBox1, TextBox1, txt1, ctl00$ContentPlaceHolder1$ASPxTextBox1
     if (/^(?:aspxtextbox1|textbox1|txt1|input1)$/i.test(terminalName) ||
         /^(?:aspxtextbox1_i|aspxtextbox1|textbox1|txt1)$/i.test(terminalId)) {
@@ -219,7 +296,7 @@ function scoreUsername(f: FieldInfo): number {
  * Heuristik deteksi password field
  */
 function scorePassword(f: FieldInfo): number {
-    if (f.type !== "password" && f.type !== "text" && f.type !== "") return -500;
+    if (f.type !== "password" && f.type !== "text" && f.type !== "tel" && f.type !== "number" && f.type !== "textarea" && f.type !== "contenteditable" && f.type !== "") return -500;
 
     const rawName = (f.name ?? "").toLowerCase();
     const rawId = (f.id ?? "").toLowerCase();
@@ -232,7 +309,8 @@ function scorePassword(f: FieldInfo): number {
     const label = (f.labelText ?? "").toLowerCase();
     const value = (f.value ?? "").toLowerCase();
 
-    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label} ${value}`.toLowerCase();
+    const fullHaystack = `${rawName} ${rawId} ${terminalName} ${terminalId} ${placeholder} ${aria} ${title} ${label} ${value} ${f.dataHints.join(" ")} ${f.role ?? ""}`.toLowerCase();
+    const semanticHints = semanticHaystack(f);
 
     // Confirm password penalty
     if (/(?:confirm|repeat|ulang|retype|konfirmasi|verifikasi|second)/i.test(fullHaystack)) {
@@ -277,6 +355,12 @@ function scorePassword(f: FieldInfo): number {
         score += 200;
     }
 
+    // Modern UI libraries often expose only data-testid/data-qa, role, or an
+    // accessible label. Keep these clues strong, but reject OTP/confirmation
+    // controls so a login page with MFA does not select the wrong secret field.
+    if (PASSWORD_HINT_RE.test(semanticHints)) score += 220;
+    if (NEGATIVE_PASSWORD_HINT_RE.test(semanticHints)) score -= 260;
+
     return score - unavailabilityPenalty(f);
 }
 
@@ -290,10 +374,7 @@ function scorePassword(f: FieldInfo): number {
 type DetectedRole = "username" | "password";
 
 function fieldHint(f: FieldInfo): string {
-    return [f.name, f.id, f.autocomplete, f.placeholder, f.ariaLabel, f.title, f.labelText]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+    return semanticHaystack(f);
 }
 
 function detectedFieldKey(f: FieldInfo, role: DetectedRole): string | null {
@@ -306,19 +387,19 @@ function detectedFieldKey(f: FieldInfo, role: DetectedRole): string | null {
             f.type === "password" ||
             f.autocomplete === "current-password" ||
             f.autocomplete === "password" ||
-            /(?:password|passwd|passcode|kata[ _-]?sandi|\\bpass\\b|\\bpwd\\b|\\bpin\\b)/i.test(hint)
+            PASSWORD_HINT_RE.test(hint)
         ) {
             return "password";
         }
         return null;
     }
 
-    if (f.autocomplete === "email" || f.type === "email" || /(?:email|e-mail|mail_address)/i.test(hint)) {
+    if (f.autocomplete === "email" || f.type === "email" || /(?:email|e\s*mail|mail\s*address)/i.test(hint)) {
         return "email";
     }
     if (
         f.autocomplete === "username" ||
-        /(?:username|user[ _-]?id|userid|login|account|identifier|id pengguna|nama pengguna|nik|nip|nrp)/i.test(hint)
+        USERNAME_HINT_RE.test(hint)
     ) {
         return "username";
     }
@@ -333,8 +414,10 @@ function isInferredField(f: FieldInfo): boolean {
     return !f.name?.trim() && !f.id?.trim();
 }
 
-export function detectLoginFields(html: string): DetectedFields {
+export function detectLoginFields(html: string, context: LoginDetectionContext = {}): DetectedFields {
     const doc = parse(html);
+    const routeHints = normalizeHint(context.pageUrl ?? "");
+    const hasLoginRouteHint = LOGIN_ROUTE_HINT_RE.test(routeHints);
 
     // Map: id -> label text
     const labelMap = new Map<string, string>();
@@ -454,17 +537,36 @@ export function detectLoginFields(html: string): DetectedFields {
                 }
             }
 
-            if (tag === "input") {
-                const type = (elementAttr(node, "type") ?? "text").toLowerCase();
+            const isEditable = hasAttr(node, "contenteditable") && elementAttr(node, "contenteditable") !== "false";
+            const isControl = tag === "input" || tag === "textarea" || isEditable;
+            if (isControl) {
+                const type = tag === "textarea"
+                    ? "textarea"
+                    : isEditable
+                      ? "contenteditable"
+                      : (elementAttr(node, "type") ?? "text").toLowerCase();
                 const name = elementName(node);
                 const id = elementAttr(node, "id");
                 const placeholder = elementAttr(node, "placeholder");
                 const ariaLabel = elementAttr(node, "aria-label");
+                const ariaLabelledBy = elementAttr(node, "aria-labelledby");
+                const role = elementAttr(node, "role");
                 const title = elementAttr(node, "title");
                 const autocomplete = firstAutocompleteWord(elementAttr(node, "autocomplete"));
+                const dataHints = attrValues(node, [
+                    "data-testid",
+                    "data-test-id",
+                    "data-test",
+                    "data-qa",
+                    "data-cy",
+                    "data-field",
+                    "data-field-name",
+                ]);
                 const isDisabled = hasAttr(node, "disabled") || elementAttr(node, "aria-disabled") === "true";
                 const isReadOnly = hasAttr(node, "readonly") || elementAttr(node, "aria-readonly") === "true";
-                const value = elementAttr(node, "value") ?? "";
+                const value = tag === "textarea" || isEditable
+                    ? extractText(node)
+                    : elementAttr(node, "value") ?? "";
 
                 // Associate label text: for= → label pembungkus → aria-labelledby
                 let labelText: string | null = null;
@@ -475,16 +577,12 @@ export function detectLoginFields(html: string): DetectedFields {
                     const wrapKey = (name ?? id ?? "").toLowerCase();
                     if (wrapKey) labelText = labelMap.get(`@wrap:${wrapKey}`) ?? null;
                 }
-                if (!labelText) {
-                    const labelledBy = elementAttr(node, "aria-labelledby");
-                    if (labelledBy) {
-                        labelText =
-                            labelledBy
-                                .split(/\s+/)
-                                .map((ref) => textByIdMap.get(ref.toLowerCase()))
-                                .filter(Boolean)
-                                .join(" ") || null;
-                    }
+                if (!labelText && ariaLabelledBy) {
+                    labelText = ariaLabelledBy
+                        .split(/\s+/)
+                        .map((ref) => textByIdMap.get(ref.toLowerCase()))
+                        .filter(Boolean)
+                        .join(" ") || null;
                 }
                 if (!labelText && ancestorLabelText) labelText = ancestorLabelText;
 
@@ -492,10 +590,14 @@ export function detectLoginFields(html: string): DetectedFields {
                     name,
                     id,
                     type,
+                    tagName: tag,
                     autocomplete,
                     placeholder,
                     ariaLabel,
+                    ariaLabelledBy,
+                    role,
                     title,
+                    dataHints,
                     labelText,
                     value,
                     isDisabled,
@@ -534,6 +636,10 @@ export function detectLoginFields(html: string): DetectedFields {
     let bestAction: string | null = null;
     let bestFormIndex = -1;
     let highestPairScore = -1;
+    // Kandidat identifier-first: form berisi field username kuat TANPA field
+    // password (MantisBT, Microsoft, Google). Dilacak terpisah; hanya dipakai
+    // bila tidak ada pasangan password sama sekali.
+    let bestIdOnly: { user: FieldInfo; score: number; action: string | null; method: string } | null = null;
     // Kontrol terpilih disimpan agar peringatan bisa menyebut kondisi nyatanya
     // (mis. field password masih readonly saat halaman diambil).
     let chosenPassword: FieldInfo | null = null;
@@ -563,6 +669,13 @@ export function detectLoginFields(html: string): DetectedFields {
             }
         }
 
+        // Form pemulihan akun (lupa/reset password) bukan kandidat login.
+        // Field-nya sering bernama identik dengan form login (kasus Matomo:
+        // form_login/form_password dipakai keduanya), jadi konteks action/URL
+        // yang bernada recovery mendiskualifikasi grup ini.
+        const formContext = `${formBestPass?.formAction ?? formBestUser?.formAction ?? ""}`;
+        if (RECOVERY_CONTEXT_RE.test(formContext)) continue;
+
         // Calculate combined score
         let pairScore = 0;
         if (formBestPass && formBestPassScore > 0) {
@@ -572,6 +685,9 @@ export function detectLoginFields(html: string): DetectedFields {
             }
             if (formIdx >= 0) {
                 pairScore += 100; // Standard <form> wrapper bonus
+            }
+            if (hasLoginRouteHint) {
+                pairScore += 120; // URL/hash route is a useful tie-breaker for SPA shells
             }
             // Bila dua form sama-sama valid, pilih field bernama/id nyata di atas
             // nama sintetis. SPA tanpa name/id tetap lolos bila itu satu-satunya form.
@@ -593,6 +709,21 @@ export function detectLoginFields(html: string): DetectedFields {
             chosenPassword = formBestPass;
             chosenUsername = formBestUser;
         }
+
+        // Identifier-first: field username kuat, TIDAK ada kandidat password di
+        // grup ini, dan konteksnya login (bukan form pencarian/pendaftaran).
+        if (formBestUser && formBestUserScore >= 200 && (!formBestPass || formBestPassScore <= 0)) {
+            const action = formBestUser.formAction;
+            const loginContext = hasLoginRouteHint || (action != null && LOGIN_ROUTE_HINT_RE.test(action));
+            if (loginContext && (!bestIdOnly || formBestUserScore > bestIdOnly.score)) {
+                bestIdOnly = {
+                    user: formBestUser,
+                    score: formBestUserScore,
+                    action,
+                    method: formBestUser.formMethod || "POST",
+                };
+            }
+        }
     }
 
     // Fallback: if no form group matched well, evaluate globally across all inputs
@@ -605,6 +736,7 @@ export function detectLoginFields(html: string): DetectedFields {
 
         for (const input of allInputs) {
             if (!hasDetectableField(input)) continue;
+            if (RECOVERY_CONTEXT_RE.test(input.formAction ?? "")) continue;
 
             const uScore = scoreUsername(input);
             if (uScore > globalBestUserScore) {
@@ -627,6 +759,13 @@ export function detectLoginFields(html: string): DetectedFields {
             bestFormIndex = globalBestPass.formIndex;
             chosenPassword = globalBestPass;
             chosenUsername = globalBestUser;
+        } else if (!bestIdOnly && globalBestUser && globalBestUserScore >= 200 && hasLoginRouteHint) {
+            bestIdOnly = {
+                user: globalBestUser,
+                score: globalBestUserScore,
+                action: globalBestUser.formAction,
+                method: globalBestUser.formMethod || "POST",
+            };
         }
     }
 
@@ -642,8 +781,41 @@ export function detectLoginFields(html: string): DetectedFields {
         bestAction = submitBtn.formAction;
     }
 
-    // Peringatan: token yang tidak bisa dipakai ulang / terikat cookie sesi.
     const warnings: string[] = [];
+
+    // ── Login dua langkah (identifier-first) ─────────────────────────────────
+    // Tidak ada password field, tetapi ada bukti halaman langkah pertama:
+    // (a) form berisi field username kuat tanpa password (MantisBT), atau
+    // (b) marker host/konten penyedia multi-step (Microsoft/Yahoo/Google).
+    let multiStep = false;
+    if (!bestPasswordField) {
+        let pageHost = "";
+        try {
+            pageHost = context.pageUrl ? new URL(context.pageUrl).hostname : "";
+        } catch {
+            pageHost = "";
+        }
+        if (bestIdOnly) {
+            multiStep = true;
+            bestUsernameField = detectedFieldKey(bestIdOnly.user, "username");
+            bestAction = bestIdOnly.action;
+            bestMethod = bestIdOnly.method;
+            warnings.push(
+                `Login dua langkah terdeteksi: halaman ini hanya meminta ${bestUsernameField ?? "username"}; ` +
+                "field password baru muncul setelah submit pertama. Portal belum bisa mengirim kredensial " +
+                "ke alur bertahap — gunakan SSO Mode VAULT."
+            );
+        } else if (MULTISTEP_HOST_RE.test(pageHost) || MULTISTEP_CONTENT_RE.test(html)) {
+            multiStep = true;
+            warnings.push(
+                "Halaman ini memakai login dua langkah (identifier dulu, password menyusul). " +
+                "Form langkah pertama dirakit JavaScript sehingga tidak ada field yang dapat dikirim server. " +
+                "Gunakan SSO Mode VAULT."
+            );
+        }
+    }
+
+    // Peringatan: token yang tidak bisa dipakai ulang / terikat cookie sesi.
     const volatileKeys = Object.keys(extraFields).filter((k) =>
         /^(?:__VIEWSTATE|__EVENTVALIDATION|__RequestVerificationToken|_csrf|csrf_token|_token|authenticity_token)/i.test(k)
     );
@@ -689,6 +861,7 @@ export function detectLoginFields(html: string): DetectedFields {
         formAction: bestAction,
         extraFields,
         confidence: highestPairScore > 0 ? highestPairScore : 0,
+        multiStep,
         warnings,
     };
 }

@@ -1,0 +1,158 @@
+{
+    "$schema": "Ekspektasi deteksi per fixture. passwordField:null = halaman memang tidak boleh menghasilkan field password (SPA shell / multi-step / halaman negatif). multiStep:true = halaman identifier-first (password muncul di langkah berikutnya). actionContains cocokkan substring pada formAction. layer hanya dokumentasi sumber fixture.",
+    "github": {
+        "url": "https://github.com/login",
+        "layer": "HTTP",
+        "usernameField": "login",
+        "passwordField": "password",
+        "actionContains": "/session",
+        "multiStep": false
+    },
+    "discourse": {
+        "url": "https://try.discourse.org/login",
+        "layer": "HTTP",
+        "usernameField": "username",
+        "passwordField": "password",
+        "actionContains": "/login",
+        "multiStep": false
+    },
+    "redmine": {
+        "url": "https://www.redmine.org/login",
+        "layer": "HTTP",
+        "usernameField": "username",
+        "passwordField": "password",
+        "actionContains": "/login",
+        "multiStep": false,
+        "note": "Ada 2 form search (name=q, action=/search) di atas form login — tidak boleh kepilih."
+    },
+    "wp": {
+        "url": "https://login.wordpress.org/",
+        "layer": "HTTP",
+        "usernameField": "log",
+        "passwordField": "pwd",
+        "actionContains": "wp-login.php",
+        "multiStep": false
+    },
+    "practiceauto": {
+        "url": "https://practicetestautomation.com/practice-test-login/",
+        "layer": "HTTP",
+        "usernameField": "username",
+        "passwordField": "password",
+        "multiStep": false,
+        "note": "Input tanpa <form> wrapper — jalur fallback global."
+    },
+    "matomo": {
+        "url": "https://demo.matomo.cloud/index.php?module=Login",
+        "layer": "HTTP",
+        "usernameField": "form_login",
+        "passwordField": "form_password",
+        "actionContains": "module=Login",
+        "multiStep": false,
+        "note": "Form login dan reset password berbagi nama field yang sama; form reset tidak boleh menang."
+    },
+    "mantisbt": {
+        "url": "https://mantisbt.org/bugs/login_page.php",
+        "layer": "HTTP",
+        "usernameField": "username",
+        "passwordField": null,
+        "actionContains": "login_password_page.php",
+        "multiStep": true,
+        "note": "Identifier-first klasik: form hanya berisi username + login_token, password di halaman berikutnya."
+    },
+    "microsoft": {
+        "url": "https://login.live.com/",
+        "layer": "HTTP",
+        "usernameField": null,
+        "passwordField": null,
+        "multiStep": true,
+        "note": "Form diserialkan di dalam JSON konfigurasi JS (input escaped). HTTP layer tidak melihat field; sinyal multi-step tetap harus dikenali."
+    },
+    "grafana": {
+        "url": "https://play.grafana.org/login",
+        "layer": "HTTP",
+        "usernameField": null,
+        "passwordField": null,
+        "multiStep": false,
+        "note": "SPA shell React (#reactRoot)."
+    },
+    "orangehrm": {
+        "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+        "layer": "HTTP",
+        "usernameField": null,
+        "passwordField": null,
+        "multiStep": false,
+        "note": "SPA Vue (<auth-login>), CSRF token di atribut komponen."
+    },
+    "saucedemo": {
+        "url": "https://www.saucedemo.com/",
+        "layer": "HTTP",
+        "usernameField": null,
+        "passwordField": null,
+        "multiStep": false,
+        "note": "SPA shell murni (#root)."
+    },
+    "reddit": {
+        "url": "https://www.reddit.com/login/",
+        "layer": "HTTP",
+        "usernameField": null,
+        "passwordField": null,
+        "multiStep": false,
+        "note": "Halaman JS-challenge anti-bot."
+    },
+    "archive": {
+        "url": "https://archive.org/account/login",
+        "layer": "HTTP",
+        "usernameField": null,
+        "passwordField": null,
+        "multiStep": false,
+        "note": "SPA Web Components (<app-root> Lit)."
+    },
+    "suitecrm": {
+        "url": "https://suitecrm.com/demo/",
+        "layer": "HTTP",
+        "usernameField": null,
+        "passwordField": null,
+        "multiStep": false,
+        "note": "NEGATIF: halaman marketing, bukan login. Tidak boleh ada passwordField."
+    },
+    "yahoo": {
+        "url": "https://login.yahoo.com/",
+        "layer": "HTTP",
+        "usernameField": null,
+        "passwordField": null,
+        "multiStep": true,
+        "note": "Multi-step identifier-first, form dirakit JS."
+    },
+    "saucedemo-rendered": {
+        "url": "https://www.saucedemo.com/",
+        "layer": "BROWSER",
+        "usernameField": "user-name",
+        "passwordField": "password",
+        "multiStep": false,
+        "note": "Fixture sintetis: DOM saucedemo setelah render."
+    },
+    "orangehrm-rendered": {
+        "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+        "layer": "BROWSER",
+        "usernameField": "username",
+        "passwordField": "password",
+        "multiStep": false,
+        "note": "Fixture sintetis: DOM OrangeHRM setelah render Vue."
+    },
+    "ms-identifier-rendered": {
+        "url": "https://login.live.com/",
+        "layer": "BROWSER",
+        "usernameField": "loginfmt",
+        "passwordField": null,
+        "multiStep": true,
+        "note": "Fixture sintetis: langkah identifier Microsoft setelah render."
+    },
+    "spa-nameless-rendered": {
+        "url": "https://app.example.internal/#/signin",
+        "layer": "BROWSER",
+        "usernameField": "email",
+        "passwordField": "password",
+        "multiStep": false,
+        "note": "Fixture sintetis: React controlled inputs tanpa name/id, hanya autocomplete — proyeksi snapshot Browserless."
+    }
+}

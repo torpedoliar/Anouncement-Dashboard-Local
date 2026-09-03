@@ -4,12 +4,15 @@ import { classifySsoMode, type ModeEvidence, type ModeVerdict } from "@/lib/port
 import { renderLoginPage } from "@/lib/portal-browser-render";
 import { probeApiLayer, type ApiProbe } from "@/lib/portal-api-probe";
 import { looksLikeClientRenderedApp } from "@/lib/portal-sso-relay";
+import { clientRouteFromUrl } from "@/lib/portal-client-route";
 
 export type DetectionLayer = "HTTP" | "BROWSER";
 
 export interface LadderResult {
     html: string;
     finalUrl: string;
+    /** Safe path-only hash route, e.g. /signin for #/signin. */
+    clientRoute: string | null;
     setCookies: string[];
     /** Cookie hidup hasil fetch ladder; dipakai langsung oleh POST relay dan tidak dipersistenkan. */
     cookieJar?: CookieJar;
@@ -54,7 +57,7 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
     const notes: string[] = [];
 
     const page: FetchedPage = await fetchPage(url);
-    const detected = detectLoginFields(page.html);
+    const detected = detectLoginFields(page.html, { pageUrl: page.finalUrl || url, layer: "HTTP" });
     const cookieNames = page.setCookies.map((cookie) => cookie.split("=")[0].trim()).filter(Boolean);
 
     const evidence: Omit<ModeEvidence, "detected"> & { detected: DetectedFields } = {
@@ -65,6 +68,8 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
         detected,
         redirected: page.redirected,
         loopDetected: page.loopDetected ?? false,
+        clientRoute: clientRouteFromUrl(url) ?? clientRouteFromUrl(page.finalUrl),
+        layer: "HTTP",
     };
 
     // Lapis 1 sudah menemukan form → tidak perlu naik lapis.
@@ -72,6 +77,7 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
         return {
             html: page.html,
             finalUrl: page.finalUrl,
+            clientRoute: clientRouteFromUrl(url) ?? clientRouteFromUrl(page.finalUrl),
             setCookies: page.setCookies,
             cookieJar: page.cookieJar,
             cookieNames,
@@ -89,13 +95,16 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
     // Lapis 2: render Chromium. Renderer menunggu form yang dapat dikirim,
     // termasuk kontrol di open Shadow DOM dan iframe same-origin.
     const rendered = await render(url);
-    const renderedDetected = rendered ? detectLoginFields(rendered.html) : null;
-    const renderedFinalUrl = rendered?.finalUrl ?? page.finalUrl;
+    const renderedFinalUrl = rendered?.finalUrl ?? (url.includes("#") ? url : page.finalUrl);
+    const renderedDetected = rendered
+        ? detectLoginFields(rendered.html, { pageUrl: renderedFinalUrl, layer: "BROWSER" })
+        : null;
     if (rendered && renderedDetected && renderedDetected.passwordField) {
         notes.push("Form login tidak ada di HTML statis; terdeteksi setelah render JavaScript.");
         return {
             html: rendered.html,
             finalUrl: renderedFinalUrl,
+            clientRoute: clientRouteFromUrl(renderedFinalUrl) ?? clientRouteFromUrl(url),
             setCookies: page.setCookies,
             cookieJar: page.cookieJar,
             cookieNames,
@@ -108,6 +117,8 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
                 html: rendered.html,
                 finalUrl: renderedFinalUrl,
                 detected: renderedDetected,
+                clientRoute: clientRouteFromUrl(renderedFinalUrl) ?? clientRouteFromUrl(url),
+                layer: "BROWSER",
             }),
             layer: "BROWSER",
             layerNotes: notes,
@@ -143,6 +154,7 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
     return {
         html: fallbackHtml,
         finalUrl: fallbackFinalUrl,
+        clientRoute: clientRouteFromUrl(fallbackFinalUrl) ?? clientRouteFromUrl(url),
         setCookies: page.setCookies,
         cookieJar: page.cookieJar,
         cookieNames,
@@ -155,6 +167,8 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
             html: fallbackHtml,
             finalUrl: fallbackFinalUrl,
             detected: fallbackDetected,
+            clientRoute: clientRouteFromUrl(fallbackFinalUrl) ?? clientRouteFromUrl(url),
+            layer: rendered ? "BROWSER" : "HTTP",
         }),
         layer: rendered ? "BROWSER" : "HTTP",
         layerNotes: notes,

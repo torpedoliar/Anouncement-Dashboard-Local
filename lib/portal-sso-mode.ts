@@ -19,6 +19,9 @@ export interface ModeEvidence {
     hopChain?: string[];
     /** Nama cookie yang dipasang server selama rantai. */
     cookieNames: string[];
+    /** Safe path-only hash route when the browser rendered a client route. */
+    clientRoute?: string | null;
+    layer?: "HTTP" | "BROWSER";
     detected: DetectedFields;
     redirected: boolean;
     loopDetected: boolean;
@@ -79,6 +82,23 @@ export function classifySsoMode(ev: ModeEvidence): ModeVerdict {
     const isFederated = chain.some((u) => FEDERATION_URL_RE.test(u)) || FEDERATION_URL_RE.test(finalUrl);
     const pairedCookies = findPairedCookies(cookieNames, detected.extraFields);
     const volatileFields = Object.keys(detected.extraFields).filter((k) => VOLATILE_FIELD_RE.test(k));
+    const isBrowserClientForm = ev.layer === "BROWSER" && Boolean(ev.clientRoute) && !detected.formAction;
+
+    if (isBrowserClientForm) {
+        signals.push("Form login muncul setelah route JavaScript/hash dirender di browser.");
+        warnings.push(
+            "Form client-side tidak dipaksa menjadi FORM/POST native karena submit dapat ditangani state atau JSON oleh router SPA. " +
+            "Gunakan kontrak API yang terdeteksi atau SSO Mode VAULT sampai endpoint login terkonfirmasi."
+        );
+        return {
+            mode: "VAULT",
+            reason:
+                "Form login hanya terlihat setelah route JavaScript/hash dirender dan tidak memiliki action server eksplisit. " +
+                "Portal tidak mengirim kredensial ke URL shell secara spekulatif; gunakan SSO Mode VAULT atau Uji JSON.",
+            signals,
+            warnings,
+        };
+    }
 
     if (isFederated) signals.push("Rantai login memakai protokol federasi (WS-Federation/SAML/OIDC).");
     if (pairedCookies.length) signals.push(`Token antiforgery terikat cookie: ${pairedCookies.join(", ")}.`);
@@ -87,6 +107,22 @@ export function classifySsoMode(ev: ModeEvidence): ModeVerdict {
 
     // ── Tidak ada form login yang bisa dikirim ────────────────────────────────
     if (!detected.passwordField) {
+        if (detected.multiStep) {
+            signals.push(
+                detected.usernameField
+                    ? `Login dua langkah: langkah pertama hanya meminta ${detected.usernameField}.`
+                    : "Login dua langkah (identifier dulu, password menyusul)."
+            );
+            return {
+                mode: "VAULT",
+                reason:
+                    "Aplikasi ini memakai login dua langkah: username/email dikirim dulu, field password baru muncul " +
+                    "di halaman berikutnya. Pengiriman form tunggal tidak dapat menyelesaikan alur bertahap ini, " +
+                    "jadi gunakan SSO Mode VAULT.",
+                signals,
+                warnings,
+            };
+        }
         if (looksLikeClientRenderedApp(html)) {
             signals.push("Halaman dirakit JavaScript; form login tidak ada di HTML mentah.");
             return {

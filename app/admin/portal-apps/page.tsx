@@ -361,6 +361,16 @@ export default function PortalAppsPage() {
                 : null;
             if (detectedProfile) setProfileCandidate(detectedProfile);
 
+            // Catatan lapis AI + hasil belajar dari koreksi sebelumnya (bila ada).
+            const llm = data.llm && typeof data.llm === "object" ? data.llm : null;
+            const llmNote = llm?.rationale
+                ? `Analisis AI${llm.assisted ? " (dipakai sebagai hasil)" : ""}: ${String(llm.rationale)}${llm.loginApiEndpoint ? ` Endpoint JSON: ${llm.loginApiEndpoint}.` : ""}${llm.multiStep ? " Login dua langkah." : ""}`
+                : undefined;
+            const learned = data.learned && typeof data.learned === "object" ? data.learned : null;
+            const learnedNote = learned
+                ? `Hasil belajar dari koreksi admin sebelumnya di situs ini: user=${learned.usernameField ?? "-"}, pass=${learned.passwordField ?? "-"}, mode=${learned.ssoMode ?? "-"}.`
+                : undefined;
+
             if (!res.ok) {
                 // Tidak ada field yang terdeteksi bukan bukti bahwa konfigurasi yang
                 // sedang diedit harus menjadi VAULT. Tampilan hanya memberi kandidat
@@ -395,6 +405,8 @@ export default function PortalAppsPage() {
                     warnings: [
                         ...(data.profilePersistenceWarning ? [String(data.profilePersistenceWarning)] : []),
                         ...(apiNote ? [apiNote] : []),
+                        ...(llmNote ? [llmNote] : []),
+                        ...(learnedNote ? [learnedNote] : []),
                         ...(recommendation ? [recommendation] : []),
                         ...notes,
                     ],
@@ -421,6 +433,8 @@ export default function PortalAppsPage() {
                 ...(data.profilePersistenceWarning ? [String(data.profilePersistenceWarning)] : []),
                 ...(data.warnings ?? []),
                 ...(data.layerNotes ?? []),
+                ...(llmNote ? [llmNote] : []),
+                ...(learnedNote ? [learnedNote] : []),
             ];
             if (data.apiLayer === "OPENAPI" && Array.isArray(data.apiContracts) && data.apiContracts.length > 0) {
                 const contracts = (data.apiContracts as Array<{ method: string; path: string }>).

@@ -49,6 +49,24 @@ SSO uses form-based credential forwarding: portal stores each user's credentials
 per app (encrypted at-rest with `PORTAL_CREDENTIAL_KEY`), then auto-submits a POST form
 to the app's `loginUrl` when the user clicks an app.
 
+### Login auto-detection (deep analysis)
+Layered: HTTP parse → Browserless render (`PORTAL_BROWSER_URL`) → OpenAPI probe →
+optional LLM layer. Key files:
+- `lib/portal-login-detect.ts` — heuristic scorer; detects identifier-first
+  **multi-step** logins (`DetectedFields.multiStep`) via username-only forms and
+  host/content markers (Microsoft `PPFT`, Yahoo `acrumb`, Google identifier).
+- `lib/portal-detect-ladder.ts` — HTTP → BROWSER ladder; `lib/portal-sso-mode.ts`
+  classifies FORM/POST/REROUTE/VAULT from evidence.
+- `lib/portal-llm-analyze.ts` — opt-in LLM layer (OpenAI-compatible endpoint,
+  configured via `PortalAiSettings` + admin page `/admin/portal-ai`). Sends only a
+  pruned DOM summary (no input values); field suggestions are verified against the
+  real DOM (anti-hallucination) and any failure falls back to heuristics.
+- `lib/portal-detection-feedback.ts` — learning loop: admin corrections saved on
+  PortalApp create/update are stored in `PortalDetectionFeedback` and surfaced as
+  `learned` suggestions in `/api/portal-apps/detect-fields`.
+- Regression harness: `npx tsx scripts/test-login-detect.ts` (fixtures in
+  `scripts/login-detect-fixtures/`, expectations in `expected.json`).
+
 ### Audit Trail
 `AuditLog` (table `audit_logs`) is the single source of truth for ALL transactions across
 admin CMS, portal users, and system. Use `logAudit()` from `lib/audit.ts` — never write
