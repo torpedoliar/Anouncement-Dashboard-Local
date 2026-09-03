@@ -133,6 +133,18 @@ interface AiConfig {
     apiKey: string | null;
 }
 
+export interface LlmOutcome {
+    analysis: LlmLoginAnalysis | null;
+    /** Alasan tidak ada analisis (nonaktif/gagal) — ditampilkan ke admin. */
+    note: string | null;
+}
+
+/** Normalisasi endpoint: admin boleh mengisi base URL (/v1) ATAU URL lengkap /chat/completions. */
+function chatCompletionsUrl(baseUrl: string): string {
+    const trimmed = baseUrl.replace(/\/+$/, "");
+    return trimmed.endsWith("/chat/completions") ? trimmed : `${trimmed}/chat/completions`;
+}
+
 async function loadAiConfig(): Promise<AiConfig | null> {
     const cfg = await prisma.portalAiSettings.findFirst();
     if (!cfg || !cfg.enabled || !cfg.baseUrl || !cfg.model) return null;
@@ -145,6 +157,83 @@ async function loadAiConfig(): Promise<AiConfig | null> {
         }
     }
     return { baseUrl: cfg.baseUrl.replace(/\/+$/, ""), model: cfg.model, apiKey };
+}
+
+/** Panggilan OpenAI-compatible /chat/completions. Mengembalikan content ATAU pesan error. */
+async function callChatCompletion(
+    config: AiConfig,
+    messages: Array<{ role: "system" | "user"; content: string }>,
+    maxTokens: number,
+): Promise<{ content: string | null; error: string | null }> {
+    const headers: Record<string, string> = { "content-type": "application/json" };
+    if (config.apiKey) headers.authorization = `Bearer ${config.apiKey}`;
+
+    try {
+        const res = await fetch(chatCompletionsUrl(config.baseUrl), {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ model: config.model, messages, temperature: 0, max_tokens: maxTokens }),
+            signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
+        });
+        if (!res.ok) {
+            const body = await res.text().catch(() => "");
+            return { content: null, error: `LLM HTTP ${res.status}${body ? `: ${body.slice(0, 150)}` : ""}` };
+        }
+        const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+        const content = data.choices?.[0]?.message?.content;
+        return content
+            ? { content, error: null }
+            : { content: null, error: "LLM: respons tanpa content (format bukan chat completions)" };
+    } catch (error) {
+        return { content: null, error: `LLM fetch gagal: ${error instanceof Error ? error.message : "unknown"}`.slice(0, 200) };
+    }
+}
+
+/**
+ * Uji koneksi ke endpoint chat completions dengan prompt minimal.
+ * Dipakai tombol "Uji Koneksi" di pengaturan — tanpa mengubah konfigurasi.
+ */
+export async function testAiConnection(override?: {
+    baseUrl?: string;
+    model?: string;
+    apiKey?: string;
+}): Promise<{ ok: boolean; latencyMs: number; reply: string | null; error: string | null }> {
+    // Uji koneksi memakai nilai form (bila diisi) atau konfigurasi tersimpan —
+    // TANPA syarat enabled, supaya admin bisa menguji sebelum mengaktifkan.
+    let config: AiConfig | null = null;
+    try {
+        const cfg = await prisma.portalAiSettings.findFirst();
+        let savedKey: string | null = null;
+        if (cfg?.apiKeyEncrypted) {
+            try {
+                savedKey = decrypt(cfg.apiKeyEncrypted);
+            } catch {
+                savedKey = null;
+            }
+        }
+        const baseUrl = (override?.baseUrl ?? cfg?.baseUrl ?? "").trim().replace(/\/+$/, "");
+        const model = (override?.model ?? cfg?.model ?? "").trim();
+        if (baseUrl && model) {
+            config = { baseUrl, model, apiKey: override?.apiKey ?? savedKey };
+        }
+    } catch {
+        config = null;
+    }
+    if (!config) return { ok: false, latencyMs: 0, reply: null, error: "Konfigurasi AI belum lengkap (baseUrl/model kosong)" };
+
+    const started = Date.now();
+    const { content, error } = await callChatCompletion(
+        config,
+        [{ role: "user", content: 'Jawab hanya dengan: {"ok":true}' }],
+        50,
+    );
+    const latencyMs = Date.now() - started;
+    if (error) {
+        await recordUsage(error);
+        return { ok: false, latencyMs, reply: null, error };
+    }
+    await recordUsage(null);
+    return { ok: true, latencyMs, reply: content!.slice(0, 200), error: null };
 }
 
 async function recordUsage(error: string | null): Promise<void> {
@@ -198,25 +287,26 @@ function safeJsonObject(text: string): Record<string, unknown> | null {
 export const __llmTestables = { pruneDom, safeJsonObject, stripUrlSecrets };
 
 /**
- * Analisis login via LLM. Mengembalikan null bila LLM nonaktif/gagal/jawabannya
- * tidak lolos verifikasi anti-halusinasi.
+ * Analisis login via LLM. Selalu mengembalikan outcome: analysis=null disertai
+ * note berbahasa Indonesia yang menjelaskan kenapa (nonaktif, gagal koneksi,
+ * JSON invalid, atau saran tidak lolos verifikasi DOM).
  */
 export async function analyzeLoginWithLlm(input: {
     url: string;
     html: string;
     layer: "HTTP" | "BROWSER";
     heuristic: DetectedFields;
-}): Promise<LlmLoginAnalysis | null> {
+}): Promise<LlmOutcome> {
     let config: AiConfig | null;
     try {
         config = await loadAiConfig();
     } catch {
-        return null;
+        return { analysis: null, note: "AI: gagal membaca konfigurasi dari database (migrasi portal_ai_settings belum jalan?)" };
     }
-    if (!config) return null;
+    if (!config) return { analysis: null, note: "AI nonaktif atau baseUrl/model belum diisi — atur di menu AI Portal." };
 
     const pruned = pruneDom(input.html);
-    if (!pruned.summary.trim()) return null;
+    if (!pruned.summary.trim()) return { analysis: null, note: "AI: tidak ada struktur form/field yang bisa dianalisis di halaman ini." };
 
     const heuristicNote = input.heuristic.passwordField
         ? `Detektor heuristik menemukan username=${input.heuristic.usernameField ?? "-"}, password=${input.heuristic.passwordField}.`
@@ -237,53 +327,38 @@ export async function analyzeLoginWithLlm(input: {
         pruned.summary,
     ].join("\n");
 
-    const headers: Record<string, string> = { "content-type": "application/json" };
-    if (config.apiKey) headers.authorization = `Bearer ${config.apiKey}`;
-
-    let raw: string;
-    try {
-        const res = await fetch(`${config.baseUrl}/chat/completions`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-                model: config.model,
-                messages: [
-                    { role: "system", content: SYSTEM_PROMPT },
-                    { role: "user", content: userPrompt },
-                ],
-                temperature: 0,
-                max_tokens: 400,
-            }),
-            signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
-        });
-        if (!res.ok) {
-            await recordUsage(`LLM HTTP ${res.status}`);
-            return null;
-        }
-        const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-        const content = data.choices?.[0]?.message?.content;
-        if (!content) {
-            await recordUsage("LLM: respons tanpa content");
-            return null;
-        }
-        raw = content;
-    } catch (error) {
-        await recordUsage(`LLM fetch gagal: ${error instanceof Error ? error.message : "unknown"}`.slice(0, 200));
-        return null;
+    // max_tokens 700: respons JSON terpotong di tengah adalah penyebab umum
+    // "JSON tidak valid" pada model yang banyak bicara.
+    const { content, error } = await callChatCompletion(
+        config,
+        [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+        ],
+        700,
+    );
+    if (error || !content) {
+        const note = `AI gagal: ${error ?? "respons kosong"}`;
+        await recordUsage(note);
+        return { analysis: null, note };
     }
 
-    const parsed = safeJsonObject(raw);
+    const parsed = safeJsonObject(content);
     if (!parsed) {
-        await recordUsage("LLM: JSON tidak valid");
-        return null;
+        const note = "AI: jawaban model bukan JSON valid";
+        await recordUsage(note);
+        return { analysis: null, note };
     }
 
     // ── Verifikasi anti-halusinasi ───────────────────────────────────────────
     // Field/action hanya diterima bila benar-benar ada di DOM yang kita kirim.
+    const dropped: string[] = [];
     const pickField = (value: unknown): string | null => {
         if (typeof value !== "string" || !value.trim()) return null;
         const candidate = value.trim();
-        return pruned.fieldKeys.has(candidate) ? candidate : null;
+        if (pruned.fieldKeys.has(candidate)) return candidate;
+        dropped.push(candidate.slice(0, 60));
+        return null;
     };
     const pickAction = (value: unknown): string | null => {
         if (typeof value !== "string" || !value.trim()) return null;
@@ -304,8 +379,7 @@ export async function analyzeLoginWithLlm(input: {
         ? Math.max(0, Math.min(100, Math.round(parsed.confidence)))
         : 0;
 
-    await recordUsage(null);
-    return {
+    const analysis: LlmLoginAnalysis = {
         usernameField: pickField(parsed.usernameField),
         passwordField: pickField(parsed.passwordField),
         formAction: pickAction(parsed.formAction),
@@ -316,4 +390,10 @@ export async function analyzeLoginWithLlm(input: {
         confidence,
         rationale: typeof parsed.rationale === "string" ? parsed.rationale.slice(0, 400) : "",
     };
+
+    const note = dropped.length > 0
+        ? `AI: sebagian saran dibuang karena tidak ada di DOM (${dropped.join(", ")})`
+        : null;
+    await recordUsage(note);
+    return { analysis, note };
 }

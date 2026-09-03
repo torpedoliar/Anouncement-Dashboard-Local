@@ -366,6 +366,8 @@ export default function PortalAppsPage() {
             const llmNote = llm?.rationale
                 ? `Analisis AI${llm.assisted ? " (dipakai sebagai hasil)" : ""}: ${String(llm.rationale)}${llm.loginApiEndpoint ? ` Endpoint JSON: ${llm.loginApiEndpoint}.` : ""}${llm.multiStep ? " Login dua langkah." : ""}`
                 : undefined;
+            // Alasan AI tidak berkontribusi (nonaktif/gagal) — jangan disembunyikan.
+            const llmSkipNote = typeof data.llmNote === "string" && data.llmNote ? data.llmNote : undefined;
             const learned = data.learned && typeof data.learned === "object" ? data.learned : null;
             const learnedNote = learned
                 ? `Hasil belajar dari koreksi admin sebelumnya di situs ini: user=${learned.usernameField ?? "-"}, pass=${learned.passwordField ?? "-"}, mode=${learned.ssoMode ?? "-"}.`
@@ -406,6 +408,7 @@ export default function PortalAppsPage() {
                         ...(data.profilePersistenceWarning ? [String(data.profilePersistenceWarning)] : []),
                         ...(apiNote ? [apiNote] : []),
                         ...(llmNote ? [llmNote] : []),
+                        ...(llmSkipNote ? [llmSkipNote] : []),
                         ...(learnedNote ? [learnedNote] : []),
                         ...(recommendation ? [recommendation] : []),
                         ...notes,
@@ -434,6 +437,7 @@ export default function PortalAppsPage() {
                 ...(data.warnings ?? []),
                 ...(data.layerNotes ?? []),
                 ...(llmNote ? [llmNote] : []),
+                ...(llmSkipNote ? [llmSkipNote] : []),
                 ...(learnedNote ? [learnedNote] : []),
             ];
             if (data.apiLayer === "OPENAPI" && Array.isArray(data.apiContracts) && data.apiContracts.length > 0) {

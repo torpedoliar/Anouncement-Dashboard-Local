@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Sparkle, Eye, EyeSlash, Robot } from "@phosphor-icons/react";
+import { Sparkle, Eye, EyeSlash, Robot, PlugsConnected } from "@phosphor-icons/react";
 import { useToast } from "@/contexts/ToastContext";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -27,6 +27,8 @@ export default function PortalAiPage() {
     const [model, setModel] = useState("");
     const [apiKey, setApiKey] = useState("");
     const [enabled, setEnabled] = useState(false);
+    const [testing, setTesting] = useState(false);
+    const [testResult, setTestResult] = useState<{ ok: boolean; latencyMs: number; reply: string | null; error: string | null } | null>(null);
 
     const { showToast } = useToast();
 
@@ -53,6 +55,28 @@ export default function PortalAiPage() {
     useEffect(() => {
         fetchConfig();
     }, [fetchConfig]);
+
+    // Uji koneksi dengan nilai form saat ini (belum disimpan) — memakai key
+    // tersimpan bila kolom API key kosong.
+    const handleTest = async () => {
+        setTesting(true);
+        setTestResult(null);
+        try {
+            const response = await fetch("/api/admin/portal-ai/test", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ baseUrl, model, apiKey: apiKey || undefined }),
+            });
+            const data = await response.json();
+            setTestResult(data);
+            showToast(data.ok ? `Koneksi berhasil (${data.latencyMs}ms)` : data.error || "Koneksi gagal", data.ok ? "success" : "error");
+        } catch {
+            setTestResult({ ok: false, latencyMs: 0, reply: null, error: "Gagal menghubungi server" });
+            showToast("Gagal menghubungi server", "error");
+        } finally {
+            setTesting(false);
+        }
+    };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -160,10 +184,30 @@ export default function PortalAiPage() {
                         Aktifkan analisis AI pada deteksi otomatis Portal Apps
                     </label>
 
-                    <Button type="submit" disabled={saving}>
-                        <Sparkle size={16} className="mr-2" />
-                        {saving ? "Menyimpan..." : "Simpan Konfigurasi"}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Button type="submit" disabled={saving || testing}>
+                            <Sparkle size={16} className="mr-2" />
+                            {saving ? "Menyimpan..." : "Simpan Konfigurasi"}
+                        </Button>
+                        <Button type="button" variant="secondary" onClick={handleTest} disabled={saving || testing}>
+                            <PlugsConnected size={16} className="mr-2" />
+                            {testing ? "Menguji..." : "Uji Koneksi"}
+                        </Button>
+                    </div>
+
+                    {testResult && (
+                        <div
+                            className="rounded-control border p-3 text-sm"
+                            style={{
+                                borderColor: testResult.ok ? "var(--success, #16a34a)" : "var(--danger, #dc2626)",
+                                color: "var(--text-1)",
+                            }}
+                        >
+                            {testResult.ok
+                                ? `Koneksi OK (${testResult.latencyMs}ms). Balasan model: ${testResult.reply ?? "-"}`
+                                : `Koneksi gagal: ${testResult.error}`}
+                        </div>
+                    )}
                 </form>
             </Card>
 

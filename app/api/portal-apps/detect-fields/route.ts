@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         const LOW_CONFIDENCE = 400;
         const needsLlm =
             !detected.passwordField || detected.multiStep === true || (detected.confidence ?? 0) < LOW_CONFIDENCE;
-        const llm = needsLlm
+        const llmOutcome = needsLlm
             ? await analyzeLoginWithLlm({
                   url: result.finalUrl,
                   html: result.html,
@@ -58,6 +58,10 @@ export async function POST(request: NextRequest) {
                   heuristic: detected,
               })
             : null;
+        const llm = llmOutcome?.analysis ?? null;
+        // Alasan AI tidak berkontribusi — ditampilkan ke admin supaya masalah
+        // konfigurasi/koneksi terlihat, bukan diam-diam dilewati.
+        const llmNote = llmOutcome?.note ?? null;
 
         // Heuristik gagal menemukan form tetapi LLM menemukan field yang
         // terverifikasi ada di DOM → adopsi sebagai hasil deteksi.
@@ -161,6 +165,7 @@ export async function POST(request: NextRequest) {
                     apiContracts: result.apiProbe.contracts,
                     apiProbeNote: result.apiProbe.note,
                     llm: llmBlock,
+                    llmNote,
                     learned,
                     profile: profile?.profile ?? null,
                     profilePersistenceWarning,
@@ -189,6 +194,7 @@ export async function POST(request: NextRequest) {
             layerNotes: presentation.layerNotes,
             multiStep: detected.multiStep ?? false,
             llm: llmBlock,
+                    llmNote,
             learned,
             // Lapis 3 probe. NONE saat form login ditemukan di HTTP/BROWSER —
             // apiContracts kosong sehingga UI tidak menampilkan tombol "Uji JSON".
