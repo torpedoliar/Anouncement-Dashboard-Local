@@ -5,6 +5,7 @@ import { renderLoginPage } from "@/lib/portal-browser-render";
 import { probeApiLayer, type ApiProbe } from "@/lib/portal-api-probe";
 import { looksLikeClientRenderedApp } from "@/lib/portal-sso-relay";
 import { clientRouteFromUrl } from "@/lib/portal-client-route";
+import { checkBrowserHealth } from "@/lib/portal-browser-health";
 
 export type DetectionLayer = "HTTP" | "BROWSER";
 
@@ -25,6 +26,8 @@ export interface LadderResult {
     layer: DetectionLayer;
     /** Catatan proses — kenapa memilih lapis ini; degradasi jujur bila layanan mati. */
     layerNotes: string[];
+    /** True bila health check browser gagal — hasil hanya dari HTML statis. */
+    browserUnavailable?: boolean;
     /**
      * Lapis 3: probe OpenAPI/Swagger same-origin. Dimuat hanya saat HTTP dan BROWSER
      * keduanya gagal menemukan passwordField DAN halaman terlihat SPA.
@@ -37,6 +40,7 @@ export interface LadderDeps {
     fetchPage?: typeof fetchLoginPage;
     render?: typeof renderLoginPage;
     probe?: typeof probeApiLayer;
+    checkHealth?: typeof checkBrowserHealth;
 }
 
 /**
@@ -54,7 +58,14 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
     const fetchPage = deps.fetchPage ?? fetchLoginPage;
     const render = deps.render ?? renderLoginPage;
     const probe = deps.probe ?? probeApiLayer;
+    const checkHealth = deps.checkHealth ?? checkBrowserHealth;
     const notes: string[] = [];
+
+    const health = await checkHealth();
+    const browserUp = health.ok;
+    if (!browserUp) {
+        notes.push(`Render browser tidak tersedia: ${health.reason}. Hasil memakai HTML statis; SPA mungkin tidak terdeteksi.`);
+    }
 
     const page: FetchedPage = await fetchPage(url);
     const detected = detectLoginFields(page.html, { pageUrl: page.finalUrl || url, layer: "HTTP" });
@@ -88,13 +99,19 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
             verdict: classifySsoMode(evidence),
             layer: "HTTP",
             layerNotes: notes,
+            browserUnavailable: !browserUp,
             apiProbe: { layer: "NONE", contracts: [], specUrl: null, note: "Form login ditemukan di lapis HTTP; probe OpenAPI tidak diperlukan" },
         };
     }
 
-    // Lapis 2: render Chromium. Renderer menunggu form yang dapat dikirim,
-    // termasuk kontrol di open Shadow DOM dan iframe same-origin.
-    const rendered = await render(url);
+    // Lapis 2 + 3 paralel untuk shell SPA: render Chromium dan probe API jalan
+    // bersamaan (bukan probe menunggu render gagal). Di luar shell SPA,
+    // perilaku lama dipertahankan (render dulu, probe hanya bila perlu).
+    const spaShell = looksLikeClientRenderedApp(page.html);
+    const renderPromise = !detected.passwordField && browserUp ? render(url) : Promise.resolve(null);
+    const earlyProbePromise =
+        spaShell ? probe(page.finalUrl || url) : Promise.resolve<ApiProbe | null>(null);
+    const [rendered, earlyProbe] = await Promise.all([renderPromise, earlyProbePromise]);
     const renderedFinalUrl = rendered?.finalUrl ?? (url.includes("#") ? url : page.finalUrl);
     const renderedDetected = rendered
         ? detectLoginFields(rendered.html, { pageUrl: renderedFinalUrl, layer: "BROWSER" })
@@ -122,14 +139,17 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
             }),
             layer: "BROWSER",
             layerNotes: notes,
+            browserUnavailable: !browserUp,
             apiProbe: { layer: "NONE", contracts: [], specUrl: null, note: "Form login ditemukan setelah render JS; probe OpenAPI tidak diperlukan" },
         };
     }
     if (rendered) {
         notes.push("Halaman dirender dengan browser tetapi tidak memuat form login yang dapat dikirim.");
-    } else {
-        notes.push("Layanan render browser tidak tersedia; deteksi terbatas pada HTML statis.");
+    } else if (browserUp) {
+        // browserUp tapi render null = layanan sempat hidup lalu gagal menjawab.
+        notes.push("Layanan render browser tidak menjawab; deteksi terbatas pada HTML statis.");
     }
+    // browserUp=false: alasan spesifik sudah dicatat di awal (tanpa pesan ganda).
 
     // Gunakan snapshot browser juga saat gagal menemukan form. Ini membuat alasan
     // fallback dan probe API mencerminkan DOM aktual, bukan hanya shell SPA awal.

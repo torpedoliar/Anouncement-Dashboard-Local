@@ -22,10 +22,14 @@ function fakePage(html: string, extra: Partial<FetchedPage> = {}): FetchedPage {
     };
 }
 
+/** Browser mock selalu sehat — kecuali kasus yang eksplisit menguji browser mati. */
+const healthy = async () => ({ ok: true as const, reason: null });
+
 async function main() {
     // Lapis 1 berhasil → layer HTTP, render TIDAK dipanggil
     let renderCalls = 0;
     const deps: LadderDeps = {
+        checkHealth: healthy,
         fetchPage: async () =>
             fakePage(`<form><input name="UserName" type="text"><input name="Password" type="password"></form>`),
         render: async () => { renderCalls++; return null; },
@@ -38,6 +42,7 @@ async function main() {
 
     // Lapis 1 gagal + render berhasil → layer BROWSER
     const deps2: LadderDeps = {
+        checkHealth: healthy,
         fetchPage: async () => fakePage(`<html><body><div id="root"></div></body></html>`),
         render: async () => ({
             html: `<html><body><form><input name="email"><input name="passwd" type="password"></form></body></html>`,
@@ -49,6 +54,7 @@ async function main() {
 
     // URL akhir dari browser dipakai untuk form action & klasifikasi, bukan URL HTTP awal
     const deps2b: LadderDeps = {
+        checkHealth: healthy,
         fetchPage: async () => fakePage(`<html><body><div id="root"></div></body></html>`),
         render: async () => ({
             html: `<html><body><form><input name="user"><input name="pwd" type="password"></form></body></html>`,
@@ -73,6 +79,7 @@ async function main() {
     // yang tidak pernah dilihat pengguna.
     let probedUrl: string | null = null;
     const deps4: LadderDeps = {
+        checkHealth: healthy,
         fetchPage: async () =>
             fakePage(
                 `<html><head><script src="/a.js"></script><script src="/b.js"></script><script src="/c.js"></script></head><body><div id="root"></div></body></html>`
@@ -101,6 +108,7 @@ async function main() {
     // Form yang readonly/disabled saat snapshot tetap menghasilkan konfigurasi,
     // bukan VAULT — ini pola anti-autofill yang lazim di aplikasi internal.
     const deps5: LadderDeps = {
+        checkHealth: healthy,
         fetchPage: async () =>
             fakePage(
                 `<form action="/login" method="post"><input name="nik" type="text" readonly><input name="pass" type="password" readonly></form>`
@@ -116,6 +124,7 @@ async function main() {
     // dan ladder harus menyimpan route path tanpa query fragment.
     let hashRenderUrl: string | null = null;
     const hashDeps: LadderDeps = {
+        checkHealth: healthy,
         fetchPage: async () => fakePage(
             `<html><body><div id="root"></div><script src="/a.js"></script><script src="/b.js"></script><script src="/c.js"></script></body></html>`,
             { finalUrl: "https://spa.app/" },
@@ -136,6 +145,7 @@ async function main() {
     // Action server eksplisit adalah bukti yang cukup untuk tetap menggunakan
     // mode transport form; ini berbeda dari form yang dibuat router SPA tanpa action.
     const explicitActionDeps: LadderDeps = {
+        checkHealth: healthy,
         fetchPage: async () => fakePage(`<html><body><div id="root"></div></body></html>`, { finalUrl: "https://spa.app/" }),
         render: async () => ({
             html: `<form method="post" action="/api/login"><input name="loginUser"><input name="loginPassword" type="password"></form>`,
@@ -145,6 +155,24 @@ async function main() {
     assertEq(r7.clientRoute, "/signin", "explicit action tetap mempertahankan clientRoute");
     assertEq(r7.detected.formAction, "/api/login", "action server eksplisit terdeteksi");
     assertEq(r7.verdict.mode, "FORM", "action server eksplisit boleh memakai FORM");
+
+    // Browser mati: alasan spesifik tercatat, hasil HTTP tetap dipakai.
+    const deadDeps: LadderDeps = {
+        fetchPage: async () =>
+            fakePage(`<form action="/login"><input name="u"><input type="password" name="p"></form>`, {
+                finalUrl: "https://x.example/login",
+            }),
+        render: async () => null,
+        checkHealth: async () => ({ ok: false, reason: "Browserless tidak terjangkau" }),
+    };
+    const r8 = await detectWithLadder("https://x.example/login", deadDeps);
+    assertEq(r8.browserUnavailable, true, "browser mati -> flag browserUnavailable");
+    assertEq(r8.detected.passwordField, "p", "browser mati -> hasil HTTP tetap dipakai");
+    assertEq(
+        r8.layerNotes.some((n) => n.includes("Browserless")),
+        true,
+        "browser mati -> alasan spesifik di layerNotes"
+    );
 
     console.log("=== ALL PASS ===");
 }
