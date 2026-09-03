@@ -158,13 +158,16 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
     const fallbackDetected = renderedDetected ?? detected;
 
     // Lapis 3: probe OpenAPI/Swagger — hanya saat halaman adalah SPA dan tidak
-    // ada form login di kedua lapis sebelumnya. Bukti SPA dari HTML mentah sudah
-    // cukup (tidak perlu render ulang): looksLikeClientRenderedApp memeriksa
-    // <div id="root"> + tidak ada <form> + script≥3.
+    // ada form login di kedua lapis sebelumnya. Hasil probe paralel (earlyProbe)
+    // dipakai ulang agar tidak ada round-trip ganda ke target — KECUALI render
+    // mengubah URL akhir (redirect JS), maka probe diulang dengan URL baru
+    // karena kontrak API terikat origin/path akhir.
     let apiProbe: ApiProbe = { layer: "NONE", contracts: [], specUrl: null, note: "Lapis 3 tidak dijalankan (bukan SPA atau form ditemukan)" };
-    if (looksLikeClientRenderedApp(page.html) || looksLikeClientRenderedApp(fallbackHtml)) {
-        apiProbe = await probe(fallbackFinalUrl);
-        if (apiProbe.layer === "OPENAPI") {
+    const needProbe = looksLikeClientRenderedApp(page.html) || looksLikeClientRenderedApp(fallbackHtml);
+    if (needProbe) {
+        const renderMovedUrl = Boolean(rendered?.finalUrl) && rendered!.finalUrl !== page.finalUrl && rendered!.finalUrl !== (url.includes("#") ? url : page.finalUrl);
+        apiProbe = earlyProbe && !renderMovedUrl ? earlyProbe : await probe(fallbackFinalUrl);
+        if (apiProbe.layer === "OPENAPI" || apiProbe.layer === "KNOWN_ENDPOINT") {
             notes.push(apiProbe.note);
         } else if (apiProbe.note) {
             notes.push(`Probe OpenAPI: ${apiProbe.note}`);
@@ -192,6 +195,7 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
         }),
         layer: rendered ? "BROWSER" : "HTTP",
         layerNotes: notes,
+        browserUnavailable: !browserUp,
         apiProbe,
     };
 }

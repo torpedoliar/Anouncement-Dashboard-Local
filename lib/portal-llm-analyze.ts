@@ -437,10 +437,9 @@ export async function analyzeLoginWithLlm(input: {
           ? "Detektor heuristik menandai halaman ini login dua langkah (identifier-first)."
           : "Detektor heuristik TIDAK menemukan form login.";
 
-    // URL dipangkas ke origin+path: query WS-Fed/SAML/OIDC dan hash route dapat
-    // membawa token yang tidak boleh keluar ke model eksternal.
-    const safeUrl = stripUrlSecrets(input.url);
-
+    // URL dipangkas ke origin+path di dalam buildAnalysisPrompt (query
+    // WS-Fed/SAML/OIDC dan hash route dapat membawa token yang tidak boleh
+    // keluar ke model eksternal).
     const userPrompt = buildAnalysisPrompt({
         url: input.url,
         layer: input.layer,
