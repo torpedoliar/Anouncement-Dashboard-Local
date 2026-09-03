@@ -160,7 +160,22 @@ if (!browserUp) {
 }
 ```
 
+Paralelisme render + probe (spec Seksi 3 poin 2): setelah deteksi HTTP selesai dan `!detected.passwordField`, bila `looksLikeClientRenderedApp(page.html)` dan `browserUp`, jalankan render DAN probe OpenAPI bersamaan — bukan probe menunggu render gagal:
+
+```ts
+const spaShell = !detected.passwordField && looksLikeClientRenderedApp(page.html);
+const renderPromise = spaShell && browserUp ? render(url) : Promise.resolve(null);
+const probePromise = spaShell ? probe(page.finalUrl || url) : Promise.resolve(null);
+const [rendered, earlyProbe] = await Promise.all([renderPromise, probePromise]);
+```
+
+Lalu: bila `rendered` + passwordField → return BROWSER seperti kode lama (probe awal diabaikan, `apiProbe: NONE` seperti semula). Bila render gagal/tanpa form → pakai `earlyProbe` sebagai `apiProbe` (hemat satu round-trip bila shell SPA). Bila bukan shell SPA → perilaku lama (render hanya bila HTTP gagal dan... pertahankan fallback lama: bila bukan spaShell, render tetap dipanggil seperti kode lama agar tidak ada regresi coverage; probe hanya bila SPA).
+
+Semua `return` di fungsi ini tambah `browserUnavailable: !browserUp`.
+
 Catatan cakupan (spec Seksi 3 poin 3): snapshot network XHR TIDAK dikerjakan di plan ini — kontrak `/content` Browserless tidak mengekspos network log, dan menambah kontrak browser baru di luar cakupan. DOM snapshot tetap seperti kini.
+
+Checklist ops (non-kode, verifikasi manual di production): service `browserless` ikut `docker-compose up` (cek `docker-compose ps browserless`), memory limit cukup untuk Chromium, `PORTAL_BROWSER_URL` menunjuk `http://browserless:3000`.
 
 Render paralel: setelah `detectLoginFields` HTTP dan bila `!detected.passwordField && looksLikeClientRenderedApp(page.html) && browserUp`, jalankan `render(url)` BERSAMAAN dengan probe persiapan lain? Minimal: panggil render segera tanpa menunggu cabang lama — struktur lama sudah memanggil render tepat di titik itu; yang berubah: health check di awal + flag. Untuk "paralel dengan probe": probe OpenAPI di lapis 3 hanya jalan bila render gagal — biarkan. Tambah di semua return: `browserUnavailable: !browserUp`.
 

@@ -43,6 +43,8 @@ const unifi = `<html><head><title>UniFi OS</title></head><body><div ui-view></di
 check(fingerprintLoginProduct(unifi, "https://192.168.1.1/")?.product === "unifi-os", "registry: UniFi dikenali");
 const mantis = `<html><body><form action="login_password_page.php"><input name="username"></form></body></html>`;
 check(fingerprintLoginProduct(mantis, "https://bugs.example.com/login_page.php")?.product === "mantisbt", "registry: MantisBT dikenali");
+const hris = `<html><head><meta name="generator" content="HRIS Portal v2"></head><body><form action="/login"><input name="nik"></form></body></html>`;
+check(fingerprintLoginProduct(hris, "https://nikhris.example.com/login")?.product === "hris-internal", "registry: HRIS internal dikenali");
 check(fingerprintLoginProduct("<html><body><h1>halo</h1></body></html>", "https://x.example/") === null, "registry: halaman asing -> null");
 console.log(failed === 0 ? "Semua lolos." : `${failed} gagal.`);
 if (failed > 0) process.exit(1);
@@ -67,6 +69,7 @@ interface ProductEntry {
     product: string;
     /** Semua marker dalam satu grup harus cocok; antar grup cukup satu grup. */
     titleRe?: RegExp;
+    generatorRe?: RegExp; // meta generator, mis. aplikasi internal
     htmlRe?: RegExp[];
     urlRe?: RegExp;
     versionRe?: RegExp;
@@ -88,15 +91,22 @@ const PRODUCT_REGISTRY: ProductEntry[] = [
         htmlRe: [/AppsLocalLogin/i, /AuthenticateUser/i],
         urlRe: /OA_HTML|AppsLocalLogin/i,
     },
+    {
+        product: "hris-internal",
+        generatorRe: /<meta[^>]+name=["']generator["'][^>]+content=["'][^"']*HRIS[^"']*["']/i,
+        urlRe: /hris|nikhris/i,
+    },
 ];
 
 export function fingerprintLoginProduct(html: string, pageUrl: string): ProductFingerprint | null {
     for (const entry of PRODUCT_REGISTRY) {
         if (entry.titleRe && !entry.titleRe.test(html)) continue;
+        if (entry.generatorRe && !entry.generatorRe.test(html)) continue;
         if (entry.urlRe && !entry.urlRe.test(pageUrl)) continue;
         if (entry.htmlRe && !entry.htmlRe.some((re) => re.test(html))) continue;
         const markers = [
             entry.titleRe?.source,
+            entry.generatorRe?.source,
             ...(entry.htmlRe ?? []).map((re) => re.source),
             entry.urlRe?.source,
         ].filter((m): m is string => Boolean(m));
@@ -105,12 +115,15 @@ export function fingerprintLoginProduct(html: string, pageUrl: string): ProductF
     }
     return null;
 }
+
+// Catatan: "generic" bukan produk registry — ia hanya lahir dari auto-register
+// fingerprint (Task 3) untuk aplikasi tak dikenal yang lolos Uji Login.
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx tsx scripts/test-product-registry.ts`
-Expected: 3 PASS, "Semua lolos."
+Expected: 4 PASS, "Semua lolos."
 
 - [ ] **Step 5: Commit**
 
@@ -188,6 +201,9 @@ import { getLearnedSuggestion, type CorrectedLoginConfig } from "@/lib/portal-de
 export interface MemoryDb {
     latestCorrection(loginUrl: string): Promise<(CorrectedLoginConfig & { correctedAt: Date }) | null>;
     latestProfile(origin: string): Promise<CorrectedLoginConfig | null>;
+    // Opsional agar mock test Task 2 tanpa method ini tidak crash; diisi
+    // implementasi nyata di Task 3 (fingerprint generik).
+    latestFingerprint?(origin: string): Promise<CorrectedLoginConfig | null>;
 }
 
 const realDb: MemoryDb = {
@@ -203,10 +219,13 @@ const realDb: MemoryDb = {
         });
         return row ? { ...row, ssoMode: null } : null;
     },
+    async latestFingerprint() {
+        return null;
+    },
 };
 
 export interface MemoryRecall {
-    source: "CORRECTION" | "PROFILE" | "REGISTRY";
+    source: "CORRECTION" | "FINGERPRINT" | "PROFILE" | "REGISTRY";
     label: string;
     product: string | null;
     config: CorrectedLoginConfig;
@@ -220,7 +239,7 @@ function originOf(url: string): string | null {
     }
 }
 
-/** Recall berurutan: koreksi admin > profile sukses > registry produk. */
+/** Recall berurutan: koreksi admin > fingerprint generik > profile > registry. */
 export async function recallLoginMemory(
     input: { loginUrl: string; html: string },
     db: MemoryDb = realDb,
@@ -238,6 +257,13 @@ export async function recallLoginMemory(
     }
 
     const origin = originOf(input.loginUrl);
+    if (origin && db.latestFingerprint) {
+        const fp = await db.latestFingerprint(origin).catch(() => null);
+        if (fp && (fp.usernameField || fp.passwordField)) {
+            return { source: "FINGERPRINT", label: "MEMORY: fingerprint generik terverifikasi", product: product?.product ?? "generic", config: fp };
+        }
+    }
+
     if (origin) {
         const profile = await db.latestProfile(origin).catch(() => null);
         if (profile && (profile.usernameField || profile.passwordField)) {
@@ -324,7 +350,7 @@ Run: `npx prisma generate`. Bump `schemaVersion` di `version.json` (+1).
 
 - [ ] **Step 2: Recall baca fingerprint generik**
 
-Di `lib/portal-memory-recall.ts`: tambah ke interface `MemoryDb` method OPSIONAL `latestFingerprint?(origin: string, formHash: string): Promise<CorrectedLoginConfig | null>` (opsional agar mock test Task 2 yang tidak memilikinya tidak crash — panggil via `db.latestFingerprint?.(...)`) dengan implementasi realDb membaca `prisma.portalProductFingerprint`. Urutan recall menjadi koreksi > fingerprint generik (bila formHash cocok) > profile > registry. `formHash` dihitung dari nama field terurut + method memakai `node:crypto` sha256 — tambah fungsi `formSignatureHash(fields: string[], method: string): string` di file yang sama. Perbarui `scripts/test-memory-recall.ts` dengan kasus GENERIC, run hingga PASS.
+Ganti stub `latestFingerprint` di `realDb` (`lib/portal-memory-recall.ts`) dengan query nyata ke `prisma.portalProductFingerprint` (row terbaru di origin, config berisi usernameField/passwordField): Urutan recall menjadi koreksi > fingerprint generik (bila formHash cocok) > profile > registry. `formHash` dihitung dari nama field terurut + method memakai `node:crypto` sha256 — tambah fungsi `formSignatureHash(fields: string[], method: string): string` di file yang sama. Perbarui `scripts/test-memory-recall.ts` dengan kasus GENERIC, run hingga PASS.
 
 - [ ] **Step 3: Auto-register di verify-login**
 
