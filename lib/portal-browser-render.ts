@@ -32,11 +32,20 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
             input.getAttribute("name"),
             input.id,
             input.getAttribute("aria-label"),
+            input.getAttribute("aria-labelledby"),
             input.getAttribute("placeholder"),
             input.getAttribute("title"),
+            input.getAttribute("role"),
+            input.getAttribute("data-testid"),
+            input.getAttribute("data-test-id"),
+            input.getAttribute("data-test"),
+            input.getAttribute("data-qa"),
+            input.getAttribute("data-cy"),
+            input.labels ? Array.from(input.labels).map((label) => label.textContent || "").join(" ") : "",
         ]
             .filter(Boolean)
             .join(" ")
+            .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
             .toLowerCase();
 
         return (
@@ -51,11 +60,18 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
     };
 
     const isPasswordCandidate = (input) => {
-        if (!hasSemanticIdentity(input) || input.disabled || input.readOnly || input.getAttribute("aria-disabled") === "true") {
+        const type = (input.getAttribute("type") || input.type || "").toLowerCase();
+        const hasLayout = typeof input.getClientRects === "function" && input.getClientRects().length > 0;
+        const computedStyle = typeof getComputedStyle === "function" ? getComputedStyle(input) : null;
+        if (
+            !hasSemanticIdentity(input) ||
+            type === "hidden" ||
+            (typeof input.getClientRects === "function" && !hasLayout) ||
+            computedStyle?.display === "none" ||
+            computedStyle?.visibility === "hidden"
+        ) {
             return false;
         }
-
-        const type = (input.getAttribute("type") || input.type || "").toLowerCase();
         const autocomplete = (input.getAttribute("autocomplete") || input.autocomplete || "")
             .toLowerCase()
             .split(/\s+/)
@@ -64,17 +80,26 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
             input.getAttribute("name"),
             input.id,
             input.getAttribute("aria-label"),
+            input.getAttribute("aria-labelledby"),
             input.getAttribute("placeholder"),
             input.getAttribute("title"),
+            input.getAttribute("role"),
+            input.getAttribute("data-testid"),
+            input.getAttribute("data-test-id"),
+            input.getAttribute("data-test"),
+            input.getAttribute("data-qa"),
+            input.getAttribute("data-cy"),
+            input.labels ? Array.from(input.labels).map((label) => label.textContent || "").join(" ") : "",
         ]
             .filter(Boolean)
             .join(" ")
+            .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
             .toLowerCase();
 
         return (
             type === "password" ||
             autocomplete.includes("current-password") ||
-            ((type === "text" || type === "") && /(?:password|passwd|passcode|kata[ _-]?sandi|\bpass\b|\bpwd\b|\bpin\b)/i.test(hint))
+            ((type === "text" || type === "tel" || type === "number" || type === "") && /(?:password|passwd|passcode|kata[ _-]?sandi|\bpass\b|\bpwd\b|\bpin\b)/i.test(hint))
         );
     };
 
@@ -82,7 +107,7 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
         if (!root || visitedRoots.has(root)) return;
         visitedRoots.add(root);
 
-        const inputs = root.querySelectorAll ? root.querySelectorAll("input") : [];
+        const inputs = root.querySelectorAll ? root.querySelectorAll("input, textarea, [contenteditable=\"true\"]") : [];
         for (const input of inputs) {
             if (isPasswordCandidate(input)) {
                 passwordCandidates.push({
@@ -129,8 +154,9 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
 
     const copyControl = (control) => {
         const isButton = control.tagName.toLowerCase() === "button";
-        const copy = document.createElement(isButton ? "button" : "input");
-        const type = isButton ? "submit" : (control.getAttribute("type") || control.type || "text").toLowerCase();
+        const isTextarea = control.tagName.toLowerCase() === "textarea";
+        const copy = isButton ? document.createElement("button") : isTextarea ? document.createElement("textarea") : document.createElement("input");
+        const type = isButton ? "submit" : isTextarea ? "textarea" : (control.getAttribute("type") || control.type || "text").toLowerCase();
         const autocomplete = (control.getAttribute("autocomplete") || control.autocomplete || "")
             .toLowerCase()
             .split(/\s+/)
@@ -143,6 +169,12 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
             "aria-label",
             "aria-labelledby",
             "title",
+            "role",
+            "data-testid",
+            "data-test-id",
+            "data-test",
+            "data-qa",
+            "data-cy",
             "formaction",
         ];
 
@@ -155,12 +187,22 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
         // from HTML autocomplete semantics so detectLoginFields can consume the
         // rendered snapshot without pretending the original DOM had those attrs.
         if (!isButton && !control.getAttribute("name") && !control.id) {
+            const controlHint = [
+                control.getAttribute("aria-label"),
+                control.getAttribute("placeholder"),
+                control.getAttribute("title"),
+                control.getAttribute("data-testid"),
+                control.getAttribute("data-test-id"),
+                control.getAttribute("data-test"),
+                control.getAttribute("data-qa"),
+                control.getAttribute("data-cy"),
+            ].filter(Boolean).join(" ").replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
             const inferredName =
-                type === "password" || autocomplete.includes("current-password") || autocomplete.includes("password")
+                type === "password" || autocomplete.includes("current-password") || autocomplete.includes("password") || /(?:password|passwd|pwd|passcode|sandi|kata[ _-]?sandi)/i.test(controlHint)
                     ? "password"
-                    : autocomplete.includes("email") || type === "email"
+                    : autocomplete.includes("email") || type === "email" || /(?:email|e-mail)/i.test(controlHint)
                       ? "email"
-                      : autocomplete.includes("username")
+                      : autocomplete.includes("username") || /(?:username|user[ _-]?id|login|account|identifier|nik|nip|nrp)/i.test(controlHint)
                         ? "username"
                         : null;
             if (inferredName) copy.setAttribute("name", inferredName);
@@ -170,6 +212,10 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
             copy.setAttribute("type", control.getAttribute("type") || "submit");
             copy.setAttribute("value", control.getAttribute("value") || control.value || "");
             copy.textContent = control.textContent || "";
+        } else if (isTextarea) {
+            // Never copy a secret value; the text is only useful for the parser
+            // when this is a non-password control.
+            if (type !== "password") copy.textContent = control.value || "";
         } else {
             copy.setAttribute("type", type);
             // Nilai field password TIDAK pernah disalin: snapshot ini dikirim ke server
@@ -202,14 +248,15 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
         projectedSources.add(source);
 
         const form = document.createElement("form");
-        form.setAttribute("method", nativeForm?.method || "POST");
-        form.setAttribute("action", nativeForm?.action || candidate.baseUrl || location.href);
+        form.setAttribute("method", nativeForm?.getAttribute("method") || "POST");
+        const nativeAction = nativeForm?.getAttribute("action");
+        if (nativeAction) form.setAttribute("action", nativeAction);
 
         const controls = [];
         const addControl = (control) => {
             if (!control || controls.includes(control)) return;
             const tag = control.tagName?.toLowerCase();
-            if (tag === "input" || tag === "button") controls.push(control);
+            if (tag === "input" || tag === "textarea" || tag === "button" || control.getAttribute?.("contenteditable") === "true") controls.push(control);
         };
 
         if (nativeForm?.elements) {
@@ -217,7 +264,7 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
         }
         const root = candidate.input.getRootNode();
         if (root.querySelectorAll) {
-            for (const control of Array.from(root.querySelectorAll("input, button"))) addControl(control);
+            for (const control of Array.from(root.querySelectorAll("input, textarea, button, [contenteditable=\"true\"]"))) addControl(control);
         }
         addControl(candidate.input);
 
@@ -285,7 +332,10 @@ export async function renderLoginPage(url: string, timeoutMs = 10_000): Promise<
             if (!res.ok) continue;
 
             const html = await res.text();
-            const finalUrl = res.headers.get("x-response-url")?.trim() || undefined;
+            const responseUrl = res.headers.get("x-response-url")?.trim() || undefined;
+            // Browserless deployments do not all expose x-response-url, but the
+            // caller-provided hash route is still the browser's actual route.
+            const finalUrl = responseUrl || (url.includes("#") ? url : undefined);
             return { html: html.slice(0, MAX_RENDERED_HTML_BYTES), finalUrl };
         } catch {
             // Timeout / layanan mati: percobaan lain tidak akan menolong.

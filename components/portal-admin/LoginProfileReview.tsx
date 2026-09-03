@@ -8,6 +8,7 @@ export interface LoginProfileSummary {
     id: string;
     origin: string;
     entryPath: string;
+    clientRoute: string | null;
     finalPath: string | null;
     formActionPath: string | null;
     httpMethod: string | null;
@@ -117,7 +118,7 @@ export default function LoginProfileReview({
                             <Badge tone={approvalTone(profile)}>{approvalLabel(profile)}</Badge>
                         </div>
                         <p className="mt-1 max-w-[72ch] text-xs leading-relaxed text-text-2">
-                            Bukti struktural untuk <span className="font-mono text-text-1">{profile.origin}{profile.entryPath}</span>.
+                            Bukti struktural untuk <span className="font-mono text-text-1">{profile.origin}{profile.entryPath}{profile.clientRoute ? `#${profile.clientRoute}` : ""}</span>.
                             Nilai token, cookie, HTML mentah, dan kredensial tidak disimpan.
                         </p>
                     </div>

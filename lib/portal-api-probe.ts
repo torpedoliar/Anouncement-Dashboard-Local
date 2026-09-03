@@ -11,7 +11,8 @@
  *    sedang diproses, BUKAN dari input admin. Tidak ada host lain disentuh.
  * 2. Hanya GET. Tidak pernah POST. JSON probe yang mengirim kredensial
  *    adalah tombol terpisah di UI dan ditangani oleh dispatcher, bukan sini.
- * 3. Cap body 512k. Cap waktu 8 detik. Cap dua path (openapi, swagger).
+ * 3. Cap body 512k. Cap the complete probe budget at 8 seconds. Common spec paths
+ *    are tried sequentially with the remaining budget; no target POST is sent.
  * 4. TLS self-signed: pakai https.request per-hop dengan rejectUnauthorized:false,
  *    bukan NODE_TLS_REJECT_UNAUTHORIZED=0 (yang mematikan verifikasi untuk
  *    SELURUH proses termasuk DB dan SMTP).
@@ -41,10 +42,18 @@ export interface ApiProbe {
 
 const MAX_BYTES = 512 * 1024;
 const TIMEOUT_MS = 8000;
-/** Path yang dicoba, berurutan. Berhenti di spec pertama yang 2xx + JSON valid. */
-const SPEC_PATHS = ["/openapi.json", "/swagger.json"];
+/** Common spec locations used by FastAPI, ASP.NET, Nest, and reverse-proxied SPAs. */
+const SPEC_PATHS = [
+    "/openapi.json",
+    "/swagger.json",
+    "/api/openapi.json",
+    "/api/swagger.json",
+    "/v1/openapi.json",
+    "/api/v1/openapi.json",
+    "/swagger/v1/swagger.json",
+];
 
-function fetchSpec(specUrl: URL): Promise<{ status: number; body: string } | null> {
+function fetchSpec(specUrl: URL, timeoutMs = TIMEOUT_MS): Promise<{ status: number; body: string } | null> {
     return new Promise((resolve) => {
         const transport = specUrl.protocol === "https:" ? https : http;
         const req = transport.request(
@@ -53,7 +62,7 @@ function fetchSpec(specUrl: URL): Promise<{ status: number; body: string } | nul
                 port: specUrl.port || (specUrl.protocol === "https:" ? 443 : 80),
                 path: `${specUrl.pathname}${specUrl.search}`,
                 method: "GET",
-                timeout: TIMEOUT_MS,
+                timeout: timeoutMs,
                 ...(specUrl.protocol === "https:" ? { rejectUnauthorized: false } : {}),
                 headers: {
                     accept: "application/json, */*;q=0.5",
@@ -184,16 +193,26 @@ export function extractContracts(spec: unknown): ApiContract[] {
         "userid",
         "user_id",
         "user",
+        "user_code",
+        "username_code",
         "email",
         "email_address",
         "emailaddress",
         "account",
         "account_id",
+        "account_name",
+        "employee_id",
+        "staff_id",
+        "member_id",
         "identifier",
         "nik",
+        "nip",
+        "nrp",
         "login",
         "login_id",
         "loginid",
+        "login_name",
+        "loginname",
     ]);
     const passRe = tokenRe([
         "password",
@@ -201,9 +220,12 @@ export function extractContracts(spec: unknown): ApiContract[] {
         "pass_word",
         "pwd",
         "passcode",
+        "passphrase",
         "sandi",
         "secret",
+        "credential",
         "pin",
+        "pin_code",
     ]);
 
     for (const [path, methodsRaw] of Object.entries(paths)) {
@@ -266,14 +288,17 @@ export async function probeApiLayer(pageUrl: string): Promise<ApiProbe> {
         return { layer: "NONE", contracts: [], specUrl: null, note: "URL halaman tidak valid" };
     }
 
+    const deadline = Date.now() + TIMEOUT_MS;
     for (const specPath of SPEC_PATHS) {
+        const remainingMs = deadline - Date.now();
+        if (remainingMs < 250) break;
         const specUrl = new URL(specPath, origin);
         // SSRF guard: origin halaman sudah difilter fetch layer; di sini kita TIDAK
         // menerima input admin, hanya origin yang sama. Tetap guard agar konsisten.
         if (specUrl.host !== origin.host || specUrl.protocol !== origin.protocol) {
             return { layer: "NONE", contracts: [], specUrl: null, note: "Asal probe tidak cocok (same-origin gagal)" };
         }
-        const res = await fetchSpec(specUrl);
+        const res = await fetchSpec(specUrl, Math.min(TIMEOUT_MS, remainingMs));
         if (!res) continue;
         if (res.status < 200 || res.status >= 300) continue;
         let parsed: unknown;

@@ -84,6 +84,17 @@ async function main() {
     // aplikasi yang mengalihkan di sisi klien diproses dengan URL yang salah.
     assertEq(ok?.finalUrl, "https://target.app/auth/signin", "finalUrl diambil dari header x-response-url");
 
+    // Browserless lama/konfigurasi tertentu tidak mengirim x-response-url.
+    // Untuk hash-router, URL pemanggil tetap menjadi bukti route browser yang dibuka.
+    const hashStub = await startStub(
+        200,
+        `<html><body><div data-testid="login-root"><textarea aria-label="PIN"></textarea></div></body></html>`,
+    );
+    process.env.PORTAL_BROWSER_URL = `http://127.0.0.1:${hashStub.port}`;
+    const hashResult = await renderLoginPage("https://spa.app/#/signin?next=/home");
+    assertEq(hashResult?.finalUrl, "https://spa.app/#/signin?next=/home", "hash URL dipertahankan tanpa x-response-url");
+    assertEq(hashResult?.html.includes("data-testid"), true, "HTML hasil render mempertahankan metadata test ID");
+
     // Kontrak permintaan: menunggu form yang bisa dikirim, bukan sekadar event load.
     const payload = stub.lastBody() ?? {};
     assertEq(stub.lastPath(), "/content", "endpoint /content dipanggil");
@@ -95,6 +106,9 @@ async function main() {
     assertEq(/shadowRoot/.test(waitForFunction?.fn ?? ""), true, "predikat memeriksa Shadow DOM");
     assertEq(/IFRAME/.test(waitForFunction?.fn ?? ""), true, "predikat memeriksa iframe");
     assertEq(/autocomplete.includes\("username"\)/.test(waitForFunction?.fn ?? ""), true, "predikat menerima input autocomplete tanpa name/id");
+    assertEq(/data-testid/.test(waitForFunction?.fn ?? ""), true, "predikat memeriksa test ID komponen");
+    assertEq(/document.createElement\("textarea"\)/.test(waitForFunction?.fn ?? ""), true, "snapshot memproyeksikan textarea");
+    assertEq(/if \(nativeAction\)/.test(waitForFunction?.fn ?? ""), true, "snapshot hanya menyalin action form eksplisit");
     assertEq(/inferredName/.test(waitForFunction?.fn ?? ""), true, "snapshot memberi nama sintetis pada input SPA");
 
     // Fungsi ini dieksekusi di Chromium, jadi salah sintaksis tidak akan terlihat di
@@ -166,6 +180,7 @@ async function main() {
     assertEq(await renderLoginPage("https://x/"), null, "layanan mati → null");
 
     stub.server.close();
+    hashStub.server.close();
     shortTimeout.server.close();
     legacyStub.server.close();
     strictStub.server.close();

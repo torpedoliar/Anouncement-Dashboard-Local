@@ -112,6 +112,40 @@ async function main() {
     assertEq(r5.detected.passwordField, "pass", "password readonly terdeteksi");
     assertEq(r5.verdict.mode !== "VAULT", true, "form readonly tidak dipaksa ke VAULT");
 
+    // Hash route hanya terlihat oleh browser. Renderer harus menerima URL lengkap
+    // dan ladder harus menyimpan route path tanpa query fragment.
+    let hashRenderUrl: string | null = null;
+    const hashDeps: LadderDeps = {
+        fetchPage: async () => fakePage(
+            `<html><body><div id="root"></div><script src="/a.js"></script><script src="/b.js"></script><script src="/c.js"></script></body></html>`,
+            { finalUrl: "https://spa.app/" },
+        ),
+        render: async (renderUrl: string) => {
+            hashRenderUrl = renderUrl;
+            return { html: `<form><input autocomplete="username"><input autocomplete="current-password" type="password"></form>` };
+        },
+    };
+    const r6 = await detectWithLadder("https://spa.app/#/signin?next=/home", hashDeps);
+    assertEq(hashRenderUrl, "https://spa.app/#/signin?next=/home", "renderer menerima hash URL lengkap");
+    assertEq(r6.layer, "BROWSER", "hash SPA ditemukan setelah render browser");
+    assertEq(r6.clientRoute, "/signin", "clientRoute hash dinormalisasi menjadi path");
+    assertEq(r6.finalUrl, "https://spa.app/#/signin?next=/home", "hash URL dipertahankan saat renderer tidak memberi finalUrl");
+    assertEq(r6.detected.passwordField, "password", "password hash SPA terdeteksi");
+    assertEq(r6.verdict.mode, "VAULT", "form browser-only tanpa action tidak dipaksa native FORM/POST");
+
+    // Action server eksplisit adalah bukti yang cukup untuk tetap menggunakan
+    // mode transport form; ini berbeda dari form yang dibuat router SPA tanpa action.
+    const explicitActionDeps: LadderDeps = {
+        fetchPage: async () => fakePage(`<html><body><div id="root"></div></body></html>`, { finalUrl: "https://spa.app/" }),
+        render: async () => ({
+            html: `<form method="post" action="/api/login"><input name="loginUser"><input name="loginPassword" type="password"></form>`,
+        }),
+    };
+    const r7 = await detectWithLadder("https://spa.app/#/signin", explicitActionDeps);
+    assertEq(r7.clientRoute, "/signin", "explicit action tetap mempertahankan clientRoute");
+    assertEq(r7.detected.formAction, "/api/login", "action server eksplisit terdeteksi");
+    assertEq(r7.verdict.mode, "FORM", "action server eksplisit boleh memakai FORM");
+
     console.log("=== ALL PASS ===");
 }
 main().catch((e) => { console.error("THROWN:", e.message); process.exitCode = 1; });

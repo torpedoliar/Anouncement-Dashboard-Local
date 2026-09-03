@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { clientRouteFromUrl, normalizeClientRoute } from "@/lib/portal-client-route";
 
 /**
  * Versi snapshot yang menentukan apakah dua struktur rute login setara.
@@ -18,6 +19,7 @@ export interface LoginFingerprintInput {
     loginUrl?: string | null;
     origin?: string | null;
     entryPath?: string | null;
+    clientRoute?: string | null;
     finalPath?: string | null;
     formActionPath?: string | null;
     recommendedMode?: string | null;
@@ -32,6 +34,7 @@ export interface LoginFingerprintSnapshot {
     version: typeof LOGIN_FINGERPRINT_VERSION;
     origin: string;
     entryPath: string;
+    clientRoute?: string;
     finalPath: string | null;
     formActionPath: string | null;
     recommendedMode: string | null;
@@ -124,7 +127,7 @@ export function buildLoginFingerprintSnapshot(input: LoginFingerprintInput): Log
     const origin = normalizeOrigin(input.origin) || urlOrigin;
     const entryPath = pathnameFrom(input.entryPath ?? input.loginUrl);
 
-    return {
+    const snapshot: LoginFingerprintSnapshot = {
         version: LOGIN_FINGERPRINT_VERSION,
         origin,
         entryPath,
@@ -137,6 +140,14 @@ export function buildLoginFingerprintSnapshot(input: LoginFingerprintInput): Log
         extraFieldNames: normalizedStrings(input.extraFieldNames),
         apiContracts: normalizeContracts(input.apiContracts, origin),
     };
+
+    const clientRoute = input.clientRoute
+        ? normalizeClientRoute(input.clientRoute)
+        : clientRouteFromUrl(input.loginUrl);
+    // Preserve the v2 snapshot byte-for-byte for ordinary URLs. Hash routes
+    // gain one safe, path-only field so #/signin cannot collide with /.
+    if (clientRoute) snapshot.clientRoute = clientRoute;
+    return snapshot;
 }
 
 /** Hash SHA-256 dari snapshot rute login non-secret yang kanonis. */

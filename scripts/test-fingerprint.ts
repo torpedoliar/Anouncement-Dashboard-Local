@@ -29,12 +29,42 @@ const fp = computeLoginFingerprint(base);
 assertEq(fp.length, 64, "output SHA-256 hex 64 char");
 assertEq(computeLoginFingerprint(base), fp, "deterministik");
 
-// Nilai token & query TIDAK boleh mengubah fingerprint
+// Query dan nilai token TIDAK boleh mengubah fingerprint; route hash yang aman
+// justru harus membedakan halaman login SPA yang berbeda.
 assertEq(
-    computeLoginFingerprint({ ...base, loginUrl: "https://k2prodapp/Identity/STS/Forms/Account/Login?wct=999999#ignored" }),
+    computeLoginFingerprint({ ...base, loginUrl: "https://k2prodapp/Identity/STS/Forms/Account/Login?wct=999999" }),
     fp,
-    "query/fragment berbeda → fingerprint sama",
+    "query berbeda → fingerprint sama",
 );
+const signinFingerprint = computeLoginFingerprint({
+    ...base,
+    loginUrl: "https://k2prodapp/Identity/STS/Forms/Account/Login?wct=999999#/signin",
+});
+assertEq(signinFingerprint !== fp, true, "client route /signin → fingerprint berbeda dari route server");
+assertEq(
+    computeLoginFingerprint({ ...base, clientRoute: "/signin" }),
+    signinFingerprint,
+    "clientRoute eksplisit setara dengan hash route",
+);
+assertEq(
+    computeLoginFingerprint({
+        ...base,
+        loginUrl: "https://k2prodapp/Identity/STS/Forms/Account/Login#/dashboard",
+    }) !== signinFingerprint,
+    true,
+    "#/signin dan #/dashboard → fingerprint berbeda",
+);
+const hashQuerySnapshot = buildLoginFingerprintSnapshot({
+    ...base,
+    loginUrl: "https://k2prodapp/Identity/STS/Forms/Account/Login#/signin?next=/home",
+});
+assertEq(hashQuerySnapshot.clientRoute, "/signin", "query hash dibuang dari clientRoute");
+const sensitiveHashInput = {
+    ...base,
+    loginUrl: "https://k2prodapp/Identity/STS/Forms/Account/Login#access_token=secret",
+};
+assertEq(buildLoginFingerprintSnapshot(sensitiveHashInput).clientRoute, undefined, "fragment token tidak dipersistenkan");
+assertEq(computeLoginFingerprint(sensitiveHashInput), fp, "fragment token tidak mengubah fingerprint");
 assertEq(
     computeLoginFingerprint({ ...base, extraFieldNames: ["wa", "__RequestVerificationToken"] }),
     fp,

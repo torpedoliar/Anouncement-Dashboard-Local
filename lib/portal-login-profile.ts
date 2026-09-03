@@ -10,6 +10,7 @@ import { type ApiContract } from "@/lib/portal-api-probe";
 import { type LadderResult, detectWithLadder } from "@/lib/portal-detect-ladder";
 import { computeLoginFingerprint } from "@/lib/portal-fingerprint";
 import { assertSafeHttpUrl } from "@/lib/portal-url-guard";
+import { clientRouteFromUrl, hasUnsafeClientRoute } from "@/lib/portal-client-route";
 
 /**
  * Profil deteksi adalah metadata struktural, bukan sesi login. Nilai hidden
@@ -28,6 +29,7 @@ export const loginProfileSummarySelect = {
     id: true,
     origin: true,
     entryPath: true,
+    clientRoute: true,
     finalPath: true,
     formActionPath: true,
     httpMethod: true,
@@ -63,6 +65,7 @@ export interface LoginProfileSummary {
     id: string;
     origin: string;
     entryPath: string;
+    clientRoute: string | null;
     finalPath: string | null;
     formActionPath: string | null;
     httpMethod: string | null;
@@ -94,6 +97,7 @@ export interface LoginProfileSummary {
 export interface LoginProfileCandidate {
     origin: string;
     entryPath: string;
+    clientRoute: string | null;
     finalPath: string | null;
     formActionPath: string | null;
     httpMethod: string | null;
@@ -154,6 +158,7 @@ const SAFE_DISCOVERY_MESSAGES = {
     volatileFields: "Field token dinamis terdeteksi.",
     redirected: "Pengalihan menuju halaman login terdeteksi.",
     browserRendered: "Halaman login dirender melalui browser.",
+    clientRoute: "Route login client-side/hash terdeteksi.",
     apiContract: "Kontrak API login terdeteksi.",
     redirectLoop: "Loop pengalihan login terdeteksi.",
     antiForgeryWarning: "Token antiforgery terikat sesi memerlukan mode POST.",
@@ -174,31 +179,35 @@ function normalizePathname(url: URL): string {
     return pathname || "/";
 }
 
-function locationFrom(rawUrl: string): { origin: string; path: string } | null {
+function locationFrom(rawUrl: string): { origin: string; path: string; clientRoute: string | null } | null {
     const safe = assertSafeHttpUrl(rawUrl);
-    if (!safe.ok) return null;
+    if (!safe.ok || hasUnsafeClientRoute(rawUrl)) return null;
 
     try {
         const url = new URL(safe.href);
-        return { origin: safe.origin, path: normalizePathname(url) };
+        return {
+            origin: safe.origin,
+            path: normalizePathname(url),
+            clientRoute: clientRouteFromUrl(rawUrl),
+        };
     } catch {
         return null;
     }
 }
 
-function hasQueryOrFragment(rawUrl: string): boolean {
+function hasQuery(rawUrl: string): boolean {
     try {
-        const url = new URL(rawUrl);
-        return Boolean(url.search || url.hash);
+        return Boolean(new URL(rawUrl).search);
     } catch {
         return true;
     }
 }
 
-/** URL untuk UI/audit hanya menyimpan origin + pathname, tanpa query atau fragment. */
+/** URL untuk UI/audit menyimpan origin + pathname + route hash yang sudah dinormalisasi; query/token dibuang. */
 export function sanitizeLoginUrlForDisplay(rawUrl: string): string | null {
     const location = locationFrom(rawUrl);
-    return location ? `${location.origin}${location.path}` : null;
+    if (!location) return null;
+    return `${location.origin}${location.path}${location.clientRoute ? `#${location.clientRoute}` : ""}`;
 }
 
 function actionPathFrom(rawAction: string | null | undefined, baseUrl: string, origin: string): string | null {
@@ -309,6 +318,9 @@ function safeDiscoveryEvidenceFromResult(result: LadderResult): {
     if (result.layer === "BROWSER" || containsAny(rawSignals, [/javascript/, /dirender/, /browser/])) {
         signals.add(SAFE_DISCOVERY_MESSAGES.browserRendered);
     }
+    if (result.clientRoute) {
+        signals.add(SAFE_DISCOVERY_MESSAGES.clientRoute);
+    }
     if (result.apiProbe.contracts.length > 0) {
         signals.add(SAFE_DISCOVERY_MESSAGES.apiContract);
     }
@@ -355,6 +367,8 @@ export function sanitizePortalAppDiscoverySignals(value: unknown): string[] {
             output.add(SAFE_DISCOVERY_MESSAGES.volatileFields);
         } else if (containsAny(raw, [/javascript/, /dirender/, /browser/])) {
             output.add(SAFE_DISCOVERY_MESSAGES.browserRendered);
+        } else if (containsAny(raw, [/hash/, /client[- ]?side route/, /route login client/])) {
+            output.add(SAFE_DISCOVERY_MESSAGES.clientRoute);
         } else if (containsAny(raw, [/openapi/, /swagger/, /kontrak api/, /json/])) {
             output.add(SAFE_DISCOVERY_MESSAGES.apiContract);
         } else if (containsAny(raw, [/loop/, /pengalihan/, /redirect/])) {
@@ -369,6 +383,7 @@ export function sanitizePortalAppDiscoverySignals(value: unknown): string[] {
 /** Data aman untuk respons diagnosis yang juga dapat disimpan kembali oleh editor. */
 export function getSafeLoginProfileDiscoveryPresentation(result: LadderResult): {
     finalUrl: string | null;
+    clientRoute: string | null;
     discoverySignals: string[];
     warnings: string[];
     layerNotes: string[];
@@ -376,6 +391,7 @@ export function getSafeLoginProfileDiscoveryPresentation(result: LadderResult): 
     const evidence = safeDiscoveryEvidenceFromResult(result);
     return {
         finalUrl: sanitizeLoginUrlForDisplay(result.finalUrl),
+        clientRoute: result.clientRoute ?? clientRouteFromUrl(result.finalUrl),
         discoverySignals: evidence.discoverySignals,
         warnings: evidence.warnings,
         layerNotes: evidence.layerNotes,
@@ -393,6 +409,7 @@ export function serializeLoginProfile(profile: LoginProfileSummaryRecord | Porta
         id: profile.id,
         origin: profile.origin,
         entryPath: profile.entryPath,
+        clientRoute: profile.clientRoute,
         finalPath: profile.finalPath,
         formActionPath: profile.formActionPath,
         httpMethod: profile.httpMethod,
@@ -423,9 +440,9 @@ export function serializeLoginProfile(profile: LoginProfileSummaryRecord | Porta
 }
 
 /**
- * Mengubah hasil ladder menjadi kandidat yang aman dipersistenkan. URL query
- * atau fragment pada entrypoint, target akhir, dan action form ditolak sebelum
- * profile dibuat; nilai tersebut tidak pernah disimpan. Nama cookie, nilai
+ * Mengubah hasil ladder menjadi kandidat yang aman dipersistenkan. URL query atau
+ * fragment callback/token ditolak; hash route path yang aman (mis. #/signin)
+ * disimpan sebagai clientRoute tanpa query/fragment value. Nama cookie, nilai
  * hidden input, cookies, token, HTML, dan kredensial juga tidak pernah ikut
  * profile.
  */
@@ -439,9 +456,11 @@ export function buildLoginProfileCandidate(
         !entry ||
         !final ||
         entry.origin !== final.origin ||
-        hasQueryOrFragment(entryUrl) ||
-        hasQueryOrFragment(result.finalUrl)
+        hasQuery(entryUrl) ||
+        hasQuery(result.finalUrl)
     ) return null;
+
+    const clientRoute = entry.clientRoute;
 
     const hasForm = Boolean(result.detected.passwordField);
     const contracts = apiContracts(result.apiProbe.contracts);
@@ -468,6 +487,7 @@ export function buildLoginProfileCandidate(
     return {
         origin: entry.origin,
         entryPath: entry.path,
+        clientRoute,
         finalPath: final.path,
         formActionPath,
         httpMethod,
@@ -484,6 +504,7 @@ export function buildLoginProfileCandidate(
         fingerprint: computeLoginFingerprint({
             origin: entry.origin,
             entryPath: entry.path,
+            clientRoute,
             finalPath: final.path,
             formActionPath,
             httpMethod,
@@ -552,12 +573,17 @@ export async function recordLoginProfileCandidate(input: {
     if (!candidate) return null;
 
     for (let attempt = 0; attempt < PROFILE_WRITE_RETRIES; attempt++) {
-        const existing = await prisma.portalLoginProfile.findUnique({
-            where: { origin_entryPath: { origin: candidate.origin, entryPath: candidate.entryPath } },
+        const existing = await prisma.portalLoginProfile.findFirst({
+            where: {
+                origin: candidate.origin,
+                entryPath: candidate.entryPath,
+                clientRoute: candidate.clientRoute,
+            },
         });
         const now = new Date();
         const transition = candidateTransition(existing, candidate, now);
         const persistData = {
+            clientRoute: candidate.clientRoute,
             finalPath: candidate.finalPath,
             formActionPath: candidate.formActionPath,
             httpMethod: candidate.httpMethod,
@@ -616,6 +642,7 @@ export async function recordLoginProfileCandidate(input: {
                             profileId: profile.id,
                             fingerprint: candidate.fingerprint,
                             source: input.source,
+                            clientRoute: candidate.clientRoute,
                             finalPath: candidate.finalPath,
                             formActionPath: candidate.formActionPath,
                             httpMethod: candidate.httpMethod,
@@ -700,8 +727,9 @@ export async function approveLoginProfile(input: {
 
 function profileMatchesConfiguration(profile: PortalLoginProfile, config: LoginProfileConfiguration): boolean {
     const location = locationFrom(config.loginUrl);
-    if (!location || location.origin !== profile.origin || hasQueryOrFragment(config.loginUrl)) return false;
+    if (!location || location.origin !== profile.origin || hasQuery(config.loginUrl)) return false;
     if (location.path !== profile.entryPath) return false;
+    if ((profile.clientRoute ?? null) !== location.clientRoute) return false;
     if (profile.recommendedMode && config.ssoMode !== profile.recommendedMode) return false;
     if (profile.httpMethod && config.httpMethod.toUpperCase() !== profile.httpMethod.toUpperCase()) return false;
     if (profile.usernameField && config.usernameField !== profile.usernameField) return false;
