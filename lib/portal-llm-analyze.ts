@@ -172,18 +172,18 @@ async function callChatCompletion(
         const res = await fetch(chatCompletionsUrl(config.baseUrl), {
             method: "POST",
             headers,
-            body: JSON.stringify({ model: config.model, messages, temperature: 0, max_tokens: maxTokens }),
+            body: JSON.stringify({ model: config.model, messages, temperature: 0, max_tokens: maxTokens, stream: false }),
             signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
         });
         if (!res.ok) {
             const body = await res.text().catch(() => "");
             return { content: null, error: `LLM HTTP ${res.status}${body ? `: ${body.slice(0, 150)}` : ""}` };
         }
-        const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-        const content = data.choices?.[0]?.message?.content;
+        const text = await res.text();
+        const content = extractChatContent(text);
         return content
             ? { content, error: null }
-            : { content: null, error: "LLM: respons tanpa content (format bukan chat completions)" };
+            : { content: null, error: `LLM: respons tanpa content (bukan chat completions/JSON valid): ${text.slice(0, 120)}` };
     } catch (error) {
         return { content: null, error: `LLM fetch gagal: ${error instanceof Error ? error.message : "unknown"}`.slice(0, 200) };
     }
@@ -283,8 +283,47 @@ function safeJsonObject(text: string): Record<string, unknown> | null {
     }
 }
 
+/**
+ * Ekstrak content chat dari tiga bentuk respons OpenAI-compatible:
+ * 1. JSON tunggal (standar /chat/completions non-stream),
+ * 2. SSE stream (`data: {...}` per baris, delta.content dirangkai),
+ * 3. NDJSON stream (Ollama native /api/chat: satu objek per baris).
+ * Provider/proxy yang memaksa stream adalah penyebab error
+ * "Unexpected non-whitespace character after JSON" pada res.json() biasa.
+ */
+function extractChatContent(text: string): string | null {
+    try {
+        const data = JSON.parse(text) as {
+            choices?: Array<{ message?: { content?: string } }>;
+            message?: { content?: string };
+        };
+        const content = data?.choices?.[0]?.message?.content ?? data?.message?.content;
+        return typeof content === "string" ? content : null;
+    } catch {
+        // Bukan JSON tunggal — coba format stream.
+    }
+
+    let assembled = "";
+    for (const line of text.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === "data: [DONE]") continue;
+        const payload = trimmed.startsWith("data:") ? trimmed.slice(5).trim() : trimmed;
+        try {
+            const obj = JSON.parse(payload) as {
+                choices?: Array<{ delta?: { content?: string }; message?: { content?: string } }>;
+                message?: { content?: string };
+            };
+            const chunk = obj?.choices?.[0]?.delta?.content ?? obj?.choices?.[0]?.message?.content ?? obj?.message?.content;
+            if (typeof chunk === "string") assembled += chunk;
+        } catch {
+            // Baris rusak/komentar SSE diabaikan.
+        }
+    }
+    return assembled || null;
+}
+
 // Diekspor untuk self-check scripts/test-llm-analyze.ts (tanpa DB/LLM).
-export const __llmTestables = { pruneDom, safeJsonObject, stripUrlSecrets };
+export const __llmTestables = { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl };
 
 /**
  * Analisis login via LLM. Selalu mengembalikan outcome: analysis=null disertai

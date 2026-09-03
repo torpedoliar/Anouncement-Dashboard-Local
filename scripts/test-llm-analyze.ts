@@ -7,7 +7,7 @@
  */
 import { __llmTestables } from "../lib/portal-llm-analyze";
 
-const { pruneDom, safeJsonObject, stripUrlSecrets } = __llmTestables;
+const { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl } = __llmTestables;
 let failed = 0;
 
 function check(ok: boolean, label: string) {
@@ -46,6 +46,30 @@ const stripped = stripUrlSecrets("https://idp.example.com/adfs/ls?wa=wsignin1.0&
 check(!stripped.includes("SECRET") && !stripped.includes("abc"), "url: query/fragment dibuang");
 check(stripped === "https://idp.example.com/adfs/ls", "url: origin+path dipertahankan");
 check(stripUrlSecrets("bukan-url?token=x") === "bukan-url", "url: non-URL fallback aman");
+
+// Ekstraksi content dari berbagai bentuk respons provider.
+check(
+    extractChatContent('{"choices":[{"message":{"content":"{\\"ok\\":true}"}}]}') === '{"ok":true}',
+    "extract: JSON chat completions standar"
+);
+check(
+    extractChatContent('{"message":{"role":"assistant","content":"halo"},"done":true}') === "halo",
+    "extract: objek tunggal gaya Ollama native"
+);
+check(
+    extractChatContent('data: {"choices":[{"delta":{"content":"Hel"}}]}\n\ndata: {"choices":[{"delta":{"content":"lo"}}]}\n\ndata: [DONE]\n\n') === "Hello",
+    "extract: SSE stream (delta dirangkai)"
+);
+check(
+    extractChatContent('{"message":{"content":"Hel"},"done":false}\n{"message":{"content":"lo"},"done":true}') === "Hello",
+    "extract: NDJSON stream (Ollama native)"
+);
+check(extractChatContent("<html>404 not found</html>") === null, "extract: HTML error page -> null");
+
+// Normalisasi endpoint.
+check(chatCompletionsUrl("https://api.openai.com/v1") === "https://api.openai.com/v1/chat/completions", "endpoint: base /v1 dilengkapi");
+check(chatCompletionsUrl("https://api.openai.com/v1/chat/completions") === "https://api.openai.com/v1/chat/completions", "endpoint: URL lengkap tidak dobel");
+check(chatCompletionsUrl("http://ollama:11434/v1/") === "http://ollama:11434/v1/chat/completions", "endpoint: trailing slash dibersihkan");
 
 console.log(failed === 0 ? "\nSemua lolos." : `\n${failed} gagal.`);
 if (failed > 0) process.exit(1);
