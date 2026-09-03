@@ -159,20 +159,48 @@ async function loadAiConfig(): Promise<AiConfig | null> {
     return { baseUrl: cfg.baseUrl.replace(/\/+$/, ""), model: cfg.model, apiKey };
 }
 
+const SENSITIVE_PATTERNS: Array<{ label: string; re: RegExp }> = [
+    { label: "nilai input", re: /\bvalue\s*=\s*["'][^"']+["']/i },
+    { label: "email", re: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/ },
+    { label: "NIK/nomor digit", re: /\b\d{8,16}\b/ },
+    { label: "token panjang", re: /\b[A-Za-z0-9+/=]{32,}\b/ },
+];
+
+/** Batalkan pengiriman bila payload mengandung data sensitif. Throw = tidak dikirim. */
+export function assertSafePrompt(payload: string): void {
+    for (const { label, re } of SENSITIVE_PATTERNS) {
+        if (re.test(payload)) {
+            throw new Error(`Payload LLM dibatalkan: terdeteksi ${label}. Bersihkan pruner sebelum mengirim.`);
+        }
+    }
+}
+
 /** Panggilan OpenAI-compatible /chat/completions. Mengembalikan content ATAU pesan error. */
 async function callChatCompletion(
     config: AiConfig,
     messages: Array<{ role: "system" | "user"; content: string }>,
     maxTokens: number,
+    useJsonMode = false,
 ): Promise<{ content: string | null; error: string | null }> {
     const headers: Record<string, string> = { "content-type": "application/json" };
     if (config.apiKey) headers.authorization = `Bearer ${config.apiKey}`;
+
+    // response_format json_object hanya untuk provider yang mendukung
+    // (OpenAI/OpenRouter). Ollama/lokal diabaikan — parsing toleran tetap ada.
+    const body: Record<string, unknown> = {
+        model: config.model,
+        messages,
+        temperature: 0,
+        max_tokens: maxTokens,
+        stream: false,
+    };
+    if (useJsonMode) body.response_format = { type: "json_object" };
 
     try {
         const res = await fetch(chatCompletionsUrl(config.baseUrl), {
             method: "POST",
             headers,
-            body: JSON.stringify({ model: config.model, messages, temperature: 0, max_tokens: maxTokens, stream: false }),
+            body: JSON.stringify(body),
             signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
         });
         if (!res.ok) {
@@ -339,7 +367,7 @@ function extractChatContent(text: string): string | null {
 }
 
 // Diekspor untuk self-check scripts/test-llm-analyze.ts (tanpa DB/LLM).
-export const __llmTestables = { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl };
+export const __llmTestables = { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl, assertSafePrompt };
 
 /**
  * Analisis login via LLM. Selalu mengembalikan outcome: analysis=null disertai
@@ -382,10 +410,20 @@ export async function analyzeLoginWithLlm(input: {
         pruned.summary,
     ].join("\n");
 
+    // Guard privasi: batalkan SEBELUM fetch bila pruner bocor.
+    try {
+        assertSafePrompt(userPrompt);
+    } catch (guardError) {
+        const note = `AI: pengiriman dibatalkan guard privasi: ${guardError instanceof Error ? guardError.message : "payload sensitif"}`;
+        await recordUsage(note);
+        return { analysis: null, note };
+    }
+
     // max_tokens 2500: reasoning model (DeepSeek-R1/QwQ dsb.) membakar banyak
     // token untuk penalaran sebelum jawaban akhir; budget kecil membuat content
     // kosong dengan finish_reason=length. Untuk model non-reasoning angka ini
     // hanya batas atas, bukan pemakaian.
+    const useJsonMode = !/localhost|127\.0\.0\.1|ollama/i.test(config.baseUrl);
     const { content, error } = await callChatCompletion(
         config,
         [
@@ -393,6 +431,7 @@ export async function analyzeLoginWithLlm(input: {
             { role: "user", content: userPrompt },
         ],
         2500,
+        useJsonMode,
     );
     if (error || !content) {
         const note = `AI gagal: ${error ?? "respons kosong"}`;

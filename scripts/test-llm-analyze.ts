@@ -7,7 +7,7 @@
  */
 import { __llmTestables } from "../lib/portal-llm-analyze";
 
-const { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl } = __llmTestables;
+const { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl, assertSafePrompt } = __llmTestables;
 let failed = 0;
 
 function check(ok: boolean, label: string) {
@@ -74,6 +74,28 @@ check(
 check(chatCompletionsUrl("https://api.openai.com/v1") === "https://api.openai.com/v1/chat/completions", "endpoint: base /v1 dilengkapi");
 check(chatCompletionsUrl("https://api.openai.com/v1/chat/completions") === "https://api.openai.com/v1/chat/completions", "endpoint: URL lengkap tidak dobel");
 check(chatCompletionsUrl("http://ollama:11434/v1/") === "http://ollama:11434/v1/chat/completions", "endpoint: trailing slash dibersihkan");
+
+// Guard privasi: payload bersih lolos, pola sensitif dibatalkan.
+let threw = false;
+try { assertSafePrompt('URL halaman: https://x.example/login\ninput type=text name=nik'); } catch { threw = true; }
+check(!threw, "guard: payload bersih lolos");
+
+const leaks: Array<[string, string]> = [
+    ["value=", 'input type=text name=nik value="12345"'],
+    ["email", "hubungi budi.santoso@example.com untuk akses"],
+    ["nik-digit", "karyawan 12345678 sudah terdaftar"],
+    ["token", "token: ThT4PqRmEPhKr6+/D1h7Zu0Q3MK3oYo/o8BNIwWU1e0isb1IOc2eIMUgpnhwwx4VSE2hkZ7qohiykRjITA/S3g=="],
+];
+for (const [label, payload] of leaks) {
+    let blocked = false;
+    try { assertSafePrompt(payload); } catch { blocked = true; }
+    check(blocked, `guard: pola ${label} dibatalkan`);
+}
+
+// Normalisasi reasoning (spec Seksi 4 poin 2): JSON di dalam teks penalaran
+// tetap bisa diparsing menjadi objek analisis.
+const reasoningText = 'Saya analisis dulu. {"usernameField":"nik","passwordField":"katasandi","multiStep":false} Selesai.';
+check(safeJsonObject(reasoningText)?.passwordField === "katasandi", "reasoning: JSON di dalam teks penalaran terekstrak");
 
 console.log(failed === 0 ? "\nSemua lolos." : `\n${failed} gagal.`);
 if (failed > 0) process.exit(1);
