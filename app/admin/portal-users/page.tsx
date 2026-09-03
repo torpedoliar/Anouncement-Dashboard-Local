@@ -103,6 +103,11 @@ export default function PortalUsersPage() {
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
+    // Pencarian & filter daftar pengguna (server-side; search di-debounce).
+    const [searchInput, setSearchInput] = useState("");
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"" | "true" | "false">("");
+    const [roleFilter, setRoleFilter] = useState<"" | "PORTAL_ADMIN" | "PORTAL_USER">("");
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState<PortalUser | null>(null);
     const [formData, setFormData] = useState(emptyForm);
@@ -129,7 +134,11 @@ export default function PortalUsersPage() {
 
     const fetchUsers = useCallback(async () => {
         try {
-            const response = await fetch(`/api/portal-users?page=${page}&limit=20`);
+            const params = new URLSearchParams({ page: String(page), limit: "20" });
+            if (search) params.set("search", search);
+            if (statusFilter) params.set("isActive", statusFilter);
+            if (roleFilter) params.set("role", roleFilter);
+            const response = await fetch(`/api/portal-users?${params.toString()}`);
             if (response.ok) {
                 const data = await response.json();
                 setUsers(data.data || data);
@@ -140,7 +149,7 @@ export default function PortalUsersPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [page]);
+    }, [page, search, statusFilter, roleFilter]);
 
     const fetchApps = async () => {
         try {
@@ -244,6 +253,17 @@ export default function PortalUsersPage() {
         fetchApps();
         fetchGroups();
     }, [fetchUsers]);
+
+    // Debounce ketikan pencarian; setiap perubahan pencarian/filter kembali ke
+    // halaman 1 supaya tidak "nyangkut" di halaman kosong.
+    useEffect(() => {
+        const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [search, statusFilter, roleFilter]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -734,13 +754,48 @@ export default function PortalUsersPage() {
                 </Card>
             </div>
 
+            {/* Pencarian & filter */}
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_180px_180px]">
+                <Input
+                    type="search"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder="Cari nama, NIK, email, atau departemen..."
+                    aria-label="Cari pengguna"
+                />
+                <Select
+                    aria-label="Filter status"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as "" | "true" | "false")}
+                    options={[
+                        { value: "", label: "Semua status" },
+                        { value: "true", label: "Aktif" },
+                        { value: "false", label: "Nonaktif" },
+                    ]}
+                />
+                <Select
+                    aria-label="Filter role"
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value as "" | "PORTAL_ADMIN" | "PORTAL_USER")}
+                    options={[
+                        { value: "", label: "Semua role" },
+                        { value: "PORTAL_USER", label: "Portal User" },
+                        { value: "PORTAL_ADMIN", label: "Portal Admin" },
+                    ]}
+                />
+            </div>
+
             {/* Table */}
             {users.length === 0 ? (
                 <div className="flex flex-col items-center gap-4 rounded-card border border-border p-12 text-center shadow-lvl-1">
                     <div className="flex h-12 w-12 items-center justify-center rounded-card bg-surface-2">
                         <User size={24} className="text-text-3" aria-hidden="true" />
                     </div>
-                    <p className="text-text-3">Belum ada pengguna.</p>
+                    <p className="text-text-3">
+                        {search || statusFilter || roleFilter
+                            ? "Tidak ada pengguna yang cocok dengan pencarian/filter."
+                            : "Belum ada pengguna."}
+                    </p>
                 </div>
             ) : (
                 <div className="overflow-hidden rounded-card border border-border bg-surface-1 shadow-lvl-1">
