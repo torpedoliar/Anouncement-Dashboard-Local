@@ -181,9 +181,17 @@ async function callChatCompletion(
         }
         const text = await res.text();
         const content = extractChatContent(text);
-        return content
-            ? { content, error: null }
-            : { content: null, error: `LLM: respons tanpa content (bukan chat completions/JSON valid): ${text.slice(0, 120)}` };
+        if (content) return { content, error: null };
+        // Diagnosis khusus: reasoning model menghabiskan seluruh budget token.
+        if (/"finish_reason"\s*:\s*"length"/.test(text) && text.includes("reasoning_content")) {
+            return {
+                content: null,
+                error:
+                    "LLM: model reasoning menghabiskan seluruh budget token untuk penalaran tanpa menghasilkan jawaban " +
+                    "(finish_reason=length). Naikkan max_tokens atau pakai model non-reasoning (mis. gpt-4o-mini).",
+            };
+        }
+        return { content: null, error: `LLM: respons tanpa content (bukan chat completions/JSON valid): ${text.slice(0, 120)}` };
     } catch (error) {
         return { content: null, error: `LLM fetch gagal: ${error instanceof Error ? error.message : "unknown"}`.slice(0, 200) };
     }
@@ -222,10 +230,11 @@ export async function testAiConnection(override?: {
     if (!config) return { ok: false, latencyMs: 0, reply: null, error: "Konfigurasi AI belum lengkap (baseUrl/model kosong)" };
 
     const started = Date.now();
+    // Budget 400: reasoning model butuh ruang untuk reasoning sebelum menjawab.
     const { content, error } = await callChatCompletion(
         config,
         [{ role: "user", content: 'Jawab hanya dengan: {"ok":true}' }],
-        50,
+        400,
     );
     const latencyMs = Date.now() - started;
     if (error) {
@@ -294,11 +303,18 @@ function safeJsonObject(text: string): Record<string, unknown> | null {
 function extractChatContent(text: string): string | null {
     try {
         const data = JSON.parse(text) as {
-            choices?: Array<{ message?: { content?: string } }>;
-            message?: { content?: string };
+            choices?: Array<{ message?: { content?: string; reasoning_content?: string } }>;
+            message?: { content?: string; reasoning_content?: string };
         };
-        const content = data?.choices?.[0]?.message?.content ?? data?.message?.content;
-        return typeof content === "string" ? content : null;
+        const msg = data?.choices?.[0]?.message ?? data?.message;
+        if (typeof msg?.content === "string" && msg.content.trim()) return msg.content;
+        // Reasoning model (DeepSeek-R1/QwQ dsb.): jawaban akhir bisa kosong bila
+        // budget token habis untuk reasoning — kembalikan reasoning agar admin
+        // melihat apa yang dikerjakan model alih-alih "respons kosong".
+        if (typeof msg?.reasoning_content === "string" && msg.reasoning_content.trim()) {
+            return msg.reasoning_content;
+        }
+        return null;
     } catch {
         // Bukan JSON tunggal — coba format stream.
     }
@@ -366,15 +382,17 @@ export async function analyzeLoginWithLlm(input: {
         pruned.summary,
     ].join("\n");
 
-    // max_tokens 700: respons JSON terpotong di tengah adalah penyebab umum
-    // "JSON tidak valid" pada model yang banyak bicara.
+    // max_tokens 2500: reasoning model (DeepSeek-R1/QwQ dsb.) membakar banyak
+    // token untuk penalaran sebelum jawaban akhir; budget kecil membuat content
+    // kosong dengan finish_reason=length. Untuk model non-reasoning angka ini
+    // hanya batas atas, bukan pemakaian.
     const { content, error } = await callChatCompletion(
         config,
         [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
         ],
-        700,
+        2500,
     );
     if (error || !content) {
         const note = `AI gagal: ${error ?? "respons kosong"}`;

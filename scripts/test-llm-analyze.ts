@@ -65,6 +65,10 @@ check(
     "extract: NDJSON stream (Ollama native)"
 );
 check(extractChatContent("<html>404 not found</html>") === null, "extract: HTML error page -> null");
+check(
+    extractChatContent('{"choices":[{"finish_reason":"length","message":{"content":"","reasoning_content":"The user wants"}}]}') === "The user wants",
+    "extract: reasoning model content kosong -> fallback reasoning_content"
+);
 
 // Normalisasi endpoint.
 check(chatCompletionsUrl("https://api.openai.com/v1") === "https://api.openai.com/v1/chat/completions", "endpoint: base /v1 dilengkapi");
