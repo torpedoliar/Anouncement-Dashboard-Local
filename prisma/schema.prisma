@@ -643,6 +643,7 @@ model PortalAiSettings {
   model           String?   // contoh: gpt-4o-mini, llama3.1
   apiKeyEncrypted String?   // AES-256-GCM via lib/portal-crypto.ts encrypt()
   enabled         Boolean   @default(false)
+  maxTokens       Int?      // budget token per analisis; default 2500, reasoning ≥4000
   lastUsedAt      DateTime?
   lastError       String?
   createdAt       DateTime  @default(now())

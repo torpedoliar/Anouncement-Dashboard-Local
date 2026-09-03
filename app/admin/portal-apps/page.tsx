@@ -378,6 +378,11 @@ export default function PortalAppsPage() {
             const memoryNote = memory?.label
                 ? `${String(memory.label)}${memory.product ? ` (produk: ${memory.product})` : ""}.`
                 : undefined;
+            // Voting berbobot transparan.
+            const votes = data.votes && typeof data.votes === "object" ? data.votes : null;
+            const votesNote = votes
+                ? `Suara: heuristik ${votes.heuristic ?? "-"} + memori ${votes.memory ?? "-"} + AI ${votes.llm ?? "-"} → ${votes.winner ?? "-"}.`
+                : undefined;
 
             if (!res.ok) {
                 // Tidak ada field yang terdeteksi bukan bukti bahwa konfigurasi yang
@@ -417,6 +422,7 @@ export default function PortalAppsPage() {
                         ...(llmSkipNote ? [llmSkipNote] : []),
                         ...(learnedNote ? [learnedNote] : []),
                         ...(memoryNote ? [memoryNote] : []),
+                        ...(votesNote ? [votesNote] : []),
                         ...(recommendation ? [recommendation] : []),
                         ...notes,
                     ],
@@ -447,6 +453,7 @@ export default function PortalAppsPage() {
                 ...(llmSkipNote ? [llmSkipNote] : []),
                 ...(learnedNote ? [learnedNote] : []),
                 ...(memoryNote ? [memoryNote] : []),
+                ...(votesNote ? [votesNote] : []),
             ];
             if ((data.apiLayer === "OPENAPI" || data.apiLayer === "KNOWN_ENDPOINT") && Array.isArray(data.apiContracts) && data.apiContracts.length > 0) {
                 const contracts = (data.apiContracts as Array<{ method: string; path: string }>).

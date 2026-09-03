@@ -31,6 +31,7 @@ export async function GET() {
                 model: cfg.model,
                 apiKeyMasked: cfg.apiKeyEncrypted ? "****" : null,
                 enabled: cfg.enabled,
+                maxTokens: cfg.maxTokens,
                 lastUsedAt: cfg.lastUsedAt,
                 lastError: cfg.lastError,
                 updatedAt: cfg.updatedAt,
@@ -54,9 +55,15 @@ export async function PUT(request: NextRequest) {
         const model = typeof body?.model === "string" ? body.model.trim() : "";
         const apiKey = typeof body?.apiKey === "string" ? body.apiKey.trim() : "";
         const enabled = Boolean(body?.enabled);
+        const maxTokens = body?.maxTokens === null || body?.maxTokens === undefined || body?.maxTokens === ""
+            ? null
+            : Number(body.maxTokens);
 
         if (enabled && (!baseUrl || !model)) {
             return NextResponse.json({ error: "baseUrl dan model wajib diisi bila AI aktif" }, { status: 400 });
+        }
+        if (maxTokens !== null && (!Number.isInteger(maxTokens) || maxTokens < 500 || maxTokens > 8000)) {
+            return NextResponse.json({ error: "maxTokens harus bilangan bulat 500-8000" }, { status: 400 });
         }
 
         if (baseUrl) {
@@ -79,8 +86,8 @@ export async function PUT(request: NextRequest) {
 
         const cfg = await prisma.portalAiSettings.upsert({
             where: { id: 1 },
-            update: { baseUrl: baseUrl || null, model: model || null, apiKeyEncrypted, enabled },
-            create: { id: 1, baseUrl: baseUrl || null, model: model || null, apiKeyEncrypted, enabled },
+            update: { baseUrl: baseUrl || null, model: model || null, apiKeyEncrypted, enabled, maxTokens },
+            create: { id: 1, baseUrl: baseUrl || null, model: model || null, apiKeyEncrypted, enabled, maxTokens },
         });
 
         await logAudit({
@@ -90,7 +97,7 @@ export async function PUT(request: NextRequest) {
             action: "PORTAL_AI_SETTINGS_UPDATE",
             entityType: "PORTAL",
             entityId: "ai-settings",
-            changes: { baseUrl, model, enabled, apiKeyChanged: Boolean(apiKey) },
+            changes: { baseUrl, model, enabled, maxTokens, apiKeyChanged: Boolean(apiKey) },
             request,
         });
 
@@ -101,6 +108,7 @@ export async function PUT(request: NextRequest) {
                 model: cfg.model,
                 apiKeyMasked: cfg.apiKeyEncrypted ? "****" : null,
                 enabled: cfg.enabled,
+                maxTokens: cfg.maxTokens,
                 lastUsedAt: cfg.lastUsedAt,
                 lastError: cfg.lastError,
                 updatedAt: cfg.updatedAt,

@@ -13,6 +13,7 @@ interface PortalAiConfig {
     model: string | null;
     apiKeyMasked: string | null;
     enabled: boolean;
+    maxTokens: number | null;
     lastUsedAt: string | null;
     lastError: string | null;
     updatedAt: string;
@@ -27,6 +28,7 @@ export default function PortalAiPage() {
     const [model, setModel] = useState("");
     const [apiKey, setApiKey] = useState("");
     const [enabled, setEnabled] = useState(false);
+    const [maxTokens, setMaxTokens] = useState("");
     const [testing, setTesting] = useState(false);
     const [testResult, setTestResult] = useState<{ ok: boolean; latencyMs: number; reply: string | null; error: string | null } | null>(null);
 
@@ -42,6 +44,7 @@ export default function PortalAiPage() {
                 setBaseUrl(data.config.baseUrl ?? "");
                 setModel(data.config.model ?? "");
                 setEnabled(data.config.enabled);
+                setMaxTokens(data.config.maxTokens != null ? String(data.config.maxTokens) : "");
             } else {
                 setConfig(null);
             }
@@ -85,7 +88,7 @@ export default function PortalAiPage() {
             const response = await fetch("/api/admin/portal-ai", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ baseUrl, model, apiKey: apiKey || undefined, enabled }),
+                body: JSON.stringify({ baseUrl, model, apiKey: apiKey || undefined, enabled, maxTokens: maxTokens || undefined }),
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "Gagal menyimpan konfigurasi");
@@ -176,6 +179,23 @@ export default function PortalAiPage() {
                         </div>
                         <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>
                             Key dienkripsi AES-256-GCM sebelum disimpan. Kosong boleh bila endpoint lokal tidak butuh key.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-1)" }}>
+                            Max tokens (kosongkan = default 2500)
+                        </label>
+                        <Input
+                            type="number"
+                            min={500}
+                            max={8000}
+                            value={maxTokens}
+                            onChange={(e) => setMaxTokens(e.target.value)}
+                            placeholder="2500"
+                        />
+                        <p className="text-xs mt-1" style={{ color: "var(--text-3)" }}>
+                            Budget token per analisis. Model reasoning (DeepSeek-R1, QwQ, dsb.) disarankan ≥4000.
                         </p>
                     </div>
 

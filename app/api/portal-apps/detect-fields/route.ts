@@ -68,12 +68,36 @@ export async function POST(request: NextRequest) {
                   html: result.html,
                   layer: result.layer,
                   heuristic: detected,
+                  evidence: [
+                      memory ? `${memory.label}${memory.product ? ` (produk: ${memory.product})` : ""}` : null,
+                      result.apiProbe.layer !== "NONE" ? `probe: ${result.apiProbe.note}` : null,
+                  ]
+                      .filter((line): line is string => Boolean(line))
+                      .join(" "),
               })
             : null;
         const llm = llmOutcome?.analysis ?? null;
         // Alasan AI tidak berkontribusi — ditampilkan ke admin supaya masalah
         // konfigurasi/koneksi terlihat, bukan diam-diam dilewati.
         const llmNote = llmOutcome?.note ?? null;
+
+        // Voting berbobot transparan: heuristik + memori + LLM.
+        const heuristicVote = Math.min(1, (detected.confidence ?? 0) / 1000);
+        const memoryVote =
+            memory?.source === "CORRECTION" ? 1
+            : memory?.source === "FINGERPRINT" ? 0.7
+            : memory?.source === "PROFILE" ? 0.8
+            : memory?.source === "REGISTRY" ? 0.6
+            : 0;
+        const llmVote = llm ? Math.min(1, llm.confidence / 100) : 0;
+        const votes = {
+            heuristic: Math.round(heuristicVote * 100) / 100,
+            memory: memoryVote,
+            llm: Math.round(llmVote * 100) / 100,
+            winner: [heuristicVote, memoryVote, llmVote].indexOf(Math.max(heuristicVote, memoryVote, llmVote)) === 0
+                ? "heuristic"
+                : memoryVote >= llmVote ? "memory" : "llm",
+        };
 
         // Heuristik gagal menemukan form tetapi LLM menemukan field yang
         // terverifikasi ada di DOM → adopsi sebagai hasil deteksi.
@@ -180,6 +204,7 @@ export async function POST(request: NextRequest) {
                     llmNote,
                     learned,
                     memory,
+                    votes,
                     profile: profile?.profile ?? null,
                     profilePersistenceWarning,
                 },
@@ -210,6 +235,7 @@ export async function POST(request: NextRequest) {
             llmNote,
             learned,
             memory,
+            votes,
             // Lapis 3 probe. NONE saat form login ditemukan di HTTP/BROWSER —
             // apiContracts kosong sehingga UI tidak menampilkan tombol "Uji JSON".
             apiLayer: result.apiProbe.layer,

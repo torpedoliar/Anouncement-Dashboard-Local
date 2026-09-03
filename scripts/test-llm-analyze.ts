@@ -7,7 +7,7 @@
  */
 import { __llmTestables } from "../lib/portal-llm-analyze";
 
-const { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl, assertSafePrompt } = __llmTestables;
+const { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl, assertSafePrompt, buildAnalysisPrompt } = __llmTestables;
 let failed = 0;
 
 function check(ok: boolean, label: string) {
@@ -96,6 +96,18 @@ for (const [label, payload] of leaks) {
 // tetap bisa diparsing menjadi objek analisis.
 const reasoningText = 'Saya analisis dulu. {"usernameField":"nik","passwordField":"katasandi","multiStep":false} Selesai.';
 check(safeJsonObject(reasoningText)?.passwordField === "katasandi", "reasoning: JSON di dalam teks penalaran terekstrak");
+
+// Evidence yang membawa NIK palsu harus menggagalkan guard (jalur prompt utuh).
+const dirtyPrompt = buildAnalysisPrompt({
+    url: "https://hris.example.com/login",
+    layer: "HTTP",
+    heuristicNote: "tidak ada form",
+    evidence: "koreksi sebelumnya untuk NIK 12345678",
+    domSummary: "input type=text name=nik",
+});
+let dirtyBlocked = false;
+try { assertSafePrompt(dirtyPrompt); } catch { dirtyBlocked = true; }
+check(dirtyBlocked, "guard: evidence ber-NIK membatalkan seluruh prompt");
 
 console.log(failed === 0 ? "\nSemua lolos." : `\n${failed} gagal.`);
 if (failed > 0) process.exit(1);

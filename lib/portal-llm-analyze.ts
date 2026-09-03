@@ -2,6 +2,7 @@ import { parse } from "parse5";
 import type { DefaultTreeAdapterMap } from "parse5";
 import prisma from "@/lib/prisma";
 import { decrypt } from "@/lib/portal-crypto";
+import { logAudit } from "@/lib/audit";
 import type { DetectedFields } from "@/lib/portal-login-detect";
 import type { SsoMode } from "@/lib/portal-sso-mode";
 
@@ -131,7 +132,11 @@ interface AiConfig {
     baseUrl: string;
     model: string;
     apiKey: string | null;
+    maxTokens: number;
 }
+
+/** Budget default bila admin tidak mengisi maxTokens. */
+const DEFAULT_MAX_TOKENS = 2500;
 
 export interface LlmOutcome {
     analysis: LlmLoginAnalysis | null;
@@ -156,7 +161,7 @@ async function loadAiConfig(): Promise<AiConfig | null> {
             apiKey = null;
         }
     }
-    return { baseUrl: cfg.baseUrl.replace(/\/+$/, ""), model: cfg.model, apiKey };
+    return { baseUrl: cfg.baseUrl.replace(/\/+$/, ""), model: cfg.model, apiKey, maxTokens: cfg.maxTokens ?? DEFAULT_MAX_TOKENS };
 }
 
 const SENSITIVE_PATTERNS: Array<{ label: string; re: RegExp }> = [
@@ -165,6 +170,25 @@ const SENSITIVE_PATTERNS: Array<{ label: string; re: RegExp }> = [
     { label: "NIK/nomor digit", re: /\b\d{8,16}\b/ },
     { label: "token panjang", re: /\b[A-Za-z0-9+/=]{32,}\b/ },
 ];
+
+/** Susun prompt analisis. Diekstrak agar guard privasi bisa diuji murni. */
+export function buildAnalysisPrompt(input: {
+    url: string;
+    layer: "HTTP" | "BROWSER";
+    heuristicNote: string;
+    evidence?: string;
+    domSummary: string;
+}): string {
+    return [
+        `URL halaman: ${stripUrlSecrets(input.url)}`,
+        `Lapis deteksi: ${input.layer}`,
+        input.heuristicNote,
+        ...(input.evidence?.trim() ? [`Bukti lapis lain: ${input.evidence.trim().slice(0, 500)}`] : []),
+        "",
+        "Ringkasan DOM:",
+        input.domSummary,
+    ].join("\n");
+}
 
 /** Batalkan pengiriman bila payload mengandung data sensitif. Throw = tidak dikirim. */
 export function assertSafePrompt(payload: string): void {
@@ -250,7 +274,7 @@ export async function testAiConnection(override?: {
         const baseUrl = (override?.baseUrl ?? cfg?.baseUrl ?? "").trim().replace(/\/+$/, "");
         const model = (override?.model ?? cfg?.model ?? "").trim();
         if (baseUrl && model) {
-            config = { baseUrl, model, apiKey: override?.apiKey ?? savedKey };
+            config = { baseUrl, model, apiKey: override?.apiKey ?? savedKey, maxTokens: DEFAULT_MAX_TOKENS };
         }
     } catch {
         config = null;
@@ -265,6 +289,20 @@ export async function testAiConnection(override?: {
         400,
     );
     const latencyMs = Date.now() - started;
+    // Audit tanpa isi prompt/respons — hanya fakta pemanggilan.
+    try {
+        await logAudit({
+            actorType: "SYSTEM",
+            category: "PORTAL",
+            action: "PORTAL_LLM_CALL",
+            entityType: "PORTAL",
+            entityId: "ai-settings",
+            outcome: error ? "FAILURE" : "SUCCESS",
+            changes: { purpose: "test-connection", model: config.model, latencyMs, ok: !error },
+        });
+    } catch {
+        // Audit tidak boleh menggagalkan uji koneksi.
+    }
     if (error) {
         await recordUsage(error);
         return { ok: false, latencyMs, reply: null, error };
@@ -367,7 +405,7 @@ function extractChatContent(text: string): string | null {
 }
 
 // Diekspor untuk self-check scripts/test-llm-analyze.ts (tanpa DB/LLM).
-export const __llmTestables = { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl, assertSafePrompt };
+export const __llmTestables = { pruneDom, safeJsonObject, stripUrlSecrets, extractChatContent, chatCompletionsUrl, assertSafePrompt, buildAnalysisPrompt };
 
 /**
  * Analisis login via LLM. Selalu mengembalikan outcome: analysis=null disertai
@@ -379,6 +417,8 @@ export async function analyzeLoginWithLlm(input: {
     html: string;
     layer: "HTTP" | "BROWSER";
     heuristic: DetectedFields;
+    /** Ringkasan bukti lapis lain (ladder/probe/recall), 1-2 baris. Tetap lewat guard privasi. */
+    evidence?: string;
 }): Promise<LlmOutcome> {
     let config: AiConfig | null;
     try {
@@ -401,14 +441,13 @@ export async function analyzeLoginWithLlm(input: {
     // membawa token yang tidak boleh keluar ke model eksternal.
     const safeUrl = stripUrlSecrets(input.url);
 
-    const userPrompt = [
-        `URL halaman: ${safeUrl}`,
-        `Lapis deteksi: ${input.layer}`,
+    const userPrompt = buildAnalysisPrompt({
+        url: input.url,
+        layer: input.layer,
         heuristicNote,
-        "",
-        "Ringkasan DOM:",
-        pruned.summary,
-    ].join("\n");
+        evidence: input.evidence,
+        domSummary: pruned.summary,
+    });
 
     // Guard privasi: batalkan SEBELUM fetch bila pruner bocor.
     try {
@@ -419,10 +458,8 @@ export async function analyzeLoginWithLlm(input: {
         return { analysis: null, note };
     }
 
-    // max_tokens 2500: reasoning model (DeepSeek-R1/QwQ dsb.) membakar banyak
-    // token untuk penalaran sebelum jawaban akhir; budget kecil membuat content
-    // kosong dengan finish_reason=length. Untuk model non-reasoning angka ini
-    // hanya batas atas, bukan pemakaian.
+    // Budget dari konfigurasi admin (default 2500; reasoning model butuh besar).
+    // Untuk model non-reasoning angka ini hanya batas atas, bukan pemakaian.
     const useJsonMode = !/localhost|127\.0\.0\.1|ollama/i.test(config.baseUrl);
     const { content, error } = await callChatCompletion(
         config,
@@ -430,9 +467,23 @@ export async function analyzeLoginWithLlm(input: {
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
         ],
-        2500,
+        config.maxTokens,
         useJsonMode,
     );
+    // Audit tanpa isi prompt/respons — hanya fakta pemanggilan.
+    try {
+        await logAudit({
+            actorType: "SYSTEM",
+            category: "PORTAL",
+            action: "PORTAL_LLM_CALL",
+            entityType: "PORTAL",
+            entityId: "ai-settings",
+            outcome: error || !content ? "FAILURE" : "SUCCESS",
+            changes: { purpose: "login-analysis", model: config.model, promptChars: userPrompt.length, ok: !error && Boolean(content) },
+        });
+    } catch {
+        // Audit tidak boleh menggagalkan analisis.
+    }
     if (error || !content) {
         const note = `AI gagal: ${error ?? "respons kosong"}`;
         await recordUsage(note);
