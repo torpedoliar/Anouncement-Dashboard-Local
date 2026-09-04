@@ -221,12 +221,20 @@ async function callChatCompletion(
     if (useJsonMode) body.response_format = { type: "json_object" };
 
     try {
-        const res = await fetch(chatCompletionsUrl(config.baseUrl), {
-            method: "POST",
-            headers,
-            body: JSON.stringify(body),
-            signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
-        });
+        const doFetch = () =>
+            fetch(chatCompletionsUrl(config.baseUrl), {
+                method: "POST",
+                headers,
+                body: JSON.stringify(body),
+                signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
+            });
+        let res = await doFetch();
+        // Fallback kompatibilitas: sebagian model (mis. seri o1) menolak
+        // response_format dengan HTTP 400 — coba ulang sekali tanpanya.
+        if (!res.ok && useJsonMode && res.status === 400) {
+            delete body.response_format;
+            res = await doFetch();
+        }
         if (!res.ok) {
             const body = await res.text().catch(() => "");
             return { content: null, error: `LLM HTTP ${res.status}${body ? `: ${body.slice(0, 150)}` : ""}` };
@@ -282,11 +290,12 @@ export async function testAiConnection(override?: {
     if (!config) return { ok: false, latencyMs: 0, reply: null, error: "Konfigurasi AI belum lengkap (baseUrl/model kosong)" };
 
     const started = Date.now();
-    // Budget 400: reasoning model butuh ruang untuk reasoning sebelum menjawab.
+    // Budget mengikuti konfigurasi (bukan angka tetap) agar uji mencerminkan
+    // budget analisis sebenarnya — reasoning berat butuh ruang besar.
     const { content, error } = await callChatCompletion(
         config,
         [{ role: "user", content: 'Jawab hanya dengan: {"ok":true}' }],
-        400,
+        config.maxTokens,
     );
     const latencyMs = Date.now() - started;
     // Audit tanpa isi prompt/respons — hanya fakta pemanggilan.
