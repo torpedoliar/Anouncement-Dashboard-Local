@@ -894,6 +894,8 @@ model PortalGroup {
   id          String   @id @default(cuid())
   name        String   @unique // "Accounting", "Umum"
   description String?
+  // MANUAL = dikelola admin tangan; DEPARTMENT = dikelola sync departemen (Spec #1).
+  kind        PortalGroupKind @default(MANUAL)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -903,7 +905,28 @@ model PortalGroup {
   visibility PortalUserAppVisibility[]
 
   @@index([isActive])
+  @@index([kind])
   @@map("portal_groups")
+}
+
+// Alias nama departemen/jabatan mentah HRIS → nama group canonical (Spec #1).
+// Contoh: "ACC" → "Accounting". Dikelola admin di /admin/portal-groups.
+model PortalNameAlias {
+  id          String   @id @default(cuid())
+  // DEPARTMENT dulu; JABATAN disiapkan utk masa depan (spec menunda group jabatan).
+  tipe        String   @default("DEPARTMENT")
+  rawName     String   // nama mentah dari HRIS, dibanding exact setelah trim
+  canonical   String   // nama group tujuan
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tipe, rawName])
+  @@map("portal_name_aliases")
+}
+
+enum PortalGroupKind {
+  MANUAL
+  DEPARTMENT
 }
 
 model PortalUserAppVisibility {

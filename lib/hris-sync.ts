@@ -4,6 +4,7 @@ import { listEmployees, HrisGatewayError } from "@/lib/hris-gateway-client";
 import type { HrisEmployeeRow } from "@/lib/hris-gateway-client";
 import { maskNik, JIT_DEFAULT_PASSWORD } from "@/lib/hris-jit";
 import { logAudit } from "@/lib/audit";
+import { reconcileAndApply } from "@/lib/portal-group-sync";
 import { Prisma } from "@prisma/client";
 
 // ============================================================================
@@ -40,6 +41,15 @@ export interface HrisSyncResult {
     created: number;
     errors: Array<{ nik: string; error: string }>;
     jobId: string;
+    /** Hasil reconcile departemen → group (Spec #1) — undefined bila belum jalan. */
+    groupSync?: {
+        groupsCreated: number;
+        membersAdded: number;
+        membersRemoved: number;
+        missingDepartments: number;
+        removedInactive: number;
+        newDepartments: string[];
+    };
 }
 
 function sleep(ms: number): Promise<void> {
@@ -146,6 +156,33 @@ export async function runHrisSync(
                 errors: result.errors.slice(0, 20),
             },
         }).catch(() => {});
+    }
+
+    // Sinkronisasi departemen → group (Spec #1, tiket #3): dijalankan di akhir
+    // run yang sama, TIDAK menggagalkan sync bila gagal (cuma catat error).
+    try {
+        const { plan, applied } = await reconcileAndApply();
+        result.groupSync = {
+            groupsCreated: applied.groupsCreated,
+            membersAdded: applied.membersAdded,
+            membersRemoved: applied.membersRemoved,
+            missingDepartments: plan.missingDepartments.length,
+            removedInactive: plan.removedInactive.length,
+            newDepartments: plan.newDepartments,
+        };
+        await logAudit({
+            actorType: "SYSTEM",
+            category: "PORTAL",
+            action: "PORTAL_GROUP_SYNC",
+            entityType: "PortalGroup",
+            entityId: "reconcile",
+            metadata: { ...result.groupSync },
+        }).catch(() => {});
+    } catch (err: unknown) {
+        result.errors.push({
+            nik: "group-sync",
+            error: err instanceof Error ? err.message : "Gagal reconcile group departemen",
+        });
     }
 
     return result;

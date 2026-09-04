@@ -13,6 +13,9 @@
  * "beda kapital/spasi"; alias table menangani sisanya (mis. "ACC" → "Accounting").
  */
 
+import prisma from "@/lib/prisma";
+import { logAudit } from "@/lib/audit";
+
 export const ALL_STAFF_GROUP = "All Staff";
 
 /** Group yang dikelola sync: DEPARTMENT + baseline All Staff (apapun kind-nya). */
@@ -154,4 +157,111 @@ export function reconcileGroups(input: ReconcileInput): ReconcileResult {
     }
 
     return result;
+}
+
+/**
+ * Jalankan hasil reconcile ke DB (tiket #3): buat group DEPARTMENT baru,
+ * tambah/hapus keanggotaan, audit per perubahan via logAudit (non-blocking).
+ * Idempotent — dipanggil dengan hasil reconcile kosong = tidak menulis apa pun.
+ */
+export async function applyReconcile(
+    plan: ReconcileResult,
+    actorId: string = "system"
+): Promise<{ groupsCreated: number; membersAdded: number; membersRemoved: number }> {
+    let groupsCreated = 0;
+    let membersAdded = 0;
+    let membersRemoved = 0;
+
+    for (const g of plan.createGroups) {
+        await prisma.portalGroup.upsert({
+            where: { name: g.name },
+            create: { name: g.name, kind: "DEPARTMENT" },
+            update: {}, // sudah ada → biarkan (mis. admin sudah ubah kind-nya)
+        });
+        groupsCreated++;
+    }
+
+    for (const op of plan.membershipOps) {
+        if (op.op === "add") {
+            const group = await prisma.portalGroup.findUnique({ where: { name: op.group } });
+            if (!group) continue; // group hilang di antara plan & apply — skip aman
+            await prisma.portalUserGroup.upsert({
+                where: { portalUserId_groupId: { portalUserId: op.user, groupId: group.id } },
+                create: { portalUserId: op.user, groupId: group.id },
+                update: {},
+            });
+            membersAdded++;
+            logAudit({
+                actorType: "SYSTEM",
+                actorId,
+                category: "PORTAL",
+                action: "PORTAL_GROUP_MEMBER_ADD",
+                entityType: "PortalUserGroup",
+                entityId: `${op.user}:${op.group}`,
+                metadata: { user: op.user, group: op.group, source: "department-sync" },
+            }).catch(() => {});
+        } else {
+            const group = await prisma.portalGroup.findUnique({ where: { name: op.group } });
+            if (!group) continue;
+            const deleted = await prisma.portalUserGroup.deleteMany({
+                where: { portalUserId: op.user, groupId: group.id },
+            });
+            if (deleted.count > 0) membersRemoved++;
+            logAudit({
+                actorType: "SYSTEM",
+                actorId,
+                category: "PORTAL",
+                action: "PORTAL_GROUP_MEMBER_REMOVE",
+                entityType: "PortalUserGroup",
+                entityId: `${op.user}:${op.group}`,
+                metadata: { user: op.user, group: op.group, source: "department-sync" },
+            }).catch(() => {});
+        }
+    }
+
+    return { groupsCreated, membersAdded, membersRemoved };
+}
+
+/**
+ * Reconcile end-to-end dari DB (dipakai HRIS sync & tombol "Rapikan", tiket #4):
+ * baca user + group + keanggotaan + alias → plan murni → apply. Ringkasan
+ * dikembalikan untuk response API / laporan sync.
+ */
+export async function reconcileAndApply(
+    actorId: string = "system"
+): Promise<{
+    plan: ReconcileResult;
+    applied: { groupsCreated: number; membersAdded: number; membersRemoved: number };
+}> {
+    const [users, groups, memberships, aliases] = await Promise.all([
+        prisma.portalUser.findMany({
+            // SEMUA user dibaca (termasuk non-aktif) — reconcile butuh mereka
+            // untuk mengeluarkan dari group sync-managed.
+            select: { id: true, departemen: true, eligible: true, isActive: true },
+        }),
+        prisma.portalGroup.findMany({ select: { id: true, name: true, kind: true } }),
+        prisma.portalUserGroup.findMany({ select: { portalUserId: true, groupId: true } }),
+        prisma.portalNameAlias.findMany({ where: { tipe: "DEPARTMENT" } }),
+    ]);
+
+    // groupId → nama (keanggotaan disimpan by id, plan by nama).
+    const idToName = new Map(groups.map((g) => [g.id, g.name]));
+
+    const plan = reconcileGroups({
+        users: users.map((u) => ({
+            id: u.id,
+            departemen: u.departemen,
+            eligible: u.eligible,
+            isActive: u.isActive,
+        })),
+        groups: groups.map((g) => ({ name: g.name, kind: g.kind })),
+        memberships: memberships.map((m) => ({
+            user: m.portalUserId,
+            group: idToName.get(m.groupId) ?? "",
+        })).filter((m) => m.group),
+        aliases: Object.fromEntries(aliases.map((a) => [a.rawName, a.canonical])),
+    });
+
+    const applied = await applyReconcile(plan, actorId);
+    return { plan, applied };
 }
