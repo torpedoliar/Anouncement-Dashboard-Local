@@ -23,6 +23,6 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Deploy via update.ps1
-        working-directory: 'E:\Vibe\Dashboard SJA\announcement-dashboard'
+        working-directory: 'D:\Docker Backup\announcement-dashboard'
         shell: pwsh
         run: ./update.ps1
