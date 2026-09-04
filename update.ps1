@@ -98,23 +98,15 @@ else {
     Write-Host "SKIP - Database container not running (first install?)" -ForegroundColor Yellow
 }
 
-# Step 3: Stop containers SEBELUM git pull.
-# Di Windows, proses yang masih memegang handle file .git (pack/.idx) membuat `git pull`
-# bertanya "Unlink of file ... failed. Should I try again? (y/n)" berulang tanpa henti.
-# Urutan benar: backup -> secret check -> stop -> pull. Ini menghilangkan lock tsb.
+# Step 3: Pull latest code SEBELUM stop container.
+# (Lama: down dulu baru pull utk hindari file-lock .git di Windows. Sekarang pull
+# dulu sambil app tetap jalan — bila pull gagal kena lock, app tidak ikut mati.)
 Write-Host ""
-Write-Host "[3/6] Stopping containers..." -ForegroundColor Yellow
-docker-compose down 2>&1 | Out-Null
-Write-Host "OK - Containers stopped" -ForegroundColor Green
-
-# Step 3.5: Pull latest code
-Write-Host ""
-Write-Host "[3.5/6] Pulling latest code from GitHub..." -ForegroundColor Yellow
+Write-Host "[3/6] Pulling latest code from GitHub..." -ForegroundColor Yellow
 git pull origin main
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Git pull failed!" -ForegroundColor Red
     Write-Host "Pastikan tidak ada proses yang masih mengunci file .git (Windows Defender / antivirus)." -ForegroundColor Yellow
-    Write-Host "Coba lagi, atau nonaktifkan antivirus utk folder proyek ini, lalu ulangi." -ForegroundColor Yellow
     exit 1
 }
 Write-Host "OK - Code updated" -ForegroundColor Green
@@ -130,24 +122,25 @@ else {
     Write-Host "No schema changes detected" -ForegroundColor Green
 }
 
-# Step 5: Rebuild
+# Step 5: Rebuild image BARU dulu, sementara app lama masih jalan (zero-downtime-ish).
+# Pakai cache Docker (tanpa --no-cache): layer deps + build cuma diulang bila berubah.
+# Catatan: db/browserless TIDAK disentuh di sini — schema change dijalankan container
+# web lewat `prisma migrate deploy`, bukan container db.
 Write-Host ""
-Write-Host "[5/6] Rebuilding (this may take 2-5 minutes)..." -ForegroundColor Yellow
-docker-compose build --no-cache
+Write-Host "[5/6] Building new image (app keeps running)..." -ForegroundColor Yellow
+docker-compose build
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Build failed!" -ForegroundColor Red
-    Write-Host ""
-    Write-Host "To restore database from backup:" -ForegroundColor Yellow
-    Write-Host "  docker-compose up -d db" -ForegroundColor Cyan
-    Write-Host "  Get-Content $backupFile | docker-compose exec -T db psql -U postgres announcement_db" -ForegroundColor Cyan
+    Write-Host "App lama masih jalan, tidak ada downtime. Fix code lalu ulangi." -ForegroundColor Yellow
     exit 1
 }
 Write-Host "OK - Build completed" -ForegroundColor Green
 
-# Step 6: Start containers and sync database
+# Step 6: Swap container web saja (db & browserless tetap hidup), lalu sync database.
+# Recreate web = downtime ~5 detik, bukan down -> build -> up (dulu bisa 5 menit).
 Write-Host ""
-Write-Host "[6/6] Starting containers and syncing database..." -ForegroundColor Yellow
-docker-compose up -d
+Write-Host "[6/6] Swapping web container and syncing database..." -ForegroundColor Yellow
+docker-compose up -d --no-deps web
 Start-Sleep -Seconds 8
 
 # Sync database schema (use migrations for safety)

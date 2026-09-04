@@ -1,0 +1,28 @@
+name: Deploy
+
+# CD: push ke main (setelah CI hijau) → self-hosted runner di server produksi
+# menjalankan update.ps1 (cek secret → backup DB → pull → build → swap web → migrate).
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Jangan deploy kalau CI gagal, atau kalau ini push ke branch lain
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: [self-hosted, production]
+    timeout-minutes: 30
+    steps:
+      - name: Deploy via update.ps1
+        working-directory: 'E:\Vibe\Dashboard SJA\announcement-dashboard'
+        shell: pwsh
+        run: ./update.ps1
