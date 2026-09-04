@@ -1,0 +1,171 @@
+{
+    "$schema": "./schema.md",
+    "note": "Setiap kasus: input (users, groups, aliases) -> output operasi reconcile. Murni, tanpa DB.",
+    "merge-case-insensitive": {
+        "users": [
+            { "id": "u1", "departemen": "Accounting", "eligible": true, "isActive": true },
+            { "id": "u2", "departemen": " accounting ", "eligible": true, "isActive": true },
+            { "id": "u3", "departemen": "ACCOUNTING", "eligible": true, "isActive": true }
+        ],
+        "groups": [],
+        "aliases": {},
+        "expect": {
+            "createGroups": [{ "name": "Accounting" }],
+            "membershipOps": [
+                { "user": "u1", "group": "Accounting", "op": "add" },
+                { "user": "u1", "group": "All Staff", "op": "add" },
+                { "user": "u2", "group": "Accounting", "op": "add" },
+                { "user": "u2", "group": "All Staff", "op": "add" },
+                { "user": "u3", "group": "Accounting", "op": "add" },
+                { "user": "u3", "group": "All Staff", "op": "add" }
+            ],
+            "newDepartments": ["Accounting"]
+        }
+    },
+    "alias-maps-to-canonical": {
+        "users": [
+            { "id": "u1", "departemen": "ACC", "eligible": true, "isActive": true },
+            { "id": "u2", "departemen": "Accounting", "eligible": true, "isActive": true }
+        ],
+        "groups": [{ "name": "Accounting", "kind": "DEPARTMENT" }],
+        "aliases": { "ACC": "Accounting" },
+        "expect": {
+            "createGroups": [],
+            "membershipOps": [
+                { "user": "u1", "group": "Accounting", "op": "add" },
+                { "user": "u1", "group": "All Staff", "op": "add" },
+                { "user": "u2", "group": "Accounting", "op": "add" },
+                { "user": "u2", "group": "All Staff", "op": "add" }
+            ]
+        }
+    },
+    "unknown-department-creates-group-and-reports": {
+        "users": [
+            { "id": "u1", "departemen": "Riset Baru", "eligible": true, "isActive": true }
+        ],
+        "groups": [],
+        "aliases": {},
+        "expect": {
+            "createGroups": [{ "name": "Riset Baru" }],
+            "membershipOps": [
+                { "user": "u1", "group": "All Staff", "op": "add" },
+                { "user": "u1", "group": "Riset Baru", "op": "add" }
+            ],
+            "newDepartments": ["Riset Baru"]
+        }
+    },
+    "no-department-skipped-and-reported": {
+        "users": [
+            { "id": "u1", "departemen": null, "eligible": true, "isActive": true }
+        ],
+        "groups": [],
+        "aliases": {},
+        "expect": {
+            "createGroups": [],
+            "membershipOps": [
+                { "user": "u1", "group": "All Staff", "op": "add" }
+            ],
+            "missingDepartments": ["u1"]
+        }
+    },
+    "move-department-switches-group": {
+        "users": [
+            { "id": "u1", "departemen": "Umum", "eligible": true, "isActive": true }
+        ],
+        "groups": [
+            { "name": "Accounting", "kind": "DEPARTMENT" },
+            { "name": "Umum", "kind": "DEPARTMENT" }
+        ],
+        "aliases": {},
+        "memberships": [
+            { "user": "u1", "group": "Accounting" }
+        ],
+        "expect": {
+            "createGroups": [],
+            "membershipOps": [
+                { "user": "u1", "group": "Accounting", "op": "remove" },
+                { "user": "u1", "group": "All Staff", "op": "add" },
+                { "user": "u1", "group": "Umum", "op": "add" }
+            ]
+        }
+    },
+    "non-eligible-removed-from-sync-groups-only": {
+        "users": [
+            { "id": "u1", "departemen": "Accounting", "eligible": false, "isActive": false }
+        ],
+        "groups": [
+            { "name": "Accounting", "kind": "DEPARTMENT" },
+            { "name": "All Staff", "kind": "MANUAL" },
+            { "name": "Sertifikasi", "kind": "MANUAL" }
+        ],
+        "aliases": {},
+        "memberships": [
+            { "user": "u1", "group": "Accounting" },
+            { "user": "u1", "group": "All Staff" },
+            { "user": "u1", "group": "Sertifikasi" }
+        ],
+        "expect": {
+            "createGroups": [],
+            "membershipOps": [
+                { "user": "u1", "group": "Accounting", "op": "remove" },
+                { "user": "u1", "group": "All Staff", "op": "remove" }
+            ]
+        }
+    },
+    "manual-group-untouched": {
+        "users": [
+            { "id": "u1", "departemen": "Accounting", "eligible": true, "isActive": true }
+        ],
+        "groups": [
+            { "name": "Accounting", "kind": "DEPARTMENT" },
+            { "name": "Sertifikasi", "kind": "MANUAL" }
+        ],
+        "aliases": {},
+        "memberships": [
+            { "user": "u1", "group": "Accounting" },
+            { "user": "u1", "group": "Sertifikasi" }
+        ],
+        "expect": {
+            "createGroups": [],
+            "membershipOps": [
+                { "user": "u1", "group": "All Staff", "op": "add" }
+            ]
+        }
+    },
+    "idempotent-second-run-empty": {
+        "users": [
+            { "id": "u1", "departemen": "Accounting", "eligible": true, "isActive": true }
+        ],
+        "groups": [
+            { "name": "Accounting", "kind": "DEPARTMENT" },
+            { "name": "All Staff", "kind": "MANUAL" }
+        ],
+        "aliases": {},
+        "memberships": [
+            { "user": "u1", "group": "Accounting" },
+            { "user": "u1", "group": "All Staff" }
+        ],
+        "expect": {
+            "createGroups": [],
+            "membershipOps": []
+        }
+    },
+    "inactive-user-removed-then-rejoin-when-active": {
+        "users": [
+            { "id": "u1", "departemen": "Accounting", "eligible": true, "isActive": false }
+        ],
+        "groups": [
+            { "name": "Accounting", "kind": "DEPARTMENT" }
+        ],
+        "aliases": {},
+        "memberships": [
+            { "user": "u1", "group": "Accounting" }
+        ],
+        "expect": {
+            "createGroups": [],
+            "membershipOps": [
+                { "user": "u1", "group": "Accounting", "op": "remove" }
+            ]
+        }
+    }
+}
