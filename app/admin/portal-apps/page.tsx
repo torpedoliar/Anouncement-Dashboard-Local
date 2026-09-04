@@ -117,6 +117,14 @@ export default function PortalAppsPage() {
     const [detecting, setDetecting] = useState(false);
     const [detectMsg, setDetectMsg] = useState<{ type: "ok" | "err"; text: string; warnings?: string[] } | null>(null);
     const [profileCandidate, setProfileCandidate] = useState<LoginProfileSummary | null>(null);
+    // Hasil deteksi terakhir (field apa adanya) — untuk "Uji hasil deteksi"
+    // tanpa harus menyetujui/menerapkan ke editor dulu.
+    const [lastDetection, setLastDetection] = useState<{
+        usernameField: string | null;
+        passwordField: string | null;
+        httpMethod: string | null;
+        ssoMode: string | null;
+    } | null>(null);
     const [approvingProfile, setApprovingProfile] = useState(false);
     const [verify, setVerify] = useState<{ username: string; password: string }>({ username: "", password: "" });
     const [verifyState, setVerifyState] = useState<"idle" | "running" | "ok" | "fail">("idle");
@@ -349,6 +357,7 @@ export default function PortalAppsPage() {
         setDetecting(true);
         setDetectMsg(null);
         setProfileCandidate(null);
+        setLastDetection(null);
         try {
             const res = await fetch("/api/portal-apps/detect-fields", {
                 method: "POST",
@@ -468,6 +477,16 @@ export default function PortalAppsPage() {
                     : `Berhasil terdeteksi: ${detectedInfo}`,
                 warnings: allWarnings.length ? allWarnings : undefined,
             });
+            // Simpan field hasil deteksi untuk "Uji hasil deteksi" — hanya bila
+            // pasangan user+pass lengkap.
+            if (data.usernameField && data.passwordField) {
+                setLastDetection({
+                    usernameField: String(data.usernameField),
+                    passwordField: String(data.passwordField),
+                    httpMethod: typeof data.httpMethod === "string" ? data.httpMethod : null,
+                    ssoMode: typeof data.recommendedMode === "string" ? data.recommendedMode : null,
+                });
+            }
         } catch {
             setDetectMsg({ type: "err", text: "Terjadi kesalahan saat deteksi." });
         } finally {
@@ -475,7 +494,10 @@ export default function PortalAppsPage() {
         }
     };
 
-    const handleVerifyLogin = async (useJsonApi?: boolean) => {
+    const handleVerifyLogin = async (
+        useJsonApi?: boolean,
+        fieldOverride?: { usernameField?: string | null; passwordField?: string | null; httpMethod?: string | null; ssoMode?: string | null },
+    ) => {
         if (!formData.loginUrl) {
             setVerifyState("fail");
             setVerifyMsg("Isi LOGIN URL terlebih dahulu.");
@@ -490,14 +512,16 @@ export default function PortalAppsPage() {
         setVerifyMsg("");
         setApiProbeResult(null); // Reset API probe result
         try {
-            // Build full payload with complete form snapshot (v2 requirement)
+            // Build full payload with complete form snapshot (v2 requirement).
+            // fieldOverride (dari "Uji hasil deteksi") menang atas editor —
+            // editor tidak diubah, persetujuan tetap terpisah.
             const body: Record<string, unknown> = {
                 url: formData.loginUrl,
                 appId: editingApp?.id ?? undefined, // alur edit: hasil disimpan ke app (loginVerifiedAt)
-                ssoMode: formData.ssoMode,         // v2: add ssoMode
-                httpMethod: formData.httpMethod,   // v2: add httpMethod
-                usernameField: formData.usernameField,
-                passwordField: formData.passwordField,
+                ssoMode: fieldOverride?.ssoMode ?? formData.ssoMode,         // v2: add ssoMode
+                httpMethod: fieldOverride?.httpMethod ?? formData.httpMethod, // v2: add httpMethod
+                usernameField: fieldOverride?.usernameField ?? formData.usernameField,
+                passwordField: fieldOverride?.passwordField ?? formData.passwordField,
                 testUsername: verify.username,
                 testPassword: verify.password,
             };
@@ -1068,6 +1092,27 @@ export default function PortalAppsPage() {
                                                         <li key={s}>{s}</li>
                                                     ))}
                                                 </ul>
+                                            )}
+                                            {lastDetection && (
+                                                <div className="mt-2">
+                                                    <p className="mb-1">
+                                                        Field terdeteksi: {lastDetection.usernameField} / {lastDetection.passwordField}
+                                                        {lastDetection.ssoMode ? ` · Mode: ${lastDetection.ssoMode}` : ""}
+                                                    </p>
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        onClick={() => handleVerifyLogin(false, lastDetection)}
+                                                        disabled={verifyState === "running"}
+                                                        title="Uji field hasil deteksi dengan kredensial di panel Uji Login — tanpa mengubah editor/persetujuan"
+                                                    >
+                                                        {verifyState === "running" ? "Menguji..." : "Uji hasil deteksi"}
+                                                    </Button>
+                                                    <p className="mt-1 text-text-3">
+                                                        Memakai username/password dari panel Uji Login di bawah. Editor tidak diubah.
+                                                    </p>
+                                                </div>
                                             )}
                                         </div>
                                     ) : null}

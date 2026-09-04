@@ -62,8 +62,8 @@ export async function PUT(request: NextRequest) {
         if (enabled && (!baseUrl || !model)) {
             return NextResponse.json({ error: "baseUrl dan model wajib diisi bila AI aktif" }, { status: 400 });
         }
-        if (maxTokens !== null && (!Number.isInteger(maxTokens) || maxTokens < 500 || maxTokens > 8000)) {
-            return NextResponse.json({ error: "maxTokens harus bilangan bulat 500-8000" }, { status: 400 });
+        if (maxTokens !== null && (!Number.isInteger(maxTokens) || maxTokens < 500 || maxTokens > 32000)) {
+            return NextResponse.json({ error: "maxTokens harus bilangan bulat 500-32000" }, { status: 400 });
         }
 
         if (baseUrl) {

@@ -189,7 +189,7 @@ export default function PortalAiPage() {
                         <Input
                             type="number"
                             min={500}
-                            max={8000}
+                            max={32000}
                             value={maxTokens}
                             onChange={(e) => setMaxTokens(e.target.value)}
                             placeholder="2500"
