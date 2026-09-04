@@ -3,6 +3,12 @@
 # Dashboard Pengumuman Santos Jaya Abadi
 # ============================================
 
+# GitHub Actions' shell:powershell wrapper sets $ErrorActionPreference='Stop'.
+# Perintah native (docker-compose) menulis warning/progress ke stderr → di PS 5.1
+# jadi ErrorRecord → script mati padahal sukses. Script ini gate di $LASTEXITCODE,
+# jadi kembalikan Continue (error asli tetap tertangkap lewat exit code).
+$ErrorActionPreference = "Continue"
+
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "  Dashboard Pengumuman - Update" -ForegroundColor Cyan
