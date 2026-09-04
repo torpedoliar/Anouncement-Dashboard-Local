@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CaretLeft, CaretRight, GridFour, PencilSimple, Plus, Trash, Users } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, GridFour, PencilSimple, Plus, Trash, Users, ArrowsClockwise } from "@phosphor-icons/react";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -42,6 +42,21 @@ const emptyForm = {
     appIds: [] as string[],
 };
 
+interface ReconcileSummary {
+    groupsToCreate: string[];
+    membersAdded: number;
+    membersRemoved: number;
+    newDepartments: string[];
+    missingDepartments: string[];
+    removedInactive: string[];
+}
+
+interface NameAlias {
+    id: string;
+    rawName: string;
+    canonical: string;
+}
+
 export default function PortalGroupsPage() {
     const [groups, setGroups] = useState<PortalGroup[]>([]);
     const [apps, setApps] = useState<PortalApp[]>([]);
@@ -55,6 +70,105 @@ export default function PortalGroupsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const { showToast } = useToast();
     const { confirm, ConfirmDialog } = useConfirm();
+
+    // Tiket #4: tombol "Rapikan" (reconcile departemen → group, dry-run dulu).
+    const [reconcileSummary, setReconcileSummary] = useState<ReconcileSummary | null>(null);
+    const [isReconciling, setIsReconciling] = useState(false);
+    const [showReconcileModal, setShowReconcileModal] = useState(false);
+
+    // Tiket #5: kelola alias nama departemen.
+    const [aliases, setAliases] = useState<NameAlias[]>([]);
+    const [newAliasRaw, setNewAliasRaw] = useState("");
+    const [newAliasCanonical, setNewAliasCanonical] = useState("");
+    const [isAliasSaving, setIsAliasSaving] = useState(false);
+
+    const fetchAliases = useCallback(async () => {
+        try {
+            const response = await fetch("/api/portal-groups/aliases");
+            if (response.ok) {
+                const data = await response.json();
+                setAliases(data.data || []);
+            }
+        } catch (err) {
+            console.error("Gagal memuat alias:", err);
+        }
+    }, []);
+
+    const previewReconcile = async () => {
+        setIsReconciling(true);
+        try {
+            const response = await fetch("/api/portal-groups/reconcile?dryRun=1");
+            if (response.ok) {
+                const data = await response.json();
+                setReconcileSummary(data.summary);
+                setShowReconcileModal(true);
+            } else {
+                showToast("Gagal membuat preview", "error");
+            }
+        } finally {
+            setIsReconciling(false);
+        }
+    };
+
+    const applyReconcile = async () => {
+        setIsReconciling(true);
+        try {
+            const response = await fetch("/api/portal-groups/reconcile", { method: "POST" });
+            if (response.ok) {
+                const data = await response.json();
+                showToast(
+                    `Selesai: ${data.applied.membersAdded} anggota ditambah, ${data.applied.membersRemoved} dihapus, ${data.applied.groupsCreated} grup dibuat`,
+                    "success"
+                );
+                setShowReconcileModal(false);
+                fetchGroups();
+            } else {
+                showToast("Gagal menerapkan reconcile", "error");
+            }
+        } finally {
+            setIsReconciling(false);
+        }
+    };
+
+    const addAlias = async () => {
+        if (!newAliasRaw.trim() || !newAliasCanonical.trim()) return;
+        setIsAliasSaving(true);
+        try {
+            const response = await fetch("/api/portal-groups/aliases", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rawName: newAliasRaw.trim(), canonical: newAliasCanonical.trim() }),
+            });
+            if (response.ok) {
+                setNewAliasRaw("");
+                setNewAliasCanonical("");
+                fetchAliases();
+            } else {
+                const data = await response.json().catch(() => ({}));
+                showToast(data.error || "Gagal menambah alias", "error");
+            }
+        } finally {
+            setIsAliasSaving(false);
+        }
+    };
+
+    const deleteAlias = async (alias: NameAlias) => {
+        const ok = await confirm({
+            title: "Hapus Alias",
+            message: `Hapus alias "${alias.rawName}" → "${alias.canonical}"?`,
+        });
+        if (!ok) return;
+        const response = await fetch(`/api/portal-groups/aliases?id=${alias.id}`, { method: "DELETE" });
+        if (response.ok) {
+            fetchAliases();
+        } else {
+            showToast("Gagal menghapus alias", "error");
+        }
+    };
+
+    useEffect(() => {
+        fetchAliases();
+    }, [fetchAliases]);
 
     const fetchGroups = useCallback(async () => {
         try {
@@ -299,9 +413,20 @@ export default function PortalGroupsPage() {
                 <div>
                     <h1 className="font-display text-2xl font-semibold text-text-1">Grup Portal</h1>
                 </div>
-                <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
-                    Tambah Grup
-                </Button>
+                <div className="flex gap-3">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        iconLeft={<ArrowsClockwise size={14} aria-hidden="true" />}
+                        onClick={previewReconcile}
+                        disabled={isReconciling}
+                    >
+                        {isReconciling ? "Memproses..." : "Rapikan Grup"}
+                    </Button>
+                    <Button type="button" iconLeft={<Plus size={14} aria-hidden="true" />} onClick={openAddModal}>
+                        Tambah Grup
+                    </Button>
+                </div>
             </div>
 
             {/* Stats */}
@@ -455,6 +580,122 @@ export default function PortalGroupsPage() {
                             </div>
                         </form>
             </Modal>
+
+            {/* Modal preview "Rapikan" (tiket #4) */}
+            <Modal
+                open={showReconcileModal}
+                onClose={() => setShowReconcileModal(false)}
+                title="Preview Rapikan Grup"
+                size="md"
+            >
+                {reconcileSummary && (
+                    <div className="space-y-4">
+                        <p className="text-sm text-text-2">
+                            Hasil analisis terhadap data departemen user saat ini. Tidak ada perubahan
+                            yang diterapkan sebelum kamu menekan &quot;Terapkan&quot;.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="rounded-control border border-border p-3">
+                                <p className="text-text-3">Anggota ditambah</p>
+                                <p className="font-display text-xl font-semibold text-success">{reconcileSummary.membersAdded}</p>
+                            </div>
+                            <div className="rounded-control border border-border p-3">
+                                <p className="text-text-3">Anggota dihapus</p>
+                                <p className="font-display text-xl font-semibold text-danger">{reconcileSummary.membersRemoved}</p>
+                            </div>
+                            <div className="rounded-control border border-border p-3">
+                                <p className="text-text-3">Grup baru dibuat</p>
+                                <p className="font-display text-xl font-semibold text-text-1">{reconcileSummary.groupsToCreate.length}</p>
+                            </div>
+                            <div className="rounded-control border border-border p-3">
+                                <p className="text-text-3">Dikeluarkan (non-aktif)</p>
+                                <p className="font-display text-xl font-semibold text-text-1">{reconcileSummary.removedInactive.length}</p>
+                            </div>
+                        </div>
+                        {reconcileSummary.groupsToCreate.length > 0 && (
+                            <div>
+                                <p className="mb-1 text-sm font-semibold text-text-1">GRUP BARU</p>
+                                <p className="text-sm text-text-2">{reconcileSummary.groupsToCreate.join(", ")}</p>
+                            </div>
+                        )}
+                        {reconcileSummary.missingDepartments.length > 0 && (
+                            <div className="rounded-control border border-warning/40 bg-warning-subtle px-3 py-2 text-sm text-text-1">
+                                {reconcileSummary.missingDepartments.length} user tanpa departemen — dilewati
+                                dari grup departemen (tetap di All Staff). Tindak lanjut ke HR.
+                            </div>
+                        )}
+                        <div className="flex justify-end gap-3 pt-2">
+                            <Button type="button" variant="secondary" onClick={() => setShowReconcileModal(false)} disabled={isReconciling}>
+                                Batal
+                            </Button>
+                            <Button type="button" onClick={applyReconcile} disabled={isReconciling}>
+                                {isReconciling ? "Menerapkan..." : "Terapkan"}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            {/* Kelola alias nama departemen (tiket #5) */}
+            <div className="mt-8">
+                <h2 className="font-display text-lg font-semibold text-text-1">Alias Nama Departemen</h2>
+                <p className="mb-4 text-sm text-text-2">
+                    Nama mentah dari HRIS dipetakan ke nama grup canonical. Contoh: &quot;ACC&quot; → &quot;Accounting&quot;.
+                </p>
+                <Card className="p-4">
+                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+                        <Input
+                            label="NAMA MENTAH HRIS"
+                            type="text"
+                            value={newAliasRaw}
+                            onChange={(e) => setNewAliasRaw(e.target.value)}
+                            placeholder="mis. ACC"
+                            className="sm:max-w-48"
+                        />
+                        <Input
+                            label="GRUP TUJUAN"
+                            type="text"
+                            value={newAliasCanonical}
+                            onChange={(e) => setNewAliasCanonical(e.target.value)}
+                            placeholder="mis. Accounting"
+                            list="department-groups"
+                            className="sm:max-w-48"
+                        />
+                        <datalist id="department-groups">
+                            {groups.map((g) => (
+                                <option key={g.id} value={g.name} />
+                            ))}
+                        </datalist>
+                        <Button type="button" onClick={addAlias} disabled={isAliasSaving || !newAliasRaw.trim() || !newAliasCanonical.trim()}>
+                            Tambah Alias
+                        </Button>
+                    </div>
+                    {aliases.length === 0 ? (
+                        <p className="text-sm text-text-3">Belum ada alias.</p>
+                    ) : (
+                        <ul className="divide-y divide-border">
+                            {aliases.map((a) => (
+                                <li key={a.id} className="flex items-center justify-between py-2 text-sm">
+                                    <span className="text-text-1">
+                                        {a.rawName} <span className="text-text-3">→</span> <span className="font-semibold">{a.canonical}</span>
+                                    </span>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => deleteAlias(a)}
+                                        aria-label="Hapus alias"
+                                        className="text-danger"
+                                    >
+                                        <Trash size={14} />
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </Card>
+            </div>
+
             <ConfirmDialog />
         </div>
     );
