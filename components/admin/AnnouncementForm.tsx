@@ -10,6 +10,7 @@ import SiteSyndicationPicker, { SiteAssoc } from "./SiteSyndicationPicker";
 import AnnouncementPreview from "./AnnouncementPreview";
 import { useSiteTheme } from "@/components/SiteThemeProvider";
 import { deriveAnnouncementStatus } from "@/lib/announcement-status";
+import { parseApiResponseError } from "@/lib/error-humanize";
 
 interface Category {
     id: string;
@@ -175,15 +176,19 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
         try {
             const formData = new FormData();
             formData.append("file", file);
+            const activeSiteId = defaultSiteId || siteAssocs[0]?.siteId;
+            if (activeSiteId) {
+                formData.append("siteId", activeSiteId);
+            }
             const response = await fetch("/api/upload", { method: "POST", body: formData });
             if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || "Upload failed");
+                const errorMsg = await parseApiResponseError(response, "Gagal mengunggah gambar");
+                throw new Error(errorMsg);
             }
             const data = await response.json();
             setImagePath(data.url);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Upload failed");
+            setError(err instanceof Error ? err.message : "Gagal mengunggah gambar");
         } finally {
             setImageUploading(false);
         }
@@ -196,8 +201,11 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
             setError("Ukuran video maksimal 100MB");
             return;
         }
-        if (file.type !== "video/mp4") {
-            setError("Format video harus MP4");
+        const allowedVideoMimes = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
+        const ext = file.name.split('.').pop()?.toLowerCase() || "";
+        const allowedExts = ["mp4", "webm", "ogg", "mov"];
+        if (!allowedVideoMimes.includes(file.type) && !allowedExts.includes(ext) && !file.type.startsWith("video/")) {
+            setError("Format video harus MP4, WebM, OGG, atau MOV");
             return;
         }
         setVideoUploading(true);
@@ -205,15 +213,19 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
         try {
             const formData = new FormData();
             formData.append("file", file);
+            const activeSiteId = defaultSiteId || siteAssocs[0]?.siteId;
+            if (activeSiteId) {
+                formData.append("siteId", activeSiteId);
+            }
             const response = await fetch("/api/media", { method: "POST", body: formData });
             if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || "Upload failed");
+                const errorMsg = await parseApiResponseError(response, "Gagal mengunggah video");
+                throw new Error(errorMsg);
             }
             const data = await response.json();
             setVideoPath(data.url);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Upload video failed");
+            setError(err instanceof Error ? err.message : "Gagal mengunggah video");
         } finally {
             setVideoUploading(false);
         }
@@ -598,18 +610,18 @@ export default function AnnouncementForm({ categories, defaultSiteId, initialDat
                                     <label
                                         className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border-strong cursor-pointer rounded-card transition-colors duration-150 hover:border-text-3"
                                         role="button"
-                                        aria-label="Upload video MP4, maksimal 100MB"
+                                        aria-label="Upload video, maksimal 100MB"
                                     >
                                         <VideoCamera size={32} className="mb-2 text-text-3" />
                                         <span className="text-sm text-text-3">
                                             {videoUploading ? "Uploading video..." : "Klik untuk upload video"}
                                         </span>
                                         <span className="text-xs mt-1 text-text-3">
-                                            MP4, max 100MB
+                                            MP4/WebM/MOV, max 100MB
                                         </span>
                                         <input
                                             type="file"
-                                            accept="video/mp4"
+                                            accept="video/mp4,video/webm,video/ogg,video/quicktime"
                                             onChange={handleVideoUpload}
                                             className="hidden"
                                             disabled={videoUploading}

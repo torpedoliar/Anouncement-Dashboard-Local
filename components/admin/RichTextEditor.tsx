@@ -17,6 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import MediaPickerModal from "./MediaPickerModal";
 import { useToast } from "@/contexts/ToastContext";
+import { parseApiResponseError } from "@/lib/error-humanize";
 
 interface RichTextEditorProps {
     content: string;
@@ -290,8 +291,8 @@ export default function RichTextEditor({
                 body: formData,
             });
             if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || "Upload failed");
+                const errorMsg = await parseApiResponseError(response, "Gagal mengunggah gambar");
+                throw new Error(errorMsg);
             }
             const data = await response.json();
             editor.chain().focus().setImage({
@@ -300,7 +301,7 @@ export default function RichTextEditor({
             }).run();
         } catch (error) {
             console.error("Image upload failed:", error);
-            const message = error instanceof Error ? error.message : "Gagal mengupload gambar";
+            const message = error instanceof Error ? error.message : "Gagal mengunggah gambar";
             showToast(message, "error");
         } finally {
             setIsUploading(false);
@@ -313,8 +314,11 @@ export default function RichTextEditor({
 
     const handleVideoUpload = useCallback(async (file: File) => {
         if (!editor) return;
-        if (!file.type.startsWith('video/')) {
-            showToast('Format file tidak valid. Hanya video yang diperbolehkan.', 'error');
+        const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+        const ext = file.name.split('.').pop()?.toLowerCase() || '';
+        const allowedExts = ['mp4', 'webm', 'ogg', 'mov'];
+        if (!file.type.startsWith('video/') && !allowedTypes.includes(file.type) && !allowedExts.includes(ext)) {
+            showToast('Format file tidak valid. Hanya video (MP4, WebM, OGG, MOV) yang diperbolehkan.', 'error');
             return;
         }
         if (file.size > 100 * 1024 * 1024) {
@@ -330,8 +334,8 @@ export default function RichTextEditor({
                 body: formData,
             });
             if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || "Upload failed");
+                const errorMsg = await parseApiResponseError(response, "Gagal mengunggah video");
+                throw new Error(errorMsg);
             }
             const data = await response.json();
             editor.chain().focus().insertContent({
@@ -340,7 +344,7 @@ export default function RichTextEditor({
             }).run();
         } catch (error) {
             console.error("Video upload failed:", error);
-            const message = error instanceof Error ? error.message : "Gagal mengupload video";
+            const message = error instanceof Error ? error.message : "Gagal mengunggah video";
             showToast(message, "error");
         } finally {
             setIsVideoUploading(false);
@@ -402,8 +406,8 @@ export default function RichTextEditor({
                 body: formData,
             });
             if (!response.ok) {
-                const data = await response.json().catch(() => ({}));
-                throw new Error(data.error || "Gagal mengunggah PDF");
+                const errorMsg = await parseApiResponseError(response, "Gagal mengunggah PDF");
+                throw new Error(errorMsg);
             }
             const data = await response.json();
             // Update the SAME block's src in place (no new node). Filename kept.
@@ -804,7 +808,7 @@ export default function RichTextEditor({
             <input
                 ref={videoInputRef}
                 type="file"
-                accept="video/mp4,video/webm,video/ogg"
+                accept="video/mp4,video/webm,video/ogg,video/quicktime"
                 onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) { handleVideoUpload(file); e.target.value = ''; }

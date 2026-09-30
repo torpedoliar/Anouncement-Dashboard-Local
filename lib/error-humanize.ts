@@ -57,6 +57,10 @@ const PATTERN_MESSAGES: Array<{ pattern: RegExp | string; message: string }> = [
         message: "Ukuran berkas melebihi batas maksimal yang diperbolehkan.",
     },
     {
+        pattern: /unexpected token.*is not valid json|is not valid json/i,
+        message: "Respon server tidak sesuai format. Kemungkinan file melebihi batas ukuran server (misal konfigurasi proxy) atau terjadi gangguan jaringan.",
+    },
+    {
         pattern: /unauthorized/i,
         message: "Akses ditolak. Silakan login dengan akun yang memiliki wewenang.",
     },

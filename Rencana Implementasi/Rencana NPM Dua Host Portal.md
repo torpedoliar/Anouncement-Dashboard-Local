@@ -62,8 +62,9 @@ Buat **satu Proxy Host**:
 | WebSockets | **ON** |
 | SSL | cert AD CS internal (bukan Let's Encrypt krn domain internal) |
 
-**Custom Nginx Config** (tab Advanced) — WAJIB, karena NPM tidak set `X-Forwarded-Proto` secara default:
+**Custom Nginx Config** (tab Advanced) — WAJIB, karena NPM tidak set `X-Forwarded-Proto` secara default dan default body size hanya 1MB (menyebabkan gagal upload video/media error 413):
 ```nginx
+client_max_body_size 100M;
 proxy_set_header X-Forwarded-Proto $scheme;
 proxy_set_header X-Forwarded-Host $host;
 proxy_set_header Host $host;

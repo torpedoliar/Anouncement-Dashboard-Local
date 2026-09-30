@@ -16,6 +16,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { useConfirm } from "@/hooks/useConfirm";
 import { formatDistanceToNow } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { parseApiResponseError } from "@/lib/error-humanize";
 
 interface Media {
     id: string;
@@ -84,12 +85,13 @@ export default function MediaGalleryPage() {
                 if (response.ok) {
                     showToast(`${file.name} berhasil diupload`, "success");
                 } else {
-                    const data = await response.json();
-                    showToast(`${file.name}: ${data.error}`, "error");
+                    const errorMsg = await parseApiResponseError(response, "Gagal mengupload media");
+                    showToast(`${file.name}: ${errorMsg}`, "error");
                 }
             } catch (error) {
                 console.error("Upload error:", error);
-                showToast(`Gagal upload ${file.name}`, "error");
+                const message = error instanceof Error ? error.message : `Gagal upload ${file.name}`;
+                showToast(message, "error");
             }
         }
 

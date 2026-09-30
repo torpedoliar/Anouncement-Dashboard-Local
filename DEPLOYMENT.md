@@ -56,6 +56,10 @@ environment:
   - NEXTAUTH_URL=http://your-domain.com:8080
 ```
 
+> **Catatan Reverse Proxy (Nginx / Nginx Proxy Manager):**
+> Jika menggunakan Nginx / NPM di depan aplikasi, pastikan menambahkan direktif `client_max_body_size 100M;` pada konfigurasi Nginx/NPM Anda agar upload video (hingga 100MB) tidak ditolak dengan status *413 Request Entity Too Large*.
+
+
 ---
 
 ## 📁 Data Storage

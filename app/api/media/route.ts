@@ -3,13 +3,16 @@ import prisma from "@/lib/prisma";
 import { validatePagination } from '@/lib/pagination-utils';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getCurrentSiteId } from "@/lib/site-context";
+import { getCurrentSiteId, resolveAdminSiteId } from "@/lib/site-context";
 import { canAccessSite, canEditOnSite } from "@/lib/site-access";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
 import sharp from "sharp";
 import { z } from "zod";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 120;
 
 // WR-05: folder fisik ditentukan dari MIME tersimpan (bukan ekstensi nama file).
 function isVideoMime(mimeType: string): boolean {
@@ -18,7 +21,7 @@ function isVideoMime(mimeType: string): boolean {
 
 // File type configurations
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-const VIDEO_TYPES = ["video/mp4"];
+const VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg", "video/quicktime"];
 const PDF_TYPES = ["application/pdf"];
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB (before compression)
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
@@ -118,15 +121,18 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const file = formData.get("file") as File;
         const alt = formData.get("alt") as string | null;
-        const siteId = formData.get("siteId") as string | null; // Optional: null = shared, otherwise site-specific
+        let siteId = formData.get("siteId") as string | null; // Optional: null = shared, otherwise site-specific
 
         if (!file) {
             return NextResponse.json({ error: "File is required" }, { status: 400 });
         }
 
         // CR-01: tulis media adalah jalur write — wajib gate lewat lib/site-access
-        // (invariant CLAUDE.md), pola sama dengan GET/DELETE di file ini. Sebelumnya
-        // siteId diterima mentah sehingga editor situs A bisa menulis ke situs mana pun.
+        // (invariant CLAUDE.md). Jika siteId tidak dikirim via form, gunakan konteks site admin aktif.
+        if (!siteId) {
+            siteId = await resolveAdminSiteId();
+        }
+
         const isSuperAdmin = !!session.user?.isSuperAdmin;
         if (siteId) {
             if (!z.string().cuid().safeParse(siteId).success) {
@@ -189,9 +195,19 @@ export async function POST(request: NextRequest) {
             finalMimeType = "application/pdf";
         } else if (isVideo) {
             // Video - no compression (would need ffmpeg)
-            filename = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp4`;
+            const extFromName = path.extname(file.name).toLowerCase().replace(/^\./, "");
+            const mimeToExt: Record<string, string> = {
+                "video/mp4": "mp4",
+                "video/webm": "webm",
+                "video/ogg": "ogg",
+                "video/quicktime": "mov",
+            };
+            const ext = ["mp4", "webm", "ogg", "mov"].includes(extFromName)
+                ? extFromName
+                : (mimeToExt[file.type] || "mp4");
+            filename = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
             finalBuffer = buffer;
-            finalMimeType = file.type;
+            finalMimeType = file.type || `video/${ext}`;
         } else if (isGif) {
             // GIF - preserve animation, no compression
             filename = `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.gif`;
