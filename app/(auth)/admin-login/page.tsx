@@ -20,6 +20,9 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("isLoggingOut");
+    }
     const errorParam = searchParams.get("error");
     if (errorParam === "SessionExpired" || errorParam === "SessionRequired") {
       setError("Sesi Anda telah berakhir. Silakan masuk kembali untuk melanjutkan.");
@@ -44,7 +47,7 @@ function LoginForm() {
         setError("Kredensial tidak valid");
       } else {
         const callbackUrl = searchParams.get("callbackUrl") || "/admin";
-        router.push(callbackUrl);
+        window.location.href = callbackUrl;
       }
     } catch {
       setError("Terjadi kesalahan. Silakan coba lagi.");
