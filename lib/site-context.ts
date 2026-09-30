@@ -39,17 +39,20 @@ export async function getCurrentSiteId(): Promise<string | null> {
  * over plain HTTP.
  */
 export async function resolveAdminSiteId(): Promise<string | null> {
-    const cookieId = await getCurrentSiteId();
-    if (cookieId) return cookieId;
-
     // Lazy imports avoid pulling auth/prisma into modules that only need the
     // cookie helpers, and sidestep any import-cycle concerns.
     const { getServerSession } = await import('next-auth');
     const { authOptions } = await import('@/lib/auth');
-    const { getDefaultSite } = await import('@/lib/site-access');
+    const { canAccessSite, getDefaultSite } = await import('@/lib/site-access');
 
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return null;
+
+    const cookieId = await getCurrentSiteId();
+    if (cookieId && (await canAccessSite(session.user.id, cookieId))) {
+        return cookieId;
+    }
+
     const fallback = await getDefaultSite(session.user.id);
     return fallback?.id ?? null;
 }
