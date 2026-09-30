@@ -46,7 +46,7 @@ export default async function AdminLayout({
     }
 
     return (
-        <NextAuthProvider basePath="/api/auth">
+        <NextAuthProvider session={session} basePath="/api/auth">
             <SessionExpiryWatcher />
             <script dangerouslySetInnerHTML={{ __html: PREPAINT_SCRIPT }} />
             <AdminSiteThemeProvider>
