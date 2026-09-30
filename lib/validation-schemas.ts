@@ -69,6 +69,7 @@ export function sanitizeHTML(html: string): string {
             // div[data-youtube-video]) + the native video controls flag —
             // tanpa ini save→reload menghancurkan embed yang sah (WR-06).
             'data-video', 'data-youtube-video', 'controls',
+            'preload', 'playsinline', 'poster', 'type', 'autoplay', 'muted', 'loop',
         ],
         ALLOW_DATA_ATTR: false,
     });

@@ -14,8 +14,10 @@ import { FilePdf } from "@phosphor-icons/react";
 // placeholders. Kept EXPLICIT here so the preview can never silently drop
 // them. ADD_ATTR is the right knob: it extends the html profile, whereas a
 // plain ALLOWED_ATTR array is wiped by USE_PROFILES (which replaces the list
-// wholesale). No generic media tag is added — onerror/js payloads stay stripped.
-const PDF_MARKER_ATTRS: string[] = ["data-pdf", "data-src", "data-filename"];
+const PREVIEW_MARKER_ATTRS: string[] = [
+    "data-pdf", "data-src", "data-filename",
+    "data-video", "data-youtube-video", "controls", "preload", "playsinline", "poster", "type", "autoplay", "muted", "loop",
+];
 
 interface PdfBlock {
     src: string;
@@ -84,7 +86,8 @@ export default function AnnouncementPreview({
         if (content) {
             const sanitized = DOMPurify.sanitize(content, {
                 USE_PROFILES: { html: true },
-                ADD_ATTR: PDF_MARKER_ATTRS,
+                ADD_TAGS: ["video", "source", "iframe"],
+                ADD_ATTR: PREVIEW_MARKER_ATTRS,
             });
             setSafeContent(sanitized);
             setPdfBlocks(extractPdfBlocks(sanitized));

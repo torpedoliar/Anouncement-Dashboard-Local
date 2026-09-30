@@ -89,7 +89,7 @@ export default function ArticleHero({
                             muted={isMuted}
                             loop
                             playsInline
-                            preload="none"
+                            preload="metadata"
                             poster={imagePath || undefined}
                             style={{
                                 width: "100%",

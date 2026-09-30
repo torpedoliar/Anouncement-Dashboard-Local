@@ -96,20 +96,33 @@ const Video = Node.create({
     draggable: true,
     addAttributes() {
         return {
-            src: { default: null },
+            src: {
+                default: null,
+                parseHTML: (element) => {
+                    const videoEl = element.tagName === 'VIDEO' ? element : element.querySelector('video');
+                    return videoEl?.getAttribute('src') || element.getAttribute('data-src') || element.getAttribute('src') || null;
+                },
+            },
         };
     },
     parseHTML() {
-        return [{
-            tag: 'div[data-video]',
-        }];
+        return [
+            {
+                tag: 'div[data-video]',
+            },
+            {
+                tag: 'video',
+            },
+        ];
     },
     renderHTML({ HTMLAttributes }) {
-        return ['div', mergeAttributes({ 'data-video': '', style: 'margin:16px 0;border-radius:8px;overflow:hidden;' }), [
+        return ['div', mergeAttributes({ 'data-video': '', 'data-src': HTMLAttributes.src || '', style: 'margin:16px 0;border-radius:8px;overflow:hidden;' }), [
             'video',
             {
                 src: HTMLAttributes.src,
                 controls: 'true',
+                preload: 'metadata',
+                playsinline: 'true',
                 style: 'width:100%;max-height:500px;border-radius:8px;',
             },
         ]];
