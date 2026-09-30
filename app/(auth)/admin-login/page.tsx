@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, EnvelopeSimple, LockKey } from "@phosphor-icons/react";
 import AuthFrame from "@/components/auth/AuthFrame";
@@ -13,7 +13,6 @@ export const dynamic = "force-dynamic";
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
