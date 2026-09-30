@@ -58,6 +58,10 @@ export default function AdminSidebar({
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("isLoggingOut", "1");
+            localStorage.removeItem("currentSiteId");
+        }
         await signOut({ callbackUrl: "/admin-login" });
     };
 

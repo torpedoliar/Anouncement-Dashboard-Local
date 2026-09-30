@@ -69,6 +69,10 @@ export default function AdminTopbar({ drawerOpen, onToggleDrawer }: AdminTopbarP
     const handleLogout = async () => {
         // End the NextAuth session (clears the JWT cookie), then redirect.
         // Mirrors AdminSidebar — a bare router.push would leave the session cookie valid.
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("isLoggingOut", "1");
+            localStorage.removeItem("currentSiteId");
+        }
         await signOut({ callbackUrl: "/admin-login" });
     };
 

@@ -27,6 +27,9 @@ export default function SessionExpiryWatcher() {
 
     // 1. Pantau status autentikasi dari NextAuth
     useEffect(() => {
+        if (typeof window !== "undefined" && sessionStorage.getItem("isLoggingOut") === "1") {
+            return;
+        }
         if (status === "unauthenticated" && pathname?.startsWith("/admin")) {
             redirectToLogin("SessionExpired");
         }
@@ -40,9 +43,16 @@ export default function SessionExpiryWatcher() {
         window.fetch = async (...args) => {
             try {
                 const response = await originalFetch(...args);
-                if (response.status === 401 && window.location.pathname.startsWith("/admin")) {
-                    console.warn("[Auth] 401 Unauthorized detected on API call. Redirecting to login...");
-                    redirectToLogin("SessionExpired");
+                if (
+                    response.status === 401 &&
+                    window.location.pathname.startsWith("/admin") &&
+                    sessionStorage.getItem("isLoggingOut") !== "1"
+                ) {
+                    const rawUrl = typeof args[0] === "string" ? args[0] : (args[0] as Request)?.url || "";
+                    if (rawUrl.includes("/api/") && !rawUrl.includes("/api/auth/")) {
+                        console.warn("[Auth] 401 Unauthorized detected on API call. Redirecting to login...");
+                        redirectToLogin("SessionExpired");
+                    }
                 }
                 return response;
             } catch (error) {
