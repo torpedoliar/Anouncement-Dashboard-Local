@@ -82,3 +82,6 @@ From Server Prod/
 
 # hive workspace (agent coordination, local only) — never commit
 hive/
+
+# lokal: worktree eksekusi plan (SDD)
+.worktrees/
