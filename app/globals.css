@@ -838,6 +838,7 @@ a {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  /* Putih tetap — titik cahaya gerak di atas garis brand (bukan teks); tidak ada token putih di tema. */
   background: #fff;
   box-shadow: 0 0 10px #fff;
   animation: launch-travel 1.6s var(--motion-ease) infinite;
