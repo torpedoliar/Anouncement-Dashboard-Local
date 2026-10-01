@@ -27,6 +27,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000"),
   title: "Dashboard Pengumuman | Santos Jaya Abadi",
   description: "Portal pengumuman dan berita terbaru dari Santos Jaya Abadi",
   keywords: ["pengumuman", "berita", "santos jaya abadi", "kapal api"],

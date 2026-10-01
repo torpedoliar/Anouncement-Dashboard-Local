@@ -3,13 +3,20 @@
  * Shows individual article within a site context
  */
 
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import ArticleHero from "@/components/site/ArticleHero";
 import ArticleContent from "@/components/site/ArticleContent";
+import ReadingProgress from "@/components/site/ReadingProgress";
+import TableOfContents from "@/components/site/TableOfContents";
+import ShareBar from "@/components/site/ShareBar";
+import { MarkRead } from "@/components/site/ReadState";
 import AnnouncementCard from "@/components/AnnouncementCard";
 import CommentSection from "@/components/CommentSection";
+import { extractYoutubeId } from "@/lib/utils";
 
 // Thumbnail/reading helpers sekarang hidup di dalam AnnouncementCard (T4) —
 // helper lokal extractYoutubeId/getThumbnailUrl dihapus.
@@ -20,7 +27,10 @@ interface PageProps {
     params: Promise<{ siteSlug: string; articleSlug: string }>;
 }
 
-async function getArticleData(siteSlug: string, articleSlug: string) {
+// Query baca saja — TIDAK menaikkan viewCount. Inkrement dilakukan sekali di
+// ArticlePage supaya generateMetadata (yang ikut memanggil getArticle) tidak
+// menghitung view ganda.
+const getArticle = cache(async (siteSlug: string, articleSlug: string) => {
     // Get site first
     const site = await prisma.site.findUnique({
         where: { slug: siteSlug, isActive: true },
@@ -49,12 +59,6 @@ async function getArticleData(siteSlug: string, articleSlug: string) {
 
     if (!announcement) return null;
 
-    // Increment view count
-    await prisma.announcement.update({
-        where: { id: announcement.id },
-        data: { viewCount: { increment: 1 } },
-    });
-
     // Get related articles from the same site
     const relatedArticles = await prisma.announcement.findMany({
         where: {
@@ -80,24 +84,51 @@ async function getArticleData(siteSlug: string, articleSlug: string) {
         primarySite && !isPrimarySite ? `/site/${primarySite.slug}/${announcement.slug}` : null;
 
     return { site, announcement, relatedArticles, canonicalUrl };
+});
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { siteSlug, articleSlug } = await params;
+    const data = await getArticle(siteSlug, articleSlug);
+    if (!data) return {};
+    const { site, announcement, canonicalUrl } = data;
+    const ytId = announcement.youtubeUrl ? extractYoutubeId(announcement.youtubeUrl) : null;
+    const image = announcement.imagePath ?? (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined);
+    const description = announcement.excerpt ?? undefined;
+    return {
+        title: `${announcement.title} | ${site.name}`,
+        description,
+        alternates: canonicalUrl ? { canonical: canonicalUrl } : undefined,
+        openGraph: {
+            type: "article",
+            title: announcement.title,
+            description,
+            siteName: site.name,
+            publishedTime: announcement.createdAt.toISOString(),
+            images: image ? [{ url: image }] : undefined,
+        },
+    };
 }
 
 export default async function ArticlePage({ params }: PageProps) {
     const { siteSlug, articleSlug } = await params;
-    const data = await getArticleData(siteSlug, articleSlug);
+    const data = await getArticle(siteSlug, articleSlug);
 
     if (!data) {
         notFound();
     }
 
-    const { site, announcement, relatedArticles, canonicalUrl } = data;
+    const { site, announcement, relatedArticles } = data;
+
+    // Tepat satu inkrement view per kunjungan halaman.
+    await prisma.announcement.update({
+        where: { id: announcement.id },
+        data: { viewCount: { increment: 1 } },
+    });
 
     return (
         <div className="min-h-screen bg-surface-0 text-text-1">
-            {/* Canonical link for syndicated content */}
-            {canonicalUrl && (
-                <link rel="canonical" href={canonicalUrl} />
-            )}
+            <ReadingProgress targetId="article-body" wordCount={announcement.wordCount} />
+            <MarkRead siteSlug={siteSlug} id={announcement.id} />
 
             {/* Navbar */}
             {/* Back link kini ditangani ArticleHero (lihat T2.2); blok <nav> lokal
@@ -121,11 +152,14 @@ export default async function ArticlePage({ params }: PageProps) {
             />
 
             {/* Article Content Container */}
-            <article className="mx-auto max-w-[800px] px-6 pb-12 pt-8">
+            <article id="article-body" className="mx-auto max-w-[800px] px-6 pb-12 pt-8">
                 {/* Hero Media moved up */}
 
                 {/* Content */}
                 <ArticleContent html={announcement.content} />
+
+                <TableOfContents containerSelector="#article-body .prose-santos" />
+                <ShareBar title={announcement.title} url={`/site/${siteSlug}/${announcement.slug}`} />
 
                 {/* Syndication notice */}
                 {announcement.sites.length > 1 && (

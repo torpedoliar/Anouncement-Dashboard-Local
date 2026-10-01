@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { List, X } from "@phosphor-icons/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface NavLink {
@@ -19,20 +19,25 @@ interface NavbarProps {
 
 export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", customLinks }: NavbarProps) {
     const [isScrolled, setIsScrolled] = useState(false);
+    const [hidden, setHidden] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const navRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
+        let lastY = window.scrollY;
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 50);
+            const y = window.scrollY;
+            setIsScrolled(y > 50);
+            // Sembunyi saat turun melewati 80px, muncul saat naik. Tidak pernah
+            // sembunyi selama fokus keyboard ada di dalam navbar atau menu terbuka.
+            const focusInside = navRef.current?.contains(document.activeElement) ?? false;
+            if (y > 80 && y > lastY + 4 && !focusInside) setHidden(true);
+            else if (y < lastY - 4 || y <= 80) setHidden(false);
+            lastY = y;
         };
-
-        // Initial check
         handleScroll();
-
-        window.addEventListener("scroll", handleScroll);
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
     // Navbar lalu memakai state isDesktop + guard mounted yang default-true di SSR,
@@ -52,7 +57,9 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                 Langsung ke Konten
             </a>
             <nav
-                className={`fixed inset-x-0 top-0 z-sticky transition-colors duration-300 ${
+                ref={navRef}
+                onFocus={() => setHidden(false)}
+                className={`fixed inset-x-0 top-0 z-sticky transition-[transform,background-color] duration-300 ${hidden && !isMobileMenuOpen ? "-translate-y-full" : "translate-y-0"} ${
                     isScrolled
                         ? "border-b border-border bg-[rgb(var(--surface-0-rgb)/0.95)] backdrop-blur-md"
                         : "border-b border-transparent bg-transparent"
