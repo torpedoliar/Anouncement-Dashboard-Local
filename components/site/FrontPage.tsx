@@ -103,7 +103,7 @@ export default function FrontPage({
                 {/* Lead story — remount per slide supaya koreografi entrance
                     berjalan ulang setiap pergantian (pola FullscreenHero lama). */}
                 <div key={lead.id} className="lg:col-span-8" style={{ animation: "cine-rise var(--motion-slow) var(--motion-ease) both" }}>
-                    <a href={`/site/${siteSlug}/${lead.slug}`} data-story-card className="group block">
+                    <a href={`/site/${siteSlug}/${lead.slug}`} data-story-card className="group block rounded-[2px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                         {/* Media — video/YouTube autoplay muted saat jadi lead */}
                         <div className="relative aspect-[16/9] overflow-hidden bg-surface-2" style={{ animation: "cine-fade-in var(--motion-standard) var(--motion-ease) both", viewTransitionName: `story-${lead.id}` }}>
                             {leadYoutubeId ? (
