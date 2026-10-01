@@ -19,8 +19,7 @@ import CommandPalette from "@/components/admin/CommandPalette";
  * (`html[data-admin-sidebar="rail"]`), sehingga geometri sudah benar sejak
  * frame pertama.
  *
- * Tema terang TIDAK diatur di sini lagi — itu sekarang tugas script pra-paint
- * global di app/layout.tsx (kunci "theme", fallback prefers-color-scheme).
+ * Tema terang TIDAK diatur di sini — itu tugas script pra-paint global (lib/theme-key.ts, kunci "adminTheme", fallback prefers-color-scheme).
  */
 const PREPAINT_SCRIPT = `
 (function () {

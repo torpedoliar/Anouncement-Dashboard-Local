@@ -43,10 +43,7 @@ export default function AdminTopbar({ drawerOpen, onToggleDrawer }: AdminTopbarP
         const next = adminTheme === "light" ? "dark" : "light";
         setAdminTheme(next);
         try {
-            // Kunci "theme" dibaca script pra-paint di app/layout.tsx (global,
-            // semua area). "adminTheme" adalah kunci era lama — tetap ditulis
-            // untuk sesi browser lama yang hanya punya script pra-paint admin.
-            localStorage.setItem("theme", next);
+            // Kunci admin saja — situs & portal punya kuncinya sendiri (lib/theme-key.ts).
             localStorage.setItem("adminTheme", next);
         } catch {
             // Storage diblokir: tema tetap berubah untuk sesi ini.

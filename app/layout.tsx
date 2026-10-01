@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Lora, Sora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { THEME_PREPAINT_SCRIPT } from "@/lib/theme-key";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -44,31 +45,6 @@ export const metadata: Metadata = {
   },
 };
 
-/**
- * Script pra-paint: menerapkan tema SEBELUM frame pertama supaya tidak ada
- * kedip gelap→terang (atau sebaliknya).
- *
- * Urutan prioritas:
- *   1. Pilihan eksplisit user di localStorage ("light"/"dark"). Kunci lama
- *      "adminTheme" (era toggle-hanya-admin) tetap dibaca sebagai fallback
- *      supaya preferensi pengguna lama tidak hilang.
- *   2. Belum pernah memilih → ikuti prefers-color-sistem OS.
- *
- * CSS membaca class `html.theme-light` (blok var "PAPER edition" di
- * globals.css); default tanpa class = gelap.
- */
-const THEME_PREPAINT_SCRIPT = `
-(function () {
-  try {
-    var theme = localStorage.getItem('theme') || localStorage.getItem('adminTheme');
-    if (!theme) {
-      theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    }
-    if (theme === 'light') document.documentElement.classList.add('theme-light');
-  } catch (e) {}
-})();
-`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -84,7 +60,7 @@ export default function RootLayout({
         kelihatan: surface ikut terang tapi body tetap hitam dan teks tetap
         putih. Warna body sekarang murni dari token.
       */}
-      {/* Script pra-paint tema — inline di <head> agar tampil sebelum CSS paint */}
+      {/* Tema per permukaan (lib/theme-key.ts) — diterapkan sebelum paint pertama */}
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_PREPAINT_SCRIPT }} />
       </head>
