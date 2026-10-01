@@ -225,6 +225,7 @@ export default function PortalHome({
                                     open={!collapsed[g.id]}
                                     onToggle={(e) => {
                                         const isCollapsed = !(e.currentTarget as HTMLDetailsElement).open;
+                                        setCollapsed((prev) => ({ ...prev, [g.id]: isCollapsed }));
                                         writeCollapsed(g.id, isCollapsed);
                                     }}
                                 >
