@@ -2485,7 +2485,7 @@ Catatan: `AnnouncementCard` juga dipakai di "Artikel Terkait" pada halaman artik
 ```
 - `<Image>` lead: tambah kelas `front-kenburns` (Ken Burns hanya pada gambar, bukan video/iframe).
 - `<h2>` judul lead: tambahkan `style={{ animation: "cine-rise var(--motion-slow) var(--motion-ease) 120ms both" }}` dan `<ReadMarker siteSlug={siteSlug} id={lead.id} createdAt={new Date(lead.createdAt).toISOString()} />` setelah `{lead.title}`.
-- Judul story sekunder `<h3>` tambah `ReadMarker` serupa. `Link` lead & sekunder diganti `<a>` biasa (View Transitions lintas dokumen butuh navigasi penuh) dengan atribut `data-story-card`; hapus `import Link` bila tak terpakai. Media lead diberi `style={{ viewTransitionName: \`story-${lead.id}\` }}` — lead tidak pernah muncul juga di feed (`frontIds`), jadi nama unik.
+- Judul story sekunder `<h3>` tambah `ReadMarker` serupa. `Link` lead & sekunder diganti `<a>` biasa (View Transitions lintas dokumen butuh navigasi penuh) dengan atribut `data-story-card`; hapus `import Link` bila tak terpakai. Media lead diberi inline style `viewTransitionName` bernilai `story-{lead.id}` (template literal) — lead tidak pernah muncul juga di feed (`frontIds`), jadi nama unik.
 - CSS (blok Situs):
 ```css
 .front-progress {
