@@ -26,7 +26,7 @@ Rework struktur, UI/UX, motion, dan tema untuk dua permukaan pengguna:
 ### Asumsi
 - Panel admin **tidak** dirombak; ikut berganti font karena token font global.
 - Rute, data, dan alur login SSO **tidak berubah**. Hanya tampilan, struktur halaman, interaksi.
-- Satu-satunya data baru di DB: **favorit aplikasi** (kolom `pinned`). Status "sudah dibaca" dan "kunjungan terakhir" disimpan di `localStorage` per perangkat.
+- Satu-satunya data baru di DB: **favorit aplikasi** (tabel `portal_user_app_pins`). Status "sudah dibaca" dan "kunjungan terakhir" disimpan di `localStorage` per perangkat.
 - Tidak ada dependensi baru. Motion memakai CSS, View Transitions API bawaan browser, dan token `--motion-*` yang ada.
 - Semua motion mati di `prefers-reduced-motion: reduce`.
 
@@ -82,7 +82,7 @@ Blok `html.theme-light` di `globals.css`:
 - Setiap pasangan teks/permukaan baru dicek AA (≥ 4.5:1 teks normal) dengan alat kontras; nilai yang gagal disesuaikan sebelum merge.
 
 ### 2.4 Pembersihan
-- `app/[slug]/page.tsx`: hapus template mati (~450 baris), sisakan `redirect()` ke URL kanonis.
+- `app/[slug]/page.tsx`: sudah berupa redirect 38 baris (template mati telah dihapus sebelumnya) — tidak ada pekerjaan.
 - Pindahkan `style={{}}` inline ke kelas token di: `components/site/ArticleHero.tsx` (21), `app/site/page.tsx` (12), `components/SitePickerCard.tsx` (10), `app/site/[siteSlug]/[articleSlug]/page.tsx` (10). Pengecualian sah: nilai dinamis dari data (warna kategori, `--site-primary` per situs) tetap inline lewat CSS custom property.
 - Tambah `focus-visible:outline-*` ke semua elemen interaktif di `components/site/**`, `Navbar.tsx`, `SitePickerCard.tsx`, `AnnouncementCard.tsx`.
 
@@ -109,8 +109,9 @@ Satu kolom, `max-w-[1200px]`:
 - `AppCard.tsx` hanya dipakai `GroupedAppGrid` (beranda) — keduanya diganti `AppTile` + grid baru, lalu dihapus.
 
 ### 3.3 Favorit (data)
-- Prisma: `PortalUserAppVisibility` tambah `pinned Boolean @default(false)`. Baris dibuat via upsert `(portalUserId, appId)` bila belum ada (default `visible: true`).
-- Migrasi Prisma satu kolom; `version.json` `schemaVersion` 18 → 19.
+- Prisma: model baru `PortalUserAppPin` (`@@id([portalUserId, appId])`, `createdAt`, cascade ke `PortalUser` dan `PortalApp`), tabel `portal_user_app_pins`.
+  - **Kenapa bukan kolom di `PortalUserAppVisibility`** (revisi 2026-10-02 saat menyusun rencana): `saveVisibility()` menghapus SEMUA baris visibility user setiap onboarding/reset, dan `saveVisibilityPartial(visible=true)` menghapus barisnya — favorit akan ikut hilang. Selain itu baris app `visible: true` berarti "tampilkan walau grupnya disembunyikan", jadi membuat baris hanya untuk menyimpan pin akan diam-diam membatalkan grup tersembunyi.
+- Migrasi Prisma satu tabel; `version.json` `schemaVersion` 18 → 19.
 - `PATCH /api/portal/apps/[id]/pin` body `{ pinned: boolean }`:
   - Sesi portal wajib (`portalAuthOptions`), 401 bila tidak.
   - `canAccessPortalApp(userId, appId)` wajib, 403 bila tidak.
@@ -121,13 +122,14 @@ Satu kolom, `max-w-[1200px]`:
 ### 3.4 Command palette `Ctrl+K` / `/`
 - `<dialog>` native (fokus terkunci, Esc menutup bawaan browser). Pemicu: `Ctrl+K`/`Cmd+K` di mana saja; `/` bila fokus bukan di input. Tombol pencarian terlihat di `PortalHeader` dengan label kbd.
 - Data: daftar app yang sudah dirender di beranda (diteruskan sebagai props), tidak ada fetch tambahan. Palette hanya aktif di beranda `/portal`; tombol pencarian di `PortalHeader` pada halaman lain menavigasi ke `/portal?cari=1` yang membuka palette saat mount. (Palette global di semua halaman portal ditunda sampai ada kebutuhan — butuh endpoint daftar app baru.)
-- Pencarian: fungsi murni `rankApps(query, apps)` — skor substring (awal kata > tengah) atas nama, kategori, nama grup; tanpa library. Query kosong → Terakhir dipakai + Favorit. Self-check: `scripts/test-rank-apps.ts`.
+- Pencarian: fungsi murni `rankApps(query, apps)` di `lib/portal-home.ts` — skor substring (awal kata > tengah) atas nama, kategori, nama grup; tanpa library. Query kosong → Favorit + Terakhir dipakai. Self-check: `scripts/test-portal-home.ts`.
 - Keyboard: ↑/↓ memindah, Enter membuka, `aria-activedescendant` pada listbox.
-- Grid beranda: roving tabindex — panah memindah fokus antar tile, Enter membuka.
+- Grid beranda: semua tile tetap bisa di-Tab; tombol panah memindah fokus antar tile dalam satu grid, Enter membuka.
 
 ### 3.5 Animasi buka aplikasi (zoom → jembatan)
 **Zoom (lintas halaman):**
-- `globals.css`: `@view-transition { navigation: auto; }`.
+- `globals.css`: `@view-transition { navigation: auto; }`. Ini hanya berlaku untuk navigasi dokumen penuh, jadi tile app dan kartu artikel memakai `<a href>` biasa (bukan `next/link`). Halaman launch dan artikel sama-sama `force-dynamic`, jadi prefetch yang hilang tidak berarti.
+- `view-transition-name` dipasang **saat klik** pada elemen yang diklik saja — app yang sama bisa tampil di Favorit, Terakhir dipakai, dan beberapa grup sekaligus, dan nama ganda membatalkan transisi.
 - `AppTile` memberi `view-transition-name: app-{slug}` pada ikon. Halaman launch memberi nama yang sama pada ikon kanan jembatan → browser menganimasikan perpindahan.
 - Browser tanpa dukungan: navigasi biasa, tanpa efek. Tidak ada polyfill.
 - `prefers-reduced-motion`: `::view-transition-group(*) { animation: none; }`.
@@ -136,9 +138,10 @@ Satu kolom, `max-w-[1200px]`:
 - Logo portal → garis koneksi (mengisi kiri ke kanan) → ikon app; judul "Membuka {app}", baris "Masuk sebagai {username}".
 - Props: `steps: { label; state: "pending" | "active" | "done" | "error" }[]`, `onRetry`, `manualHref`.
 - Dipakai oleh `SSOAutoSubmit`, `SSOPostSubmit`, `SSORerouteSubmit`, `SSORedirectHandoff` — menggantikan `sso-rings-container`. Tahapan jujur per mode:
-  - FORM: Menyiapkan → Mengirim login.
-  - POST / REROUTE: Ambil sesi → Kirim login → Membuka (dipicu status fetch yang sudah ada di masing-masing komponen).
-  - REDIRECT: Mengalihkan.
+  - Revisi 2026-10-02: komponen launch hanya mengirim form ke server (tidak ada fetch bertahap di klien), jadi klien hanya tahu dua keadaan nyata. Tahapan dibuat dua langkah agar jujur:
+  - FORM: Menyiapkan → Mengirim login ke {app}.
+  - POST / REROUTE: Menyiapkan → Portal masuk ke {app}.
+  - REDIRECT: Menyiapkan → Mengalihkan ke {app}.
 - Gagal: tahap aktif menjadi `error` (merah), muncul "Coba lagi" dan "Buka manual" (perilaku fallback yang sudah ada dipertahankan).
 - Tidak ada jeda buatan; submit tetap segera seperti sekarang.
 - CSS `sso-rings-*` dan `sso-glow-pulse`/`sso-ring-spin` di `globals.css` dihapus bila tidak ada pemakai lain.
@@ -157,7 +160,7 @@ Night (default). Latar sapaan: gradien mesh radial `--accent` + biru info, opaci
 3. **FrontPage** (komponen yang ada) ditambah:
    - Garis progress 3px warna `--site-primary` di bawah media lead; animasi `ROTATE_MS`; berhenti saat jeda/hover/fokus (state yang sudah ada).
    - Ken Burns: `scale 1 → 1.06` selama durasi slide pada gambar lead (bukan video).
-   - Judul lead masuk per baris memakai `cine-rise` yang sudah ada.
+   - Judul lead masuk dengan `cine-rise` tertunda 120ms setelah media (pemecahan per baris ditunda: butuh pengukuran baris di klien untuk efek yang kecil).
 4. **Feed dengan pembatas waktu**: "Hari ini" / "Minggu ini" / "Sebelumnya", dikelompokkan dari `createdAt` saat render server (zona waktu `Asia/Jakarta`). Pagination tetap.
 5. **BARU / sudah dibaca** (komponen klien kecil pada kartu):
    - Dibaca: daftar ID artikel di `localStorage` `site:{slug}:read` (maks 200, FIFO); ditulis saat halaman artikel dibuka.
@@ -166,9 +169,9 @@ Night (default). Latar sapaan: gradien mesh radial `--accent` + biru info, opaci
    - Logika murni (`isNew`, `pushRead`) di `lib/reading-state.ts`; self-check `scripts/test-reading-state.ts`.
 
 ### 4.2 Halaman artikel
-- **Progress baca**: bar 2px `--site-primary` fixed di atas viewport, dari scroll posisi konten artikel; label "sisa {n} menit" dari `wordCount` × sisa proporsi. Memakai `animation-timeline: scroll()` bila didukung, fallback listener scroll pasif + `requestAnimationFrame`.
+- **Progress baca**: bar 2px `--site-primary` fixed di atas viewport, dari scroll posisi konten artikel; label "sisa {n} menit" dari `wordCount` × sisa proporsi. Satu jalur: listener scroll pasif + `requestAnimationFrame` (label menit butuh JS juga, jadi jalur CSS scroll-timeline tidak menghemat apa pun).
 - **Daftar isi**: dibangun klien dari h2/h3 di `.prose-santos` (menambah `id` slug bila belum ada). Tampil bila ≥ 3 heading: kolom melayang di ≥ lg, tombol "Daftar isi" di bawahnya membuka `<dialog>`. Item aktif disorot via `IntersectionObserver`.
-- **Navbar auto-hide**: `Navbar.tsx` menyembunyikan diri saat scroll turun > 80px, muncul saat scroll naik; tidak pernah sembunyi saat fokus berada di dalam navbar.
+- **Navbar auto-hide** (berlaku di seluruh situs, karena `Navbar` dipakai layout situs): `Navbar.tsx` menyembunyikan diri saat scroll turun > 80px, muncul saat scroll naik; tidak pernah sembunyi saat fokus berada di dalam navbar.
 - **Bagikan**: tombol WhatsApp (`https://wa.me/?text={judul}%20{url}`) + salin tautan (`navigator.clipboard` dengan fallback `execCommand`, pola sama dengan `SSOCredentialVault`).
 - **Metadata OG**: tambah `generateMetadata` di `app/site/[siteSlug]/[articleSlug]/page.tsx` — `title`, `description` (excerpt), `openGraph.images` (imagePath / thumbnail YouTube), `openGraph.type: "article"`, canonical dari junction `isPrimary`.
 - **Transisi kartu → artikel**: `view-transition-name: story-{id}` pada media kartu dan hero artikel (mekanisme sama dengan portal).
@@ -189,7 +192,7 @@ Night (default). Latar sapaan: gradien mesh radial `--accent` + biru info, opaci
 - Launch gagal → `LaunchBridge` menandai tahap error, tombol coba lagi / buka manual.
 
 ## 7. Verifikasi
-- Self-check baru (pola `scripts/test-*.ts` repo, tanpa framework): `test-theme-key.ts`, `test-rank-apps.ts`, `test-reading-state.ts`.
+- Self-check baru (pola `scripts/test-*.ts` repo, tanpa framework): `test-theme-key.ts`, `test-portal-home.ts` (ranking, favorit, hitungan status, pintasan keyboard), `test-reading-state.ts`.
 - Self-check portal yang ada tetap lulus.
 - `npm run lint`, `npx tsc --noEmit`, `npm run build`.
 - Uji manual per fase di browser (Chromium + Firefox): portal grid, `Ctrl+K`, pin, launch tiap mode SSO (FORM/POST/REROUTE/VAULT/REDIRECT), situs Paper, BARU/dibaca, artikel (progress, TOC, share, OG via validator), reduced-motion on/off.
