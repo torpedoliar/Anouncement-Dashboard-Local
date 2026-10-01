@@ -166,7 +166,7 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
         <div className="min-h-screen bg-surface-0 pt-20 text-text-1">
             <EditionStrip
                 siteSlug={siteSlug}
-                items={[...frontStories, ...announcements].map((a) => ({ id: a.id, createdAt: a.createdAt.toISOString() }))}
+                items={[...new Map([...frontStories, ...announcements].map((a) => [a.id, a])).values()].map((a) => ({ id: a.id, createdAt: a.createdAt.toISOString() }))}
             />
             {/* Nameplate koran — selalu tampil, juga saat feed kosong */}
             <Masthead
