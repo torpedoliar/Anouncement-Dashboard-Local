@@ -367,6 +367,10 @@ export const PatchVisibilitySchema = z.object({
     visible: z.boolean(),
 });
 
+export const PinAppSchema = z.object({
+    pinned: z.boolean(),
+});
+
 // -----------------------------------------
 // Newsletter Schemas
 // -----------------------------------------

@@ -609,6 +609,7 @@ model PortalUser {
   auditLogs     AuditLog[]
   groups        PortalUserGroup[]
   visibility    PortalUserAppVisibility[]
+  pins          PortalUserAppPin[]
 
   @@index([isActive])
   @@index([role])
@@ -749,6 +750,7 @@ model PortalApp {
   credentials   PortalUserAppCredential[]
   groupApps     PortalGroupApp[]
   visibility    PortalUserAppVisibility[]
+  pins          PortalUserAppPin[]
   healthLogs    PortalAppHealthLog[]
 
   @@index([isActive])
@@ -946,6 +948,21 @@ model PortalUserAppVisibility {
   @@index([groupId])
   @@index([appId])
   @@map("portal_user_app_visibility")
+}
+
+// Favorit beranda portal. Tabel terpisah dari visibility: saveVisibility()
+// menghapus semua baris visibility saat onboarding/reset, dan baris app
+// visible=true punya arti "tampilkan walau grup disembunyikan".
+model PortalUserAppPin {
+  portalUserId String
+  appId        String
+  createdAt    DateTime @default(now())
+
+  portalUser   PortalUser @relation(fields: [portalUserId], references: [id], onDelete: Cascade)
+  app          PortalApp  @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@id([portalUserId, appId])
+  @@map("portal_user_app_pins")
 }
 
 model PortalGroupApp {
