@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
@@ -12,6 +11,7 @@ import {
     SpeakerSlash,
 } from "@phosphor-icons/react";
 import { extractYoutubeId, formatDateShort, readingTimeLabel } from "@/lib/utils";
+import { ReadMarker } from "@/components/site/ReadState";
 
 /**
  * FrontPage — "halaman depan koran" dengan rotasi otomatis 5 detik:
@@ -103,9 +103,9 @@ export default function FrontPage({
                 {/* Lead story — remount per slide supaya koreografi entrance
                     berjalan ulang setiap pergantian (pola FullscreenHero lama). */}
                 <div key={lead.id} className="lg:col-span-8" style={{ animation: "cine-rise var(--motion-slow) var(--motion-ease) both" }}>
-                    <Link href={`/site/${siteSlug}/${lead.slug}`} className="group block">
+                    <a href={`/site/${siteSlug}/${lead.slug}`} data-story-card className="group block">
                         {/* Media — video/YouTube autoplay muted saat jadi lead */}
-                        <div className="relative aspect-[16/9] overflow-hidden bg-surface-2" style={{ animation: "cine-fade-in var(--motion-standard) var(--motion-ease) both" }}>
+                        <div className="relative aspect-[16/9] overflow-hidden bg-surface-2" style={{ animation: "cine-fade-in var(--motion-standard) var(--motion-ease) both", viewTransitionName: `story-${lead.id}` }}>
                             {leadYoutubeId ? (
                                 <iframe
                                     title={`Video: ${lead.title}`}
@@ -130,17 +130,26 @@ export default function FrontPage({
                                     alt={lead.title}
                                     fill
                                     sizes="(min-width: 1024px) 66vw, 100vw"
-                                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+                                    className="front-kenburns object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
                                 />
                             ) : (
                                 <div aria-hidden="true" className="h-full w-full bg-surface-2" />
+                            )}
+                            {count > 1 && (
+                                <span
+                                    key={`${lead.id}-${userPaused || hovered ? "p" : "r"}`}
+                                    aria-hidden="true"
+                                    className={`front-progress ${userPaused || hovered ? "is-paused" : ""}`}
+                                    style={{ animationDuration: `${ROTATE_MS}ms` }}
+                                />
                             )}
                         </div>
 
                         <div className="mt-4">
                             <StoryMeta story={lead} className="mb-2" />
-                            <h2 className="font-serif text-title font-bold text-text-1 underline-offset-4 group-hover:underline md:text-display">
+                            <h2 className="font-serif text-title font-bold text-text-1 underline-offset-4 group-hover:underline md:text-display" style={{ animation: "cine-rise var(--motion-slow) var(--motion-ease) 120ms both" }}>
                                 {lead.title}
+                                <ReadMarker siteSlug={siteSlug} id={lead.id} createdAt={new Date(lead.createdAt).toISOString()} />
                             </h2>
                             {lead.excerpt && (
                                 <p className="mt-2 max-w-[68ch] text-body leading-relaxed text-text-2 line-clamp-2">
@@ -148,7 +157,7 @@ export default function FrontPage({
                                 </p>
                             )}
                         </div>
-                    </Link>
+                    </a>
 
                     {/* Kontrol rotasi — di bawah meta, sejajar dengan teks lead */}
                     {count > 1 && (
@@ -221,10 +230,11 @@ export default function FrontPage({
                             const { image, youtube, videoOnly } = storyThumb(story);
                             const isVideo = !!story.videoPath || story.videoType === "youtube";
                             return (
-                                <Link
+                                <a
                                     key={story.id}
                                     href={`/site/${siteSlug}/${story.slug}`}
-                                    className="group flex gap-4 py-4 first:pt-0 last:pb-0"
+                                    data-story-card
+                                    className="group flex gap-4 py-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent first:pt-0 last:pb-0"
                                     style={{ animation: `cine-rise var(--motion-slow) var(--motion-ease) ${150 + i * 90}ms both` }}
                                 >
                                     <div className="relative aspect-[4/3] w-28 shrink-0 overflow-hidden bg-surface-2">
@@ -261,10 +271,11 @@ export default function FrontPage({
                                     <div className="min-w-0">
                                         <h3 className="font-serif text-body font-bold leading-snug text-text-1 line-clamp-2 group-hover:text-accent">
                                             {story.title}
+                                            <ReadMarker siteSlug={siteSlug} id={story.id} createdAt={new Date(story.createdAt).toISOString()} />
                                         </h3>
                                         <StoryMeta story={story} className="mt-1.5" />
                                     </div>
-                                </Link>
+                                </a>
                             );
                         })}
                     </div>

@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { extractYoutubeId, formatDateShort, readingTimeLabel } from "@/lib/utils";
 import { Clock, Play, PushPin, YoutubeLogo } from "@phosphor-icons/react";
 import { useRef, useState, useEffect } from "react";
+import { ReadMarker } from "@/components/site/ReadState";
 
 interface AnnouncementCardProps {
     id: string;
@@ -34,6 +34,7 @@ interface AnnouncementCardProps {
 }
 
 export default function AnnouncementCard({
+    id,
     title,
     excerpt,
     slug,
@@ -118,6 +119,7 @@ export default function AnnouncementCard({
             className={`relative overflow-hidden bg-surface-2 ${
                 featured ? "aspect-[16/10] md:aspect-auto md:h-full md:w-1/2" : "aspect-[16/10]"
             }`}
+            style={{ viewTransitionName: `story-${id}` }}
         >
             {imageThumb ? (
                 <Image
@@ -170,8 +172,9 @@ export default function AnnouncementCard({
     );
 
     return (
-        <Link href={href} className="block rounded-[2px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style={style}>
+        <a href={href} className="block rounded-[2px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style={style}>
             <article
+                data-story-card
                 className={`group h-full overflow-hidden border border-border bg-surface-1 ease-[var(--motion-ease)] transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-accent ${
                     featured ? "flex flex-col md:flex-row" : "flex flex-col"
                 }`}
@@ -203,6 +206,7 @@ export default function AnnouncementCard({
                         }`}
                     >
                         {title}
+                        {siteSlug && <ReadMarker siteSlug={siteSlug} id={id} createdAt={new Date(createdAt).toISOString()} />}
                     </h3>
 
                     {/* Excerpt */}
@@ -221,6 +225,6 @@ export default function AnnouncementCard({
                     </div>
                 </div>
             </article>
-        </Link>
+        </a>
     );
 }

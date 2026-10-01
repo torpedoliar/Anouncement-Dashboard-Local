@@ -7,10 +7,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import Masthead from "@/components/site/Masthead";
+import EditionStrip from "@/components/site/EditionStrip";
 import FrontPage from "@/components/site/FrontPage";
 import CategoryStrip from "@/components/site/CategoryStrip";
 import AnnouncementCard from "@/components/AnnouncementCard";
 import Pagination from "@/components/Pagination";
+import { timeBucket, TIME_BUCKET_LABEL, type TimeBucket } from "@/lib/reading-state";
 
 // Thumbnail/reading helpers sekarang hidup di dalam AnnouncementCard (T4) —
 // helper lokal extractYoutubeId/getThumbnailUrl dihapus.
@@ -162,6 +164,10 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
         // paddingTop 80px = tinggi Navbar fixed (h-20) — Masthead tidak lagi
         // tertutup navbar seperti hero full-bleed sebelumnya.
         <div className="min-h-screen bg-surface-0 pt-20 text-text-1">
+            <EditionStrip
+                siteSlug={siteSlug}
+                items={[...frontStories, ...announcements].map((a) => ({ id: a.id, createdAt: a.createdAt.toISOString() }))}
+            />
             {/* Nameplate koran — selalu tampil, juga saat feed kosong */}
             <Masthead
                 siteName={site.name}
@@ -221,40 +227,45 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
 
                         {/* Grid kronologis murni — stagger entrance (Varian C).
                             Kartu pertama tampil featured hanya di halaman depan. */}
-                        {chronologicalFeed.length > 0 && (
-                            <div
-                                className="cine-stagger grid gap-6"
-                                style={{
-                                    gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
-                                }}
-                            >
-                                {chronologicalFeed.map((announcement, i) => {
-                                    const featured = isFrontPage && i === 0;
-                                    return (
-                                        <AnnouncementCard
-                                            key={announcement.id}
-                                            style={{
-                                                "--i": Math.min(i, 11),
-                                                gridColumn: featured ? "1 / -1" : undefined,
-                                            } as React.CSSProperties}
-                                            id={announcement.id}
-                                            title={announcement.title}
-                                            excerpt={announcement.excerpt || undefined}
-                                            slug={announcement.slug}
-                                            siteSlug={siteSlug}
-                                            imagePath={announcement.imagePath || undefined}
-                                            videoPath={announcement.videoPath}
-                                            videoType={announcement.videoType}
-                                            youtubeUrl={announcement.youtubeUrl}
-                                            category={announcement.category}
-                                            createdAt={announcement.createdAt}
-                                            wordCount={announcement.wordCount}
-                                            featured={featured}
-                                        />
-                                    );
-                                })}
-                            </div>
-                        )}
+                        {chronologicalFeed.length > 0 && (() => {
+                            const nowIso = new Date().toISOString();
+                            const buckets: TimeBucket[] = ["today", "week", "older"];
+                            let index = 0;
+                            return buckets.map((bucket) => {
+                                const items = chronologicalFeed.filter((a) => timeBucket(a.createdAt.toISOString(), nowIso) === bucket);
+                                if (items.length === 0) return null;
+                                return (
+                                    <section key={bucket} aria-label={TIME_BUCKET_LABEL[bucket]} className="mb-10">
+                                        <h2 className="edition-divider mb-6">{TIME_BUCKET_LABEL[bucket]}</h2>
+                                        <div className="cine-stagger grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(min(350px,100%),1fr))]">
+                                            {items.map((announcement) => {
+                                                const i = index++;
+                                                const featured = isFrontPage && i === 0;
+                                                return (
+                                                    <AnnouncementCard
+                                                        key={announcement.id}
+                                                        style={{ "--i": Math.min(i, 11), gridColumn: featured ? "1 / -1" : undefined } as React.CSSProperties}
+                                                        id={announcement.id}
+                                                        title={announcement.title}
+                                                        excerpt={announcement.excerpt || undefined}
+                                                        slug={announcement.slug}
+                                                        siteSlug={siteSlug}
+                                                        imagePath={announcement.imagePath || undefined}
+                                                        videoPath={announcement.videoPath}
+                                                        videoType={announcement.videoType}
+                                                        youtubeUrl={announcement.youtubeUrl}
+                                                        category={announcement.category}
+                                                        createdAt={announcement.createdAt}
+                                                        wordCount={announcement.wordCount}
+                                                        featured={featured}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                    </section>
+                                );
+                            });
+                        })()}
 
                         {feedItems.length === 0 && (
                             <p className="py-12 text-center text-small text-text-3">
