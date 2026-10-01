@@ -697,74 +697,6 @@ a {
    IMPRESSIVE LOADING ANIMATIONS (TASK-23)
    ========================================================================== */
 
-/* Pulsing Glow Effect - For SSO handoff pages */
-@keyframes sso-glow-pulse {
-  0%, 100% {
-    box-shadow: 
-      0 0 8px var(--brand-red-alpha),
-      0 0 16px var(--brand-red-alpha),
-      inset 0 0 12px var(--brand-red-alpha);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 
-      0 0 12px var(--brand-red),
-      0 0 24px var(--brand-red-light),
-      inset 0 0 20px var(--brand-red);
-    transform: scale(1.05);
-  }
-}
-
-/* Concentric Ring Rotation - Stylized instead of basic spinner */
-@keyframes sso-ring-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.sso-rings-container {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-
-.sso-ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 2px solid transparent;
-}
-
-.sso-ring-outer {
-  width: 100%;
-  height: 100%;
-  border-top-color: var(--brand-red);
-  border-bottom-color: var(--brand-red-light);
-  animation: sso-ring-spin 1.5s linear infinite;
-}
-
-.sso-ring-middle {
-  width: 70%;
-  height: 70%;
-  top: 15%;
-  left: 15%;
-  border-right-color: var(--brand-red-light);
-  border-left-color: var(--brand-red);
-  animation: sso-ring-spin 2s linear infinite reverse;
-}
-
-.sso-ring-inner {
-  width: 40%;
-  height: 40%;
-  top: 30%;
-  left: 30%;
-  background: linear-gradient(135deg, var(--brand-red), var(--brand-red-dark));
-  box-shadow: 0 0 12px var(--brand-red-alpha), 0 0 24px var(--brand-red-alpha);
-  animation: sso-glow-pulse 2s ease-in-out infinite;
-}
-
 /* Shimmer Effect - For ListSkeleton */
 @keyframes shimmer-shine {
   0% {
@@ -874,6 +806,48 @@ a {
 
 .portal-palette[open] { animation: modalScale var(--motion-fast) var(--motion-ease); }
 
+/* Navigasi dokumen penuh (tile → launch, kartu → artikel) dianimasikan browser
+   yang mendukung View Transitions; lainnya berpindah biasa. */
+@view-transition { navigation: auto; }
+::view-transition-group(*) {
+  animation-duration: var(--motion-slow);
+  animation-timing-function: var(--motion-ease);
+}
+
+.launch-wire {
+  position: relative;
+  width: min(180px, 30vw);
+  height: 2px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.launch-wire::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--brand-red), var(--accent));
+  transform-origin: left;
+  animation: launch-fill 1.6s var(--motion-ease) infinite;
+}
+.launch-wire.is-done::after { animation: none; transform: scaleX(1); background: var(--color-success); }
+.launch-wire.is-error::after { animation: none; transform: scaleX(1); background: var(--color-danger); }
+.launch-pulse {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px #fff;
+  animation: launch-travel 1.6s var(--motion-ease) infinite;
+}
+.launch-wire.is-done .launch-pulse,
+.launch-wire.is-error .launch-pulse { display: none; }
+@keyframes launch-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes launch-travel { from { left: 0; opacity: 1; } 90% { opacity: 1; } to { left: calc(100% - 8px); opacity: 0; } }
+.launch-step-active { animation: portal-breathe 1.2s ease-in-out infinite; }
+
 /* Accessibility - Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -897,6 +871,12 @@ a {
   }
   .portal-breathe,
   .portal-mesh { animation: none !important; }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+  .launch-wire::after { animation: none !important; transform: scaleX(1); }
+  .launch-pulse,
+  .launch-step-active { animation: none !important; }
 }
 /* Category Tab Hover */
 .category-tab:hover {

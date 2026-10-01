@@ -364,6 +364,7 @@ export default async function SsoLaunchPage({ params, searchParams }: PageProps)
     return <SSOAutoSubmit
         app={{
             name: app.name,
+            slug: app.slug,
             loginUrl: releaseApp.loginUrl,
             httpMethod: releaseApp.httpMethod,
             usernameField: releaseApp.usernameField,
