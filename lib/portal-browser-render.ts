@@ -5,7 +5,7 @@ export interface RenderResult {
 }
 
 const MAX_RENDERED_HTML_BYTES = 512 * 1024;
-const MAX_LOGIN_FORM_WAIT_MS = 8_000;
+const MAX_LOGIN_FORM_WAIT_MS = 12_000;
 
 /**
  * Fungsi ini dijalankan Browserless setelah navigasi. Selain menunggu field yang
@@ -277,6 +277,26 @@ const LOGIN_FORM_READY_FUNCTION = String.raw`() => {
 }`;
 
 /**
+ * Browserless v1 mengevaluasi fungsi `waitFor` satu kali lalu langsung mengambil
+ * snapshot — ia tidak mengulang sampai bernilai true seperti `waitForFunction` v2.
+ * Spike 2026-10-01: Grafana, OrangeHRM, Portainer, SonarQube, Atlassian kembali
+ * tanpa form karena predikat dijalankan sebelum bundle SPA selesai merakit form.
+ * Pembungkus ini mem-poll sendiri. Batasnya diukur dari `performance.now()`
+ * (mulai navigasi halaman) supaya navigasi + tunggu form tetap di dalam
+ * `formWaitMs`; saat habis ia mengembalikan false dan v1 tetap mengirim DOM terakhir.
+ */
+function pollingReadyFunction(formWaitMs: number): string {
+    return `async () => {
+        const ready = ${LOGIN_FORM_READY_FUNCTION};
+        while (performance.now() < ${formWaitMs}) {
+            try { if (ready()) return true; } catch {}
+            await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+        try { return ready(); } catch { return false; }
+    }`;
+}
+
+/**
  * Kontrak /content berbeda antar generasi Browserless: v2 memakai
  * `waitForFunction` + `bestAttempt`, sedangkan v1 (`browserless/chrome`) memakai
  * satu properti `waitFor`. Payload dicoba berurutan supaya deployment yang masih
@@ -294,7 +314,7 @@ function renderAttempts(url: string, formWaitMs: number): Array<Record<string, u
             // kembalikan DOM terakhir alih-alih menganggap renderer mati.
             bestAttempt: true,
         },
-        { url, gotoOptions, waitFor: LOGIN_FORM_READY_FUNCTION },
+        { url, gotoOptions, waitFor: pollingReadyFunction(formWaitMs) },
         { url },
     ];
 }
@@ -308,7 +328,7 @@ function renderAttempts(url: string, formWaitMs: number): Array<Record<string, u
  * dikembalikan apa adanya, sehingga pemanggil bisa menjelaskan alasannya alih-alih
  * menyamarkannya sebagai layanan mati.
  */
-export async function renderLoginPage(url: string, timeoutMs = 10_000): Promise<RenderResult | null> {
+export async function renderLoginPage(url: string, timeoutMs = 15_000): Promise<RenderResult | null> {
     const endpoint = process.env.PORTAL_BROWSER_URL?.trim();
     if (!endpoint) return null;
 

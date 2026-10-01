@@ -169,6 +169,33 @@ async function main() {
     assertEq(minimal?.html.includes("type=\"password\""), true, "payload minimal sebagai jaring terakhir");
     assertEq(strictStub.bodies().length, 3, "tiga percobaan payload dijalankan");
 
+    // Browserless v1 mengevaluasi fungsi `waitFor` SEKALI (bukti spike 2026-10-01:
+    // Grafana/OrangeHRM/Portainer kembali tanpa form). Predikat v1 harus mem-poll
+    // sendiri sampai form muncul, dan lolos ke snapshot (return) saat waktunya habis.
+    const v1Fn = (legacyBodies[1] as { waitFor?: string })?.waitFor ?? "";
+    assertEq(/^async \(\) =>/.test(v1Fn), true, "predikat v1 adalah fungsi async yang mem-poll");
+    let pollCalls = 0;
+    const fakeDocGlobals = { document: { getElementById: () => null, querySelectorAll: () => [] }, location: { href: "x" } };
+    const v1Eval = new Function(...Object.keys(fakeDocGlobals), `"use strict"; return (${v1Fn});`)(...Object.values(fakeDocGlobals)) as () => Promise<boolean>;
+    const started = Date.now();
+    const v1Result = await v1Eval().catch(() => { pollCalls = -1; return null; });
+    assertEq(v1Result, false, "predikat v1 mengembalikan false (bukan hang) saat form tak pernah muncul");
+    assertEq(Date.now() - started < 15_000, true, "predikat v1 berhenti sebelum batas waktu Browserless");
+    assertEq(pollCalls, 0, "predikat v1 tidak melempar");
+
+    // Gagal navigasi lambat (timeout/408) TIDAK boleh menghapus seluruh render:
+    // percobaan berikutnya harus tetap dijalankan, bukan langsung null.
+    const navTimeoutStub = await startStub(200, "", {}, (received) => {
+        if (received && ("waitForFunction" in received || "waitFor" in received)) {
+            return { status: 408, body: "browserless function has timed-out" };
+        }
+        return { status: 200, body: `<html><body><form><input type="password" name="p"></form></body></html>` };
+    });
+    process.env.PORTAL_BROWSER_URL = `http://127.0.0.1:${navTimeoutStub.port}`;
+    const afterTimeout = await renderLoginPage("https://slow.app/login");
+    assertEq(afterTimeout?.html.includes("type=\"password\""), true, "408 pada payload tunggu → payload minimal tetap dicoba");
+    navTimeoutStub.server.close();
+
     const errStub = await startStub(500, "boom");
     process.env.PORTAL_BROWSER_URL = `http://127.0.0.1:${errStub.port}`;
     assertEq(await renderLoginPage("https://x/"), null, "semua kontrak gagal → null");

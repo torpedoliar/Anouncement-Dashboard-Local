@@ -44,6 +44,7 @@ interface FieldInfo {
     value: string;
     isDisabled: boolean;
     isReadOnly: boolean;
+    isDecoy?: boolean;
     formIndex: number;
     formMethod: string | null;
     formAction: string | null;
@@ -562,6 +563,9 @@ export function detectLoginFields(html: string, context: LoginDetectionContext =
                     "data-field",
                     "data-field-name",
                 ]);
+                // Umpan autofill: input disembunyikan dari pengguna & tab order
+                // (Microsoft `passwd` di langkah identifier). Bukan field login.
+                const isDecoy = elementAttr(node, "aria-hidden") === "true" && elementAttr(node, "tabindex") === "-1";
                 const isDisabled = hasAttr(node, "disabled") || elementAttr(node, "aria-disabled") === "true";
                 const isReadOnly = hasAttr(node, "readonly") || elementAttr(node, "aria-readonly") === "true";
                 const value = tag === "textarea" || isEditable
@@ -602,6 +606,7 @@ export function detectLoginFields(html: string, context: LoginDetectionContext =
                     value,
                     isDisabled,
                     isReadOnly,
+                    isDecoy,
                     formIndex: currentFormIndex,
                     formMethod: currentFormMethod,
                     formAction: currentFormAction,
@@ -654,7 +659,7 @@ export function detectLoginFields(html: string, context: LoginDetectionContext =
         let formBestPassScore = -1;
 
         for (const input of inputs) {
-            if (!hasDetectableField(input)) continue;
+            if (input.isDecoy || !hasDetectableField(input)) continue;
 
             const uScore = scoreUsername(input);
             if (uScore > formBestUserScore) {
@@ -735,7 +740,7 @@ export function detectLoginFields(html: string, context: LoginDetectionContext =
         let globalBestPassScore = -1;
 
         for (const input of allInputs) {
-            if (!hasDetectableField(input)) continue;
+            if (input.isDecoy || !hasDetectableField(input)) continue;
             if (RECOVERY_CONTEXT_RE.test(input.formAction ?? "")) continue;
 
             const uScore = scoreUsername(input);

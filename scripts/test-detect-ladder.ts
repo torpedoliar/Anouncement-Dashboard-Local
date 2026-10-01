@@ -3,7 +3,7 @@
  * Run: npx tsx scripts/test-detect-ladder.ts
  */
 import { detectWithLadder, type LadderDeps } from "../lib/portal-detect-ladder";
-import type { FetchedPage } from "../lib/portal-fetch-html";
+import { FetchError, type FetchedPage } from "../lib/portal-fetch-html";
 
 function assertEq(actual: unknown, expected: unknown, label: string) {
     const ok = JSON.stringify(actual) === JSON.stringify(expected);
@@ -173,6 +173,39 @@ async function main() {
         true,
         "browser mati -> alasan spesifik di layerNotes"
     );
+
+    // Lapis HTTP melempar (403 WAF / 404 bot-filter / timeout) tetapi Chromium
+    // berhasil merender form → hasil BROWSER dipakai, bukan exception.
+    const httpFailDeps: LadderDeps = {
+        checkHealth: healthy,
+        fetchPage: async () => { throw new FetchError("Halaman login mengembalikan HTTP 403 (Forbidden)", 403); },
+        render: async () => ({
+            html: `<html><body><form action="/session"><input name="login"><input name="password" type="password"></form></body></html>`,
+            finalUrl: "https://waf.example/login",
+        }),
+    };
+    const r9 = await detectWithLadder("https://waf.example/login", httpFailDeps);
+    assertEq(r9.layer, "BROWSER", "HTTP gagal + render berhasil -> layer BROWSER");
+    assertEq(r9.detected.passwordField, "password", "HTTP gagal -> field dari render");
+    assertEq(r9.layerNotes.some((n) => n.includes("403")), true, "HTTP gagal -> alasan HTTP tercatat");
+
+    // HTTP gagal DAN render tidak menemukan form → error HTTP asli tetap dilempar
+    // supaya admin melihat penyebab sebenarnya (403/timeout), bukan "form tidak ada".
+    let thrown: unknown = null;
+    await detectWithLadder("https://waf.example/login", {
+        ...httpFailDeps,
+        render: async () => ({ html: "<html><body>Access denied</body></html>" }),
+    }).catch((e) => { thrown = e; });
+    assertEq(thrown instanceof FetchError && thrown.status, 403, "HTTP gagal + render tanpa form -> FetchError asli");
+
+    // Host terlarang (SSRF guard, status 400) TIDAK boleh dicoba lewat browser.
+    let renderedBlocked = false;
+    await detectWithLadder("http://169.254.169.254/", {
+        checkHealth: healthy,
+        fetchPage: async () => { throw new FetchError("Host tidak diizinkan", 400); },
+        render: async () => { renderedBlocked = true; return null; },
+    }).catch(() => null);
+    assertEq(renderedBlocked, false, "FetchError 400 (URL/host ditolak) -> render tidak dipanggil");
 
     console.log("=== ALL PASS ===");
 }

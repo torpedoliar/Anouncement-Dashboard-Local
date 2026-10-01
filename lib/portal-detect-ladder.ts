@@ -1,4 +1,4 @@
-import { fetchLoginPage, type CookieJar, type FetchedPage } from "@/lib/portal-fetch-html";
+import { fetchLoginPage, FetchError, type CookieJar, type FetchedPage } from "@/lib/portal-fetch-html";
 import { detectLoginFields, type DetectedFields } from "@/lib/portal-login-detect";
 import { classifySsoMode, type ModeEvidence, type ModeVerdict } from "@/lib/portal-sso-mode";
 import { renderLoginPage } from "@/lib/portal-browser-render";
@@ -67,7 +67,20 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
         notes.push(`Render browser tidak tersedia: ${health.reason}. Hasil memakai HTML statis; SPA mungkin tidak terdeteksi.`);
     }
 
-    const page: FetchedPage = await fetchPage(url);
+    // Lapis HTTP gagal (403 WAF, 404 bot-filter, timeout) belum tentu berarti
+    // halaman tidak ada — Chromium sering tetap lolos (spike 2026-10-01). Lanjutkan
+    // ke render dengan halaman kosong; error asli dilempar ulang bila render pun
+    // tidak menemukan form. Status 400 = URL/host ditolak guard → jangan dirender.
+    let httpError: FetchError | null = null;
+    let page: FetchedPage;
+    try {
+        page = await fetchPage(url);
+    } catch (error) {
+        if (!(error instanceof FetchError) || error.status === 400 || !browserUp) throw error;
+        httpError = error;
+        notes.push(`Lapis HTTP gagal: ${error.message}. Dicoba lewat render browser.`);
+        page = { html: "", finalUrl: url, setCookies: [], statusCode: null, redirected: false };
+    }
     const detected = detectLoginFields(page.html, { pageUrl: page.finalUrl || url, layer: "HTTP" });
     const cookieNames = page.setCookies.map((cookie) => cookie.split("=")[0].trim()).filter(Boolean);
 
@@ -143,6 +156,7 @@ export async function detectWithLadder(url: string, deps: LadderDeps = {}): Prom
             apiProbe: { layer: "NONE", contracts: [], specUrl: null, note: "Form login ditemukan setelah render JS; probe OpenAPI tidak diperlukan" },
         };
     }
+    if (httpError) throw httpError;
     if (rendered) {
         notes.push("Halaman dirender dengan browser tetapi tidak memuat form login yang dapat dikirim.");
     } else if (browserUp) {

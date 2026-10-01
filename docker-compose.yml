@@ -68,12 +68,14 @@ services:
     image: browserless/chrome:latest
     restart: unless-stopped
     environment:
-      - CONNECTION_TIMEOUT=10000
+      # Harus > timeout render portal (15s, lib/portal-browser-render.ts); 10s
+      # memotong sesi dengan HTTP 408 sebelum form SPA sempat dirakit.
+      - CONNECTION_TIMEOUT=20000
       - MAX_CONCURRENT_SESSIONS=2
       # Terima sertifikat self-signed untuk target intranet internal (lihat
-      # detect-verify-v2 §5 keputusan C). Tanpa flag ini, Chromium abort pada
-      # TLS handshake dan lapis 2 ladder selalu gagal untuk target internal.
-      - CHROME_FLAGS=--ignore-certificate-errors
+      # detect-verify-v2 §5 keputusan C). Image v1 mengabaikan CHROME_FLAGS;
+      # variabel inilah yang berlaku (terverifikasi pada self-signed.badssl.com).
+      - DEFAULT_IGNORE_HTTPS_ERRORS=true
     # Bind ke jaringan internal compose saja — jangan di-expose ke host/publik.
     networks:
       - internal

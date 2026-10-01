@@ -154,5 +154,13 @@
         "passwordField": "password",
         "multiStep": false,
         "note": "Fixture sintetis: React controlled inputs tanpa name/id, hanya autocomplete — proyeksi snapshot Browserless."
+    },
+    "ms-polled-rendered": {
+        "url": "https://login.microsoftonline.com/",
+        "layer": "BROWSER",
+        "usernameField": "loginfmt",
+        "passwordField": null,
+        "multiStep": true,
+        "note": "Render dengan polling (2026-10-01): langkah identifier memuat input passwd umpan prefill (aria-hidden=true, tabindex=-1, moveOffScreen). Bukan field login."
     }
 }
