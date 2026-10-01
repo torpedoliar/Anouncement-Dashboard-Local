@@ -833,6 +833,47 @@ a {
   animation: modalScale var(--motion-standard) var(--motion-ease) both;
 }
 
+/* ==========================================================================
+   Portal home (spec 2026-10-02 §3)
+   ========================================================================== */
+.portal-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
+}
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+@media (min-width: 640px) { .portal-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .portal-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+/* Titik status bermasalah bernapas pelan; status normal statis. */
+@keyframes portal-breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.85); }
+}
+.portal-breathe { animation: portal-breathe 2.4s ease-in-out infinite; }
+
+/* Gradien brand di belakang sapaan — bergeser sangat pelan. */
+@keyframes portal-mesh-drift {
+  from { background-position: 0% 0%, 100% 0%; }
+  to { background-position: 12% 6%, 88% 10%; }
+}
+.portal-mesh {
+  background:
+    radial-gradient(600px 260px at 15% 0%, rgb(var(--accent-rgb) / 0.16), transparent 60%),
+    radial-gradient(520px 260px at 90% 10%, rgb(var(--color-info-rgb) / 0.10), transparent 60%);
+  background-size: 120% 120%, 120% 120%;
+  animation: portal-mesh-drift var(--motion-ambient) ease-in-out infinite alternate;
+}
+
+.portal-palette[open] { animation: modalScale var(--motion-fast) var(--motion-ease); }
+
 /* Accessibility - Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -854,6 +895,8 @@ a {
     filter: none !important;
     animation: none !important;
   }
+  .portal-breathe,
+  .portal-mesh { animation: none !important; }
 }
 /* Category Tab Hover */
 .category-tab:hover {

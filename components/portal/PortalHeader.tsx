@@ -4,7 +4,7 @@ import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { GearSix, Key, List, SignOut, SquaresFour, X } from "@phosphor-icons/react";
+import { GearSix, Key, List, MagnifyingGlass, SignOut, SquaresFour, X } from "@phosphor-icons/react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Button from "@/components/ui/Button";
 
@@ -28,7 +28,7 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
         <header className="sticky top-0 z-sticky border-b border-border bg-surface-1">
             <div className="flex h-14 items-center justify-between px-4 sm:px-6">
                 {/* Logo */}
-                <Link href="/portal" className="font-display font-semibold text-text-1">
+                <Link href="/portal" className="rounded-control font-display font-semibold text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                     <span className="text-accent">PORTAL</span> SSO
                 </Link>
 
@@ -56,6 +56,16 @@ export default function PortalHeader({ userName }: PortalHeaderProps) {
 
                 {/* Right side */}
                 <div className="flex items-center gap-3">
+                    {pathname !== "/portal" && (
+                        <a
+                            href="/portal?cari=1"
+                            aria-label="Cari aplikasi"
+                            className="inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-sm text-text-2 hover:bg-surface-2 hover:text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                        >
+                            <MagnifyingGlass size={16} aria-hidden="true" />
+                            <kbd className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10px] sm:inline">Ctrl K</kbd>
+                        </a>
+                    )}
                     <ThemeToggle />
                     <span className="hidden text-sm text-text-2 sm:inline">{userName}</span>
                     <Button
