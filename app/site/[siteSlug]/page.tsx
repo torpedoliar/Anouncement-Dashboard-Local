@@ -161,7 +161,7 @@ export default async function SiteHomePage({ params, searchParams }: PageProps) 
     return (
         // paddingTop 80px = tinggi Navbar fixed (h-20) — Masthead tidak lagi
         // tertutup navbar seperti hero full-bleed sebelumnya.
-        <div style={{ minHeight: "100vh", paddingTop: "80px", backgroundColor: "var(--surface-0)", color: "var(--text-1)" }}>
+        <div className="min-h-screen bg-surface-0 pt-20 text-text-1">
             {/* Nameplate koran — selalu tampil, juga saat feed kosong */}
             <Masthead
                 siteName={site.name}

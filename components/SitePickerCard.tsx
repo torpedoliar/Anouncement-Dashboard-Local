@@ -32,141 +32,42 @@ export default function SitePickerCard({ site }: SitePickerCardProps) {
     return (
         <Link
             href={`/site/${site.slug}`}
-            className="site-picker-card"
-            style={{
-                display: "block",
-                backgroundColor: "var(--bg-card)",
-                borderRadius: "16px",
-                padding: "28px",
-                textDecoration: "none",
-                position: "relative",
-                overflow: "hidden",
-            }}
+            className="site-picker-card relative block overflow-hidden rounded-sheet bg-surface-1 p-7 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-            {/* Gradient accent at top */}
-            <div
-                style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: "4px",
-                    background: `linear-gradient(90deg, ${site.primaryColor}, ${site.primaryColor}80)`,
-                }}
-            />
+            {/* Garis aksen warna situs */}
+            <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: site.primaryColor }} />
 
-            {/* Logo or Color Circle */}
             <div
-                style={{
-                    width: "56px",
-                    height: "56px",
-                    borderRadius: "14px",
-                    backgroundColor: site.primaryColor,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "20px",
-                    fontSize: "24px",
-                    fontWeight: 700,
-                    color: "#fff",
-                    boxShadow: `0 4px 20px ${site.primaryColor}40`,
-                }}
+                className="mb-5 flex h-14 w-14 items-center justify-center overflow-hidden rounded-[14px] text-2xl font-bold text-white"
+                style={{ backgroundColor: site.primaryColor }}
             >
                 {(site.logo || site.logoPath) ? (
                     <Image
-                        width={320}
-                        height={160}
+                        width={56}
+                        height={56}
                         src={site.logo || site.logoPath || ""}
                         alt={site.name}
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "contain", // changed to contain for logos
-                            borderRadius: "14px",
-                        }}
+                        className="h-full w-full object-contain"
                     />
                 ) : (
                     site.name.charAt(0).toUpperCase()
                 )}
             </div>
 
-            {/* Site Name */}
-            <h2
-                style={{
-                    fontSize: "20px",
-                    fontWeight: 700,
-                    color: "var(--text-primary)",
-                    marginBottom: "8px",
-                }}
-            >
-                {site.name}
-            </h2>
+            <h2 className="mb-2 font-serif text-xl font-bold text-text-1">{site.name}</h2>
 
-            {/* Description */}
             {site.description && (
-                <p
-                    style={{
-                        fontSize: "14px",
-                        color: "var(--text-muted)",
-                        marginBottom: "20px",
-                        lineHeight: 1.5,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                    }}
-                >
-                    {site.description}
-                </p>
+                <p className="mb-5 line-clamp-2 text-sm leading-normal text-text-2">{site.description}</p>
             )}
 
-            {/* Stats */}
-            <div
-                style={{
-                    display: "flex",
-                    gap: "16px",
-                    marginBottom: "20px",
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        fontSize: "13px",
-                        color: "var(--text-tertiary)",
-                    }}
-                >
-                    <FileText size={14} />
-                    <span>{articleCount} artikel</span>
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        fontSize: "13px",
-                        color: "var(--text-tertiary)",
-                    }}
-                >
-                    <Tag size={14} />
-                    <span>{categoryCount} kategori</span>
-                </div>
+            <div className="mb-5 flex gap-4 text-[13px] text-text-3">
+                <span className="flex items-center gap-1.5"><FileText size={14} aria-hidden="true" />{articleCount} artikel</span>
+                <span className="flex items-center gap-1.5"><Tag size={14} aria-hidden="true" />{categoryCount} kategori</span>
             </div>
 
-            {/* CTA */}
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: site.primaryColor,
-                }}
-            >
+            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: site.primaryColor }}>
                 Kunjungi Site
-                <ArrowRight size={16} />
+                <ArrowRight size={16} aria-hidden="true" />
             </div>
         </Link>
     );

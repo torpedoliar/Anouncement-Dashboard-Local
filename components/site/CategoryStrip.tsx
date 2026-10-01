@@ -54,7 +54,7 @@ export default function CategoryStrip({ items }: { items: CategoryStripItem[] })
                     href={item.href}
                     data-active={item.active}
                     aria-current={item.active ? "true" : undefined}
-                    className={`whitespace-nowrap py-3 text-small font-semibold uppercase tracking-[0.08em] transition-colors duration-150 ${
+                    className={`whitespace-nowrap py-3 text-small font-semibold uppercase tracking-[0.08em] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                         item.active ? "text-text-1" : "text-text-3 hover:text-text-1"
                     }`}
                 >

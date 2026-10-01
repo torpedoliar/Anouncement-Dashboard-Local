@@ -170,12 +170,11 @@ export default function AnnouncementCard({
     );
 
     return (
-        <Link href={href} style={{ display: 'block', textDecoration: 'none', ...style }}>
+        <Link href={href} className="block rounded-[2px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style={style}>
             <article
-                className={`group h-full overflow-hidden border border-border bg-surface-1 transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-accent ${
+                className={`group h-full overflow-hidden border border-border bg-surface-1 ease-[var(--motion-ease)] transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-accent ${
                     featured ? "flex flex-col md:flex-row" : "flex flex-col"
                 }`}
-                style={{ transitionTimingFunction: "var(--motion-ease)" }}
             >
                 {mediaBlock}
 

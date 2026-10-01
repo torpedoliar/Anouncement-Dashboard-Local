@@ -41,92 +41,37 @@ export default async function SitePickerPage() {
     ]);
 
     return (
-        <div
-            style={{
-                minHeight: "100vh",
-                backgroundColor: "var(--surface-0)",
-                color: "var(--text-1)",
-            }}
-        >
+        <div className="site-paper min-h-screen bg-surface-0 text-text-1">
             {/* Masthead Kapal Api — versi kalem (revisi): merah tidak lagi flat
                 menyala; tinggi dipangkas dan diberi napas sebelum grid.
                 Teks putih fixed-light: selalu di atas gradient merah brand. */}
-            <div
-                style={{
-                    padding: "36px 24px 32px",
-                    textAlign: "center",
-                    background: "linear-gradient(135deg, var(--brand-red-dark) 0%, var(--brand-red) 55%, var(--brand-red-light) 100%)",
-                    borderBottom: "1px solid rgba(0,0,0,0.12)",
-                }}
-            >
+            <div className="border-b border-black/10 bg-[linear-gradient(135deg,var(--brand-red-dark)_0%,var(--brand-red)_55%,var(--brand-red-light)_100%)] px-6 pb-8 pt-9 text-center">
                 {settings?.logoPath ? (
-                    <div style={{ position: 'relative', width: '88px', height: '88px', margin: "0 auto 16px", filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.18))" }}>
+                    <div className="relative mx-auto mb-4 h-[88px] w-[88px] drop-shadow-[0_2px_8px_rgba(0,0,0,0.18)]">
                         <Image
                             src={settings.logoPath}
                             alt="Logo"
                             fill
-                            style={{ objectFit: 'contain' }}
+                            className="object-contain"
                         />
                     </div>
                 ) : (
-                    <div
-                        style={{
-                            width: "64px",
-                            height: "64px",
-                            borderRadius: "16px",
-                            backgroundColor: "#fff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            margin: "0 auto 16px",
-                            boxShadow: "0 4px 16px rgba(0,0,0,0.16)",
-                        }}
-                    >
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-[0_4px_16px_rgba(0,0,0,0.16)]">
                         <Globe size={32} color="#C41920" />
                     </div>
                 )}
-                <h1
-                    style={{
-                        fontSize: "clamp(24px, 4vw, 38px)",
-                        fontWeight: 800,
-                        lineHeight: 1.15,
-                        marginBottom: "10px",
-                        color: "#fff",
-                        textWrap: "balance",
-                    }}
-                >
+                <h1 className="mb-2.5 font-serif text-[clamp(24px,4vw,38px)] font-bold leading-[1.15] text-white [text-wrap:balance]">
                     Pilih Site
                 </h1>
-                <p
-                    style={{
-                        fontSize: "15px",
-                        lineHeight: 1.6,
-                        color: "rgba(255,255,255,0.88)",
-                        maxWidth: "560px",
-                        margin: "0 auto",
-                    }}
-                >
+                <p className="mx-auto max-w-[560px] text-[15px] leading-relaxed text-white/90">
                     Pilih salah satu site untuk melihat berita dan pengumuman terbaru
                 </p>
             </div>
 
             {/* Sites Grid — diberi napas atas supaya tidak menabrak masthead */}
-            <div
-                style={{
-                    maxWidth: "1200px",
-                    margin: "0 auto",
-                    padding: "32px 24px 80px",
-                }}
-            >
+            <div className="mx-auto max-w-[1200px] px-6 pb-20 pt-8">
                 {sites.length > 0 ? (
-                    <div
-                        className="cine-stagger"
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(min(350px, 100%), 1fr))",
-                            gap: "24px",
-                        }}
-                    >
+                    <div className="cine-stagger grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(min(350px,100%),1fr))]">
                         {sites.map((site, i) => (
                             <div key={site.id} style={{ "--i": i } as React.CSSProperties}>
                                 <SitePickerCard site={site} />
@@ -134,12 +79,7 @@ export default async function SitePickerPage() {
                         ))}
                     </div>
                 ) : (
-                    <div
-                        style={{
-                            textAlign: "center",
-                            padding: "60px 20px",
-                        }}
-                    >
+                    <div className="px-5 py-16 text-center">
                         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-card border border-accent/30 bg-accent-subtle">
                             <Globe size={24} className="text-accent" aria-hidden="true" />
                         </div>
@@ -154,15 +94,7 @@ export default async function SitePickerPage() {
             </div>
 
             {/* Footer */}
-            <div
-                style={{
-                    borderTop: "1px solid var(--border)",
-                    padding: "24px",
-                    textAlign: "center",
-                    color: "var(--text-3)",
-                    fontSize: "13px",
-                }}
-            >
+            <div className="border-t border-border p-6 text-center text-[13px] text-text-3">
                 © {new Date().getFullYear()} Santos Jaya Abadi. All rights reserved.
             </div>
         </div>

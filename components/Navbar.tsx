@@ -61,7 +61,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                 <div className="mx-auto max-w-7xl px-6">
                     <div className="flex h-20 items-center justify-between">
                         {/* Logo */}
-                        <Link href="/" className="flex items-center gap-3">
+                        <Link href="/" className="flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                             {logoPath ? (
                                 <Image
                                     src={logoPath}
@@ -88,7 +88,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className="nav-link px-0 py-2 text-xs font-semibold uppercase tracking-[0.15em]"
+                                    className="nav-link px-0 py-2 text-xs font-semibold uppercase tracking-[0.15em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                 >
                                     {link.label}
                                 </Link>
@@ -100,10 +100,11 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                         <div className="flex items-center gap-2">
                             <ThemeToggle />
                             <button
+                                type="button"
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 aria-label={isMobileMenuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
                                 aria-expanded={isMobileMenuOpen}
-                                className="cursor-pointer p-2 text-text-1 transition-colors duration-150 hover:text-accent lg:hidden"
+                                className="cursor-pointer p-2 text-text-1 transition-colors duration-150 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent lg:hidden"
                             >
                                 {isMobileMenuOpen ? <X size={24} /> : <List size={24} />}
                             </button>
@@ -118,7 +119,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                                     key={link.href}
                                     href={link.href}
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="block px-4 py-3 text-xs font-semibold tracking-[0.1em] text-text-2 transition-colors duration-150 hover:text-text-1"
+                                    className="block px-4 py-3 text-xs font-semibold tracking-[0.1em] text-text-2 transition-colors duration-150 hover:text-text-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                 >
                                     {link.label}
                                 </Link>
@@ -126,7 +127,7 @@ export default function Navbar({ logoPath, siteName = "Santos Jaya Abadi", custo
                             <Link
                                 href="/admin-login"
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="block px-4 py-3 text-xs font-semibold tracking-[0.1em] text-accent"
+                                className="block px-4 py-3 text-xs font-semibold tracking-[0.1em] text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                             >
                                 ADMIN
                             </Link>

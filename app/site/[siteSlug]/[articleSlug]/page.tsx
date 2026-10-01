@@ -93,7 +93,7 @@ export default async function ArticlePage({ params }: PageProps) {
     const { site, announcement, relatedArticles, canonicalUrl } = data;
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "var(--surface-0)", color: "var(--text-1)" }}>
+        <div className="min-h-screen bg-surface-0 text-text-1">
             {/* Canonical link for syndicated content */}
             {canonicalUrl && (
                 <link rel="canonical" href={canonicalUrl} />
@@ -106,12 +106,12 @@ export default async function ArticlePage({ params }: PageProps) {
 
             {/* Hero Section */}
             <ArticleHero
+                id={announcement.id}
                 title={announcement.title}
                 category={announcement.category}
                 author={announcement.author}
                 createdAt={announcement.createdAt}
                 wordCount={announcement.wordCount}
-                viewCount={announcement.viewCount}
                 imagePath={announcement.imagePath}
                 videoPath={announcement.videoPath}
                 youtubeUrl={announcement.youtubeUrl}
@@ -121,7 +121,7 @@ export default async function ArticlePage({ params }: PageProps) {
             />
 
             {/* Article Content Container */}
-            <article style={{ maxWidth: "800px", margin: "0 auto", padding: "32px 24px 48px" }}>
+            <article className="mx-auto max-w-[800px] px-6 pb-12 pt-8">
                 {/* Hero Media moved up */}
 
                 {/* Content */}
@@ -129,16 +129,7 @@ export default async function ArticlePage({ params }: PageProps) {
 
                 {/* Syndication notice */}
                 {announcement.sites.length > 1 && (
-                    <div
-                        style={{
-                            marginTop: "48px",
-                            padding: "16px 20px",
-                            backgroundColor: "var(--surface-1)",
-                            borderRadius: "8px",
-                            fontSize: "13px",
-                            color: "var(--text-3)",
-                        }}
-                    >
+                    <div className="mt-12 rounded-card bg-surface-1 px-5 py-4 text-[13px] text-text-3">
                         Artikel ini juga tersedia di:{" "}
                         {announcement.sites
                             .filter((s) => s.site.id !== site.id)
@@ -146,11 +137,7 @@ export default async function ArticlePage({ params }: PageProps) {
                                 <Link
                                     key={s.site.id}
                                     href={`/site/${s.site.slug}/${announcement.slug}`}
-                                    style={{
-                                        color: site.primaryColor,
-                                        textDecoration: "none",
-                                        marginLeft: "8px",
-                                    }}
+                                    className="ml-2 font-semibold text-accent underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                                 >
                                     {s.site.name}
                                 </Link>
@@ -161,7 +148,7 @@ export default async function ArticlePage({ params }: PageProps) {
 
             {/* Comments Section */}
             {announcement.allowComments && (
-                <div style={{ maxWidth: "800px", margin: "0 auto", padding: "0 24px 60px" }}>
+                <div className="mx-auto max-w-[800px] px-6 pb-16">
                     <CommentSection announcementId={announcement.id} />
                 </div>
             )}
@@ -170,23 +157,13 @@ export default async function ArticlePage({ params }: PageProps) {
             {relatedArticles.length > 0 && (
                 <div
                     data-cine
-                    style={{
-                        maxWidth: "1200px",
-                        margin: "0 auto",
-                        padding: "48px 24px 80px",
-                        borderTop: "1px solid var(--border)",
-                    }}
+                    className="mx-auto max-w-[1200px] border-t border-border px-6 pb-20 pt-12"
                 >
-                    <h2 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "24px" }}>
+                    <h2 className="mb-6 text-2xl font-bold">
                         Artikel Terkait
                     </h2>
                     <div
-                        className="cine-stagger"
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
-                            gap: "20px",
-                        }}
+                        className="cine-stagger grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))]"
                     >
                         {relatedArticles.map((article, i) => (
                             <AnnouncementCard
@@ -210,18 +187,6 @@ export default async function ArticlePage({ params }: PageProps) {
                 </div>
             )}
 
-            {/* Footer */}
-            <div
-                style={{
-                    borderTop: "1px solid var(--border)",
-                    padding: "24px",
-                    textAlign: "center",
-                    color: "#666",
-                    fontSize: "13px",
-                }}
-            >
-                © {new Date().getFullYear()} {site.name}. All rights reserved.
-            </div>
         </div>
     );
 }
