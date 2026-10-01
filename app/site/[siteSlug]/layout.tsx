@@ -63,7 +63,7 @@ export default async function SiteLayout({
             siteName={site.name}
             siteSlug={site.slug}
         >
-            <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            <div className="site-paper flex min-h-screen flex-col">
                 {/* Fallback scroll-reveal (browser tanpa animation-timeline). */}
                 <CineReveal />
                 {site.settings?.bannerEnabled && site.settings?.bannerText ? (
@@ -75,7 +75,7 @@ export default async function SiteLayout({
                     customLinks={customLinks}
                 />
 
-                <main id="main-content" style={{ flex: 1, scrollMarginTop: "80px" }}>
+                <main id="main-content" className="flex-1 scroll-mt-20">
                     {children}
                 </main>
 

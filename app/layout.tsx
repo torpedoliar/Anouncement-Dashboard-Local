@@ -1,31 +1,24 @@
 import type { Metadata } from "next";
-import { Inter, Lora, Sora, JetBrains_Mono } from "next/font/google";
+import { Libre_Franklin, Newsreader, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { THEME_PREPAINT_SCRIPT } from "@/lib/theme-key";
-const inter = Inter({
-  variable: "--font-inter",
+// UI & body — turunan Franklin Gothic, tradisi tipografi surat kabar.
+const sans = Libre_Franklin({
+  variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
 });
 
-// Serif editorial — headline permukaan publik (suara "koran pagi").
-const lora = Lora({
+// Serif editorial — judul, masthead, isi artikel. Axis opsz: huruf menyesuaikan ukuran.
+const serif = Newsreader({
   variable: "--font-serif",
   subsets: ["latin"],
   display: "swap",
-  weight: ["600", "700"],
+  axes: ["opsz"],
 });
 
-// Masthead / display / headings — the newsroom voice (spec §3.2)
-const sora = Sora({
-  variable: "--font-sora",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["600", "700"],
-});
-
-// Numbers / IDs / clocks / counts / timestamps (spec §3.2)
+// Angka / ID / jam / hitungan / timestamp.
 const mono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
@@ -65,7 +58,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_PREPAINT_SCRIPT }} />
       </head>
       <body
-        className={`${inter.variable} ${lora.variable} ${sora.variable} ${mono.variable} font-sans antialiased min-h-screen`}
+        className={`${sans.variable} ${serif.variable} ${mono.variable} font-sans antialiased min-h-screen`}
         suppressHydrationWarning
       >
         <ToastProvider>

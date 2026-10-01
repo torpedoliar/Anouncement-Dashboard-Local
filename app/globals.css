@@ -147,30 +147,46 @@
 
 /* ---- PAPER edition (light). App defaults to night; this is opt-in via <html class="theme-light"> ---- */
 html.theme-light {
-  --surface-0: #F1EFEA;
-  --surface-1: #FAFAF7;
-  --surface-2: #EDEBE6;
-  --surface-3: #E4E1DA;
-  --border: #DDD9D0;
+  /* Edisi Pagi: kertas hangat. Kontras dicek 2026-10-02:
+     text-1 di surface-0 15.6:1, text-3 di surface-0 5.0:1, text-3 di surface-2 4.6:1. */
+  --surface-0: #F5F2EA;
+  --surface-1: #FFFDF8;
+  --surface-2: #EDE9DF;
+  --surface-3: #E2DCCF;
+  --border: #DDD6C8;
   --text-1: #1C1917;
   --text-2: #57534E;
-  /* Dinaikkan dari #8A857E (≈3.7:1 di putih) ke #6B675F (≈5.0:1) — AA 12px (T7). */
   --text-3: #6B675F;
   --accent: var(--site-primary, var(--brand-red));
 
-  /* Kanal pendamping edisi paper — harus ikut dioverride, kalau tidak varian
-     alpha (mis. hover:bg-surface-2/60) tetap memakai nilai gelap. */
-  --surface-0-rgb: 241 239 234;
-  --surface-1-rgb: 250 250 247;
-  --surface-2-rgb: 237 235 230;
-  --surface-3-rgb: 228 225 218;
-  --border-rgb: 221 217 208;
+  --surface-0-rgb: 245 242 234;
+  --surface-1-rgb: 255 253 248;
+  --surface-2-rgb: 237 233 223;
+  --surface-3-rgb: 226 220 207;
+  --border-rgb: 221 214 200;
   --text-1-rgb: 28 25 23;
   --text-2-rgb: 87 83 78;
   --text-3-rgb: 107 103 95;
   --shadow-1: 0 1px 2px rgba(28, 25, 23, 0.08);
   --shadow-2: 0 4px 12px -2px rgba(28, 25, 23, 0.10);
   --shadow-3: 0 12px 32px -8px rgba(28, 25, 23, 0.14);
+}
+
+/* Grain kertas — hanya situs pengumuman, hanya edisi Paper. Statis (tanpa
+   animasi), pointer-events none, tidak memengaruhi kontras teks. */
+html.theme-light .site-paper {
+  position: relative;
+  isolation: isolate;
+}
+html.theme-light .site-paper::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .32 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Brand utility classes */
@@ -293,7 +309,7 @@ html {
 body {
   background-color: var(--surface-0);
   color: var(--text-1);
-  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
   /* Ensure all elements transition smoothly during theme switch */
@@ -323,14 +339,14 @@ html.theme-light {
     color var(--motion-standard) var(--motion-ease);
 }
 
-/* Headings — Sora (display) */
+/* Headings UI — Libre Franklin; judul editorial memakai .font-serif */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-sora), system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   text-wrap: balance;
@@ -463,15 +479,18 @@ a {
 /* Prose styles for content */
 .prose-santos {
   color: var(--text-2);
+  /* Isi artikel serif — Newsreader dirancang untuk teks berita panjang. */
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.125rem;
   /* Panjang baris prosa dibatasi 65–75ch supaya nyaman dibaca. */
-  max-width: 72ch;
+  max-width: 68ch;
 }
 
 .prose-santos h1,
 .prose-santos h2,
 .prose-santos h3 {
   color: var(--text-1);
-  font-family: var(--font-sora), system-ui, sans-serif;
+  font-family: var(--font-serif), Georgia, serif;
 }
 
 /* Heading global (h1..h6) tidak punya margin atas, jadi heading artikel
@@ -486,7 +505,7 @@ a {
 
 .prose-santos p {
   margin-bottom: 1.5em;
-  line-height: 1.8;
+  line-height: 1.7;
   text-wrap: pretty;
 }
 
