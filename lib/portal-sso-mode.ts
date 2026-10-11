@@ -70,6 +70,36 @@ function findPairedCookies(cookieNames: string[], extraFields: Record<string, st
     return Array.from(paired);
 }
 
+export interface RememberedLoginConfig {
+    usernameField: string | null;
+    passwordField: string | null;
+    httpMethod: string | null;
+    ssoMode: string | null;
+}
+
+/**
+ * Konfigurasi yang pernah dikoreksi/diverifikasi admin menang atas heuristik yang
+ * gagal menemukan field password. Tanpa ini, situs yang sudah dikoreksi tetap jatuh
+ * ke VAULT pada setiap deteksi ulang karena koreksi hanya tampil sebagai catatan.
+ * Mengubah `detected` dan `verdict` di tempat; mengembalikan true bila diadopsi.
+ */
+export function adoptRememberedConfig(
+    detected: DetectedFields,
+    verdict: ModeVerdict,
+    remembered: RememberedLoginConfig | null | undefined,
+    label: string,
+): boolean {
+    if (detected.passwordField || !remembered?.passwordField) return false;
+    detected.usernameField = remembered.usernameField ?? detected.usernameField;
+    detected.passwordField = remembered.passwordField;
+    detected.httpMethod = remembered.httpMethod ?? detected.httpMethod;
+    detected.multiStep = false;
+    verdict.mode = (remembered.ssoMode as SsoMode | null) ?? "FORM";
+    verdict.reason = `Memakai ${label}: field tidak terlihat di halaman, tetapi konfigurasi ini pernah dipakai untuk situs yang sama.`;
+    verdict.signals.push(`Field diambil dari ${label}.`);
+    return true;
+}
+
 // looksLikeClientRenderedApp & looksLikeOracleEbs kini di lib/portal-sso-relay
 // agar dipakai bersama verify-login (satu definisi, dua pemanggil).
 

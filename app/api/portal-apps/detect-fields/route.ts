@@ -11,6 +11,7 @@ import {
     recordLoginProfileCandidate,
 } from "@/lib/portal-login-profile";
 import { FetchError } from "@/lib/portal-fetch-html";
+import { adoptRememberedConfig } from "@/lib/portal-sso-mode";
 
 // POST /api/portal-apps/detect-fields — SuperAdmin & ADMIN. Body { url }
 export async function POST(request: NextRequest) {
@@ -169,6 +170,14 @@ export async function POST(request: NextRequest) {
             profilePersistenceWarning = "Hasil deteksi tersedia, tetapi kandidat profile belum dapat disimpan.";
         }
 
+        // Heuristik dan AI sama-sama buta, tetapi admin pernah menyimpan konfigurasi
+        // untuk situs ini → pakai itu, bukan jatuh ke VAULT lagi. Dijalankan setelah
+        // profile dicatat agar profile tetap mencerminkan deteksi asli. Admin tetap
+        // bisa membuktikannya lewat "Uji hasil deteksi".
+        const adoptedMemory =
+            adoptRememberedConfig(detected, verdict, learned, "koreksi admin sebelumnya") ||
+            adoptRememberedConfig(detected, verdict, memory?.config, memory?.label ?? "memori deteksi");
+
         if (!detected.passwordField) {
             // Gagal menemukan form. Loop redirect turut dijelaskan agar admin paham
             // bahwa server hidup tapi URL yang diisi tidak mengarah ke formulir.
@@ -190,6 +199,10 @@ export async function POST(request: NextRequest) {
                     redirected: result.redirected,
                     loopDetected: result.loopDetected,
                     multiStep: detected.multiStep ?? false,
+                    // Kandidat parsial (mis. field username langkah pertama) tetap
+                    // dikirim agar admin bisa melengkapi dan menjalankan tangga uji.
+                    usernameField: detected.usernameField ?? llm?.usernameField ?? null,
+                    httpMethod: detected.httpMethod ?? "POST",
                     recommendedMode: verdict.mode,
                     recommendationReason: verdict.reason,
                     detectionSignals: presentation.discoverySignals,
@@ -231,6 +244,7 @@ export async function POST(request: NextRequest) {
             detectionLayer: result.layer,
             layerNotes: presentation.layerNotes,
             multiStep: detected.multiStep ?? false,
+            adoptedMemory,
             llm: llmBlock,
             llmNote,
             learned,

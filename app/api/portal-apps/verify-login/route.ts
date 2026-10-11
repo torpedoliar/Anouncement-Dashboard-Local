@@ -18,6 +18,7 @@ import {
 import { probeApiLayer, type ApiProbe } from "@/lib/portal-api-probe";
 import { fingerprintLoginProduct } from "@/lib/portal-product-registry";
 import { formSignatureHash } from "@/lib/portal-memory-recall";
+import { captureLoginRequest } from "@/lib/portal-browser-capture";
 import { logAudit } from "@/lib/audit";
 import prisma from "@/lib/prisma";
 import { verifyLoginSchema } from "@/lib/validation-schemas";
@@ -277,6 +278,50 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (data.ladder && !data.jsonApi) {
+            let ladder: LadderOutcome;
+            try {
+                // Slot pertama sudah dipakai di atas; tiap kiriman kredensial
+                // berikutnya menghabiskan slot rate limit yang sama.
+                ladder = await runTestLadder(data, () =>
+                    checkVerifyLimit(verifyAttempts, adminId, VERIFY_MAX, VERIFY_WINDOW_MS).allowed,
+                );
+            } catch (error) {
+                console.error("verify-login ladder error:", error);
+                return NextResponse.json({ error: "Gagal menjalankan tangga uji" }, { status: 422 });
+            }
+            for (const attempt of ladder.attempts) {
+                await logAudit({
+                    actorType: "ADMIN_USER",
+                    actorId: adminId,
+                    category: "PORTAL",
+                    action: "SSO_VERIFY_LOGIN",
+                    entityType: "PORTAL_APP",
+                    entityId: data.appId ?? undefined,
+                    outcome: attempt.ok ? "SUCCESS" : "FAILURE",
+                    errorMessage: attempt.ok ? undefined : attempt.message,
+                    metadata: {
+                        target: sanitizeLoginUrlForDisplay(data.url),
+                        ssoMode: attempt.mode,
+                        ladderStep: attempt.step,
+                        validationOutcome: attempt.outcome,
+                    },
+                    request,
+                }).catch(() => {});
+            }
+            // Hasil tangga hanya mengisi form editor; status verifikasi app tidak
+            // diubah sampai admin menyimpan dan menguji konfigurasi itu sendiri.
+            const win = ladder.attempts.find((attempt) => attempt.ok);
+            return NextResponse.json({
+                ok: Boolean(ladder.suggestion),
+                handoff: false,
+                message: ladder.message,
+                verifyMode: ladder.suggestion?.ssoMode ?? "VAULT",
+                validationOutcome: win?.outcome ?? "REJECTED",
+                ladder,
+            });
+        }
+
         let result: DispatchResult;
         try {
             result = await dispatch(data);
@@ -323,6 +368,142 @@ export async function POST(request: NextRequest) {
         console.error("verify-login error:", error);
         return NextResponse.json({ error: "Gagal menjalankan uji login" }, { status: 422 });
     }
+}
+
+type LadderAttempt = {
+    step: number;
+    mode: "FORM" | "POST" | "REROUTE" | "CAPTURE";
+    ok: boolean;
+    outcome: LoginProfileValidationOutcome;
+    message: string;
+};
+type LadderOutcome = {
+    attempts: LadderAttempt[];
+    message: string;
+    /** Konfigurasi yang terbukti — hanya untuk mengisi form editor. */
+    suggestion: {
+        ssoMode: "FORM" | "POST" | "REROUTE";
+        usernameField: string;
+        passwordField: string;
+        httpMethod: "POST";
+        loginUrl?: string;
+    } | null;
+    /** Endpoint JSON yang terekam dari browser (mode tetap VAULT). Nama kunci saja. */
+    jsonEndpoint: { url: string; bodyKeys: string[]; status: number | null } | null;
+};
+
+const LADDER_MAX_ATTEMPTS = 3;
+
+/**
+ * Tangga uji: buktikan mode dengan kredensial uji, bukan menebak dari HTML.
+ *  - Oracle EBS → hanya REROUTE (engine XHR khusus).
+ *  - Form di HTML statis → FORM (POST tanpa cookie ke LOGIN URL, persis seperti
+ *    SSOAutoSubmit dari browser pengguna), lalu POST (relay server dengan cookie
+ *    dan action form). POST ditolak dengan form login kembali = password/field
+ *    salah → berhenti, tidak ada gunanya mencoba lagi.
+ *  - Tanpa form statis (SPA) → Browserless mengisi & submit, rekam request-nya.
+ *    Form-encoded → diverifikasi ulang sebagai FORM ke endpoint terekam.
+ *    JSON → dilaporkan apa adanya; mode tetap VAULT (belum ada engine JSON).
+ * Maksimal 3 kiriman kredensial; tiap kiriman setelah yang pertama memakai slot
+ * rate limit verify-login.
+ */
+async function runTestLadder(data: VerifyConfig, consumeSlot: () => boolean): Promise<LadderOutcome> {
+    const attempts: LadderAttempt[] = [];
+    const done = (message: string, suggestion: LadderOutcome["suggestion"] = null, jsonEndpoint: LadderOutcome["jsonEndpoint"] = null): LadderOutcome =>
+        ({ attempts, message, suggestion, jsonEndpoint });
+    const canSend = () => attempts.length < LADDER_MAX_ATTEMPTS && (attempts.length === 0 || consumeSlot());
+
+    const page = await fetchLoginPage(data.url);
+    const fresh = detectLoginFields(page.html, { pageUrl: page.finalUrl });
+    const userField = fresh.usernameField ?? data.usernameField;
+    const passField = fresh.passwordField ?? data.passwordField;
+
+    if (looksLikeOracleEbs(page.html, page.finalUrl)) {
+        const result = await dispatch({ ...data, ssoMode: "REROUTE", jsonApi: null });
+        if ("status" in result) return done("Uji REROUTE tidak dapat dijalankan.");
+        attempts.push({ step: 1, mode: "REROUTE", ok: result.ok, outcome: result.outcome, message: result.message });
+        return result.ok
+            ? done("Terbukti: SSO Mode REROUTE (Oracle EBS).", { ssoMode: "REROUTE", usernameField: userField, passwordField: passField, httpMethod: "POST" })
+            : done(result.message);
+    }
+
+    if (fresh.passwordField) {
+        // FORM: browser pengguna mengirim langsung ke LOGIN URL tanpa cookie target.
+        const formExtras = await refreshVolatileFields(page.finalUrl, { ...fresh.extraFields, ...(data.extraFields ?? {}) });
+        const formBody = new URLSearchParams({ ...formExtras, [userField]: data.testUsername, [passField]: data.testPassword });
+        const formTry = await relayLogin({
+            actionUrl: data.url,
+            body: formBody.toString(),
+            jar: new CookieJar(),
+            referer: page.finalUrl,
+            allowInsecureTLS: true,
+        });
+        attempts.push({
+            step: 1,
+            mode: "FORM",
+            ok: formTry.ok,
+            outcome: !formTry.ok ? "REJECTED" : formTry.handoff ? "CREDENTIAL_ACCEPTED" : "TRANSPORT_VALIDATED",
+            message: formTry.ok ? "Login diterima tanpa relay server." : (formTry.failureReason ?? "Ditolak."),
+        });
+        if (formTry.ok) {
+            return done("Terbukti: SSO Mode FORM.", { ssoMode: "FORM", usernameField: userField, passwordField: passField, httpMethod: "POST" });
+        }
+
+        if (!canSend()) return done("Batas percobaan uji login tercapai sebelum POST dicoba.");
+        const postTry = await dispatch({ ...data, ssoMode: "POST", httpMethod: "POST", usernameField: userField, passwordField: passField, jsonApi: null });
+        if ("status" in postTry) return done("Uji POST tidak dapat dijalankan.");
+        attempts.push({ step: 2, mode: "POST", ok: postTry.ok, outcome: postTry.outcome, message: postTry.message });
+        return postTry.ok
+            ? done("Terbukti: SSO Mode POST (token terikat cookie, perlu relay server).", { ssoMode: "POST", usernameField: userField, passwordField: passField, httpMethod: "POST" })
+            : done(`FORM dan POST sama-sama ditolak — periksa username/password uji. ${postTry.message}`);
+    }
+
+    // Tidak ada form di HTML statis: rekam apa yang dikirim halaman saat submit.
+    const capture = await captureLoginRequest(data.url, data.testUsername, data.testPassword);
+    if (!capture) return done("Layanan browser tidak tersedia — submit SPA tidak dapat direkam. Mode tetap VAULT.");
+    attempts.push({
+        step: 1,
+        mode: "CAPTURE",
+        ok: Boolean(capture.login && !capture.stillOnLogin),
+        outcome: capture.login && !capture.stillOnLogin ? "TRANSPORT_VALIDATED" : "REJECTED",
+        message: capture.login
+            ? `${capture.login.method} ${sanitizeLoginUrlForDisplay(capture.login.url) ?? "endpoint"} (${capture.login.encoding}) → HTTP ${capture.login.status ?? "?"}`
+            : capture.note,
+    });
+    const login = capture.login;
+    if (!login) return done(`${capture.note} Mode tetap VAULT.`);
+    if (capture.stillOnLogin) {
+        return done("Halaman tetap menampilkan form login setelah submit — kredensial uji kemungkinan salah. Mode tetap VAULT.");
+    }
+    if (login.encoding === "json" || !login.usernameKey || !login.passwordKey) {
+        return done(
+            "Login aplikasi memakai API JSON. Portal belum punya engine SSO JSON, jadi mode tetap VAULT; endpoint dicatat untuk referensi.",
+            null,
+            { url: sanitizeLoginUrlForDisplay(login.url) ?? login.url, bodyKeys: login.bodyKeys, status: login.status },
+        );
+    }
+
+    // Form-encoded: buktikan ulang dari server, persis seperti SSOAutoSubmit
+    // (POST tanpa cookie ke endpoint terekam).
+    if (!canSend()) return done("Batas percobaan uji login tercapai sebelum verifikasi ulang.");
+    const replayBody = new URLSearchParams({ [login.usernameKey]: data.testUsername, [login.passwordKey]: data.testPassword });
+    const replay = await relayLogin({ actionUrl: login.url, body: replayBody.toString(), jar: new CookieJar(), referer: page.finalUrl, allowInsecureTLS: true });
+    attempts.push({
+        step: 2,
+        mode: "FORM",
+        ok: replay.ok,
+        outcome: !replay.ok ? "REJECTED" : replay.handoff ? "CREDENTIAL_ACCEPTED" : "TRANSPORT_VALIDATED",
+        message: replay.ok ? "Endpoint terekam menerima kiriman form langsung." : (replay.failureReason ?? "Ditolak."),
+    });
+    return replay.ok
+        ? done("Terbukti: SSO Mode FORM ke endpoint yang direkam browser. LOGIN URL ikut diganti ke endpoint itu.", {
+              ssoMode: "FORM",
+              usernameField: login.usernameKey,
+              passwordField: login.passwordKey,
+              httpMethod: "POST",
+              loginUrl: login.url,
+          })
+        : done(`Endpoint terekam menolak kiriman langsung dari server. Mode tetap VAULT. ${replay.failureReason ?? ""}`.trim());
 }
 
 /**

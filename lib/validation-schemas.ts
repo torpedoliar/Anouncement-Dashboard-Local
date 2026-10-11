@@ -321,6 +321,9 @@ export const verifyLoginSchema = z.object({
         })
         .nullable()
         .optional(),
+    // Tangga uji: coba FORM → POST → REROUTE (Oracle) / rekam submit browser,
+    // lalu kembalikan mode yang terbukti. Tidak menyimpan apa pun ke app.
+    ladder: z.boolean().optional(),
 });
 
 // -----------------------------------------

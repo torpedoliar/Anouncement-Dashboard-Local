@@ -5,7 +5,7 @@
  * Kasus diambil dari bukti NYATA k2prodapp: token antiforgery terikat cookie
  * (`__RequestVerificationToken_L0lkZW50aXR5...`) → POST; form polos → FORM.
  */
-import { classifySsoMode, type ModeEvidence } from "../lib/portal-sso-mode";
+import { adoptRememberedConfig, classifySsoMode, type ModeEvidence } from "../lib/portal-sso-mode";
 import { looksLikeClientRenderedApp } from "../lib/portal-sso-relay";
 
 function assertEq(actual: unknown, expected: unknown, label: string) {
@@ -100,6 +100,23 @@ function base(): ModeEvidence {
     b.detected.extraFields = {};
     const v = classifySsoMode(b);
     assertEq(v.mode, "POST", "chain federasi + form → POST");
+}
+
+// Koreksi admin tersimpan menang atas VAULT "tidak ada password field"
+{
+    const b = base();
+    b.detected.passwordField = null;
+    b.detected.usernameField = "email";
+    b.detected.multiStep = true;
+    const v = classifySsoMode(b);
+    assertEq(v.mode, "VAULT", "tanpa password field → VAULT sebelum memori");
+    const remembered = { usernameField: "email", passwordField: "pwd", httpMethod: "POST", ssoMode: "POST" };
+    assertEq(adoptRememberedConfig(b.detected, v, remembered, "koreksi"), true, "koreksi diadopsi");
+    assertEq([v.mode, b.detected.passwordField, b.detected.multiStep], ["POST", "pwd", false], "mode & field dari koreksi");
+    assertEq(adoptRememberedConfig(b.detected, v, remembered, "koreksi"), false, "tidak menimpa field yang sudah ada");
+    const b2 = base();
+    b2.detected.passwordField = null;
+    assertEq(adoptRememberedConfig(b2.detected, classifySsoMode(b2), { usernameField: "u", passwordField: null, httpMethod: null, ssoMode: "VAULT" }, "x"), false, "koreksi tanpa password tidak diadopsi");
 }
 
 console.log("=== ALL PASS ===");

@@ -130,6 +130,13 @@ export default function PortalAppsPage() {
     const [verifyState, setVerifyState] = useState<"idle" | "running" | "ok" | "fail">("idle");
     const [verifyMsg, setVerifyMsg] = useState("");
     const [apiProbeResult, setApiProbeResult] = useState<{ ok: boolean; status: number; note: string } | null>(null);
+    // Hasil "Tangga uji": mode yang terbukti dengan kredensial uji. Hanya diterapkan
+    // ke editor saat admin menekan "Terapkan"; Simpan tetap langkah terpisah.
+    const [ladderResult, setLadderResult] = useState<{
+        attempts: Array<{ step: number; mode: string; ok: boolean; message: string }>;
+        suggestion: { ssoMode: string; usernameField: string; passwordField: string; httpMethod: string; loginUrl?: string } | null;
+        jsonEndpoint: { url: string; bodyKeys: string[]; status: number | null } | null;
+    } | null>(null);
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const [logoError, setLogoError] = useState("");
     const { showToast } = useToast();
@@ -419,6 +426,14 @@ export default function PortalAppsPage() {
                     : data.apiProbeNote
                       ? String(data.apiProbeNote)
                       : undefined;
+                // Kandidat parsial tetap ditampilkan supaya admin bisa langsung
+                // menjalankan tangga uji alih-alih mengisi field manual.
+                setLastDetection({
+                    usernameField: typeof data.usernameField === "string" ? data.usernameField : null,
+                    passwordField: null,
+                    httpMethod: typeof data.httpMethod === "string" ? data.httpMethod : null,
+                    ssoMode: typeof data.recommendedMode === "string" ? data.recommendedMode : null,
+                });
                 setDetectMsg({
                     type: hasJsonLogin || Boolean(detectedProfile) ? "ok" : "err",
                     text: detectedProfile
@@ -477,16 +492,13 @@ export default function PortalAppsPage() {
                     : `Berhasil terdeteksi: ${detectedInfo}`,
                 warnings: allWarnings.length ? allWarnings : undefined,
             });
-            // Simpan field hasil deteksi untuk "Uji hasil deteksi" — hanya bila
-            // pasangan user+pass lengkap.
-            if (data.usernameField && data.passwordField) {
-                setLastDetection({
-                    usernameField: String(data.usernameField),
-                    passwordField: String(data.passwordField),
-                    httpMethod: typeof data.httpMethod === "string" ? data.httpMethod : null,
-                    ssoMode: typeof data.recommendedMode === "string" ? data.recommendedMode : null,
-                });
-            }
+            // Simpan field hasil deteksi untuk "Uji hasil deteksi".
+            setLastDetection({
+                usernameField: typeof data.usernameField === "string" ? data.usernameField : null,
+                passwordField: typeof data.passwordField === "string" ? data.passwordField : null,
+                httpMethod: typeof data.httpMethod === "string" ? data.httpMethod : null,
+                ssoMode: typeof data.recommendedMode === "string" ? data.recommendedMode : null,
+            });
         } catch {
             setDetectMsg({ type: "err", text: "Terjadi kesalahan saat deteksi." });
         } finally {
@@ -497,6 +509,7 @@ export default function PortalAppsPage() {
     const handleVerifyLogin = async (
         useJsonApi?: boolean,
         fieldOverride?: { usernameField?: string | null; passwordField?: string | null; httpMethod?: string | null; ssoMode?: string | null },
+        ladder?: boolean,
     ) => {
         if (!formData.loginUrl) {
             setVerifyState("fail");
@@ -511,6 +524,7 @@ export default function PortalAppsPage() {
         setVerifyState("running");
         setVerifyMsg("");
         setApiProbeResult(null); // Reset API probe result
+        setLadderResult(null);
         try {
             // Build full payload with complete form snapshot (v2 requirement).
             // fieldOverride (dari "Uji hasil deteksi") menang atas editor —
@@ -525,6 +539,7 @@ export default function PortalAppsPage() {
                 testUsername: verify.username,
                 testPassword: verify.password,
             };
+            if (ladder) body.ladder = true;
 
             // Parse extraFields from JSON string to object
             if (formData.extraFields && formData.extraFields.trim()) {
@@ -555,6 +570,7 @@ export default function PortalAppsPage() {
             }
             setVerifyState(data.ok ? "ok" : "fail");
             setVerifyMsg(data.message);
+            if (data.ladder) setLadderResult(data.ladder);
 
             // Store apiProbe result if present (for "Uji JSON")
             if (data.apiProbe) {
@@ -1096,7 +1112,7 @@ export default function PortalAppsPage() {
                                             {lastDetection && (
                                                 <div className="mt-2">
                                                     <p className="mb-1">
-                                                        Field terdeteksi: {lastDetection.usernameField} / {lastDetection.passwordField}
+                                                        Field terdeteksi: {lastDetection.usernameField ?? "?"} / {lastDetection.passwordField ?? "?"}
                                                         {lastDetection.ssoMode ? ` · Mode: ${lastDetection.ssoMode}` : ""}
                                                     </p>
                                                     <Button
@@ -1218,6 +1234,13 @@ export default function PortalAppsPage() {
                                     >
                                         {verifyState === "running" ? "Menguji..." : "Uji Login"}
                                     </button>
+                                    <button
+                                        type="button" onClick={() => handleVerifyLogin(false, undefined, true)} disabled={verifyState === "running"}
+                                        title="Coba FORM → POST (atau REROUTE untuk Oracle); bila tak ada form, browser mengisi & merekam submit. Maks 3 kiriman, memakai kuota uji login."
+                                        className="inline-flex h-9 items-center justify-center rounded-control border border-border px-3 text-sm font-medium text-text-1 hover:bg-surface-3 disabled:opacity-50"
+                                    >
+                                        {verifyState === "running" ? "Menguji..." : "Cari mode otomatis (tangga uji)"}
+                                    </button>
                                     {/* Uji JSON button - tampil bila ada kontrak API (OpenAPI / endpoint dikenal) */}
                                     {(formData.apiLayer === "OPENAPI" || formData.apiLayer === "KNOWN_ENDPOINT") && formData.apiContracts && formData.apiContracts.length > 0 && (
                                         <button
@@ -1232,6 +1255,43 @@ export default function PortalAppsPage() {
                                     <p className={`mt-2 text-sm ${verifyState === "ok" ? "text-success" : "text-warning"}`}>
                                         {verifyMsg}
                                     </p>
+                                )}
+                                {ladderResult && (
+                                    <div className="mt-2 rounded border border-border p-2 text-xs text-text-2">
+                                        <ul className="list-inside list-disc">
+                                            {ladderResult.attempts.map((attempt) => (
+                                                <li key={`${attempt.step}-${attempt.mode}`}>
+                                                    {attempt.mode}: {attempt.ok ? "berhasil" : "gagal"} — {attempt.message}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        {ladderResult.jsonEndpoint && (
+                                            <p className="mt-1">
+                                                Endpoint JSON terekam: {ladderResult.jsonEndpoint.url} (kunci: {ladderResult.jsonEndpoint.bodyKeys.join(", ") || "-"})
+                                            </p>
+                                        )}
+                                        {ladderResult.suggestion && (
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                className="mt-2"
+                                                onClick={() => {
+                                                    const s = ladderResult.suggestion!;
+                                                    updateLoginConfig({
+                                                        ssoMode: s.ssoMode,
+                                                        usernameField: s.usernameField,
+                                                        passwordField: s.passwordField,
+                                                        httpMethod: s.httpMethod,
+                                                        ...(s.loginUrl ? { loginUrl: s.loginUrl } : {}),
+                                                    });
+                                                    setLadderResult(null);
+                                                }}
+                                            >
+                                                Terapkan {ladderResult.suggestion.ssoMode} ({ladderResult.suggestion.usernameField} / {ladderResult.suggestion.passwordField}) ke form
+                                            </Button>
+                                        )}
+                                    </div>
                                 )}
                                 {/* API probe result */}
                                 {apiProbeResult && (

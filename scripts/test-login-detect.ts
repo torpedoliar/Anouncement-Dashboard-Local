@@ -12,6 +12,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { detectLoginFields } from "../lib/portal-login-detect";
+import { classifySsoMode } from "../lib/portal-sso-mode";
+import { clientRouteFromUrl } from "../lib/portal-client-route";
 
 interface Expected {
     url: string;
@@ -20,6 +22,8 @@ interface Expected {
     passwordField: string | null;
     actionContains?: string;
     multiStep?: boolean;
+    /** Mode hasil classifySsoMode (tanpa cookie/redirect). Mencegah regresi diam-diam ke VAULT. */
+    mode?: "FORM" | "POST" | "REROUTE" | "VAULT";
     note?: string;
 }
 
@@ -63,6 +67,20 @@ for (const name of names) {
         if (gotMulti !== exp.multiStep) {
             problems.push(`multiStep: harap ${exp.multiStep}, dapat ${gotMulti}`);
         }
+    }
+
+    if (exp.mode !== undefined) {
+        const verdict = classifySsoMode({
+            html,
+            finalUrl: exp.url,
+            cookieNames: [],
+            detected: result,
+            redirected: false,
+            loopDetected: false,
+            clientRoute: clientRouteFromUrl(exp.url),
+            layer: exp.layer,
+        });
+        if (verdict.mode !== exp.mode) problems.push(`mode: harap ${exp.mode}, dapat ${verdict.mode}`);
     }
 
     if (problems.length === 0) {

@@ -1,12 +1,13 @@
 {
-    "$schema": "Ekspektasi deteksi per fixture. passwordField:null = halaman memang tidak boleh menghasilkan field password (SPA shell / multi-step / halaman negatif). multiStep:true = halaman identifier-first (password muncul di langkah berikutnya). actionContains cocokkan substring pada formAction. layer hanya dokumentasi sumber fixture.",
+    "$schema": "Ekspektasi deteksi per fixture. passwordField:null = halaman memang tidak boleh menghasilkan field password (SPA shell / multi-step / halaman negatif). multiStep:true = halaman identifier-first (password muncul di langkah berikutnya). actionContains cocokkan substring pada formAction. layer hanya dokumentasi sumber fixture. mode = hasil classifySsoMode tanpa cookie/redirect (VAULT pada halaman tanpa password memang benar; tangga uji yang membuktikan mode nyata).",
     "github": {
         "url": "https://github.com/login",
         "layer": "HTTP",
         "usernameField": "login",
         "passwordField": "password",
         "actionContains": "/session",
-        "multiStep": false
+        "multiStep": false,
+        "mode": "FORM"
     },
     "discourse": {
         "url": "https://try.discourse.org/login",
@@ -14,7 +15,8 @@
         "usernameField": "username",
         "passwordField": "password",
         "actionContains": "/login",
-        "multiStep": false
+        "multiStep": false,
+        "mode": "FORM"
     },
     "redmine": {
         "url": "https://www.redmine.org/login",
@@ -23,7 +25,8 @@
         "passwordField": "password",
         "actionContains": "/login",
         "multiStep": false,
-        "note": "Ada 2 form search (name=q, action=/search) di atas form login — tidak boleh kepilih."
+        "note": "Ada 2 form search (name=q, action=/search) di atas form login — tidak boleh kepilih.",
+        "mode": "FORM"
     },
     "wp": {
         "url": "https://login.wordpress.org/",
@@ -31,7 +34,8 @@
         "usernameField": "log",
         "passwordField": "pwd",
         "actionContains": "wp-login.php",
-        "multiStep": false
+        "multiStep": false,
+        "mode": "FORM"
     },
     "practiceauto": {
         "url": "https://practicetestautomation.com/practice-test-login/",
@@ -39,7 +43,8 @@
         "usernameField": "username",
         "passwordField": "password",
         "multiStep": false,
-        "note": "Input tanpa <form> wrapper — jalur fallback global."
+        "note": "Input tanpa <form> wrapper — jalur fallback global.",
+        "mode": "FORM"
     },
     "matomo": {
         "url": "https://demo.matomo.cloud/index.php?module=Login",
@@ -48,7 +53,8 @@
         "passwordField": "form_password",
         "actionContains": "module=Login",
         "multiStep": false,
-        "note": "Form login dan reset password berbagi nama field yang sama; form reset tidak boleh menang."
+        "note": "Form login dan reset password berbagi nama field yang sama; form reset tidak boleh menang.",
+        "mode": "FORM"
     },
     "mantisbt": {
         "url": "https://mantisbt.org/bugs/login_page.php",
@@ -57,7 +63,8 @@
         "passwordField": null,
         "actionContains": "login_password_page.php",
         "multiStep": true,
-        "note": "Identifier-first klasik: form hanya berisi username + login_token, password di halaman berikutnya."
+        "note": "Identifier-first klasik: form hanya berisi username + login_token, password di halaman berikutnya.",
+        "mode": "VAULT"
     },
     "microsoft": {
         "url": "https://login.live.com/",
@@ -65,7 +72,8 @@
         "usernameField": null,
         "passwordField": null,
         "multiStep": true,
-        "note": "Form diserialkan di dalam JSON konfigurasi JS (input escaped). HTTP layer tidak melihat field; sinyal multi-step tetap harus dikenali."
+        "note": "Form diserialkan di dalam JSON konfigurasi JS (input escaped). HTTP layer tidak melihat field; sinyal multi-step tetap harus dikenali.",
+        "mode": "VAULT"
     },
     "grafana": {
         "url": "https://play.grafana.org/login",
@@ -73,7 +81,8 @@
         "usernameField": null,
         "passwordField": null,
         "multiStep": false,
-        "note": "SPA shell React (#reactRoot)."
+        "note": "SPA shell React (#reactRoot).",
+        "mode": "VAULT"
     },
     "orangehrm": {
         "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
@@ -81,7 +90,8 @@
         "usernameField": null,
         "passwordField": null,
         "multiStep": false,
-        "note": "SPA Vue (<auth-login>), CSRF token di atribut komponen."
+        "note": "SPA Vue (<auth-login>), CSRF token di atribut komponen.",
+        "mode": "VAULT"
     },
     "saucedemo": {
         "url": "https://www.saucedemo.com/",
@@ -89,7 +99,8 @@
         "usernameField": null,
         "passwordField": null,
         "multiStep": false,
-        "note": "SPA shell murni (#root)."
+        "note": "SPA shell murni (#root).",
+        "mode": "VAULT"
     },
     "reddit": {
         "url": "https://www.reddit.com/login/",
@@ -97,7 +108,8 @@
         "usernameField": null,
         "passwordField": null,
         "multiStep": false,
-        "note": "Halaman JS-challenge anti-bot."
+        "note": "Halaman JS-challenge anti-bot.",
+        "mode": "VAULT"
     },
     "archive": {
         "url": "https://archive.org/account/login",
@@ -105,7 +117,8 @@
         "usernameField": null,
         "passwordField": null,
         "multiStep": false,
-        "note": "SPA Web Components (<app-root> Lit)."
+        "note": "SPA Web Components (<app-root> Lit).",
+        "mode": "VAULT"
     },
     "suitecrm": {
         "url": "https://suitecrm.com/demo/",
@@ -113,7 +126,8 @@
         "usernameField": null,
         "passwordField": null,
         "multiStep": false,
-        "note": "NEGATIF: halaman marketing, bukan login. Tidak boleh ada passwordField."
+        "note": "NEGATIF: halaman marketing, bukan login. Tidak boleh ada passwordField.",
+        "mode": "VAULT"
     },
     "yahoo": {
         "url": "https://login.yahoo.com/",
@@ -121,7 +135,8 @@
         "usernameField": null,
         "passwordField": null,
         "multiStep": true,
-        "note": "Multi-step identifier-first, form dirakit JS."
+        "note": "Multi-step identifier-first, form dirakit JS.",
+        "mode": "VAULT"
     },
     "saucedemo-rendered": {
         "url": "https://www.saucedemo.com/",
@@ -129,7 +144,8 @@
         "usernameField": "user-name",
         "passwordField": "password",
         "multiStep": false,
-        "note": "Fixture sintetis: DOM saucedemo setelah render."
+        "note": "Fixture sintetis: DOM saucedemo setelah render.",
+        "mode": "FORM"
     },
     "orangehrm-rendered": {
         "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
@@ -137,7 +153,8 @@
         "usernameField": "username",
         "passwordField": "password",
         "multiStep": false,
-        "note": "Fixture sintetis: DOM OrangeHRM setelah render Vue."
+        "note": "Fixture sintetis: DOM OrangeHRM setelah render Vue.",
+        "mode": "FORM"
     },
     "ms-identifier-rendered": {
         "url": "https://login.live.com/",
@@ -145,7 +162,8 @@
         "usernameField": "loginfmt",
         "passwordField": null,
         "multiStep": true,
-        "note": "Fixture sintetis: langkah identifier Microsoft setelah render."
+        "note": "Fixture sintetis: langkah identifier Microsoft setelah render.",
+        "mode": "VAULT"
     },
     "spa-nameless-rendered": {
         "url": "https://app.example.internal/#/signin",
@@ -153,7 +171,8 @@
         "usernameField": "email",
         "passwordField": "password",
         "multiStep": false,
-        "note": "Fixture sintetis: React controlled inputs tanpa name/id, hanya autocomplete — proyeksi snapshot Browserless."
+        "note": "Fixture sintetis: React controlled inputs tanpa name/id, hanya autocomplete — proyeksi snapshot Browserless.",
+        "mode": "VAULT"
     },
     "ms-polled-rendered": {
         "url": "https://login.microsoftonline.com/",
@@ -161,6 +180,7 @@
         "usernameField": "loginfmt",
         "passwordField": null,
         "multiStep": true,
-        "note": "Render dengan polling (2026-10-01): langkah identifier memuat input passwd umpan prefill (aria-hidden=true, tabindex=-1, moveOffScreen). Bukan field login."
+        "note": "Render dengan polling (2026-10-01): langkah identifier memuat input passwd umpan prefill (aria-hidden=true, tabindex=-1, moveOffScreen). Bukan field login.",
+        "mode": "VAULT"
     }
 }
